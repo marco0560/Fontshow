@@ -3,12 +3,13 @@ import re
 import os
 import sys
 import platform
-from pathlib import Path
 import subprocess
 
 # --- Configurazione ---
 OUTPUT_FILENAME = "catalogo_font_sistema.tex"
-# Font da escludere che causano crash o problemi noti in LuaLaTeX, indipendentemente dal sistema operativo
+# Font da escludere che causano crash o problemi noti
+# Un font simbolico classico, spesso problematico in LuaTeX ma non installato in questo sistema è
+#    "Hololens MDL2 Assets"
 EXCLUDED_FONTS = {
     "Segoe MDL2 Assets",
 	"Segoe Fluent Icons",
@@ -21,18 +22,32 @@ EXCLUDED_FONTS = {
     "Wingdings 2",
     "Wingdings 3",
     "Marlett",
-    "Symbol"
-# Font simbolico classico, spesso problematico in LuaTeX ma non installato in questo sistema
-#    "Hololens MDL2 Assets",
+    "Symbol",
+    "Microsoft YaHei",
+    "Noto Sans Arabic",
+    "Noto Sans Hebrew",
+    "Yu Gothic"
 }
 
-# Font non-Latini che richiedono un testo di esempio specifico (o una lingua specifica)
+# Font non-Latini con configurazione linguistica/script specifica (polyglossia + fontspec options)
+# NUOVO: Aggiunto il campo 'options' per specificare Script=...
 SPECIAL_SCRIPT_FONTS = {
-    "Noto Sans Arabic": "أهلا وسهلاً! هذا نص تجريبي باللغة العربية.",  # Arabo (RTL)
-    "Noto Sans CJK JP": "こんにちは、世界！これは日本語のテストテキストです。",  # Giapponese (CJK)
-    "Noto Sans Thai": "สวัสดีครับ นี่คือข้อความทดสอบภาษาไทย",  # Tailandese
-    "Noto Sans Hebrew": "שלום עולם! זה טקסט בדיקה בעברית.",  # Ebraico (RTL)
+    # Font esistenti
+    "Noto Sans Arabic": {"lang": "arabic", "options": "Script=Arabic", "text": "أهلا وسهلاً! هذا نص تجريبي باللغة العربية. (Scrittura RTL corretta)"},  # Arabo (RTL)
+    "Noto Sans Hebrew": {"lang": "hebrew", "options": "Script=Hebrew", "text": "שלום עולם! זה טקסט בדיקה בעברית. (Scrittura RTL corretta)"},  # Ebraico (RTL)
+    "Noto Sans CJK JP": {"lang": "japanese", "options": "Script=CJK", "text": "こんにちは、世界！これは日本語のテストテキストです。"},  # Giapponese (CJK)
+    "Noto Sans Thai": {"lang": "thai", "options": "Script=Thai", "text": "สวัสดีครับ นี่คือข้อความทดสอบภาษาไทย"},  # Tailandese
+    
+    # --- NUOVE VOCI PER CINESE, GIAPPONESE E HINDI ---
+    "Yu Gothic": {"lang": "japanese", "options": "Script=Japanese", "text": "こんにちは世界！これは日本語のテストテキストです。"},  # Giapponese (Script=Japanese)
+    "Microsoft YaHei": {"lang": "chinese", "options": "Script=Han", "text": "你好世界! 这是一个中文测试文本。"}, # Cinese Semplificato (Script=Han)
+    "Nirmala UI": {"lang": "hindi", "options": "Script=Devanagari", "text": "नमस्ते दुनिया! यह एक हिन्दी परीक्षण पाठ है।"}, # Hindi (Devanagari)
+    # --- FINE NUOVE VOCI ---
+    
+    # Aggiungi qui eventuali altri font speciali
 }
+
+# --- Funzioni di Sistema (Identiche alla V3) ---
 
 def clean_font_name(name):
     """Pulisce il nome del font per ottenere il nome della famiglia."""
@@ -80,10 +95,8 @@ def get_installed_fonts_linux():
         
         font_list = set()
         for line in lines:
-            # L'output è tipicamente: "/path/to/file.ttf: FamilyName"
             if ':' in line:
                 family_part = line.split(':')[-1].strip()
-                # A volte fc-list restituisce nomi multipli separati da virgola
                 for name in family_part.split(','):
                     base_name = name.strip()
                     if base_name and base_name not in EXCLUDED_FONTS:
@@ -125,14 +138,15 @@ def escape_latex(text):
     }
     return "".join(replacements.get(c, c) for c in text)
 
+# --- Funzione di Generazione LaTeX Aggiornata ---
+
 def generate_latex(font_list):
-    """Genera il codice LaTeX completo."""
+    """Genera il codice LaTeX completo, con la nuova macro per Script/Opzioni."""
     print(f"Generazione file LaTeX per {len(font_list)} font...")
     
-    latex_code = r"""
-\documentclass[11pt,a4paper]{article}
+    latex_code = r"""\documentclass[11pt,a4paper]{article}
 \usepackage{fontspec}
-\usepackage[italian]{babel}
+\usepackage{polyglossia} % Gestione multilingue avanzata
 \usepackage{lipsum}
 \usepackage{xcolor}
 \usepackage{tcolorbox}
@@ -142,6 +156,16 @@ def generate_latex(font_list):
 \usepackage{booktabs}
 \usepackage{multicol}
 
+\setmainlanguage{italian}
+% Definisci le lingue secondarie necessarie per il test dei font complessi
+\setotherlanguage{latin}
+\setotherlanguage{arabic}
+\setotherlanguage{hebrew}
+\setotherlanguage{japanese}
+\setotherlanguage{chinese}  % Aggiunto Cinese
+\setotherlanguage{hindi}    % Aggiunto Hindi
+\setotherlanguage{thai}
+
 \geometry{margin=2cm}
 
 % Colori
@@ -149,6 +173,7 @@ def generate_latex(font_list):
 \definecolor{boxcolor}{HTML}{f0f0f0}
 \definecolor{successcolor}{HTML}{28a745}
 \definecolor{errorcolor}{HTML}{dc3545}
+\definecolor{othercolor}{HTML}{0d6efd}
 
 % Setup Box
 \tcbuselibrary{skins}
@@ -161,26 +186,34 @@ def generate_latex(font_list):
     title={\textbf{Non Caricato: #1}}, coltitle=white, colbacktitle=errorcolor!80!black
 }
 
-% --- MACRO PER CARATTERI NON LATINI ---
-% Per Noto Sans Arabic, usiamo \setfontlanguage{Arabic} per la visualizzazione RTL corretta
-\newcommand{\TestNonLatin}[3]{% #1: Font Name, #2: Language Tag, #3: Sample Text
-    \par\noindent\textbf{Test {#2}:}
-    {\fontspec{#1}\setfontlanguage{#2}#3\par}
-    \vspace{0.5em}
+% --- MACRO PER CARATTERI NON LATINI (FIXED) ---
+% #1: Font Name, #2: Language Tag (polyglossia), #3: Font Options (e.g., Script=Arabic), #4: Sample Text
+\newcommand{\TestNonLatin}[4]{%
+	\par\noindent\textbf{Test in Lingua (\texttt{#2}) con Opzioni: \texttt{[#3]}}
+	
+	\foreignlanguage{#2}{%
+		\fontspec{#1}[#3]%
+		#4\par
+	}%
+	\vspace{0.5em}
 }
 % --------------------------------------
 
 % --- GESTIONE CONTATORI E INDICI ---
 \newcounter{cntWorking}
 \newcounter{cntBroken}
+\newcounter{cntExcluded}
 \setcounter{cntWorking}{0}
 \setcounter{cntBroken}{0}
+\setcounter{cntExcluded}{0}
 
 % Definiamo file di output temporanei per gli indici
 \newwrite\fileWorking
 \immediate\openout\fileWorking=\jobname.working
 \newwrite\fileBroken
 \immediate\openout\fileBroken=\jobname.broken
+\newwrite\fileExcluded
+\immediate\openout\fileExcluded=\jobname.excluded
 
 % Macro ROBUSTE per registrare i font (evita errori di espansione)
 \protected\def\LogWorking#1{%
@@ -192,8 +225,14 @@ def generate_latex(font_list):
     \stepcounter{cntBroken}%
     \immediate\write\fileBroken{\unexpanded{\item} #1}%
 }
+
+\protected\def\LogExcluded#1{%
+    \stepcounter{cntExcluded}%
+    \immediate\write\fileExcluded{\unexpanded{\item} #1}%
+}
 % -----------------------------------
-\SetLipsumLanguage{cicero}
+
+\SetLipsumText{cicero}
 \newcommand{\Li}{\lipsum[1][1-4]}
 
 \title{\Huge\textbf{\color{titlecolor}Catalogo Font di Sistema}}
@@ -212,38 +251,41 @@ I font problematici noti sono stati esclusi preventivamente. La compilazione è 
 \tableofcontents
 \newpage
 
-\section{Catalogo Dettagliato}
-"""
+\section{Catalogo Dettagliato}"""
 
     # Loop sui font
     total = len(font_list)
     for idx, font in enumerate(font_list):
         safe_name = escape_latex(font)
         
-        # Gestione Esempi: Testo standard o Testo specifico per lingua
-        sample_code = ""
+        if idx % 50 == 0:
+            print(f"  ... processati {idx}/{total}")
+
+        # Inizializza l'esempio di testo standard (Lipsum)
+        sample_code = r"""\textbf{Test Latino (Lipsum):}
+    {\fontspec{""" + font + r"""}
+    \Li
+    }"""
+        
+        # Gestione Esempi: Testo specifico per lingua
         if font in SPECIAL_SCRIPT_FONTS:
-            # Usa la macro per i caratteri speciali
-            sample_text = escape_latex(SPECIAL_SCRIPT_FONTS[font])
-            lang_tag = "Arabic" if "Arabic" in font else "Japanese" if "CJK" in font else "Hebrew" if "Hebrew" in font else "Thai"
+            spec = SPECIAL_SCRIPT_FONTS[font]
+            sample_text = escape_latex(spec["text"])
+            lang_tag = spec["lang"]
+            font_options = spec["options"] # <-- NUOVO: Opzioni Fontspec
 
-            sample_code = f"""
-            \\TestNonLatin{{{font}}}{{{lang_tag}}}{{{sample_text}}}
-            \n"""
-
-        # Aggiunge sempre un esempio di testo Latino standard
-        if font not in SPECIAL_SCRIPT_FONTS:
-            sample_code = r"""
-            \textbf{Test Latino:}
-            {\fontspec{""" + font + r"""}
-            \Li
-            }"""
+            sample_code = f"""\\TestNonLatin{{{font}}}{{{lang_tag}}}{{{font_options}}}{{{sample_text}}}
+            """
+        else:
+             # Usa il codice standard se non è un font con script speciale
+             sample_code = r"""\textbf{Test Latino (Lipsum):}
+    {\fontspec{""" + font + r"""}
+    \Li
+    }"""
 
 
         # Blocco LaTeX per il singolo font
-        # Usiamo \IfFontExistsTF con le macro robuste definite sopra
-        block =f"""
-\\subsection{{{safe_name}}}
+        block =f"""\\subsection{{{safe_name}}}
 
 \\IfFontExistsTF{{{font}}}{{%
     \\LogWorking{{{safe_name}}}
@@ -258,17 +300,23 @@ I font problematici noti sono stati esclusi preventivamente. La compilazione è 
         Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
     \\end{{errorbox}}
 }}
-\\vspace{{1em}}
-"""
+\\vspace{{1em}}"""
+        latex_code += "\n\n"
         latex_code += block
 
+    latex_code += "\n\n"
+    for font in sorted(list(EXCLUDED_FONTS)):
+        block = r"\LogExcluded{" + font + "}\n"
+        latex_code += block
+
+
     # Chiusura documento e stampa indici
-    latex_code += r"""
-\newpage
+    latex_code += r"""\newpage
 
 % Chiusura file degli indici
 \immediate\closeout\fileWorking
 \immediate\closeout\fileBroken
+\immediate\closeout\fileExcluded
 
 \section{Riepilogo e Statistiche}
 
@@ -284,6 +332,7 @@ I font problematici noti sono stati esclusi preventivamente. La compilazione è 
 Font Analizzati (Post-Filtro) & """ + str(total) + r""" \\
 \textcolor{successcolor}{\textbf{Font Funzionanti}} & \textbf{\arabic{cntWorking}} \\
 \textcolor{errorcolor}{\textbf{Font Problematici}} & \textbf{\arabic{cntBroken}} \\
+\textcolor{othercolor}{\textbf{Font Esclusi}} & \textbf{\arabic{cntExcluded}} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -297,15 +346,25 @@ Font Analizzati (Post-Filtro) & """ + str(total) + r""" \\
 \end{multicols}
 
 \section{Indice: Font Problematici}
+\begin{multicols}{2}
 \begin{itemize}
     \input{\jobname.broken}
 \end{itemize}
+\end{multicols}
+
+\section{Indice: Font Esclusi}
+\begin{multicols}{2}
+\begin{itemize}
+    \input{\jobname.excluded}
+\end{itemize}
+\end{multicols}
 
 \end{document}
 """
     return latex_code
 
 def main():
+    print("[1/3] Rilevamento font in corso...")
     fonts = get_installed_fonts()
     if not fonts:
         print("✗ Nessun font da catalogare o errore di sistema.")
@@ -313,11 +372,12 @@ def main():
         
     latex_content = generate_latex(fonts)
     
-    print(f"Scrittura file {OUTPUT_FILENAME}...")
+    print(f"[2/3] Scrittura file {OUTPUT_FILENAME}...")
     try:
         with open(OUTPUT_FILENAME, "w", encoding="utf-8") as f:
             f.write(latex_content)
         print("✓ Fatto! File LaTeX generato correttamente.")
+        print(f"[3/3] Pronto per la compilazione.")
         print(f"  Esegui: lualatex {OUTPUT_FILENAME} (due volte)")
     except Exception as e:
         print(f"✗ Errore scrittura file: {e}")

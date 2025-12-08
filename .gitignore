@@ -1,0 +1,13 @@
+*.pdf
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.synctex.gz(busy)
+*.fls
+*.fdb_latexmk
+*.bak
+*.broken
+*.ecluded
+*.working
