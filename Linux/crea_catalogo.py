@@ -1,7 +1,15 @@
-import winreg
+import sys
+
+if sys.platform == "win32":
+    import winreg
+    # modulo specifico Windows
+    IS_WINDOWS = True
+    WINDOWS_MODULE = winreg
+else:
+    IS_WINDOWS = False
+    # eventuale alternativa per altri OS
 import re
 import os
-import sys
 import platform
 import subprocess
 
@@ -26,7 +34,10 @@ EXCLUDED_FONTS = {
     "Microsoft YaHei",
     "Noto Sans Arabic",
     "Noto Sans Hebrew",
-    "Yu Gothic"
+    "Yu Gothic",
+# Inseriti in Linux
+    "Noto Emoji",
+    "KacstScreen"
 }
 
 # Font non-Latini con configurazione linguistica/script specifica (polyglossia + fontspec options)
@@ -57,6 +68,7 @@ def clean_font_name(name):
     # Regex potente per catturare varianti comuni (Bold, Italic, ecc. in ITA/ENG)
     variants = r'\s+(Bold|Italic|Light|Regular|Medium|Semibold|Black|Thin|Heavy|Condensed|Extended|Grassetto|Corsivo|Chiaro|Normale|Medio|Nero|Sottile|Pesante|Condensato|Esteso).*$'
     base_name = re.sub(variants, '', clean_name, flags=re.IGNORECASE).strip()
+    # base_name = base_name.replace('\-', '-')
     
     return base_name
 
@@ -85,6 +97,20 @@ def get_installed_fonts_windows():
             
     return sorted(list(font_list))
 
+def extract_font_family(line):
+    """Estrae il nome della famiglia del font da una riga di output fc-list"""
+    parts = line.split(':')
+    
+    if len(parts) < 2:
+        return ""
+    elif len(parts) == 2:
+        # Formato: path:family
+        return parts[1].strip()
+    else:
+        # Formato: path:family:style o path:family:altro:style
+        # Unisci tutti gli elementi tranne primo e ultimo
+        return ':'.join(parts[1:2]).strip()
+
 def get_installed_fonts_linux():
     """Recupera la lista dei font installati su Linux usando fc-list."""
     print("Sistema: Linux. Uso 'fc-list' per l'estrazione dei font...")
@@ -96,7 +122,7 @@ def get_installed_fonts_linux():
         font_list = set()
         for line in lines:
             if ':' in line:
-                family_part = line.split(':')[-1].strip()
+                family_part = extract_font_family(line)
                 for name in family_part.split(','):
                     base_name = name.strip()
                     if base_name and base_name not in EXCLUDED_FONTS:
