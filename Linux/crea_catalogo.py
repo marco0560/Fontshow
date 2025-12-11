@@ -8,6 +8,8 @@ if sys.platform == "win32":
 else:
     IS_WINDOWS = False
     # eventuale alternativa per altri OS
+    # Define a non-Windows placeholder so static checkers won't flag missing 'winreg'
+    winreg = None
 import re
 import os
 import platform
