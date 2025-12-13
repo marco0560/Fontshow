@@ -28,7 +28,7 @@ LIPSUM_TEXT = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do e
 def generate_excluded_latex(excluded_fonts):
     """Genera il codice LaTeX per il catalogo dei font esclusi."""
     latex_parts = []
-    
+
     # Intestazione LaTeX
     latex_parts.append(r"""
 \documentclass[11pt,a4paper]{article}
@@ -67,7 +67,7 @@ Questi font sono stati esclusi dal catalogo principale per i seguenti motivi:
 
 \section{Esempi dei Font Esclusi}
 """)
-    
+
     # Corpo del documento: test per ogni font escluso
     for font_name in sorted(excluded_fonts):
         latex_parts.append(f"\\subsection{{{font_name}}}\n")
@@ -84,23 +84,24 @@ Questi font sono stati esclusi dal catalogo principale per i seguenti motivi:
     latex_parts.append(r"""
 \end{document}
 """)
-    
+
     return "\n".join(latex_parts)
 
 def main():
+    """Generazione principale del catalogo dei font esclusi"""
     print("===========================================")
     print("  GENERATORE CATALOGO FONT ESCLUSI (Py)")
     print("===========================================")
     print(f"Font da catalogare: {len(EXCLUDED_FONTS)}")
-    
+
     # Genera il contenuto LaTeX
     latex_content = generate_excluded_latex(EXCLUDED_FONTS)
-    
+
     # Scrivi il file
     try:
         with open(OUTPUT_FILENAME, 'w', encoding='utf-8') as f:
             f.write(latex_content)
-        
+
         print("\n" + "="*50)
         print(f"✓ File LaTeX creato con successo: {OUTPUT_FILENAME}")
         print(f"Per compilare: lualatex \"{OUTPUT_FILENAME}\"")
