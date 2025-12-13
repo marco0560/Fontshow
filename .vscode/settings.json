@@ -1,0 +1,7 @@
+{
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "editor.detectIndentation": false,
+  "editor.renderWhitespace": "boundary"
+}
