@@ -26,6 +26,5 @@ __pycache__/
 *.broken
 *.ecluded
 *.working
-*.dvi
-*.pdf
+*.tex
 !figure.pdf

@@ -13,10 +13,13 @@ else:
 import re
 import os
 import platform
+from datetime import datetime
 import subprocess
 
 # --- Configurazione ---
-OUTPUT_FILENAME = "catalogo_font_sistema.tex"
+# OUTPUT_FILENAME now includes the platform name and current date (YYYYMMDD)
+DATE_STR = datetime.now().strftime("%Y%m%d")
+OUTPUT_FILENAME = f"catalogo_font_sistema_{platform.system()}_{DATE_STR}.tex"
 # Font da escludere che causano crash o problemi noti
 # Un font simbolico classico, spesso problematico in LuaTeX ma non installato in questo sistema è
 #    "Hololens MDL2 Assets"
@@ -50,13 +53,13 @@ SPECIAL_SCRIPT_FONTS = {
     "Noto Sans Hebrew": {"lang": "hebrew", "options": "Script=Hebrew", "text": "שלום עולם! זה טקסט בדיקה בעברית. (Scrittura RTL corretta)"},  # Ebraico (RTL)
     "Noto Sans CJK JP": {"lang": "japanese", "options": "Script=CJK", "text": "こんにちは、世界！これは日本語のテストテキストです。"},  # Giapponese (CJK)
     "Noto Sans Thai": {"lang": "thai", "options": "Script=Thai", "text": "สวัสดีครับ นี่คือข้อความทดสอบภาษาไทย"},  # Tailandese
-    
+
     # --- NUOVE VOCI PER CINESE, GIAPPONESE E HINDI ---
     "Yu Gothic": {"lang": "japanese", "options": "Script=Japanese", "text": "こんにちは世界！これは日本語のテストテキストです。"},  # Giapponese (Script=Japanese)
     "Microsoft YaHei": {"lang": "chinese", "options": "Script=Han", "text": "你好世界! 这是一个中文测试文本。"}, # Cinese Semplificato (Script=Han)
     "Nirmala UI": {"lang": "hindi", "options": "Script=Devanagari", "text": "नमस्ते दुनिया! यह एक हिन्दी परीक्षण पाठ है।"}, # Hindi (Devanagari)
     # --- FINE NUOVE VOCI ---
-    
+
     # Aggiungi qui eventuali altri font speciali
 }
 
@@ -66,12 +69,11 @@ def clean_font_name(name):
     """Pulisce il nome del font per ottenere il nome della famiglia."""
     # Rimuove "(TrueType)", "(OpenType)" e simili
     clean_name = re.sub(r'\s*\((TrueType|OpenType|True Type|Type 1)\)\s*$', '', name)
-    
+
     # Regex potente per catturare varianti comuni (Bold, Italic, ecc. in ITA/ENG)
     variants = r'\s+(Bold|Italic|Light|Regular|Medium|Semibold|Black|Thin|Heavy|Condensed|Extended|Grassetto|Corsivo|Chiaro|Normale|Medio|Nero|Sottile|Pesante|Condensato|Esteso).*$'
     base_name = re.sub(variants, '', clean_name, flags=re.IGNORECASE).strip()
-    # base_name = base_name.replace('\-', '-')
-    
+
     return base_name
 
 def get_installed_fonts_windows():
@@ -82,27 +84,27 @@ def get_installed_fonts_windows():
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
         r"SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Fonts"
     ]
-    
+
     for path in registry_paths:
         try:
             with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
                 for i in range(winreg.QueryInfoKey(key)[1]):
                     name, value, _ = winreg.EnumValue(key, i)
-                    
+
                     if re.search(r'\.(ttf|otf|ttc|fon)$', value, re.IGNORECASE):
                         base_name = clean_font_name(name)
                         if base_name and base_name not in EXCLUDED_FONTS:
                             font_list.add(base_name)
-                        
+
         except FileNotFoundError:
             continue
-            
+
     return sorted(list(font_list))
 
 def extract_font_family(line):
-    """Estrae il nome della famiglia del font da una riga di output fc-list"""
+    """Linux only: Estrae il nome della famiglia del font da una riga di output fc-list"""
     parts = line.split(':')
-    
+
     if len(parts) < 2:
         return ""
     elif len(parts) == 2:
@@ -120,18 +122,21 @@ def get_installed_fonts_linux():
         # Esegue fc-list e cattura l'output
         result = subprocess.run(['fc-list', ':family'], capture_output=True, text=True, check=True)
         lines = result.stdout.strip().split('\n')
-        
+
         font_list = set()
         for line in lines:
             if ':' in line:
-                family_part = extract_font_family(line)
+                if IS_WINDOWS:
+                    family_part = line.split(':')[-1].strip()
+                else:
+                    family_part = extract_font_family(line)
                 for name in family_part.split(','):
                     base_name = name.strip()
                     if base_name and base_name not in EXCLUDED_FONTS:
                         font_list.add(base_name)
-                        
+
         return sorted(list(font_list))
-        
+
     except FileNotFoundError:
         print("Errore: 'fc-list' non trovato. Assicurati che fontconfig sia installato.")
         return []
@@ -142,7 +147,7 @@ def get_installed_fonts_linux():
 def get_installed_fonts():
     """Determina il sistema operativo e richiama la funzione appropriata."""
     system = platform.system()
-    
+
     if system == "Windows":
         return get_installed_fonts_windows()
     elif system == "Linux":
@@ -171,7 +176,7 @@ def escape_latex(text):
 def generate_latex(font_list):
     """Genera il codice LaTeX completo, con la nuova macro per Script/Opzioni."""
     print(f"Generazione file LaTeX per {len(font_list)} font...")
-    
+
     latex_code = r"""\documentclass[11pt,a4paper]{article}
 \usepackage{fontspec}
 \usepackage{polyglossia} % Gestione multilingue avanzata
@@ -218,7 +223,7 @@ def generate_latex(font_list):
 % #1: Font Name, #2: Language Tag (polyglossia), #3: Font Options (e.g., Script=Arabic), #4: Sample Text
 \newcommand{\TestNonLatin}[4]{%
 	\par\noindent\textbf{Test in Lingua (\texttt{#2}) con Opzioni: \texttt{[#3]}}
-	
+
 	\foreignlanguage{#2}{%
 		\fontspec{#1}[#3]%
 		#4\par
@@ -272,7 +277,7 @@ def generate_latex(font_list):
 \maketitle
 
 \begin{abstract}
-Questo documento cataloga i font installati. 
+Questo documento cataloga i font installati.
 I font problematici noti sono stati esclusi preventivamente. La compilazione è eseguita con \textbf{LuaLaTeX}.
 \end{abstract}
 
@@ -285,7 +290,7 @@ I font problematici noti sono stati esclusi preventivamente. La compilazione è 
     total = len(font_list)
     for idx, font in enumerate(font_list):
         safe_name = escape_latex(font)
-        
+
         if idx % 50 == 0:
             print(f"  ... processati {idx}/{total}")
 
@@ -294,7 +299,7 @@ I font problematici noti sono stati esclusi preventivamente. La compilazione è 
     {\fontspec{""" + font + r"""}
     \Li
     }"""
-        
+
         # Gestione Esempi: Testo specifico per lingua
         if font in SPECIAL_SCRIPT_FONTS:
             spec = SPECIAL_SCRIPT_FONTS[font]
@@ -397,9 +402,9 @@ def main():
     if not fonts:
         print("✗ Nessun font da catalogare o errore di sistema.")
         sys.exit(1)
-        
+
     latex_content = generate_latex(fonts)
-    
+
     print(f"[2/3] Scrittura file {OUTPUT_FILENAME}...")
     try:
         with open(OUTPUT_FILENAME, "w", encoding="utf-8") as f:
