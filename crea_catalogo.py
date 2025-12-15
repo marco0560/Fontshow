@@ -23,10 +23,18 @@ from datetime import datetime
 import subprocess
 import argparse
 
+def get_unique_filename(base_name, extension):
+    """Genera un nome file unico aggiungendo un contatore a tre cifre (000-999)."""
+    for i in range(1000):
+        suffix = f"_{i:03d}"
+        filename = f"{base_name}{suffix}.{extension}"
+        if not os.path.exists(filename):
+            return filename
+    raise ValueError(f"Impossibile trovare un nome file unico per {base_name}.{extension} dopo 1000 tentativi.")
+
 # --- Configurazione ---
 # OUTPUT_FILENAME now includes the platform name and current date (YYYYMMDD)
 DATE_STR = datetime.now().strftime("%Y%m%d")
-OUTPUT_FILENAME = f"catalogo_font_sistema_{platform.system()}_{DATE_STR}.tex"
 
 # Font per test fisso
 TEST_FONTS = {"arial", "times", "courier", "helvetica", "dejavu"}
@@ -431,7 +439,12 @@ def generate_test_output(limit=None, filter_test=False):
     # Ordina alfabeticamente per il primo nome base
     details.sort(key=lambda x: x['base_names'][0].lower() if x['base_names'] else '')
 
-    test_filename = f"test_output_{platform.system()}_{DATE_STR}.txt"
+    base_name = f"test_output_{platform.system()}_{DATE_STR}"
+    try:
+        test_filename = get_unique_filename(base_name, "txt")
+    except ValueError as e:
+        print(f"Errore generazione file di test: {e}")
+        return
     with open(test_filename, 'w', encoding='utf-8') as f:
         for item in details:
             f.write(f"Raw line: {item['raw_line']}\n")
@@ -508,6 +521,14 @@ def main():
     parser.add_argument('-T', '--TestFixed', action='store_true', help='Filtra solo i font che contengono sottostringhe in TEST_FONTS')
     parser.add_argument('-n', '--number', type=int, help='Limita il numero di font processati ai primi N (se positivo) o agli ultimi |N| (se negativo)')
     args = parser.parse_args()
+
+    # Genera nome file unico per il catalogo LaTeX
+    base_name = f"catalogo_font_sistema_{platform.system()}_{DATE_STR}"
+    try:
+        OUTPUT_FILENAME = get_unique_filename(base_name, "tex")
+    except ValueError as e:
+        print(f"Errore: {e}")
+        sys.exit(1)
 
     if args.test:
         generate_test_output(args.number, args.TestFixed)
