@@ -19,12 +19,13 @@ __pycache__/
 *.pyc
 *.synctex.gz
 *.synctex.gz(busy)
+*.synctex(busy)
 *.fls
 *.fdb_latexmk
 *.bak
 *.tmp
 *.broken
-*.ecluded
+*.excluded
 *.working
 *.tex
 !figure.pdf
