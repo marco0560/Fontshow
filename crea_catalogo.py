@@ -428,6 +428,9 @@ def generate_test_output(limit=None, filter_test=False):
         else:
             details = details[limit:]
 
+    # Ordina alfabeticamente per il primo nome base
+    details.sort(key=lambda x: x['base_names'][0].lower() if x['base_names'] else '')
+
     test_filename = f"test_output_{platform.system()}_{DATE_STR}.txt"
     with open(test_filename, 'w', encoding='utf-8') as f:
         for item in details:
@@ -523,6 +526,9 @@ def main():
             fonts = fonts[:args.number]
         else:
             fonts = fonts[args.number:]
+
+    # Ordina alfabeticamente la lista dei font
+    fonts = sorted(fonts)
 
     latex_content = generate_latex(fonts)
 
