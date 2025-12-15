@@ -17,8 +17,7 @@ EXCLUDED_FONTS = {
     "Symbol"
 }
 
-latex_text = r"""
-\documentclass[11pt,a4paper]{article}
+latex_text = r"""\documentclass[11pt,a4paper]{article}
 \usepackage{fontspec}
 \usepackage{polyglossia} % Gestione multilingue avanzata
 \setmainlanguage{italian}

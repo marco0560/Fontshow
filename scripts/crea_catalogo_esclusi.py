@@ -30,8 +30,7 @@ def generate_excluded_latex(excluded_fonts):
     latex_parts = []
 
     # Intestazione LaTeX
-    latex_parts.append(r"""
-\documentclass[11pt,a4paper]{article}
+    latex_parts.append(r"""\documentclass[11pt,a4paper]{article}
 \usepackage{fontspec}
 \usepackage{xcolor}
 \usepackage{tcolorbox}
