@@ -8,9 +8,7 @@ with open(msg_file, encoding="utf-8") as f:
     first_line = f.readline().strip()
 
 pattern = re.compile(
-    r'^(feat|fix|docs|refactor|test|chore)'
-    r'(\([a-z0-9._-]+\))?'
-    r'!?: .{1,72}$'
+    r"^(feat|fix|docs|refactor|test|chore)" r"(\([a-z0-9._-]+\))?" r"!?: .{1,72}$"
 )
 
 if not pattern.match(first_line):

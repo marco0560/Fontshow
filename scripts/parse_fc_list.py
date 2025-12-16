@@ -9,8 +9,9 @@ If N is omitted, prints 10 pairs.
 import subprocess
 import sys
 
+
 def parse_fc_list(limit=10):
-    cmd = ['fc-list', '-f', '%{file}:%{family}\n']
+    cmd = ["fc-list", "-f", "%{file}:%{family}\n"]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, check=True)
     except FileNotFoundError:
@@ -23,19 +24,20 @@ def parse_fc_list(limit=10):
     lines = proc.stdout.splitlines()
     count = 0
     for line in lines:
-        if ':' not in line:
+        if ":" not in line:
             continue
-        file_part, family_part = line.split(':', 1)
+        file_part, family_part = line.split(":", 1)
         file_part = file_part.strip()
         # family_part can contain comma-separated family names; take the first
-        first_family = family_part.split(',')[0].strip()
+        first_family = family_part.split(",")[0].strip()
         print(f"{count+1}. file={file_part}\n   family={first_family}\n")
         count += 1
         if count >= limit:
             break
     return 0
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     n = 10
     if len(sys.argv) > 1:
         try:

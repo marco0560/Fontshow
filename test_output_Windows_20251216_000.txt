@@ -3693,4 +3693,3 @@ Base names: Yu Gothic
 Raw line: Yu Gothic Regular & Yu Gothic UI Semilight (TrueType)
 Extracted names: Yu Gothic Regular & Yu Gothic UI Semilight (TrueType)
 Base names: Yu Gothic
-

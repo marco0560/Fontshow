@@ -1,4 +1,3 @@
-import os
 import sys
 from datetime import date
 
@@ -18,19 +17,21 @@ EXCLUDED_FONTS = {
     "Wingdings 2",
     "Wingdings 3",
     "Marlett",
-    "Symbol"
+    "Symbol",
 }
 
 # Stringhe di testo per il test
 TEST_STRING_ALPHA = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z a b c d e f g h i j k l m n o p q r s t u v w x y z 0 1 2 3 4 5 6 7 8 9"
 LIPSUM_TEXT = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
 
+
 def generate_excluded_latex(excluded_fonts):
     """Genera il codice LaTeX per il catalogo dei font esclusi."""
     latex_parts = []
 
     # Intestazione LaTeX
-    latex_parts.append(r"""\documentclass[11pt,a4paper]{article}
+    latex_parts.append(
+        r"""\documentclass[11pt,a4paper]{article}
 \usepackage{fontspec}
 \usepackage{xcolor}
 \usepackage{tcolorbox}
@@ -52,7 +53,9 @@ def generate_excluded_latex(excluded_fonts):
 
 \title{\Huge Catalogo dei Font Esclusi}
 \author{Script Python}
-\date{""" + str(date.today()) + r"""}
+\date{"""
+        + str(date.today())
+        + r"""}
 \maketitle
 \tableofcontents
 
@@ -65,7 +68,8 @@ Questi font sono stati esclusi dal catalogo principale per i seguenti motivi:
 \end{itemize}
 
 \section{Esempi dei Font Esclusi}
-""")
+"""
+    )
 
     # Corpo del documento: test per ogni font escluso
     for font_name in sorted(excluded_fonts):
@@ -73,18 +77,22 @@ Questi font sono stati esclusi dal catalogo principale per i seguenti motivi:
         latex_parts.append(f"\\begin{{excludebox}}{{{font_name}}}\n")
         latex_parts.append(f"    \\centering \\Large {TEST_STRING_ALPHA}\n")
         latex_parts.append(r"    \vspace{0.5em}")
-        latex_parts.append(r"    \textbf{Test Lipsum (Visualizza i caratteri simbolici):}")
+        latex_parts.append(
+            r"    \textbf{Test Lipsum (Visualizza i caratteri simbolici):}"
+        )
         latex_parts.append(f"    {{\\fontspec{{{font_name}}}\\small {LIPSUM_TEXT}}}\n")
-        latex_parts.append(f"\\end{{excludebox}}\n")
+        latex_parts.append("\\end{{excludebox}}\n")
         latex_parts.append(r"\vspace{1em}")
 
-
     # Chiusura LaTeX
-    latex_parts.append(r"""
+    latex_parts.append(
+        r"""
 \end{document}
-""")
+"""
+    )
 
     return "\n".join(latex_parts)
+
 
 def main():
     """Generazione principale del catalogo dei font esclusi"""
@@ -98,17 +106,18 @@ def main():
 
     # Scrivi il file
     try:
-        with open(OUTPUT_FILENAME, 'w', encoding='utf-8') as f:
+        with open(OUTPUT_FILENAME, "w", encoding="utf-8") as f:
             f.write(latex_content)
 
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print(f"✓ File LaTeX creato con successo: {OUTPUT_FILENAME}")
-        print(f"Per compilare: lualatex \"{OUTPUT_FILENAME}\"")
-        print("="*50 + "\n")
+        print(f'Per compilare: lualatex "{OUTPUT_FILENAME}"')
+        print("=" * 50 + "\n")
 
     except Exception as e:
         print(f"✗ Errore durante la scrittura del file: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

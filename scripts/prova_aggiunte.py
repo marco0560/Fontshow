@@ -4,17 +4,17 @@ import sys
 OUTPUT_FILENAME = "catalogo_font_esclusi.tex"
 EXCLUDED_FONTS = {
     "Segoe MDL2 Assets",
-	"Segoe Fluent Icons",
-	"MT Extra",
-	"MS Reference Specialty",
-	"MS Outlook",
-	"Bookshelf Symbol 7",
-	"Webdings",
+    "Segoe Fluent Icons",
+    "MT Extra",
+    "MS Reference Specialty",
+    "MS Outlook",
+    "Bookshelf Symbol 7",
+    "Webdings",
     "Wingdings",
     "Wingdings 2",
     "Wingdings 3",
     "Marlett",
-    "Symbol"
+    "Symbol",
 }
 
 latex_text = r"""\documentclass[11pt,a4paper]{article}
