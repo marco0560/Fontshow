@@ -40,7 +40,10 @@ DATE_STR = datetime.now().strftime("%Y%m%d")
 TEST_FONTS = {"arial", "times", "courier", "helvetica", "dejavu"}
 
 # --- Definizione dei blocchi statici (o quasi) di coodice LATTEX ---
-LATEX_INITIAL_CODE = r"""\documentclass[11pt,a4paper]{article}
+LATEX_INITIAL_CODE = r"""% !TeX TS-program = lualatex
+% !TeX spellcheck = it_IT
+% !TeX encoding = UTF-8
+\documentclass[11pt,a4paper]{article}
 \usepackage{fontspec}
 \usepackage{polyglossia} % Gestione multilingue avanzata
 \usepackage{lipsum}
@@ -229,7 +232,8 @@ LATEX_END_CODE_2 = r""" \\
 # Font da escludere che causano crash o problemi noti
 # Un font simbolico classico, spesso problematico in LuaTeX ma non installato in questo sistema è
 #    "Hololens MDL2 Assets"
-EXCLUDED_FONTS = {
+if IS_WINDOWS:
+    EXCLUDED_FONTS = {
     "Segoe MDL2 Assets",
 	"Segoe Fluent Icons",
 	"MT Extra",
@@ -245,18 +249,29 @@ EXCLUDED_FONTS = {
     "Microsoft YaHei",
     "Noto Sans Arabic",
     "Noto Sans Hebrew",
-    "Yu Gothic",
-# Inseriti in Linux
-    "Noto Emoji",
-    "KacstScreen"
-}
+    "Yu Gothic"
+    }
 
-TEST_FONTS = {
+    TEST_FONTS  = {
     "Times New Roman",
     "Arial",
     "Calibri",
     "Noto Sans"
-}
+    }
+elif IS_LINUX:
+    EXCLUDED_FONTS = {
+    "Noto Emoji",
+    "KacstScreen"
+    }
+    TEST_FONTS  =  {
+    "Times New Roman",
+    "Arial",
+    "Calibri",
+    "Noto Sans"
+    }
+else:
+    EXCLUDED_FONTS = set()
+    TEST_FONTS  =  set()
 
 # Font non-Latini con configurazione linguistica/script specifica (polyglossia + fontspec options)
 # NUOVO: Aggiunto il campo 'options' per specificare Script=...
@@ -266,17 +281,13 @@ SPECIAL_SCRIPT_FONTS = {
     "Noto Sans Hebrew": {"lang": "hebrew", "options": "Script=Hebrew", "text": "שלום עולם! זה טקסט בדיקה בעברית. (Scrittura RTL corretta)"},  # Ebraico (RTL)
     "Noto Sans CJK JP": {"lang": "japanese", "options": "Script=CJK", "text": "こんにちは、世界！これは日本語のテストテキストです。"},  # Giapponese (CJK)
     "Noto Sans Thai": {"lang": "thai", "options": "Script=Thai", "text": "สวัสดีครับ นี่คือข้อความทดสอบภาษาไทย"},  # Tailandese
-
-    # --- NUOVE VOCI PER CINESE, GIAPPONESE E HINDI ---
     "Yu Gothic": {"lang": "japanese", "options": "Script=Japanese", "text": "こんにちは世界！これは日本語のテストテキストです。"},  # Giapponese (Script=Japanese)
     "Microsoft YaHei": {"lang": "chinese", "options": "Script=Han", "text": "你好世界! 这是一个中文测试文本。"}, # Cinese Semplificato (Script=Han)
     "Nirmala UI": {"lang": "hindi", "options": "Script=Devanagari", "text": "नमस्ते दुनिया! यह एक हिन्दी परीक्षण पाठ है।"}, # Hindi (Devanagari)
-    # --- FINE NUOVE VOCI ---
-
     # Aggiungi qui eventuali altri font speciali
 }
 
-# --- Funzioni di Sistema (Identiche alla V3) ---
+# --- Funzioni di Sistema ---
 
 def clean_font_name(name):
     """Pulisce il nome del font per ottenere il nome della famiglia."""
@@ -284,7 +295,7 @@ def clean_font_name(name):
     clean_name = re.sub(r'\s*\((TrueType|OpenType|True Type|Type 1)\)\s*$', '', name)
 
     # Regex potente per catturare varianti comuni (Bold, Italic, ecc. in ITA/ENG)
-    variants = r'\s+(Bold|Italic|Light|Regular|Medium|Semibold|Black|Thin|Heavy|Condensed|Extended|Grassetto|Corsivo|Chiaro|Normale|Medio|Nero|Sottile|Pesante|Condensato|Esteso).*$'
+    variants = r'\s+(Bold|Italic|Light|Regular|Medium|Semibold|Black|Thin|Heavy|Narrow|Condensed|Extended|Grassetto|Corsivo|Chiaro|Normale|Medio|Nero|Sottile|Pesante|Condensato|Esteso).*$'
     base_name = re.sub(variants, '', clean_name, flags=re.IGNORECASE).strip()
 
     return base_name

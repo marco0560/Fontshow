@@ -1,0 +1,4657 @@
+% !TeX TS-program = lualatex
+% !TeX spellcheck = it_IT
+% !TeX encoding = UTF-8
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage{polyglossia} % Gestione multilingue avanzata
+\usepackage{lipsum}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{multicol}
+
+\setmainlanguage{italian}
+% Definisci le lingue secondarie necessarie per il test dei font complessi
+\setotherlanguage{latin}
+\setotherlanguage{arabic}
+\setotherlanguage{hebrew}
+\setotherlanguage{japanese}
+\setotherlanguage{chinese}  % Aggiunto Cinese
+\setotherlanguage{hindi}    % Aggiunto Hindi
+\setotherlanguage{thai}
+
+\geometry{margin=2cm}
+
+% Colori
+\definecolor{titlecolor}{HTML}{667eea}
+\definecolor{boxcolor}{HTML}{f0f0f0}
+\definecolor{successcolor}{HTML}{28a745}
+\definecolor{errorcolor}{HTML}{dc3545}
+\definecolor{othercolor}{HTML}{0d6efd}
+
+% Setup Box
+\tcbuselibrary{skins}
+\newtcolorbox{fontbox}[1]{
+    colback=boxcolor, colframe=titlecolor, boxrule=1pt, arc=3pt,
+    title={\textbf{#1}}, coltitle=white, colbacktitle=titlecolor
+}
+\newtcolorbox{errorbox}[1]{
+    colback=errorcolor!10, colframe=errorcolor!80!black, boxrule=1pt, arc=3pt,
+    title={\textbf{Non Caricato: #1}}, coltitle=white, colbacktitle=errorcolor!80!black
+}
+
+% --- MACRO PER CARATTERI NON LATINI (FIXED) ---
+% #1: Font Name, #2: Language Tag (polyglossia), #3: Font Options (e.g., Script=Arabic), #4: Sample Text
+\newcommand{\TestNonLatin}[4]{%
+	\par\noindent\textbf{Test in Lingua (\texttt{#2}) con Opzioni: \texttt{[#3]}}
+
+	\foreignlanguage{#2}{%
+		\fontspec{#1}[#3]%
+		#4\par
+	}%
+	\vspace{0.5em}
+}
+% --------------------------------------
+
+% --- GESTIONE CONTATORI E INDICI ---
+\newcounter{cntWorking}
+\newcounter{cntBroken}
+\newcounter{cntExcluded}
+\setcounter{cntWorking}{0}
+\setcounter{cntBroken}{0}
+\setcounter{cntExcluded}{0}
+
+% Definiamo file di output temporanei per gli indici
+\newwrite\fileWorking
+\immediate\openout\fileWorking=\jobname.working
+\newwrite\fileBroken
+\immediate\openout\fileBroken=\jobname.broken
+\newwrite\fileExcluded
+\immediate\openout\fileExcluded=\jobname.excluded
+
+% Macro ROBUSTE per registrare i font (evita errori di espansione)
+\protected\def\LogWorking#1{%
+    \stepcounter{cntWorking}%
+    \immediate\write\fileWorking{\unexpanded{\item} #1}%
+}
+
+\protected\def\LogBroken#1{%
+    \stepcounter{cntBroken}%
+    \immediate\write\fileBroken{\unexpanded{\item} #1}%
+}
+
+\protected\def\LogExcluded#1{%
+    \stepcounter{cntExcluded}%
+    \immediate\write\fileExcluded{\unexpanded{\item} #1}%
+}
+% -----------------------------------
+
+\SetLipsumText{cicero}
+\newcommand{\Li}{\lipsum[1][1-4]}
+
+\title{\Huge\textbf{\color{titlecolor}Catalogo Font di Sistema}}
+\author{Generato da Python in \texttt{Windows}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Questo documento cataloga i font installati.
+I font problematici noti sono stati esclusi preventivamente. La compilazione è eseguita con \textbf{LuaLaTeX}.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Catalogo Dettagliato}
+
+\subsection{Agency FB}
+
+\IfFontExistsTF{Agency FB}{%
+    \LogWorking{Agency FB}
+    \begin{fontbox}{Agency FB}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Agency FB}
+    \Li
+    }
+}{
+    \LogBroken{Agency FB}
+    \begin{errorbox}{Agency FB}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Alef}
+
+\IfFontExistsTF{Alef}{%
+    \LogWorking{Alef}
+    \begin{fontbox}{Alef}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Alef}
+    \Li
+    }
+}{
+    \LogBroken{Alef}
+    \begin{errorbox}{Alef}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Algerian}
+
+\IfFontExistsTF{Algerian}{%
+    \LogWorking{Algerian}
+    \begin{fontbox}{Algerian}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Algerian}
+    \Li
+    }
+}{
+    \LogBroken{Algerian}
+    \begin{errorbox}{Algerian}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Amiri}
+
+\IfFontExistsTF{Amiri}{%
+    \LogWorking{Amiri}
+    \begin{fontbox}{Amiri}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Amiri}
+    \Li
+    }
+}{
+    \LogBroken{Amiri}
+    \begin{errorbox}{Amiri}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Amiri Quran}
+
+\IfFontExistsTF{Amiri Quran}{%
+    \LogWorking{Amiri Quran}
+    \begin{fontbox}{Amiri Quran}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Amiri Quran}
+    \Li
+    }
+}{
+    \LogBroken{Amiri Quran}
+    \begin{errorbox}{Amiri Quran}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Arial}
+
+\IfFontExistsTF{Arial}{%
+    \LogWorking{Arial}
+    \begin{fontbox}{Arial}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Arial}
+    \Li
+    }
+}{
+    \LogBroken{Arial}
+    \begin{errorbox}{Arial}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Arial Rounded MT}
+
+\IfFontExistsTF{Arial Rounded MT}{%
+    \LogWorking{Arial Rounded MT}
+    \begin{fontbox}{Arial Rounded MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Arial Rounded MT}
+    \Li
+    }
+}{
+    \LogBroken{Arial Rounded MT}
+    \begin{errorbox}{Arial Rounded MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Bahnschrift}
+
+\IfFontExistsTF{Bahnschrift}{%
+    \LogWorking{Bahnschrift}
+    \begin{fontbox}{Bahnschrift}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Bahnschrift}
+    \Li
+    }
+}{
+    \LogBroken{Bahnschrift}
+    \begin{errorbox}{Bahnschrift}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Baskerville Old Face}
+
+\IfFontExistsTF{Baskerville Old Face}{%
+    \LogWorking{Baskerville Old Face}
+    \begin{fontbox}{Baskerville Old Face}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Baskerville Old Face}
+    \Li
+    }
+}{
+    \LogBroken{Baskerville Old Face}
+    \begin{errorbox}{Baskerville Old Face}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Bauhaus 93}
+
+\IfFontExistsTF{Bauhaus 93}{%
+    \LogWorking{Bauhaus 93}
+    \begin{fontbox}{Bauhaus 93}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Bauhaus 93}
+    \Li
+    }
+}{
+    \LogBroken{Bauhaus 93}
+    \begin{errorbox}{Bauhaus 93}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Bell MT}
+
+\IfFontExistsTF{Bell MT}{%
+    \LogWorking{Bell MT}
+    \begin{fontbox}{Bell MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Bell MT}
+    \Li
+    }
+}{
+    \LogBroken{Bell MT}
+    \begin{errorbox}{Bell MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Berlin Sans FB}
+
+\IfFontExistsTF{Berlin Sans FB}{%
+    \LogWorking{Berlin Sans FB}
+    \begin{fontbox}{Berlin Sans FB}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Berlin Sans FB}
+    \Li
+    }
+}{
+    \LogBroken{Berlin Sans FB}
+    \begin{errorbox}{Berlin Sans FB}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Berlin Sans FB Demi}
+
+\IfFontExistsTF{Berlin Sans FB Demi}{%
+    \LogWorking{Berlin Sans FB Demi}
+    \begin{fontbox}{Berlin Sans FB Demi}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Berlin Sans FB Demi}
+    \Li
+    }
+}{
+    \LogBroken{Berlin Sans FB Demi}
+    \begin{errorbox}{Berlin Sans FB Demi}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Bernard MT}
+
+\IfFontExistsTF{Bernard MT}{%
+    \LogWorking{Bernard MT}
+    \begin{fontbox}{Bernard MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Bernard MT}
+    \Li
+    }
+}{
+    \LogBroken{Bernard MT}
+    \begin{errorbox}{Bernard MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Blackadder ITC}
+
+\IfFontExistsTF{Blackadder ITC}{%
+    \LogWorking{Blackadder ITC}
+    \begin{fontbox}{Blackadder ITC}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Blackadder ITC}
+    \Li
+    }
+}{
+    \LogBroken{Blackadder ITC}
+    \begin{errorbox}{Blackadder ITC}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Bodoni MT}
+
+\IfFontExistsTF{Bodoni MT}{%
+    \LogWorking{Bodoni MT}
+    \begin{fontbox}{Bodoni MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Bodoni MT}
+    \Li
+    }
+}{
+    \LogBroken{Bodoni MT}
+    \begin{errorbox}{Bodoni MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Bodoni MT Poster Compressed}
+
+\IfFontExistsTF{Bodoni MT Poster Compressed}{%
+    \LogWorking{Bodoni MT Poster Compressed}
+    \begin{fontbox}{Bodoni MT Poster Compressed}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Bodoni MT Poster Compressed}
+    \Li
+    }
+}{
+    \LogBroken{Bodoni MT Poster Compressed}
+    \begin{errorbox}{Bodoni MT Poster Compressed}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Book Antiqua}
+
+\IfFontExistsTF{Book Antiqua}{%
+    \LogWorking{Book Antiqua}
+    \begin{fontbox}{Book Antiqua}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Book Antiqua}
+    \Li
+    }
+}{
+    \LogBroken{Book Antiqua}
+    \begin{errorbox}{Book Antiqua}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Bookman Old Style}
+
+\IfFontExistsTF{Bookman Old Style}{%
+    \LogWorking{Bookman Old Style}
+    \begin{fontbox}{Bookman Old Style}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Bookman Old Style}
+    \Li
+    }
+}{
+    \LogBroken{Bookman Old Style}
+    \begin{errorbox}{Bookman Old Style}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Bradley Hand ITC}
+
+\IfFontExistsTF{Bradley Hand ITC}{%
+    \LogWorking{Bradley Hand ITC}
+    \begin{fontbox}{Bradley Hand ITC}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Bradley Hand ITC}
+    \Li
+    }
+}{
+    \LogBroken{Bradley Hand ITC}
+    \begin{errorbox}{Bradley Hand ITC}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Britannic}
+
+\IfFontExistsTF{Britannic}{%
+    \LogWorking{Britannic}
+    \begin{fontbox}{Britannic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Britannic}
+    \Li
+    }
+}{
+    \LogBroken{Britannic}
+    \begin{errorbox}{Britannic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Broadway}
+
+\IfFontExistsTF{Broadway}{%
+    \LogWorking{Broadway}
+    \begin{fontbox}{Broadway}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Broadway}
+    \Li
+    }
+}{
+    \LogBroken{Broadway}
+    \begin{errorbox}{Broadway}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Brush Script MT}
+
+\IfFontExistsTF{Brush Script MT}{%
+    \LogWorking{Brush Script MT}
+    \begin{fontbox}{Brush Script MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Brush Script MT}
+    \Li
+    }
+}{
+    \LogBroken{Brush Script MT}
+    \begin{errorbox}{Brush Script MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Caladea}
+
+\IfFontExistsTF{Caladea}{%
+    \LogWorking{Caladea}
+    \begin{fontbox}{Caladea}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Caladea}
+    \Li
+    }
+}{
+    \LogBroken{Caladea}
+    \begin{errorbox}{Caladea}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Calibri}
+
+\IfFontExistsTF{Calibri}{%
+    \LogWorking{Calibri}
+    \begin{fontbox}{Calibri}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Calibri}
+    \Li
+    }
+}{
+    \LogBroken{Calibri}
+    \begin{errorbox}{Calibri}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Californian FB}
+
+\IfFontExistsTF{Californian FB}{%
+    \LogWorking{Californian FB}
+    \begin{fontbox}{Californian FB}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Californian FB}
+    \Li
+    }
+}{
+    \LogBroken{Californian FB}
+    \begin{errorbox}{Californian FB}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Calisto MT}
+
+\IfFontExistsTF{Calisto MT}{%
+    \LogWorking{Calisto MT}
+    \begin{fontbox}{Calisto MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Calisto MT}
+    \Li
+    }
+}{
+    \LogBroken{Calisto MT}
+    \begin{errorbox}{Calisto MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Cambria}
+
+\IfFontExistsTF{Cambria}{%
+    \LogWorking{Cambria}
+    \begin{fontbox}{Cambria}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Cambria}
+    \Li
+    }
+}{
+    \LogBroken{Cambria}
+    \begin{errorbox}{Cambria}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Cambria \& Cambria Math}
+
+\IfFontExistsTF{Cambria & Cambria Math}{%
+    \LogWorking{Cambria \& Cambria Math}
+    \begin{fontbox}{Cambria \& Cambria Math}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Cambria & Cambria Math}
+    \Li
+    }
+}{
+    \LogBroken{Cambria \& Cambria Math}
+    \begin{errorbox}{Cambria \& Cambria Math}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Candara}
+
+\IfFontExistsTF{Candara}{%
+    \LogWorking{Candara}
+    \begin{fontbox}{Candara}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Candara}
+    \Li
+    }
+}{
+    \LogBroken{Candara}
+    \begin{errorbox}{Candara}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Carlito}
+
+\IfFontExistsTF{Carlito}{%
+    \LogWorking{Carlito}
+    \begin{fontbox}{Carlito}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Carlito}
+    \Li
+    }
+}{
+    \LogBroken{Carlito}
+    \begin{errorbox}{Carlito}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Castellar}
+
+\IfFontExistsTF{Castellar}{%
+    \LogWorking{Castellar}
+    \begin{fontbox}{Castellar}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Castellar}
+    \Li
+    }
+}{
+    \LogBroken{Castellar}
+    \begin{errorbox}{Castellar}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Centaur}
+
+\IfFontExistsTF{Centaur}{%
+    \LogWorking{Centaur}
+    \begin{fontbox}{Centaur}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Centaur}
+    \Li
+    }
+}{
+    \LogBroken{Centaur}
+    \begin{errorbox}{Centaur}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Century}
+
+\IfFontExistsTF{Century}{%
+    \LogWorking{Century}
+    \begin{fontbox}{Century}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Century}
+    \Li
+    }
+}{
+    \LogBroken{Century}
+    \begin{errorbox}{Century}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Century Gothic}
+
+\IfFontExistsTF{Century Gothic}{%
+    \LogWorking{Century Gothic}
+    \begin{fontbox}{Century Gothic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Century Gothic}
+    \Li
+    }
+}{
+    \LogBroken{Century Gothic}
+    \begin{errorbox}{Century Gothic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Century Schoolbook}
+
+\IfFontExistsTF{Century Schoolbook}{%
+    \LogWorking{Century Schoolbook}
+    \begin{fontbox}{Century Schoolbook}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Century Schoolbook}
+    \Li
+    }
+}{
+    \LogBroken{Century Schoolbook}
+    \begin{errorbox}{Century Schoolbook}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Chiller}
+
+\IfFontExistsTF{Chiller}{%
+    \LogWorking{Chiller}
+    \begin{fontbox}{Chiller}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Chiller}
+    \Li
+    }
+}{
+    \LogBroken{Chiller}
+    \begin{errorbox}{Chiller}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Colonna MT}
+
+\IfFontExistsTF{Colonna MT}{%
+    \LogWorking{Colonna MT}
+    \begin{fontbox}{Colonna MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Colonna MT}
+    \Li
+    }
+}{
+    \LogBroken{Colonna MT}
+    \begin{errorbox}{Colonna MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Comic Sans MS}
+
+\IfFontExistsTF{Comic Sans MS}{%
+    \LogWorking{Comic Sans MS}
+    \begin{fontbox}{Comic Sans MS}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Comic Sans MS}
+    \Li
+    }
+}{
+    \LogBroken{Comic Sans MS}
+    \begin{errorbox}{Comic Sans MS}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Consolas}
+
+\IfFontExistsTF{Consolas}{%
+    \LogWorking{Consolas}
+    \begin{fontbox}{Consolas}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Consolas}
+    \Li
+    }
+}{
+    \LogBroken{Consolas}
+    \begin{errorbox}{Consolas}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Constantia}
+
+\IfFontExistsTF{Constantia}{%
+    \LogWorking{Constantia}
+    \begin{fontbox}{Constantia}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Constantia}
+    \Li
+    }
+}{
+    \LogBroken{Constantia}
+    \begin{errorbox}{Constantia}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Cooper}
+
+\IfFontExistsTF{Cooper}{%
+    \LogWorking{Cooper}
+    \begin{fontbox}{Cooper}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Cooper}
+    \Li
+    }
+}{
+    \LogBroken{Cooper}
+    \begin{errorbox}{Cooper}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Copperplate Gothic}
+
+\IfFontExistsTF{Copperplate Gothic}{%
+    \LogWorking{Copperplate Gothic}
+    \begin{fontbox}{Copperplate Gothic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Copperplate Gothic}
+    \Li
+    }
+}{
+    \LogBroken{Copperplate Gothic}
+    \begin{errorbox}{Copperplate Gothic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Corbel}
+
+\IfFontExistsTF{Corbel}{%
+    \LogWorking{Corbel}
+    \begin{fontbox}{Corbel}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Corbel}
+    \Li
+    }
+}{
+    \LogBroken{Corbel}
+    \begin{errorbox}{Corbel}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Courier 10,12,15}
+
+\IfFontExistsTF{Courier 10,12,15}{%
+    \LogWorking{Courier 10,12,15}
+    \begin{fontbox}{Courier 10,12,15}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Courier 10,12,15}
+    \Li
+    }
+}{
+    \LogBroken{Courier 10,12,15}
+    \begin{errorbox}{Courier 10,12,15}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Courier 10,12,15 (120)}
+
+\IfFontExistsTF{Courier 10,12,15 (120)}{%
+    \LogWorking{Courier 10,12,15 (120)}
+    \begin{fontbox}{Courier 10,12,15 (120)}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Courier 10,12,15 (120)}
+    \Li
+    }
+}{
+    \LogBroken{Courier 10,12,15 (120)}
+    \begin{errorbox}{Courier 10,12,15 (120)}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Courier New}
+
+\IfFontExistsTF{Courier New}{%
+    \LogWorking{Courier New}
+    \begin{fontbox}{Courier New}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Courier New}
+    \Li
+    }
+}{
+    \LogBroken{Courier New}
+    \begin{errorbox}{Courier New}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Curlz MT}
+
+\IfFontExistsTF{Curlz MT}{%
+    \LogWorking{Curlz MT}
+    \begin{fontbox}{Curlz MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Curlz MT}
+    \Li
+    }
+}{
+    \LogBroken{Curlz MT}
+    \begin{errorbox}{Curlz MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{David CLM}
+
+\IfFontExistsTF{David CLM}{%
+    \LogWorking{David CLM}
+    \begin{fontbox}{David CLM}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{David CLM}
+    \Li
+    }
+}{
+    \LogBroken{David CLM}
+    \begin{errorbox}{David CLM}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{David Libre}
+
+\IfFontExistsTF{David Libre}{%
+    \LogWorking{David Libre}
+    \begin{fontbox}{David Libre}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{David Libre}
+    \Li
+    }
+}{
+    \LogBroken{David Libre}
+    \begin{errorbox}{David Libre}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{DejaVu Sans Mono}
+
+\IfFontExistsTF{DejaVu Sans Mono}{%
+    \LogWorking{DejaVu Sans Mono}
+    \begin{fontbox}{DejaVu Sans Mono}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{DejaVu Sans Mono}
+    \Li
+    }
+}{
+    \LogBroken{DejaVu Sans Mono}
+    \begin{errorbox}{DejaVu Sans Mono}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{DejaVu Sans Mono Oblique}
+
+\IfFontExistsTF{DejaVu Sans Mono Oblique}{%
+    \LogWorking{DejaVu Sans Mono Oblique}
+    \begin{fontbox}{DejaVu Sans Mono Oblique}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{DejaVu Sans Mono Oblique}
+    \Li
+    }
+}{
+    \LogBroken{DejaVu Sans Mono Oblique}
+    \begin{errorbox}{DejaVu Sans Mono Oblique}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{DejaVuMathTeXGyre-Regular}
+
+\IfFontExistsTF{DejaVuMathTeXGyre-Regular}{%
+    \LogWorking{DejaVuMathTeXGyre-Regular}
+    \begin{fontbox}{DejaVuMathTeXGyre-Regular}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{DejaVuMathTeXGyre-Regular}
+    \Li
+    }
+}{
+    \LogBroken{DejaVuMathTeXGyre-Regular}
+    \begin{errorbox}{DejaVuMathTeXGyre-Regular}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Dubai}
+
+\IfFontExistsTF{Dubai}{%
+    \LogWorking{Dubai}
+    \begin{fontbox}{Dubai}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Dubai}
+    \Li
+    }
+}{
+    \LogBroken{Dubai}
+    \begin{errorbox}{Dubai}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Ebrima}
+
+\IfFontExistsTF{Ebrima}{%
+    \LogWorking{Ebrima}
+    \begin{fontbox}{Ebrima}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Ebrima}
+    \Li
+    }
+}{
+    \LogBroken{Ebrima}
+    \begin{errorbox}{Ebrima}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Edwardian Script ITC}
+
+\IfFontExistsTF{Edwardian Script ITC}{%
+    \LogWorking{Edwardian Script ITC}
+    \begin{fontbox}{Edwardian Script ITC}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Edwardian Script ITC}
+    \Li
+    }
+}{
+    \LogBroken{Edwardian Script ITC}
+    \begin{errorbox}{Edwardian Script ITC}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Elephant}
+
+\IfFontExistsTF{Elephant}{%
+    \LogWorking{Elephant}
+    \begin{fontbox}{Elephant}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Elephant}
+    \Li
+    }
+}{
+    \LogBroken{Elephant}
+    \begin{errorbox}{Elephant}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Engravers MT}
+
+\IfFontExistsTF{Engravers MT}{%
+    \LogWorking{Engravers MT}
+    \begin{fontbox}{Engravers MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Engravers MT}
+    \Li
+    }
+}{
+    \LogBroken{Engravers MT}
+    \begin{errorbox}{Engravers MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Eras}
+
+\IfFontExistsTF{Eras}{%
+    \LogWorking{Eras}
+    \begin{fontbox}{Eras}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Eras}
+    \Li
+    }
+}{
+    \LogBroken{Eras}
+    \begin{errorbox}{Eras}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Eras Demi ITC}
+
+\IfFontExistsTF{Eras Demi ITC}{%
+    \LogWorking{Eras Demi ITC}
+    \begin{fontbox}{Eras Demi ITC}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Eras Demi ITC}
+    \Li
+    }
+}{
+    \LogBroken{Eras Demi ITC}
+    \begin{errorbox}{Eras Demi ITC}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Felix Titling}
+
+\IfFontExistsTF{Felix Titling}{%
+    \LogWorking{Felix Titling}
+    \begin{fontbox}{Felix Titling}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Felix Titling}
+    \Li
+    }
+}{
+    \LogBroken{Felix Titling}
+    \begin{errorbox}{Felix Titling}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Footlight MT}
+
+\IfFontExistsTF{Footlight MT}{%
+    \LogWorking{Footlight MT}
+    \begin{fontbox}{Footlight MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Footlight MT}
+    \Li
+    }
+}{
+    \LogBroken{Footlight MT}
+    \begin{errorbox}{Footlight MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Forte}
+
+\IfFontExistsTF{Forte}{%
+    \LogWorking{Forte}
+    \begin{fontbox}{Forte}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Forte}
+    \Li
+    }
+}{
+    \LogBroken{Forte}
+    \begin{errorbox}{Forte}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Frank Ruehl CLM}
+
+\IfFontExistsTF{Frank Ruehl CLM}{%
+    \LogWorking{Frank Ruehl CLM}
+    \begin{fontbox}{Frank Ruehl CLM}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Frank Ruehl CLM}
+    \Li
+    }
+}{
+    \LogBroken{Frank Ruehl CLM}
+    \begin{errorbox}{Frank Ruehl CLM}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Frank Ruhl Hofshi}
+
+\IfFontExistsTF{Frank Ruhl Hofshi}{%
+    \LogWorking{Frank Ruhl Hofshi}
+    \begin{fontbox}{Frank Ruhl Hofshi}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Frank Ruhl Hofshi}
+    \Li
+    }
+}{
+    \LogBroken{Frank Ruhl Hofshi}
+    \begin{errorbox}{Frank Ruhl Hofshi}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{FrankRuhlHofshi-Regular}
+
+\IfFontExistsTF{FrankRuhlHofshi-Regular}{%
+    \LogWorking{FrankRuhlHofshi-Regular}
+    \begin{fontbox}{FrankRuhlHofshi-Regular}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{FrankRuhlHofshi-Regular}
+    \Li
+    }
+}{
+    \LogBroken{FrankRuhlHofshi-Regular}
+    \begin{errorbox}{FrankRuhlHofshi-Regular}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Franklin Gothic}
+
+\IfFontExistsTF{Franklin Gothic}{%
+    \LogWorking{Franklin Gothic}
+    \begin{fontbox}{Franklin Gothic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Franklin Gothic}
+    \Li
+    }
+}{
+    \LogBroken{Franklin Gothic}
+    \begin{errorbox}{Franklin Gothic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Franklin Gothic Book}
+
+\IfFontExistsTF{Franklin Gothic Book}{%
+    \LogWorking{Franklin Gothic Book}
+    \begin{fontbox}{Franklin Gothic Book}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Franklin Gothic Book}
+    \Li
+    }
+}{
+    \LogBroken{Franklin Gothic Book}
+    \begin{errorbox}{Franklin Gothic Book}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Franklin Gothic Demi}
+
+\IfFontExistsTF{Franklin Gothic Demi}{%
+    \LogWorking{Franklin Gothic Demi}
+    \begin{fontbox}{Franklin Gothic Demi}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Franklin Gothic Demi}
+    \Li
+    }
+}{
+    \LogBroken{Franklin Gothic Demi}
+    \begin{errorbox}{Franklin Gothic Demi}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Franklin Gothic Demi Cond}
+
+\IfFontExistsTF{Franklin Gothic Demi Cond}{%
+    \LogWorking{Franklin Gothic Demi Cond}
+    \begin{fontbox}{Franklin Gothic Demi Cond}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Franklin Gothic Demi Cond}
+    \Li
+    }
+}{
+    \LogBroken{Franklin Gothic Demi Cond}
+    \begin{errorbox}{Franklin Gothic Demi Cond}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Freestyle Script}
+
+\IfFontExistsTF{Freestyle Script}{%
+    \LogWorking{Freestyle Script}
+    \begin{fontbox}{Freestyle Script}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Freestyle Script}
+    \Li
+    }
+}{
+    \LogBroken{Freestyle Script}
+    \begin{errorbox}{Freestyle Script}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{French Script MT}
+
+\IfFontExistsTF{French Script MT}{%
+    \LogWorking{French Script MT}
+    \begin{fontbox}{French Script MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{French Script MT}
+    \Li
+    }
+}{
+    \LogBroken{French Script MT}
+    \begin{errorbox}{French Script MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Gabriola}
+
+\IfFontExistsTF{Gabriola}{%
+    \LogWorking{Gabriola}
+    \begin{fontbox}{Gabriola}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Gabriola}
+    \Li
+    }
+}{
+    \LogBroken{Gabriola}
+    \begin{errorbox}{Gabriola}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Gadugi}
+
+\IfFontExistsTF{Gadugi}{%
+    \LogWorking{Gadugi}
+    \begin{fontbox}{Gadugi}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Gadugi}
+    \Li
+    }
+}{
+    \LogBroken{Gadugi}
+    \begin{errorbox}{Gadugi}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Garamond}
+
+\IfFontExistsTF{Garamond}{%
+    \LogWorking{Garamond}
+    \begin{fontbox}{Garamond}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Garamond}
+    \Li
+    }
+}{
+    \LogBroken{Garamond}
+    \begin{errorbox}{Garamond}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Gentium Basic}
+
+\IfFontExistsTF{Gentium Basic}{%
+    \LogWorking{Gentium Basic}
+    \begin{fontbox}{Gentium Basic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Gentium Basic}
+    \Li
+    }
+}{
+    \LogBroken{Gentium Basic}
+    \begin{errorbox}{Gentium Basic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Gentium Book Basic}
+
+\IfFontExistsTF{Gentium Book Basic}{%
+    \LogWorking{Gentium Book Basic}
+    \begin{fontbox}{Gentium Book Basic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Gentium Book Basic}
+    \Li
+    }
+}{
+    \LogBroken{Gentium Book Basic}
+    \begin{errorbox}{Gentium Book Basic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Georgia}
+
+\IfFontExistsTF{Georgia}{%
+    \LogWorking{Georgia}
+    \begin{fontbox}{Georgia}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Georgia}
+    \Li
+    }
+}{
+    \LogBroken{Georgia}
+    \begin{errorbox}{Georgia}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Gigi}
+
+\IfFontExistsTF{Gigi}{%
+    \LogWorking{Gigi}
+    \begin{fontbox}{Gigi}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Gigi}
+    \Li
+    }
+}{
+    \LogBroken{Gigi}
+    \begin{errorbox}{Gigi}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Gill Sans MT}
+
+\IfFontExistsTF{Gill Sans MT}{%
+    \LogWorking{Gill Sans MT}
+    \begin{fontbox}{Gill Sans MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Gill Sans MT}
+    \Li
+    }
+}{
+    \LogBroken{Gill Sans MT}
+    \begin{errorbox}{Gill Sans MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Gill Sans MT Ext}
+
+\IfFontExistsTF{Gill Sans MT Ext}{%
+    \LogWorking{Gill Sans MT Ext}
+    \begin{fontbox}{Gill Sans MT Ext}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Gill Sans MT Ext}
+    \Li
+    }
+}{
+    \LogBroken{Gill Sans MT Ext}
+    \begin{errorbox}{Gill Sans MT Ext}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Gill Sans Ultra}
+
+\IfFontExistsTF{Gill Sans Ultra}{%
+    \LogWorking{Gill Sans Ultra}
+    \begin{fontbox}{Gill Sans Ultra}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Gill Sans Ultra}
+    \Li
+    }
+}{
+    \LogBroken{Gill Sans Ultra}
+    \begin{errorbox}{Gill Sans Ultra}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Gloucester MT Extra}
+
+\IfFontExistsTF{Gloucester MT Extra}{%
+    \LogWorking{Gloucester MT Extra}
+    \begin{fontbox}{Gloucester MT Extra}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Gloucester MT Extra}
+    \Li
+    }
+}{
+    \LogBroken{Gloucester MT Extra}
+    \begin{errorbox}{Gloucester MT Extra}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Goudy Old Style}
+
+\IfFontExistsTF{Goudy Old Style}{%
+    \LogWorking{Goudy Old Style}
+    \begin{fontbox}{Goudy Old Style}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Goudy Old Style}
+    \Li
+    }
+}{
+    \LogBroken{Goudy Old Style}
+    \begin{errorbox}{Goudy Old Style}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Goudy Stout}
+
+\IfFontExistsTF{Goudy Stout}{%
+    \LogWorking{Goudy Stout}
+    \begin{fontbox}{Goudy Stout}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Goudy Stout}
+    \Li
+    }
+}{
+    \LogBroken{Goudy Stout}
+    \begin{errorbox}{Goudy Stout}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Haettenschweiler}
+
+\IfFontExistsTF{Haettenschweiler}{%
+    \LogWorking{Haettenschweiler}
+    \begin{fontbox}{Haettenschweiler}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Haettenschweiler}
+    \Li
+    }
+}{
+    \LogBroken{Haettenschweiler}
+    \begin{errorbox}{Haettenschweiler}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Harlow Solid}
+
+\IfFontExistsTF{Harlow Solid}{%
+    \LogWorking{Harlow Solid}
+    \begin{fontbox}{Harlow Solid}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Harlow Solid}
+    \Li
+    }
+}{
+    \LogBroken{Harlow Solid}
+    \begin{errorbox}{Harlow Solid}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Harrington}
+
+\IfFontExistsTF{Harrington}{%
+    \LogWorking{Harrington}
+    \begin{fontbox}{Harrington}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Harrington}
+    \Li
+    }
+}{
+    \LogBroken{Harrington}
+    \begin{errorbox}{Harrington}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{High Tower Text}
+
+\IfFontExistsTF{High Tower Text}{%
+    \LogWorking{High Tower Text}
+    \begin{fontbox}{High Tower Text}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{High Tower Text}
+    \Li
+    }
+}{
+    \LogBroken{High Tower Text}
+    \begin{errorbox}{High Tower Text}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Impact}
+
+\IfFontExistsTF{Impact}{%
+    \LogWorking{Impact}
+    \begin{fontbox}{Impact}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Impact}
+    \Li
+    }
+}{
+    \LogBroken{Impact}
+    \begin{errorbox}{Impact}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Imprint MT Shadow}
+
+\IfFontExistsTF{Imprint MT Shadow}{%
+    \LogWorking{Imprint MT Shadow}
+    \begin{fontbox}{Imprint MT Shadow}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Imprint MT Shadow}
+    \Li
+    }
+}{
+    \LogBroken{Imprint MT Shadow}
+    \begin{errorbox}{Imprint MT Shadow}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Informal Roman}
+
+\IfFontExistsTF{Informal Roman}{%
+    \LogWorking{Informal Roman}
+    \begin{fontbox}{Informal Roman}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Informal Roman}
+    \Li
+    }
+}{
+    \LogBroken{Informal Roman}
+    \begin{errorbox}{Informal Roman}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Ink Free}
+
+\IfFontExistsTF{Ink Free}{%
+    \LogWorking{Ink Free}
+    \begin{fontbox}{Ink Free}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Ink Free}
+    \Li
+    }
+}{
+    \LogBroken{Ink Free}
+    \begin{errorbox}{Ink Free}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Javanese Text}
+
+\IfFontExistsTF{Javanese Text}{%
+    \LogWorking{Javanese Text}
+    \begin{fontbox}{Javanese Text}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Javanese Text}
+    \Li
+    }
+}{
+    \LogBroken{Javanese Text}
+    \begin{errorbox}{Javanese Text}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Jokerman}
+
+\IfFontExistsTF{Jokerman}{%
+    \LogWorking{Jokerman}
+    \begin{fontbox}{Jokerman}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Jokerman}
+    \Li
+    }
+}{
+    \LogBroken{Jokerman}
+    \begin{errorbox}{Jokerman}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Juice ITC}
+
+\IfFontExistsTF{Juice ITC}{%
+    \LogWorking{Juice ITC}
+    \begin{fontbox}{Juice ITC}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Juice ITC}
+    \Li
+    }
+}{
+    \LogBroken{Juice ITC}
+    \begin{errorbox}{Juice ITC}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Kristen ITC}
+
+\IfFontExistsTF{Kristen ITC}{%
+    \LogWorking{Kristen ITC}
+    \begin{fontbox}{Kristen ITC}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Kristen ITC}
+    \Li
+    }
+}{
+    \LogBroken{Kristen ITC}
+    \begin{errorbox}{Kristen ITC}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Kunstler Script}
+
+\IfFontExistsTF{Kunstler Script}{%
+    \LogWorking{Kunstler Script}
+    \begin{fontbox}{Kunstler Script}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Kunstler Script}
+    \Li
+    }
+}{
+    \LogBroken{Kunstler Script}
+    \begin{errorbox}{Kunstler Script}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Leelawadee UI}
+
+\IfFontExistsTF{Leelawadee UI}{%
+    \LogWorking{Leelawadee UI}
+    \begin{fontbox}{Leelawadee UI}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Leelawadee UI}
+    \Li
+    }
+}{
+    \LogBroken{Leelawadee UI}
+    \begin{errorbox}{Leelawadee UI}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Leelawadee UI Semilight}
+
+\IfFontExistsTF{Leelawadee UI Semilight}{%
+    \LogWorking{Leelawadee UI Semilight}
+    \begin{fontbox}{Leelawadee UI Semilight}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Leelawadee UI Semilight}
+    \Li
+    }
+}{
+    \LogBroken{Leelawadee UI Semilight}
+    \begin{errorbox}{Leelawadee UI Semilight}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Liberation Mono}
+
+\IfFontExistsTF{Liberation Mono}{%
+    \LogWorking{Liberation Mono}
+    \begin{fontbox}{Liberation Mono}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Liberation Mono}
+    \Li
+    }
+}{
+    \LogBroken{Liberation Mono}
+    \begin{errorbox}{Liberation Mono}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Liberation Sans}
+
+\IfFontExistsTF{Liberation Sans}{%
+    \LogWorking{Liberation Sans}
+    \begin{fontbox}{Liberation Sans}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Liberation Sans}
+    \Li
+    }
+}{
+    \LogBroken{Liberation Sans}
+    \begin{errorbox}{Liberation Sans}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Liberation Serif}
+
+\IfFontExistsTF{Liberation Serif}{%
+    \LogWorking{Liberation Serif}
+    \begin{fontbox}{Liberation Serif}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Liberation Serif}
+    \Li
+    }
+}{
+    \LogBroken{Liberation Serif}
+    \begin{errorbox}{Liberation Serif}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Linux Biolinum G}
+
+\IfFontExistsTF{Linux Biolinum G}{%
+    \LogWorking{Linux Biolinum G}
+    \begin{fontbox}{Linux Biolinum G}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Linux Biolinum G}
+    \Li
+    }
+}{
+    \LogBroken{Linux Biolinum G}
+    \begin{errorbox}{Linux Biolinum G}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Linux Libertine G}
+
+\IfFontExistsTF{Linux Libertine G}{%
+    \LogWorking{Linux Libertine G}
+    \begin{fontbox}{Linux Libertine G}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Linux Libertine G}
+    \Li
+    }
+}{
+    \LogBroken{Linux Libertine G}
+    \begin{errorbox}{Linux Libertine G}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Linux Libertine G Display}
+
+\IfFontExistsTF{Linux Libertine G Display}{%
+    \LogWorking{Linux Libertine G Display}
+    \begin{fontbox}{Linux Libertine G Display}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Linux Libertine G Display}
+    \Li
+    }
+}{
+    \LogBroken{Linux Libertine G Display}
+    \begin{errorbox}{Linux Libertine G Display}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Bright}
+
+\IfFontExistsTF{Lucida Bright}{%
+    \LogWorking{Lucida Bright}
+    \begin{fontbox}{Lucida Bright}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Bright}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Bright}
+    \begin{errorbox}{Lucida Bright}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Bright Demibold}
+
+\IfFontExistsTF{Lucida Bright Demibold}{%
+    \LogWorking{Lucida Bright Demibold}
+    \begin{fontbox}{Lucida Bright Demibold}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Bright Demibold}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Bright Demibold}
+    \begin{errorbox}{Lucida Bright Demibold}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Calligraphy}
+
+\IfFontExistsTF{Lucida Calligraphy}{%
+    \LogWorking{Lucida Calligraphy}
+    \begin{fontbox}{Lucida Calligraphy}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Calligraphy}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Calligraphy}
+    \begin{errorbox}{Lucida Calligraphy}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Console}
+
+\IfFontExistsTF{Lucida Console}{%
+    \LogWorking{Lucida Console}
+    \begin{fontbox}{Lucida Console}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Console}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Console}
+    \begin{errorbox}{Lucida Console}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Fax}
+
+\IfFontExistsTF{Lucida Fax}{%
+    \LogWorking{Lucida Fax}
+    \begin{fontbox}{Lucida Fax}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Fax}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Fax}
+    \begin{errorbox}{Lucida Fax}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Fax Demi-grassetto}
+
+\IfFontExistsTF{Lucida Fax Demi-grassetto}{%
+    \LogWorking{Lucida Fax Demi-grassetto}
+    \begin{fontbox}{Lucida Fax Demi-grassetto}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Fax Demi-grassetto}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Fax Demi-grassetto}
+    \begin{errorbox}{Lucida Fax Demi-grassetto}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Handwriting}
+
+\IfFontExistsTF{Lucida Handwriting}{%
+    \LogWorking{Lucida Handwriting}
+    \begin{fontbox}{Lucida Handwriting}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Handwriting}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Handwriting}
+    \begin{errorbox}{Lucida Handwriting}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Sans}
+
+\IfFontExistsTF{Lucida Sans}{%
+    \LogWorking{Lucida Sans}
+    \begin{fontbox}{Lucida Sans}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Sans}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Sans}
+    \begin{errorbox}{Lucida Sans}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Sans Demi-grassetto}
+
+\IfFontExistsTF{Lucida Sans Demi-grassetto}{%
+    \LogWorking{Lucida Sans Demi-grassetto}
+    \begin{fontbox}{Lucida Sans Demi-grassetto}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Sans Demi-grassetto}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Sans Demi-grassetto}
+    \begin{errorbox}{Lucida Sans Demi-grassetto}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Sans Typewriter}
+
+\IfFontExistsTF{Lucida Sans Typewriter}{%
+    \LogWorking{Lucida Sans Typewriter}
+    \begin{fontbox}{Lucida Sans Typewriter}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Sans Typewriter}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Sans Typewriter}
+    \begin{errorbox}{Lucida Sans Typewriter}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Sans Typewriter Oblique}
+
+\IfFontExistsTF{Lucida Sans Typewriter Oblique}{%
+    \LogWorking{Lucida Sans Typewriter Oblique}
+    \begin{fontbox}{Lucida Sans Typewriter Oblique}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Sans Typewriter Oblique}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Sans Typewriter Oblique}
+    \begin{errorbox}{Lucida Sans Typewriter Oblique}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Lucida Sans Unicode}
+
+\IfFontExistsTF{Lucida Sans Unicode}{%
+    \LogWorking{Lucida Sans Unicode}
+    \begin{fontbox}{Lucida Sans Unicode}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Lucida Sans Unicode}
+    \Li
+    }
+}{
+    \LogBroken{Lucida Sans Unicode}
+    \begin{errorbox}{Lucida Sans Unicode}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{MS Gothic \& MS UI Gothic \& MS PGothic}
+
+\IfFontExistsTF{MS Gothic & MS UI Gothic & MS PGothic}{%
+    \LogWorking{MS Gothic \& MS UI Gothic \& MS PGothic}
+    \begin{fontbox}{MS Gothic \& MS UI Gothic \& MS PGothic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{MS Gothic & MS UI Gothic & MS PGothic}
+    \Li
+    }
+}{
+    \LogBroken{MS Gothic \& MS UI Gothic \& MS PGothic}
+    \begin{errorbox}{MS Gothic \& MS UI Gothic \& MS PGothic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{MS Reference Sans Serif}
+
+\IfFontExistsTF{MS Reference Sans Serif}{%
+    \LogWorking{MS Reference Sans Serif}
+    \begin{fontbox}{MS Reference Sans Serif}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{MS Reference Sans Serif}
+    \Li
+    }
+}{
+    \LogBroken{MS Reference Sans Serif}
+    \begin{errorbox}{MS Reference Sans Serif}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{MS Sans Serif 8,10,12,14,18,24}
+
+\IfFontExistsTF{MS Sans Serif 8,10,12,14,18,24}{%
+    \LogWorking{MS Sans Serif 8,10,12,14,18,24}
+    \begin{fontbox}{MS Sans Serif 8,10,12,14,18,24}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{MS Sans Serif 8,10,12,14,18,24}
+    \Li
+    }
+}{
+    \LogBroken{MS Sans Serif 8,10,12,14,18,24}
+    \begin{errorbox}{MS Sans Serif 8,10,12,14,18,24}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{MS Sans Serif 8,10,12,14,18,24 (120)}
+
+\IfFontExistsTF{MS Sans Serif 8,10,12,14,18,24 (120)}{%
+    \LogWorking{MS Sans Serif 8,10,12,14,18,24 (120)}
+    \begin{fontbox}{MS Sans Serif 8,10,12,14,18,24 (120)}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{MS Sans Serif 8,10,12,14,18,24 (120)}
+    \Li
+    }
+}{
+    \LogBroken{MS Sans Serif 8,10,12,14,18,24 (120)}
+    \begin{errorbox}{MS Sans Serif 8,10,12,14,18,24 (120)}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{MS Serif 8,10,12,14,18,24}
+
+\IfFontExistsTF{MS Serif 8,10,12,14,18,24}{%
+    \LogWorking{MS Serif 8,10,12,14,18,24}
+    \begin{fontbox}{MS Serif 8,10,12,14,18,24}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{MS Serif 8,10,12,14,18,24}
+    \Li
+    }
+}{
+    \LogBroken{MS Serif 8,10,12,14,18,24}
+    \begin{errorbox}{MS Serif 8,10,12,14,18,24}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{MS Serif 8,10,12,14,18,24 (120)}
+
+\IfFontExistsTF{MS Serif 8,10,12,14,18,24 (120)}{%
+    \LogWorking{MS Serif 8,10,12,14,18,24 (120)}
+    \begin{fontbox}{MS Serif 8,10,12,14,18,24 (120)}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{MS Serif 8,10,12,14,18,24 (120)}
+    \Li
+    }
+}{
+    \LogBroken{MS Serif 8,10,12,14,18,24 (120)}
+    \begin{errorbox}{MS Serif 8,10,12,14,18,24 (120)}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{MV Boli}
+
+\IfFontExistsTF{MV Boli}{%
+    \LogWorking{MV Boli}
+    \begin{fontbox}{MV Boli}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{MV Boli}
+    \Li
+    }
+}{
+    \LogBroken{MV Boli}
+    \begin{errorbox}{MV Boli}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Magneto}
+
+\IfFontExistsTF{Magneto}{%
+    \LogWorking{Magneto}
+    \begin{fontbox}{Magneto}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Magneto}
+    \Li
+    }
+}{
+    \LogBroken{Magneto}
+    \begin{errorbox}{Magneto}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Maiandra GD}
+
+\IfFontExistsTF{Maiandra GD}{%
+    \LogWorking{Maiandra GD}
+    \begin{fontbox}{Maiandra GD}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Maiandra GD}
+    \Li
+    }
+}{
+    \LogBroken{Maiandra GD}
+    \begin{errorbox}{Maiandra GD}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Malgun Gothic}
+
+\IfFontExistsTF{Malgun Gothic}{%
+    \LogWorking{Malgun Gothic}
+    \begin{fontbox}{Malgun Gothic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Malgun Gothic}
+    \Li
+    }
+}{
+    \LogBroken{Malgun Gothic}
+    \begin{errorbox}{Malgun Gothic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Malgun Gothic SemiLight}
+
+\IfFontExistsTF{Malgun Gothic SemiLight}{%
+    \LogWorking{Malgun Gothic SemiLight}
+    \begin{fontbox}{Malgun Gothic SemiLight}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Malgun Gothic SemiLight}
+    \Li
+    }
+}{
+    \LogBroken{Malgun Gothic SemiLight}
+    \begin{errorbox}{Malgun Gothic SemiLight}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Matura MT Script Capitals}
+
+\IfFontExistsTF{Matura MT Script Capitals}{%
+    \LogWorking{Matura MT Script Capitals}
+    \begin{fontbox}{Matura MT Script Capitals}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Matura MT Script Capitals}
+    \Li
+    }
+}{
+    \LogBroken{Matura MT Script Capitals}
+    \begin{errorbox}{Matura MT Script Capitals}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Microsoft Himalaya}
+
+\IfFontExistsTF{Microsoft Himalaya}{%
+    \LogWorking{Microsoft Himalaya}
+    \begin{fontbox}{Microsoft Himalaya}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Microsoft Himalaya}
+    \Li
+    }
+}{
+    \LogBroken{Microsoft Himalaya}
+    \begin{errorbox}{Microsoft Himalaya}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Microsoft JhengHei}
+
+\IfFontExistsTF{Microsoft JhengHei}{%
+    \LogWorking{Microsoft JhengHei}
+    \begin{fontbox}{Microsoft JhengHei}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Microsoft JhengHei}
+    \Li
+    }
+}{
+    \LogBroken{Microsoft JhengHei}
+    \begin{errorbox}{Microsoft JhengHei}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Microsoft JhengHei \& Microsoft JhengHei UI}
+
+\IfFontExistsTF{Microsoft JhengHei & Microsoft JhengHei UI}{%
+    \LogWorking{Microsoft JhengHei \& Microsoft JhengHei UI}
+    \begin{fontbox}{Microsoft JhengHei \& Microsoft JhengHei UI}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Microsoft JhengHei & Microsoft JhengHei UI}
+    \Li
+    }
+}{
+    \LogBroken{Microsoft JhengHei \& Microsoft JhengHei UI}
+    \begin{errorbox}{Microsoft JhengHei \& Microsoft JhengHei UI}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Microsoft New Tai Lue}
+
+\IfFontExistsTF{Microsoft New Tai Lue}{%
+    \LogWorking{Microsoft New Tai Lue}
+    \begin{fontbox}{Microsoft New Tai Lue}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Microsoft New Tai Lue}
+    \Li
+    }
+}{
+    \LogBroken{Microsoft New Tai Lue}
+    \begin{errorbox}{Microsoft New Tai Lue}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Microsoft PhagsPa}
+
+\IfFontExistsTF{Microsoft PhagsPa}{%
+    \LogWorking{Microsoft PhagsPa}
+    \begin{fontbox}{Microsoft PhagsPa}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Microsoft PhagsPa}
+    \Li
+    }
+}{
+    \LogBroken{Microsoft PhagsPa}
+    \begin{errorbox}{Microsoft PhagsPa}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Microsoft Sans Serif}
+
+\IfFontExistsTF{Microsoft Sans Serif}{%
+    \LogWorking{Microsoft Sans Serif}
+    \begin{fontbox}{Microsoft Sans Serif}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Microsoft Sans Serif}
+    \Li
+    }
+}{
+    \LogBroken{Microsoft Sans Serif}
+    \begin{errorbox}{Microsoft Sans Serif}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Microsoft Tai Le}
+
+\IfFontExistsTF{Microsoft Tai Le}{%
+    \LogWorking{Microsoft Tai Le}
+    \begin{fontbox}{Microsoft Tai Le}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Microsoft Tai Le}
+    \Li
+    }
+}{
+    \LogBroken{Microsoft Tai Le}
+    \begin{errorbox}{Microsoft Tai Le}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Microsoft YaHei \& Microsoft YaHei UI}
+
+\IfFontExistsTF{Microsoft YaHei & Microsoft YaHei UI}{%
+    \LogWorking{Microsoft YaHei \& Microsoft YaHei UI}
+    \begin{fontbox}{Microsoft YaHei \& Microsoft YaHei UI}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Microsoft YaHei & Microsoft YaHei UI}
+    \Li
+    }
+}{
+    \LogBroken{Microsoft YaHei \& Microsoft YaHei UI}
+    \begin{errorbox}{Microsoft YaHei \& Microsoft YaHei UI}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Microsoft Yi Baiti}
+
+\IfFontExistsTF{Microsoft Yi Baiti}{%
+    \LogWorking{Microsoft Yi Baiti}
+    \begin{fontbox}{Microsoft Yi Baiti}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Microsoft Yi Baiti}
+    \Li
+    }
+}{
+    \LogBroken{Microsoft Yi Baiti}
+    \begin{errorbox}{Microsoft Yi Baiti}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{MingLiU-ExtB \& PMingLiU-ExtB \& MingLiU\_HKSCS-ExtB}
+
+\IfFontExistsTF{MingLiU-ExtB & PMingLiU-ExtB & MingLiU_HKSCS-ExtB}{%
+    \LogWorking{MingLiU-ExtB \& PMingLiU-ExtB \& MingLiU\_HKSCS-ExtB}
+    \begin{fontbox}{MingLiU-ExtB \& PMingLiU-ExtB \& MingLiU\_HKSCS-ExtB}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{MingLiU-ExtB & PMingLiU-ExtB & MingLiU_HKSCS-ExtB}
+    \Li
+    }
+}{
+    \LogBroken{MingLiU-ExtB \& PMingLiU-ExtB \& MingLiU\_HKSCS-ExtB}
+    \begin{errorbox}{MingLiU-ExtB \& PMingLiU-ExtB \& MingLiU\_HKSCS-ExtB}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Miriam CLM}
+
+\IfFontExistsTF{Miriam CLM}{%
+    \LogWorking{Miriam CLM}
+    \begin{fontbox}{Miriam CLM}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Miriam CLM}
+    \Li
+    }
+}{
+    \LogBroken{Miriam CLM}
+    \begin{errorbox}{Miriam CLM}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Miriam CLM Book}
+
+\IfFontExistsTF{Miriam CLM Book}{%
+    \LogWorking{Miriam CLM Book}
+    \begin{fontbox}{Miriam CLM Book}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Miriam CLM Book}
+    \Li
+    }
+}{
+    \LogBroken{Miriam CLM Book}
+    \begin{errorbox}{Miriam CLM Book}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Miriam Libre}
+
+\IfFontExistsTF{Miriam Libre}{%
+    \LogWorking{Miriam Libre}
+    \begin{fontbox}{Miriam Libre}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Miriam Libre}
+    \Li
+    }
+}{
+    \LogBroken{Miriam Libre}
+    \begin{errorbox}{Miriam Libre}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Miriam Mono CLM}
+
+\IfFontExistsTF{Miriam Mono CLM}{%
+    \LogWorking{Miriam Mono CLM}
+    \begin{fontbox}{Miriam Mono CLM}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Miriam Mono CLM}
+    \Li
+    }
+}{
+    \LogBroken{Miriam Mono CLM}
+    \begin{errorbox}{Miriam Mono CLM}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Miriam Mono CLM Book}
+
+\IfFontExistsTF{Miriam Mono CLM Book}{%
+    \LogWorking{Miriam Mono CLM Book}
+    \begin{fontbox}{Miriam Mono CLM Book}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Miriam Mono CLM Book}
+    \Li
+    }
+}{
+    \LogBroken{Miriam Mono CLM Book}
+    \begin{errorbox}{Miriam Mono CLM Book}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Miriam Mono CLM Book Oblique}
+
+\IfFontExistsTF{Miriam Mono CLM Book Oblique}{%
+    \LogWorking{Miriam Mono CLM Book Oblique}
+    \begin{fontbox}{Miriam Mono CLM Book Oblique}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Miriam Mono CLM Book Oblique}
+    \Li
+    }
+}{
+    \LogBroken{Miriam Mono CLM Book Oblique}
+    \begin{errorbox}{Miriam Mono CLM Book Oblique}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{MiriamLibre-Regular}
+
+\IfFontExistsTF{MiriamLibre-Regular}{%
+    \LogWorking{MiriamLibre-Regular}
+    \begin{fontbox}{MiriamLibre-Regular}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{MiriamLibre-Regular}
+    \Li
+    }
+}{
+    \LogBroken{MiriamLibre-Regular}
+    \begin{errorbox}{MiriamLibre-Regular}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Mistral}
+
+\IfFontExistsTF{Mistral}{%
+    \LogWorking{Mistral}
+    \begin{fontbox}{Mistral}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Mistral}
+    \Li
+    }
+}{
+    \LogBroken{Mistral}
+    \begin{errorbox}{Mistral}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Modern (All res)}
+
+\IfFontExistsTF{Modern (All res)}{%
+    \LogWorking{Modern (All res)}
+    \begin{fontbox}{Modern (All res)}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Modern (All res)}
+    \Li
+    }
+}{
+    \LogBroken{Modern (All res)}
+    \begin{errorbox}{Modern (All res)}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Modern No. 20}
+
+\IfFontExistsTF{Modern No. 20}{%
+    \LogWorking{Modern No. 20}
+    \begin{fontbox}{Modern No. 20}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Modern No. 20}
+    \Li
+    }
+}{
+    \LogBroken{Modern No. 20}
+    \begin{errorbox}{Modern No. 20}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Mongolian Baiti}
+
+\IfFontExistsTF{Mongolian Baiti}{%
+    \LogWorking{Mongolian Baiti}
+    \begin{fontbox}{Mongolian Baiti}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Mongolian Baiti}
+    \Li
+    }
+}{
+    \LogBroken{Mongolian Baiti}
+    \begin{errorbox}{Mongolian Baiti}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Monotype Corsiva}
+
+\IfFontExistsTF{Monotype Corsiva}{%
+    \LogWorking{Monotype Corsiva}
+    \begin{fontbox}{Monotype Corsiva}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Monotype Corsiva}
+    \Li
+    }
+}{
+    \LogBroken{Monotype Corsiva}
+    \begin{errorbox}{Monotype Corsiva}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Myanmar Text}
+
+\IfFontExistsTF{Myanmar Text}{%
+    \LogWorking{Myanmar Text}
+    \begin{fontbox}{Myanmar Text}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Myanmar Text}
+    \Li
+    }
+}{
+    \LogBroken{Myanmar Text}
+    \begin{errorbox}{Myanmar Text}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Nachlieli CLM}
+
+\IfFontExistsTF{Nachlieli CLM}{%
+    \LogWorking{Nachlieli CLM}
+    \begin{fontbox}{Nachlieli CLM}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Nachlieli CLM}
+    \Li
+    }
+}{
+    \LogBroken{Nachlieli CLM}
+    \begin{errorbox}{Nachlieli CLM}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Niagara Engraved}
+
+\IfFontExistsTF{Niagara Engraved}{%
+    \LogWorking{Niagara Engraved}
+    \begin{fontbox}{Niagara Engraved}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Niagara Engraved}
+    \Li
+    }
+}{
+    \LogBroken{Niagara Engraved}
+    \begin{errorbox}{Niagara Engraved}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Niagara Solid}
+
+\IfFontExistsTF{Niagara Solid}{%
+    \LogWorking{Niagara Solid}
+    \begin{fontbox}{Niagara Solid}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Niagara Solid}
+    \Li
+    }
+}{
+    \LogBroken{Niagara Solid}
+    \begin{errorbox}{Niagara Solid}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Nirmala UI \& Nirmala UI}
+
+\IfFontExistsTF{Nirmala UI & Nirmala UI}{%
+    \LogWorking{Nirmala UI \& Nirmala UI}
+    \begin{fontbox}{Nirmala UI \& Nirmala UI}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Nirmala UI & Nirmala UI}
+    \Li
+    }
+}{
+    \LogBroken{Nirmala UI \& Nirmala UI}
+    \begin{errorbox}{Nirmala UI \& Nirmala UI}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Kufi Arabic}
+
+\IfFontExistsTF{Noto Kufi Arabic}{%
+    \LogWorking{Noto Kufi Arabic}
+    \begin{fontbox}{Noto Kufi Arabic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Kufi Arabic}
+    \Li
+    }
+}{
+    \LogBroken{Noto Kufi Arabic}
+    \begin{errorbox}{Noto Kufi Arabic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Naskh Arabic}
+
+\IfFontExistsTF{Noto Naskh Arabic}{%
+    \LogWorking{Noto Naskh Arabic}
+    \begin{fontbox}{Noto Naskh Arabic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Naskh Arabic}
+    \Li
+    }
+}{
+    \LogBroken{Noto Naskh Arabic}
+    \begin{errorbox}{Noto Naskh Arabic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Sans}
+
+\IfFontExistsTF{Noto Sans}{%
+    \LogWorking{Noto Sans}
+    \begin{fontbox}{Noto Sans}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Sans}
+    \Li
+    }
+}{
+    \LogBroken{Noto Sans}
+    \begin{errorbox}{Noto Sans}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Sans Armenian}
+
+\IfFontExistsTF{Noto Sans Armenian}{%
+    \LogWorking{Noto Sans Armenian}
+    \begin{fontbox}{Noto Sans Armenian}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Sans Armenian}
+    \Li
+    }
+}{
+    \LogBroken{Noto Sans Armenian}
+    \begin{errorbox}{Noto Sans Armenian}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Sans Georgian}
+
+\IfFontExistsTF{Noto Sans Georgian}{%
+    \LogWorking{Noto Sans Georgian}
+    \begin{fontbox}{Noto Sans Georgian}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Sans Georgian}
+    \Li
+    }
+}{
+    \LogBroken{Noto Sans Georgian}
+    \begin{errorbox}{Noto Sans Georgian}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Sans Lao}
+
+\IfFontExistsTF{Noto Sans Lao}{%
+    \LogWorking{Noto Sans Lao}
+    \begin{fontbox}{Noto Sans Lao}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Sans Lao}
+    \Li
+    }
+}{
+    \LogBroken{Noto Sans Lao}
+    \begin{errorbox}{Noto Sans Lao}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Sans Lisu}
+
+\IfFontExistsTF{Noto Sans Lisu}{%
+    \LogWorking{Noto Sans Lisu}
+    \begin{fontbox}{Noto Sans Lisu}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Sans Lisu}
+    \Li
+    }
+}{
+    \LogBroken{Noto Sans Lisu}
+    \begin{errorbox}{Noto Sans Lisu}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Serif}
+
+\IfFontExistsTF{Noto Serif}{%
+    \LogWorking{Noto Serif}
+    \begin{fontbox}{Noto Serif}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Serif}
+    \Li
+    }
+}{
+    \LogBroken{Noto Serif}
+    \begin{errorbox}{Noto Serif}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Serif Armenian}
+
+\IfFontExistsTF{Noto Serif Armenian}{%
+    \LogWorking{Noto Serif Armenian}
+    \begin{fontbox}{Noto Serif Armenian}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Serif Armenian}
+    \Li
+    }
+}{
+    \LogBroken{Noto Serif Armenian}
+    \begin{errorbox}{Noto Serif Armenian}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Serif Georgian}
+
+\IfFontExistsTF{Noto Serif Georgian}{%
+    \LogWorking{Noto Serif Georgian}
+    \begin{fontbox}{Noto Serif Georgian}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Serif Georgian}
+    \Li
+    }
+}{
+    \LogBroken{Noto Serif Georgian}
+    \begin{errorbox}{Noto Serif Georgian}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Serif Hebrew}
+
+\IfFontExistsTF{Noto Serif Hebrew}{%
+    \LogWorking{Noto Serif Hebrew}
+    \begin{fontbox}{Noto Serif Hebrew}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Serif Hebrew}
+    \Li
+    }
+}{
+    \LogBroken{Noto Serif Hebrew}
+    \begin{errorbox}{Noto Serif Hebrew}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Serif Lao}
+
+\IfFontExistsTF{Noto Serif Lao}{%
+    \LogWorking{Noto Serif Lao}
+    \begin{fontbox}{Noto Serif Lao}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Serif Lao}
+    \Li
+    }
+}{
+    \LogBroken{Noto Serif Lao}
+    \begin{errorbox}{Noto Serif Lao}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{OCR A}
+
+\IfFontExistsTF{OCR A}{%
+    \LogWorking{OCR A}
+    \begin{fontbox}{OCR A}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{OCR A}
+    \Li
+    }
+}{
+    \LogBroken{OCR A}
+    \begin{errorbox}{OCR A}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Old English Text MT}
+
+\IfFontExistsTF{Old English Text MT}{%
+    \LogWorking{Old English Text MT}
+    \begin{fontbox}{Old English Text MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Old English Text MT}
+    \Li
+    }
+}{
+    \LogBroken{Old English Text MT}
+    \begin{errorbox}{Old English Text MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Onyx}
+
+\IfFontExistsTF{Onyx}{%
+    \LogWorking{Onyx}
+    \begin{fontbox}{Onyx}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Onyx}
+    \Li
+    }
+}{
+    \LogBroken{Onyx}
+    \begin{errorbox}{Onyx}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{OpenSymbol}
+
+\IfFontExistsTF{OpenSymbol}{%
+    \LogWorking{OpenSymbol}
+    \begin{fontbox}{OpenSymbol}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{OpenSymbol}
+    \Li
+    }
+}{
+    \LogBroken{OpenSymbol}
+    \begin{errorbox}{OpenSymbol}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Palace Script MT}
+
+\IfFontExistsTF{Palace Script MT}{%
+    \LogWorking{Palace Script MT}
+    \begin{fontbox}{Palace Script MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Palace Script MT}
+    \Li
+    }
+}{
+    \LogBroken{Palace Script MT}
+    \begin{errorbox}{Palace Script MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Palatino Linotype}
+
+\IfFontExistsTF{Palatino Linotype}{%
+    \LogWorking{Palatino Linotype}
+    \begin{fontbox}{Palatino Linotype}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Palatino Linotype}
+    \Li
+    }
+}{
+    \LogBroken{Palatino Linotype}
+    \begin{errorbox}{Palatino Linotype}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Papyrus}
+
+\IfFontExistsTF{Papyrus}{%
+    \LogWorking{Papyrus}
+    \begin{fontbox}{Papyrus}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Papyrus}
+    \Li
+    }
+}{
+    \LogBroken{Papyrus}
+    \begin{errorbox}{Papyrus}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Parchment}
+
+\IfFontExistsTF{Parchment}{%
+    \LogWorking{Parchment}
+    \begin{fontbox}{Parchment}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Parchment}
+    \Li
+    }
+}{
+    \LogBroken{Parchment}
+    \begin{errorbox}{Parchment}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Perpetua}
+
+\IfFontExistsTF{Perpetua}{%
+    \LogWorking{Perpetua}
+    \begin{fontbox}{Perpetua}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Perpetua}
+    \Li
+    }
+}{
+    \LogBroken{Perpetua}
+    \begin{errorbox}{Perpetua}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Perpetua Titling MT}
+
+\IfFontExistsTF{Perpetua Titling MT}{%
+    \LogWorking{Perpetua Titling MT}
+    \begin{fontbox}{Perpetua Titling MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Perpetua Titling MT}
+    \Li
+    }
+}{
+    \LogBroken{Perpetua Titling MT}
+    \begin{errorbox}{Perpetua Titling MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Perpetua Titling MT Chiarissimo}
+
+\IfFontExistsTF{Perpetua Titling MT Chiarissimo}{%
+    \LogWorking{Perpetua Titling MT Chiarissimo}
+    \begin{fontbox}{Perpetua Titling MT Chiarissimo}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Perpetua Titling MT Chiarissimo}
+    \Li
+    }
+}{
+    \LogBroken{Perpetua Titling MT Chiarissimo}
+    \begin{errorbox}{Perpetua Titling MT Chiarissimo}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Playbill}
+
+\IfFontExistsTF{Playbill}{%
+    \LogWorking{Playbill}
+    \begin{fontbox}{Playbill}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Playbill}
+    \Li
+    }
+}{
+    \LogBroken{Playbill}
+    \begin{errorbox}{Playbill}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Poor Richard}
+
+\IfFontExistsTF{Poor Richard}{%
+    \LogWorking{Poor Richard}
+    \begin{fontbox}{Poor Richard}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Poor Richard}
+    \Li
+    }
+}{
+    \LogBroken{Poor Richard}
+    \begin{errorbox}{Poor Richard}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Pristina}
+
+\IfFontExistsTF{Pristina}{%
+    \LogWorking{Pristina}
+    \begin{fontbox}{Pristina}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Pristina}
+    \Li
+    }
+}{
+    \LogBroken{Pristina}
+    \begin{errorbox}{Pristina}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Rage}
+
+\IfFontExistsTF{Rage}{%
+    \LogWorking{Rage}
+    \begin{fontbox}{Rage}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Rage}
+    \Li
+    }
+}{
+    \LogBroken{Rage}
+    \begin{errorbox}{Rage}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Ravie}
+
+\IfFontExistsTF{Ravie}{%
+    \LogWorking{Ravie}
+    \begin{fontbox}{Ravie}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Ravie}
+    \Li
+    }
+}{
+    \LogBroken{Ravie}
+    \begin{errorbox}{Ravie}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Reem Kufi}
+
+\IfFontExistsTF{Reem Kufi}{%
+    \LogWorking{Reem Kufi}
+    \begin{fontbox}{Reem Kufi}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Reem Kufi}
+    \Li
+    }
+}{
+    \LogBroken{Reem Kufi}
+    \begin{errorbox}{Reem Kufi}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Rockwell}
+
+\IfFontExistsTF{Rockwell}{%
+    \LogWorking{Rockwell}
+    \begin{fontbox}{Rockwell}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Rockwell}
+    \Li
+    }
+}{
+    \LogBroken{Rockwell}
+    \begin{errorbox}{Rockwell}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Rockwell Extra}
+
+\IfFontExistsTF{Rockwell Extra}{%
+    \LogWorking{Rockwell Extra}
+    \begin{fontbox}{Rockwell Extra}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Rockwell Extra}
+    \Li
+    }
+}{
+    \LogBroken{Rockwell Extra}
+    \begin{errorbox}{Rockwell Extra}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Roman (All res)}
+
+\IfFontExistsTF{Roman (All res)}{%
+    \LogWorking{Roman (All res)}
+    \begin{fontbox}{Roman (All res)}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Roman (All res)}
+    \Li
+    }
+}{
+    \LogBroken{Roman (All res)}
+    \begin{errorbox}{Roman (All res)}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Rubik}
+
+\IfFontExistsTF{Rubik}{%
+    \LogWorking{Rubik}
+    \begin{fontbox}{Rubik}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Rubik}
+    \Li
+    }
+}{
+    \LogBroken{Rubik}
+    \begin{errorbox}{Rubik}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Rubik-Bold}
+
+\IfFontExistsTF{Rubik-Bold}{%
+    \LogWorking{Rubik-Bold}
+    \begin{fontbox}{Rubik-Bold}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Rubik-Bold}
+    \Li
+    }
+}{
+    \LogBroken{Rubik-Bold}
+    \begin{errorbox}{Rubik-Bold}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Rubik-Regular}
+
+\IfFontExistsTF{Rubik-Regular}{%
+    \LogWorking{Rubik-Regular}
+    \begin{fontbox}{Rubik-Regular}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Rubik-Regular}
+    \Li
+    }
+}{
+    \LogBroken{Rubik-Regular}
+    \begin{errorbox}{Rubik-Regular}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Sans Serif Collection}
+
+\IfFontExistsTF{Sans Serif Collection}{%
+    \LogWorking{Sans Serif Collection}
+    \begin{fontbox}{Sans Serif Collection}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Sans Serif Collection}
+    \Li
+    }
+}{
+    \LogBroken{Sans Serif Collection}
+    \begin{errorbox}{Sans Serif Collection}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Scheherazade}
+
+\IfFontExistsTF{Scheherazade}{%
+    \LogWorking{Scheherazade}
+    \begin{fontbox}{Scheherazade}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Scheherazade}
+    \Li
+    }
+}{
+    \LogBroken{Scheherazade}
+    \begin{errorbox}{Scheherazade}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Script (All res)}
+
+\IfFontExistsTF{Script (All res)}{%
+    \LogWorking{Script (All res)}
+    \begin{fontbox}{Script (All res)}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Script (All res)}
+    \Li
+    }
+}{
+    \LogBroken{Script (All res)}
+    \begin{errorbox}{Script (All res)}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Script MT}
+
+\IfFontExistsTF{Script MT}{%
+    \LogWorking{Script MT}
+    \begin{fontbox}{Script MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Script MT}
+    \Li
+    }
+}{
+    \LogBroken{Script MT}
+    \begin{errorbox}{Script MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Segoe Print}
+
+\IfFontExistsTF{Segoe Print}{%
+    \LogWorking{Segoe Print}
+    \begin{fontbox}{Segoe Print}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Segoe Print}
+    \Li
+    }
+}{
+    \LogBroken{Segoe Print}
+    \begin{errorbox}{Segoe Print}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Segoe Script}
+
+\IfFontExistsTF{Segoe Script}{%
+    \LogWorking{Segoe Script}
+    \begin{fontbox}{Segoe Script}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Segoe Script}
+    \Li
+    }
+}{
+    \LogBroken{Segoe Script}
+    \begin{errorbox}{Segoe Script}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Segoe UI}
+
+\IfFontExistsTF{Segoe UI}{%
+    \LogWorking{Segoe UI}
+    \begin{fontbox}{Segoe UI}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Segoe UI}
+    \Li
+    }
+}{
+    \LogBroken{Segoe UI}
+    \begin{errorbox}{Segoe UI}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Segoe UI Emoji}
+
+\IfFontExistsTF{Segoe UI Emoji}{%
+    \LogWorking{Segoe UI Emoji}
+    \begin{fontbox}{Segoe UI Emoji}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Segoe UI Emoji}
+    \Li
+    }
+}{
+    \LogBroken{Segoe UI Emoji}
+    \begin{errorbox}{Segoe UI Emoji}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Segoe UI Historic}
+
+\IfFontExistsTF{Segoe UI Historic}{%
+    \LogWorking{Segoe UI Historic}
+    \begin{fontbox}{Segoe UI Historic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Segoe UI Historic}
+    \Li
+    }
+}{
+    \LogBroken{Segoe UI Historic}
+    \begin{errorbox}{Segoe UI Historic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Segoe UI Semilight}
+
+\IfFontExistsTF{Segoe UI Semilight}{%
+    \LogWorking{Segoe UI Semilight}
+    \begin{fontbox}{Segoe UI Semilight}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Segoe UI Semilight}
+    \Li
+    }
+}{
+    \LogBroken{Segoe UI Semilight}
+    \begin{errorbox}{Segoe UI Semilight}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Segoe UI Symbol}
+
+\IfFontExistsTF{Segoe UI Symbol}{%
+    \LogWorking{Segoe UI Symbol}
+    \begin{fontbox}{Segoe UI Symbol}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Segoe UI Symbol}
+    \Li
+    }
+}{
+    \LogBroken{Segoe UI Symbol}
+    \begin{errorbox}{Segoe UI Symbol}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Segoe UI Variable}
+
+\IfFontExistsTF{Segoe UI Variable}{%
+    \LogWorking{Segoe UI Variable}
+    \begin{fontbox}{Segoe UI Variable}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Segoe UI Variable}
+    \Li
+    }
+}{
+    \LogBroken{Segoe UI Variable}
+    \begin{errorbox}{Segoe UI Variable}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Showcard Gothic}
+
+\IfFontExistsTF{Showcard Gothic}{%
+    \LogWorking{Showcard Gothic}
+    \begin{fontbox}{Showcard Gothic}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Showcard Gothic}
+    \Li
+    }
+}{
+    \LogBroken{Showcard Gothic}
+    \begin{errorbox}{Showcard Gothic}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{SimSun \& NSimSun}
+
+\IfFontExistsTF{SimSun & NSimSun}{%
+    \LogWorking{SimSun \& NSimSun}
+    \begin{fontbox}{SimSun \& NSimSun}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{SimSun & NSimSun}
+    \Li
+    }
+}{
+    \LogBroken{SimSun \& NSimSun}
+    \begin{errorbox}{SimSun \& NSimSun}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{SimSun-ExtB}
+
+\IfFontExistsTF{SimSun-ExtB}{%
+    \LogWorking{SimSun-ExtB}
+    \begin{fontbox}{SimSun-ExtB}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{SimSun-ExtB}
+    \Li
+    }
+}{
+    \LogBroken{SimSun-ExtB}
+    \begin{errorbox}{SimSun-ExtB}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{SimSun-ExtG}
+
+\IfFontExistsTF{SimSun-ExtG}{%
+    \LogWorking{SimSun-ExtG}
+    \begin{fontbox}{SimSun-ExtG}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{SimSun-ExtG}
+    \Li
+    }
+}{
+    \LogBroken{SimSun-ExtG}
+    \begin{errorbox}{SimSun-ExtG}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Sitka Text}
+
+\IfFontExistsTF{Sitka Text}{%
+    \LogWorking{Sitka Text}
+    \begin{fontbox}{Sitka Text}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Sitka Text}
+    \Li
+    }
+}{
+    \LogBroken{Sitka Text}
+    \begin{errorbox}{Sitka Text}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Small Fonts}
+
+\IfFontExistsTF{Small Fonts}{%
+    \LogWorking{Small Fonts}
+    \begin{fontbox}{Small Fonts}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Small Fonts}
+    \Li
+    }
+}{
+    \LogBroken{Small Fonts}
+    \begin{errorbox}{Small Fonts}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Small Fonts (120)}
+
+\IfFontExistsTF{Small Fonts (120)}{%
+    \LogWorking{Small Fonts (120)}
+    \begin{fontbox}{Small Fonts (120)}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Small Fonts (120)}
+    \Li
+    }
+}{
+    \LogBroken{Small Fonts (120)}
+    \begin{errorbox}{Small Fonts (120)}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Snap ITC}
+
+\IfFontExistsTF{Snap ITC}{%
+    \LogWorking{Snap ITC}
+    \begin{fontbox}{Snap ITC}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Snap ITC}
+    \Li
+    }
+}{
+    \LogBroken{Snap ITC}
+    \begin{errorbox}{Snap ITC}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Stencil}
+
+\IfFontExistsTF{Stencil}{%
+    \LogWorking{Stencil}
+    \begin{fontbox}{Stencil}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Stencil}
+    \Li
+    }
+}{
+    \LogBroken{Stencil}
+    \begin{errorbox}{Stencil}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Sylfaen}
+
+\IfFontExistsTF{Sylfaen}{%
+    \LogWorking{Sylfaen}
+    \begin{fontbox}{Sylfaen}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Sylfaen}
+    \Li
+    }
+}{
+    \LogBroken{Sylfaen}
+    \begin{errorbox}{Sylfaen}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Tahoma}
+
+\IfFontExistsTF{Tahoma}{%
+    \LogWorking{Tahoma}
+    \begin{fontbox}{Tahoma}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Tahoma}
+    \Li
+    }
+}{
+    \LogBroken{Tahoma}
+    \begin{errorbox}{Tahoma}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Tempus Sans ITC}
+
+\IfFontExistsTF{Tempus Sans ITC}{%
+    \LogWorking{Tempus Sans ITC}
+    \begin{fontbox}{Tempus Sans ITC}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Tempus Sans ITC}
+    \Li
+    }
+}{
+    \LogBroken{Tempus Sans ITC}
+    \begin{errorbox}{Tempus Sans ITC}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Times New Roman}
+
+\IfFontExistsTF{Times New Roman}{%
+    \LogWorking{Times New Roman}
+    \begin{fontbox}{Times New Roman}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Times New Roman}
+    \Li
+    }
+}{
+    \LogBroken{Times New Roman}
+    \begin{errorbox}{Times New Roman}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Trebuchet MS}
+
+\IfFontExistsTF{Trebuchet MS}{%
+    \LogWorking{Trebuchet MS}
+    \begin{fontbox}{Trebuchet MS}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Trebuchet MS}
+    \Li
+    }
+}{
+    \LogBroken{Trebuchet MS}
+    \begin{errorbox}{Trebuchet MS}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Tw Cen MT}
+
+\IfFontExistsTF{Tw Cen MT}{%
+    \LogWorking{Tw Cen MT}
+    \begin{fontbox}{Tw Cen MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Tw Cen MT}
+    \Li
+    }
+}{
+    \LogBroken{Tw Cen MT}
+    \begin{errorbox}{Tw Cen MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Verdana}
+
+\IfFontExistsTF{Verdana}{%
+    \LogWorking{Verdana}
+    \begin{fontbox}{Verdana}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Verdana}
+    \Li
+    }
+}{
+    \LogBroken{Verdana}
+    \begin{errorbox}{Verdana}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Viner Hand ITC}
+
+\IfFontExistsTF{Viner Hand ITC}{%
+    \LogWorking{Viner Hand ITC}
+    \begin{fontbox}{Viner Hand ITC}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Viner Hand ITC}
+    \Li
+    }
+}{
+    \LogBroken{Viner Hand ITC}
+    \begin{errorbox}{Viner Hand ITC}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Vivaldi}
+
+\IfFontExistsTF{Vivaldi}{%
+    \LogWorking{Vivaldi}
+    \begin{fontbox}{Vivaldi}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Vivaldi}
+    \Li
+    }
+}{
+    \LogBroken{Vivaldi}
+    \begin{errorbox}{Vivaldi}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Vladimir Script}
+
+\IfFontExistsTF{Vladimir Script}{%
+    \LogWorking{Vladimir Script}
+    \begin{fontbox}{Vladimir Script}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Vladimir Script}
+    \Li
+    }
+}{
+    \LogBroken{Vladimir Script}
+    \begin{errorbox}{Vladimir Script}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Wide Latin}
+
+\IfFontExistsTF{Wide Latin}{%
+    \LogWorking{Wide Latin}
+    \begin{fontbox}{Wide Latin}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Wide Latin}
+    \Li
+    }
+}{
+    \LogBroken{Wide Latin}
+    \begin{errorbox}{Wide Latin}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\LogExcluded{Bookshelf Symbol 7}
+\LogExcluded{MS Outlook}
+\LogExcluded{MS Reference Specialty}
+\LogExcluded{MT Extra}
+\LogExcluded{Marlett}
+\LogExcluded{Microsoft YaHei}
+\LogExcluded{Noto Sans Arabic}
+\LogExcluded{Noto Sans Hebrew}
+\LogExcluded{Segoe Fluent Icons}
+\LogExcluded{Segoe MDL2 Assets}
+\LogExcluded{Symbol}
+\LogExcluded{Webdings}
+\LogExcluded{Wingdings}
+\LogExcluded{Wingdings 2}
+\LogExcluded{Wingdings 3}
+\LogExcluded{Yu Gothic}
+\newpage
+
+% Chiusura file degli indici
+\immediate\closeout\fileWorking
+\immediate\closeout\fileBroken
+\immediate\closeout\fileExcluded
+
+\section{Riepilogo e Statistiche}
+
+\begin{tcolorbox}[colback=white, colframe=gray]
+\begin{center}
+\Large\textbf{Statistiche Finali}
+\vspace{1em}
+
+\begin{tabular}{lr}
+\toprule
+\textbf{Categoria} & \textbf{Quantità} \\
+\midrule
+Font Analizzati (Post-Filtro) & 224 \\
+\textcolor{successcolor}{\textbf{Font Funzionanti}} & \textbf{\arabic{cntWorking}} \\
+\textcolor{errorcolor}{\textbf{Font Problematici}} & \textbf{\arabic{cntBroken}} \\
+\textcolor{othercolor}{\textbf{Font Esclusi}} & \textbf{\arabic{cntExcluded}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{tcolorbox}
+
+\section{Indice: Font Funzionanti}
+\begin{multicols}{2}
+\begin{itemize}
+    \input{\jobname.working}
+\end{itemize}
+\end{multicols}
+
+\section{Indice: Font Problematici}
+\begin{multicols}{2}
+\begin{itemize}
+    \input{\jobname.broken}
+\end{itemize}
+\end{multicols}
+
+\section{Indice: Font Esclusi}
+\begin{multicols}{2}
+\begin{itemize}
+    \input{\jobname.excluded}
+\end{itemize}
+\end{multicols}
+
+\end{document}

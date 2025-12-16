@@ -1,0 +1,357 @@
+% !TeX TS-program = lualatex
+% !TeX spellcheck = it_IT
+% !TeX encoding = UTF-8
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage{polyglossia} % Gestione multilingue avanzata
+\usepackage{lipsum}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{multicol}
+
+\setmainlanguage{italian}
+% Definisci le lingue secondarie necessarie per il test dei font complessi
+\setotherlanguage{latin}
+\setotherlanguage{arabic}
+\setotherlanguage{hebrew}
+\setotherlanguage{japanese}
+\setotherlanguage{chinese}  % Aggiunto Cinese
+\setotherlanguage{hindi}    % Aggiunto Hindi
+\setotherlanguage{thai}
+
+\geometry{margin=2cm}
+
+% Colori
+\definecolor{titlecolor}{HTML}{667eea}
+\definecolor{boxcolor}{HTML}{f0f0f0}
+\definecolor{successcolor}{HTML}{28a745}
+\definecolor{errorcolor}{HTML}{dc3545}
+\definecolor{othercolor}{HTML}{0d6efd}
+
+% Setup Box
+\tcbuselibrary{skins}
+\newtcolorbox{fontbox}[1]{
+    colback=boxcolor, colframe=titlecolor, boxrule=1pt, arc=3pt,
+    title={\textbf{#1}}, coltitle=white, colbacktitle=titlecolor
+}
+\newtcolorbox{errorbox}[1]{
+    colback=errorcolor!10, colframe=errorcolor!80!black, boxrule=1pt, arc=3pt,
+    title={\textbf{Non Caricato: #1}}, coltitle=white, colbacktitle=errorcolor!80!black
+}
+
+% --- MACRO PER CARATTERI NON LATINI (FIXED) ---
+% #1: Font Name, #2: Language Tag (polyglossia), #3: Font Options (e.g., Script=Arabic), #4: Sample Text
+\newcommand{\TestNonLatin}[4]{%
+	\par\noindent\textbf{Test in Lingua (\texttt{#2}) con Opzioni: \texttt{[#3]}}
+
+	\foreignlanguage{#2}{%
+		\fontspec{#1}[#3]%
+		#4\par
+	}%
+	\vspace{0.5em}
+}
+% --------------------------------------
+
+% --- GESTIONE CONTATORI E INDICI ---
+\newcounter{cntWorking}
+\newcounter{cntBroken}
+\newcounter{cntExcluded}
+\setcounter{cntWorking}{0}
+\setcounter{cntBroken}{0}
+\setcounter{cntExcluded}{0}
+
+% Definiamo file di output temporanei per gli indici
+\newwrite\fileWorking
+\immediate\openout\fileWorking=\jobname.working
+\newwrite\fileBroken
+\immediate\openout\fileBroken=\jobname.broken
+\newwrite\fileExcluded
+\immediate\openout\fileExcluded=\jobname.excluded
+
+% Macro ROBUSTE per registrare i font (evita errori di espansione)
+\protected\def\LogWorking#1{%
+    \stepcounter{cntWorking}%
+    \immediate\write\fileWorking{\unexpanded{\item} #1}%
+}
+
+\protected\def\LogBroken#1{%
+    \stepcounter{cntBroken}%
+    \immediate\write\fileBroken{\unexpanded{\item} #1}%
+}
+
+\protected\def\LogExcluded#1{%
+    \stepcounter{cntExcluded}%
+    \immediate\write\fileExcluded{\unexpanded{\item} #1}%
+}
+% -----------------------------------
+
+\SetLipsumText{cicero}
+\newcommand{\Li}{\lipsum[1][1-4]}
+
+\title{\Huge\textbf{\color{titlecolor}Catalogo Font di Sistema}}
+\author{Generato da Python in \texttt{Windows}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Questo documento cataloga i font installati.
+I font problematici noti sono stati esclusi preventivamente. La compilazione è eseguita con \textbf{LuaLaTeX}.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Catalogo Dettagliato}
+
+\subsection{Arial}
+
+\IfFontExistsTF{Arial}{%
+    \LogWorking{Arial}
+    \begin{fontbox}{Arial}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Arial}
+    \Li
+    }
+}{
+    \LogBroken{Arial}
+    \begin{errorbox}{Arial}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Arial Rounded MT}
+
+\IfFontExistsTF{Arial Rounded MT}{%
+    \LogWorking{Arial Rounded MT}
+    \begin{fontbox}{Arial Rounded MT}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Arial Rounded MT}
+    \Li
+    }
+}{
+    \LogBroken{Arial Rounded MT}
+    \begin{errorbox}{Arial Rounded MT}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Calibri}
+
+\IfFontExistsTF{Calibri}{%
+    \LogWorking{Calibri}
+    \begin{fontbox}{Calibri}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Calibri}
+    \Li
+    }
+}{
+    \LogBroken{Calibri}
+    \begin{errorbox}{Calibri}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Sans}
+
+\IfFontExistsTF{Noto Sans}{%
+    \LogWorking{Noto Sans}
+    \begin{fontbox}{Noto Sans}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Sans}
+    \Li
+    }
+}{
+    \LogBroken{Noto Sans}
+    \begin{errorbox}{Noto Sans}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Sans Armenian}
+
+\IfFontExistsTF{Noto Sans Armenian}{%
+    \LogWorking{Noto Sans Armenian}
+    \begin{fontbox}{Noto Sans Armenian}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Sans Armenian}
+    \Li
+    }
+}{
+    \LogBroken{Noto Sans Armenian}
+    \begin{errorbox}{Noto Sans Armenian}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Sans Georgian}
+
+\IfFontExistsTF{Noto Sans Georgian}{%
+    \LogWorking{Noto Sans Georgian}
+    \begin{fontbox}{Noto Sans Georgian}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Sans Georgian}
+    \Li
+    }
+}{
+    \LogBroken{Noto Sans Georgian}
+    \begin{errorbox}{Noto Sans Georgian}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Sans Lao}
+
+\IfFontExistsTF{Noto Sans Lao}{%
+    \LogWorking{Noto Sans Lao}
+    \begin{fontbox}{Noto Sans Lao}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Sans Lao}
+    \Li
+    }
+}{
+    \LogBroken{Noto Sans Lao}
+    \begin{errorbox}{Noto Sans Lao}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Noto Sans Lisu}
+
+\IfFontExistsTF{Noto Sans Lisu}{%
+    \LogWorking{Noto Sans Lisu}
+    \begin{fontbox}{Noto Sans Lisu}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Noto Sans Lisu}
+    \Li
+    }
+}{
+    \LogBroken{Noto Sans Lisu}
+    \begin{errorbox}{Noto Sans Lisu}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\subsection{Times New Roman}
+
+\IfFontExistsTF{Times New Roman}{%
+    \LogWorking{Times New Roman}
+    \begin{fontbox}{Times New Roman}
+        \centering \Large A B C D E 1 2 3
+    \end{fontbox}
+    \vspace{0.5em}
+    \textbf{Test Latino (Lipsum):}
+    {\fontspec{Times New Roman}
+    \Li
+    }
+}{
+    \LogBroken{Times New Roman}
+    \begin{errorbox}{Times New Roman}
+        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+    \end{errorbox}
+}
+\vspace{1em}
+
+\LogExcluded{Bookshelf Symbol 7}
+\LogExcluded{MS Outlook}
+\LogExcluded{MS Reference Specialty}
+\LogExcluded{MT Extra}
+\LogExcluded{Marlett}
+\LogExcluded{Microsoft YaHei}
+\LogExcluded{Noto Sans Arabic}
+\LogExcluded{Noto Sans Hebrew}
+\LogExcluded{Segoe Fluent Icons}
+\LogExcluded{Segoe MDL2 Assets}
+\LogExcluded{Symbol}
+\LogExcluded{Webdings}
+\LogExcluded{Wingdings}
+\LogExcluded{Wingdings 2}
+\LogExcluded{Wingdings 3}
+\LogExcluded{Yu Gothic}
+\newpage
+
+% Chiusura file degli indici
+\immediate\closeout\fileWorking
+\immediate\closeout\fileBroken
+\immediate\closeout\fileExcluded
+
+\section{Riepilogo e Statistiche}
+
+\begin{tcolorbox}[colback=white, colframe=gray]
+\begin{center}
+\Large\textbf{Statistiche Finali}
+\vspace{1em}
+
+\begin{tabular}{lr}
+\toprule
+\textbf{Categoria} & \textbf{Quantità} \\
+\midrule
+Font Analizzati (Post-Filtro) & 9 \\
+\textcolor{successcolor}{\textbf{Font Funzionanti}} & \textbf{\arabic{cntWorking}} \\
+\textcolor{errorcolor}{\textbf{Font Problematici}} & \textbf{\arabic{cntBroken}} \\
+\textcolor{othercolor}{\textbf{Font Esclusi}} & \textbf{\arabic{cntExcluded}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{tcolorbox}
+
+\section{Indice: Font Funzionanti}
+\begin{multicols}{2}
+\begin{itemize}
+    \input{\jobname.working}
+\end{itemize}
+\end{multicols}
+
+\section{Indice: Font Problematici}
+\begin{multicols}{2}
+\begin{itemize}
+    \input{\jobname.broken}
+\end{itemize}
+\end{multicols}
+
+\section{Indice: Font Esclusi}
+\begin{multicols}{2}
+\begin{itemize}
+    \input{\jobname.excluded}
+\end{itemize}
+\end{multicols}
+
+\end{document}
