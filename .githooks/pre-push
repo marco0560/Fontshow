@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+
+echo "🔍 Running pre-commit checks before push..."
+
+pre-commit run --all-files
+
+echo "✅ pre-push checks passed"
