@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fontshow"
+version = "0.1.0"
+description = "Fontshow utilities"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Marco Coppola" }]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["black", "ruff", "pre-commit"]
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+line-length = 88
