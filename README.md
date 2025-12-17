@@ -1,7 +1,7 @@
 # Fontshow
 
-Fontshow generates a PDF (using LuaLaTeX) catalog of the system fonts installed on the machine.
-The main goal is to produce human-readable LaTeX catalogs (`catalogo_font_sistema_<PLATFORM>_<YYYYMMDD>_NNN.tex`) that, when compiled with lualatex will produce the desired `catalogo_font_sistema_<PLATFORM>_<YYYYMMDD>_NNN.pdf` and a few temporary index files (i.e. `*.working`, `*.broken`, `*.excluded`).
+Fontshow generates a PDF catalog of the system fonts installed on the machine.
+It first produces a human-readable LaTeX catalog (`catalogo_font_sistema_<PLATFORM>_<YYYYMMDD>_NNN.tex`) that, when compiled with lualatex, will produce the desired `catalogo_font_sistema_<PLATFORM>_<YYYYMMDD>_NNN.pdf` and a few temporary index files (i.e. `*.working`, `*.broken`, `*.excluded`) that cam be deleted.
 
 ## Quick start (Windows)
 
