@@ -1,7 +1,16 @@
 {
   "branches": ["main"],
   "plugins": [
-    "@semantic-release/commit-analyzer",
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "releaseRules": [
+          { "type": "feat", "release": "minor" },
+          { "type": "fix", "release": "patch" }
+        ]
+      }
+    ],
     "@semantic-release/release-notes-generator",
 
     [
@@ -20,5 +29,6 @@
     ],
 
     "@semantic-release/github"
-  ]
+  ],
+  "tagFormat": "v${version}"
 }
