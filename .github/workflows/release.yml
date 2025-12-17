@@ -6,21 +6,49 @@ on:
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      # 🔐 SOFT enforcement: verifica firme SOLO sui commit nuovi
+      - name: Verify commit signatures (soft enforcement)
+        run: |
+          echo "🔐 Checking commit signatures for new commits..."
+
+          # Se non ci sono nuovi commit rispetto al remote, esci
+          if git diff --quiet origin/main..HEAD; then
+            echo "ℹ️ No new commits to verify"
+            exit 0
+          fi
+
+          # Mostra stato firme
+          git log origin/main..HEAD --pretty=format:'%h %G? %s'
+
+          # Fallisce se trova commit NON firmati (N) o non verificabili
+          if git log origin/main..HEAD --pretty=format:'%G?' | grep -E '[NU]'; then
+            echo "❌ Found unsigned or untrusted commits in new history"
+            exit 1
+          fi
+
+          echo "✅ All new commits are properly signed"
 
       - name: Install semantic-release and plugins
         run: |

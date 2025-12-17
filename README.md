@@ -142,6 +142,10 @@ feat: too generic
 
 ---
 
+### Commit Signing
+
+All commits must be signed with a verifiable signature.
+
 ## Key files
 
 - `crea_catalogo.py` — main multi-platform entrypoint. Platform dispatchers and LaTeX generation live here.
