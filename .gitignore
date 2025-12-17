@@ -1,3 +1,5 @@
+*.tex
+!figure.pdf
 *.pdf
 *.dvi
 *.ps
@@ -15,8 +17,18 @@
 *.glg
 *.bbl
 *.blg
+*.synctex.gz
+*.synctex.gz(busy)
+*.synctex(busy)
+# Compiling artifacts
 __pycache__/
 *.pyc
+.venv/
+dist/
+build/
+# Packaging artifacts
+*.egg-info/
+# Artifacts
 *.synctex.gz
 *.synctex.gz(busy)
 *.synctex(busy)
@@ -24,8 +36,7 @@ __pycache__/
 *.fdb_latexmk
 *.bak
 *.tmp
+# Package-specific
 *.broken
 *.excluded
 *.working
-*.tex
-!figure.pdf
