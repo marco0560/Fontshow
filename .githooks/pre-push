@@ -1,8 +1,11 @@
 #!/bin/sh
-set -e
 
 echo "🔍 Running pre-commit checks before push..."
-
 pre-commit run --all-files
-
 echo "✅ pre-push checks passed"
+
+echo "📦 Preview changelog (semantic-release dry-run)..."
+if ! npx semantic-release --dry-run; then
+  echo "❌ semantic-release preview failed"
+  exit 1
+fi

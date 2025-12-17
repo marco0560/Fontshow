@@ -2,46 +2,54 @@
 import re
 import sys
 
+ALLOWED_TYPES = {
+    "feat",
+    "fix",
+    "docs",
+    "refactor",
+    "test",
+    "chore",
+}
+
+ALLOWED_SCOPES = {
+    "core",
+    "cli",
+    "parser",
+    "output",
+    "config",
+    "build",
+    "git",
+    "release",
+    "docs",
+    "ci",
+}
+
 msg_file = sys.argv[1]
 
 with open(msg_file, encoding="utf-8") as f:
-    lines = f.read().splitlines()
-
-if not lines:
-    print("ERROR: commit message vuoto.")
-    sys.exit(1)
-
-first_line = lines[0].strip()
+    first_line = f.readline().strip()
 
 pattern = re.compile(
-    r"^(feat|fix|docs|refactor|test|chore)"  # type
-    r"(\([a-z0-9._-]+\))?"  # optional scope
-    r"!?"  # optional breaking !
-    r": "  # separator
-    r".{1,72}$"  # summary length
+    r"^(?P<type>feat|fix|docs|refactor|test|chore)"
+    r"(\((?P<scope>[a-z0-9._-]+)\))?"
+    r"(?P<breaking>!)?: "
+    r".{1,72}$"
 )
 
-if not pattern.match(first_line):
-    print("ERROR: commit message non conforme.")
-    print()
-    print("Formato richiesto:")
+match = pattern.match(first_line)
+if not match:
+    print("ERROR: commit message non compliant.")
+    print("Expected format:")
     print("  type(scope): summary")
-    print()
-    print("Supporto BREAKING CHANGE:")
-    print("  feat(core)!: summary")
-    print("  oppure:")
-    print("  feat(core): summary")
-    print()
-    print("  BREAKING CHANGE: description")
+    print("Types admitted:")
+    for s in sorted(ALLOWED_TYPES):
+        print(f"  - {s}")
     sys.exit(1)
 
-# Se presente, verifica sintattica minima del footer BREAKING CHANGE
-for line in lines[1:]:
-    if line.startswith("BREAKING CHANGE"):
-        if not re.match(r"^BREAKING CHANGE: .+", line):
-            print("ERROR: footer BREAKING CHANGE non valido.")
-            print("Formato corretto:")
-            print("  BREAKING CHANGE: description")
-            sys.exit(1)
-
-sys.exit(0)
+scope = match.group("scope")
+if scope and scope not in ALLOWED_SCOPES:
+    print(f"ERROR: scope '{scope}' not admitted.")
+    print("Scopes admitted:")
+    for s in sorted(ALLOWED_SCOPES):
+        print(f"  - {s}")
+    sys.exit(1)

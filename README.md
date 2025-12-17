@@ -13,7 +13,7 @@ It first produces a human-readable LaTeX catalog (`catalogo_font_sistema_<PLATFO
 python3 crea_catalogo.py
 ```
 
-3. To build the catalog PDF (run twice for TOC/counters):
+4. To build the catalog PDF (run twice for TOC/counters):
 
 ```bash
 lualatex catalogo_font_sistema.tex
@@ -29,7 +29,7 @@ lualatex catalogo_font_sistema.tex
 python3 crea_catalogo.py
 ```
 
-3. To build the catalog PDF (run twice for TOC/counters):
+4. To build the catalog PDF (run twice for TOC/counters):
 
 ```bash
 lualatex catalogo_font_sistema.tex
@@ -58,6 +58,89 @@ python3 crea_catalogo.py -t -n 20
 ## Windows notes
 
 Windows support reads the font registry via `winreg`. Changes to Windows-specific discovery live in the same entrypoint; test Windows changes on a Windows machine.
+
+## Commit policy
+
+This program uses the **Conventional Commits** standard with aoutomatic enforcement through Git hooks and CI.
+
+### Mandatory Format
+
+```text
+type(scope): summary
+```
+
+or, for breaking changes:
+
+```text
+type(scope)!: summary
+```
+
+with an optional footer:
+
+```text
+BREAKING CHANGE: description of the breaking change
+```
+
+---
+
+### Allowed Types
+
+* **feat** – new feature
+* **fix** – bug fix
+* **docs** – documentation
+* **refactor** – refactoring without functional changes
+* **test** – tests
+* **chore** – maintenance, tooling, CI, release
+
+### Allowed Scopes
+
+Scopes must belong to the project whitelist, for example:
+
+* `core`
+* `cli`
+* `parser`
+* `output`
+* `config`
+* `build`
+* `git`
+* `release`
+* `docs`
+* `ci`
+
+---
+
+### Length and Style
+
+* The first line of the commit **must not exceed 72 characters**.
+* The summary must be in English, **imperative** (e.g., "add" instead of "added"), and without a trailing period.
+
+---
+
+### Valid Examples
+
+```text
+feat(core): add font filtering support
+fix(cli): handle missing input file
+feat(core)!: change default output format
+```
+
+### Invalid Examples
+
+```text
+Added new feature
+fix bug
+feat: too generic
+```
+
+### Enforcement
+
+* Non-compliant commits are blocked locally via git hooks.
+
+* CI rejects any non-compliant commit.
+
+* Versioning and changelog generation are entirely automatic.
+
+---
 
 ## Key files
 

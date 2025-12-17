@@ -3,5 +3,33 @@
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
   "editor.detectIndentation": false,
-  "editor.renderWhitespace": "boundary"
+  "editor.renderWhitespace": "boundary",
+  "git.useEditorAsCommitInput": true,
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "keyword.other.git-commit",
+        "settings": {
+          "foreground": "#C586C0",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "name": "Conventional Commit Type",
+        "scope": "meta.scope.git-commit",
+        "settings": {
+          "foreground": "#4EC9B0",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "name": "Breaking Change Bang",
+        "scope": "punctuation.definition.bold.git-commit",
+        "settings": {
+          "foreground": "#F44747",
+          "fontStyle": "bold"
+        }
+      }
+    ]
+  }
 }
