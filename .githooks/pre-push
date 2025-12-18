@@ -5,7 +5,16 @@ pre-commit run --all-files
 echo "✅ pre-push checks passed"
 
 echo "📦 Preview changelog (semantic-release dry-run)..."
-if ! npx semantic-release --dry-run; then
-  echo "❌ semantic-release preview failed"
-  exit 1
+
+if command -v npx >/dev/null 2>&1; then
+  if npm list --depth=0 @semantic-release/changelog >/dev/null 2>&1; then
+    npx semantic-release --dry-run || {
+      echo "❌ semantic-release preview failed"
+      exit 1
+    }
+  else
+    echo "⚠️  semantic-release plugins not installed locally, skipping preview (CI will enforce)"
+  fi
+else
+  echo "⚠️  npx not found, skipping semantic-release preview (CI will enforce)"
 fi
