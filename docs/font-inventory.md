@@ -1,9 +1,9 @@
-## Font Inventory Script
+# Font Inventory Script
 
 This repository includes a Python script (`dump_fonts_fc.py`) for advanced analysis
 of fonts installed on a Linux system.
 
-### Main features
+## Main features
 
 - Enumeration of installed fonts via `fontconfig` (`fc-list`)
 - Full metadata extraction using `fc-query`
@@ -16,16 +16,16 @@ of fonts installed on a Linux system.
 - Persistent on-disk caching to avoid repeated analysis
 - Structured, human-readable output suitable for further processing
 
-### Dependencies
+## Dependencies
 
-#### Runtime requirements
+### Runtime requirements
 
 - Linux system with `fontconfig`
   - `fc-list`
   - `fc-query`
 - Python ≥ 3.10
 
-#### Python dependencies
+### Python dependencies
 
 - `fonttools` (optional but strongly recommended)
 
@@ -38,7 +38,7 @@ To enable full WOFF2 support:
     echo "dev-python/fonttools brotli" | sudo tee /etc/portage/package.use/fonttools
     sudo emerge --changed-use dev-python/fonttools
 
-### Cache behavior
+## Cache behavior
 
 The script uses a persistent cache directory:
 
@@ -51,7 +51,7 @@ Cache entries are automatically invalidated when:
 
 This applies to both `fc-query` output and `fontTools` analysis.
 
-### Usage
+## Usage
 
 Run the script with:
 
@@ -61,7 +61,7 @@ The output file generated is:
 
     font_inventory.txt
 
-### Notes
+## Notes
 
 - WOFF and WOFF2 are compressed containers mainly used for web fonts.
 - If `fontTools` (or Brotli support) is not available, advanced analysis is skipped.

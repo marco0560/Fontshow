@@ -1,10 +1,10 @@
-## Advanced font analysis (fontTools integration)
+# Advanced font analysis (fontTools integration)
 
 The `dump_fonts_fc.py` script includes an advanced font analysis layer based on
 [`fontTools`](https://github.com/fonttools/fonttools), providing deep inspection
 of OpenType / TrueType fonts beyond what `fontconfig` exposes.
 
-### Supported font containers
+## Supported font containers
 
 The script detects and correctly handles the following font containers:
 
@@ -17,7 +17,7 @@ WOFF and WOFF2 are compressed containers primarily used for web fonts.
 Internally, they still contain standard OpenType or TrueType data.
 WOFF2 requires Brotli support to be fully parsed.
 
-### Caching strategy
+## Caching strategy
 
 To avoid repeated and expensive font parsing, the script implements a persistent
 on-disk cache:
@@ -28,7 +28,7 @@ on-disk cache:
 
 This applies to both `fc-query` output and `fontTools` analysis.
 
-### OpenType / TrueType metadata extraction
+## OpenType / TrueType metadata extraction
 
 When `fontTools` is available, the script extracts:
 
@@ -41,7 +41,7 @@ When `fontTools` is available, the script extracts:
 - OpenType layout features (GSUB / GPOS)
 - OS/2 metrics (weight class, width class, vendor ID), when readable
 
-### Robust error handling
+## Robust error handling
 
 Some fonts in the wild contain malformed or truncated OpenType tables.
 To ensure the script never fails hard:
@@ -59,7 +59,7 @@ Example error report:
 This approach makes the script suitable for large-scale font inventories
 and real-world font collections.
 
-### Optional dependencies
+## Optional dependencies
 
 To enable advanced OpenType analysis, install:
 

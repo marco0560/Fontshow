@@ -1,10 +1,9 @@
-import sys
-import os
-import platform
-from datetime import datetime
-import subprocess
-import argparse
+from __future__ import annotations
 
+import sys
+
+import json
+from pathlib import Path
 
 if sys.platform == "win32":
     import winreg
@@ -24,56 +23,11 @@ else:
     IS_LINUX = False
     winreg = None  # Placeholder for non-Windows systems
 import re
-
-
-# ============================================================
-# Sample texts for rendering (language-aware)
-# ============================================================
-
-SAMPLE_TEXTS = {
-    "en": "The quick brown fox jumps over the lazy dog",
-    "it": "Ma la volpe col suo balzo ha raggiunto il quieto Fido",
-    "fr": "Portez ce vieux whisky au juge blond qui fume",
-    "de": "Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich",
-    "es": "El veloz murciélago hindú comía feliz cardillo y kiwi",
-    "el": "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία",
-    "ru": "Съешь же ещё этих мягких французских булок",
-    "hy": "Վարդագույն աղվեսը ցատկում է ծույլ շան վրայով",
-    "ja": "いろはにほへと ちりぬるを",
-    "vi": "Chữ Việt rất phong phú và đa dạng",
-    "zh": "天地玄黃 宇宙洪荒",
-    "ar": "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ الشَّمْسِ",
-    "he": "דג סקרן שט בים מאוכזב ולפתע מצא לו חברה",
-    "ko": "키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다",
-    # Rare / liturgical
-    "cop": "Ⲡⲁⲓ ⲙⲉⲧⲁⲛⲟⲓⲁ",
-    "ti": "ሰላም እንታይ ከመይ ኢኻ",
-}
-
-
-def choose_sample_language(font: dict) -> str | None:
-    inference = font.get("inference", {})
-    langs = inference.get("languages", [])
-    return langs[0] if langs else None
-
-
-def choose_sample_text(font: dict) -> str:
-    lang = choose_sample_language(font)
-    if lang and lang in SAMPLE_TEXTS:
-        return SAMPLE_TEXTS[lang]
-    return SAMPLE_TEXTS["en"]
-
-
-def render_sample(font: dict) -> str:
-    cls = font.get("classification", {})
-
-    if cls.get("is_emoji"):
-        return "😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🥳 🐻‍❄️ ❤️ 🐻"
-
-    if cls.get("is_decorative"):
-        return font.get("identity", {}).get("family", "Decorative Font")
-
-    return choose_sample_text(font)
+import os
+import platform
+from datetime import datetime
+import subprocess
+import argparse
 
 
 def get_unique_filename(base_name, extension):
@@ -219,6 +173,214 @@ SAMPLE_2 = r"""}
     \Li
     }"""
 # --------------------------------------------
+
+# ============================================================
+# Inventory loading (pipeline mode)
+# ============================================================
+
+DEFAULT_INVENTORY = "font_inventory_enriched.json"
+
+
+def load_font_inventory(path: Path) -> list[dict]:
+    """
+    Load a Fontshow inventory JSON file.
+
+    Expected structure:
+        { "fonts": [ { ...font descriptor... }, ... ], "metadata": { ... } }
+
+    Returns:
+        List of font descriptor dicts.
+
+    Notes:
+        - This function does not touch font files.
+        - It is safe to call on both Linux and Windows.
+    """
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    fonts = data.get("fonts", [])
+    if not isinstance(fonts, list):
+        raise TypeError("Invalid inventory JSON: expected key 'fonts' to be a list.")
+    return fonts
+
+
+def as_font_desc_list(fonts: list) -> list[dict]:
+    """
+    Normalize input fonts into a list of descriptors.
+
+    If `fonts` is already a list of dicts, it is returned as-is.
+    If `fonts` is a list of strings (legacy mode), each item becomes:
+        {"identity": {"family": "<name>"}, "classification": {}, "inference": {}}
+    """
+    out: list[dict] = []
+    for f in fonts:
+        if isinstance(f, dict):
+            out.append(f)
+        else:
+            out.append(
+                {
+                    "identity": {"family": str(f)},
+                    "classification": {},
+                    "inference": {},
+                    "coverage": {},
+                }
+            )
+    return out
+
+
+def font_family(font: dict) -> str:
+    """Best-effort family name for LaTeX rendering and sorting."""
+    ident = font.get("identity", {}) if isinstance(font, dict) else {}
+    return (
+        ident.get("family")
+        or ident.get("postscript_name")
+        or ident.get("fullname")
+        or "Unknown Font"
+    )
+
+
+# ============================================================
+# Sample texts (language-aware)
+# ============================================================
+
+SAMPLE_TEXTS = {
+    "en": "The quick brown fox jumps over the lazy dog",
+    "it": "Ma la volpe col suo balzo ha raggiunto il quieto Fido",
+    "fr": "Portez ce vieux whisky au juge blond qui fume",
+    "de": "Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich",
+    "es": "El veloz murciélago hindú comía feliz cardillo y kiwi",
+    "el": "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία",
+    "ru": "Съешь же ещё этих мягких французских булок",
+    "hy": "Վարդագույն աղվեսը ցատկում է ծույլ շան վրայով",
+    "ja": "いろはにほへと ちりぬるを",
+    "vi": "Chữ Việt rất phong phú và đa dạng",
+    "zh": "天地玄黃 宇宙洪荒",
+    "ar": "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ الشَّمْسِ",
+    "he": "דג סקרן שט בים מאוכזב ולפתע מצא לו חברה",
+    "ko": "키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다",
+    "cop": "Ⲡⲁⲓ ⲙⲉⲧⲁⲛⲟⲓⲁ",
+    "ti": "ሰላም እንታይ ከመይ ኢኻ",
+}
+
+RTL_SCRIPTS = {"arab", "hebr"}
+
+SCRIPT_TO_POLYGLOSSIA = {
+    "arab": ("arabic", "Script=Arabic"),
+    "hebr": ("hebrew", "Script=Hebrew"),
+}
+
+
+def choose_sample_language(font: dict) -> str | None:
+    inf = font.get("inference", {}) or {}
+    langs = inf.get("languages", []) or []
+    if langs:
+        return str(langs[0])
+    cov_langs = font.get("coverage", {}).get("languages", []) or []
+    return str(cov_langs[0]) if cov_langs else None
+
+
+def choose_sample_text(font: dict) -> str | None:
+    lang = choose_sample_language(font)
+    if lang and lang in SAMPLE_TEXTS:
+        return SAMPLE_TEXTS[lang]
+    return None
+
+
+def font_type_label(font: dict) -> str:
+    cls = font.get("classification", {}) or {}
+    if cls.get("is_emoji"):
+        return "EMOJI"
+    if cls.get("is_decorative"):
+        return "DECORATIVE"
+    return "TEXT"
+
+
+def primary_script(font: dict) -> str | None:
+    inf = font.get("inference", {}) or {}
+    scripts = inf.get("scripts", []) or []
+    if scripts:
+        return str(scripts[0])
+    cov_scripts = font.get("coverage", {}).get("scripts", []) or []
+    return str(cov_scripts[0]) if cov_scripts else None
+
+
+def script_label(font: dict, max_scripts: int = 2) -> str:
+    inf = font.get("inference", {}) or {}
+    scripts = inf.get("scripts", []) or []
+    if not scripts:
+        scripts = font.get("coverage", {}).get("scripts", []) or []
+    if not scripts:
+        return "UNKNOWN"
+    return ", ".join(str(s).upper() for s in scripts[:max_scripts])
+
+
+def language_label(font: dict) -> str:
+    lang = choose_sample_language(font)
+    return lang.upper() if lang else "N/A"
+
+
+def render_badges(font: dict) -> str:
+    # Keep badges ASCII-only to avoid bidi surprises.
+    return (
+        r"{\footnotesize\ttfamily "
+        f"[SCRIPTS: {script_label(font)}] "
+        f"[LANG: {language_label(font)}] "
+        f"[TYPE: {font_type_label(font)}]"
+        r"}"
+    )
+
+
+def render_sample_text(font: dict) -> str | None:
+    cls = font.get("classification", {}) or {}
+    fam = font_family(font)
+    if cls.get("is_emoji"):
+        return "😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇"
+    if cls.get("is_decorative"):
+        return fam
+    return choose_sample_text(font)
+
+
+def render_sample_code(font: dict, fam: str) -> str:
+    """
+    Build the LaTeX snippet for the sample.
+
+    Critical point:
+    - For RTL scripts (Arabic / Hebrew) we MUST use \\TestNonLatin{...}
+      so polyglossia applies the correct direction and shaping context.
+    - For LTR scripts we use a standard \\fontspec block.
+    - If we cannot select a sample text, we fall back to the existing \\Li (lipsum)
+      mechanism via SAMPLE_1/SAMPLE_2.
+    """
+    txt = render_sample_text(font)
+    ps = primary_script(font)
+
+    # RTL: always route through TestNonLatin and provide non-empty options
+    if ps in RTL_SCRIPTS:
+        lang, opts = SCRIPT_TO_POLYGLOSSIA.get(ps, ("arabic", "Script=Arabic"))
+        if not txt:
+            # Guaranteed fallback; should rarely happen because SAMPLE_TEXTS includes ar/he
+            txt = SAMPLE_TEXTS.get("ar" if ps == "arab" else "he", "")
+        return (
+            r"\TestNonLatin{"
+            + escape_latex(fam)
+            + r"}{"
+            + lang
+            + r"}{"
+            + opts
+            + r"}{"
+            + escape_latex(txt)
+            + r"}"
+        )
+
+    # LTR fallback to lipsum macro if no sample text available
+    if not txt:
+        return SAMPLE_1 + escape_latex(fam) + SAMPLE_2
+
+    # LTR: direct fontspec sample
+    return (
+        r"\textbf{Esempio:}"
+        "\n" + r"{\fontspec{" + escape_latex(fam) + r"}" + escape_latex(txt) + r"}"
+    )
+
+
 NORMAL_BLOCK = """\\subsection{{{safe_name}}}
 
 \\IfFontExistsTF{{{font}}}{{%
@@ -322,46 +484,6 @@ else:
 
 # Font non-Latini con configurazione linguistica/script specifica (polyglossia + fontspec options)
 # NUOVO: Aggiunto il campo 'options' per specificare Script=...
-SPECIAL_SCRIPT_FONTS = {
-    # Font esistenti
-    "Noto Sans Arabic": {
-        "lang": "arabic",
-        "options": "Script=Arabic",
-        "text": "أهلا وسهلاً! هذا نص تجريبي باللغة العربية. (Scrittura RTL corretta)",
-    },  # Arabo (RTL)
-    "Noto Sans Hebrew": {
-        "lang": "hebrew",
-        "options": "Script=Hebrew",
-        "text": "שלום עולם! זה טקסט בדיקה בעברית. (Scrittura RTL corretta)",
-    },  # Ebraico (RTL)
-    "Noto Sans CJK JP": {
-        "lang": "japanese",
-        "options": "Script=CJK",
-        "text": "こんにちは、世界！これは日本語のテストテキストです。",
-    },  # Giapponese (CJK)
-    "Noto Sans Thai": {
-        "lang": "thai",
-        "options": "Script=Thai",
-        "text": "สวัสดีครับ นี่คือข้อความทดสอบภาษาไทย",
-    },  # Tailandese
-    "Yu Gothic": {
-        "lang": "japanese",
-        "options": "Script=Japanese",
-        "text": "こんにちは世界！これは日本語のテストテキストです。",
-    },  # Giapponese (Script=Japanese)
-    "Microsoft YaHei": {
-        "lang": "chinese",
-        "options": "Script=Han",
-        "text": "你好世界! 这是一个中文测试文本。",
-    },  # Cinese Semplificato (Script=Han)
-    "Nirmala UI": {
-        "lang": "hindi",
-        "options": "Script=Devanagari",
-        "text": "नमस्ते दुनिया! यह एक हिन्दी परीक्षण पाठ है।",
-    },  # Hindi (Devanagari)
-    # Aggiungi qui eventuali altri font speciali
-}
-
 # --- Funzioni di Sistema ---
 
 
@@ -590,41 +712,29 @@ def escape_latex(text):
 
 
 def generate_latex(font_list):
-    """Genera il codice LaTeX completo, con la nuova macro per Script/Opzioni."""
+    """Genera il codice LaTeX completo, usando metadati inferiti per esempi e badge."""
+    font_list = as_font_desc_list(font_list)
     print(f"Generazione file LaTeX per {len(font_list)} font...")
 
     latex_code = LATEX_INITIAL_CODE
 
-    # Loop sui font
     total = len(font_list)
-    for idx, font in enumerate(font_list):
-        safe_name = escape_latex(font)
+    for idx, font in enumerate(font_list, start=1):
+        fam = font_family(font)
+        safe_name = escape_latex(fam)
+        badges = render_badges(font)
+        sample_code = render_sample_code(font, fam)
 
-        if idx % 50 == 0:
+        if idx % 50 == 0 or idx == total:
             print(f"  ... processati {idx}/{total}")
 
-        # Inizializza l'esempio di testo standard (Lipsum)
-        sample_code = SAMPLE_1 + font + SAMPLE_2
-
-        # Gestione Esempi: Testo specifico per lingua
-        if font in SPECIAL_SCRIPT_FONTS:
-            spec = SPECIAL_SCRIPT_FONTS[font]
-            sample_text = escape_latex(spec["text"])
-            lang_tag = spec["lang"]
-            font_options = spec["options"]  # <-- NUOVO: Opzioni Fontspec
-
-            sample_code = f"""\\TestNonLatin{{{font}}}{{{lang_tag}}}{{{font_options}}}{{{sample_text}}}
-            """
-        else:
-            # Usa il codice standard se non è un font con script speciale
-            sample_code = SAMPLE_1 + font + SAMPLE_2
-
-        # Blocco LaTeX per il singolo font
         block = NORMAL_BLOCK.format(
-            safe_name=safe_name, font=font, sample_code=sample_code
+            safe_name=safe_name,
+            font=fam,
+            badges=badges,
+            sample_code=sample_code,
         )
-        latex_code += "\n\n"
-        latex_code += block
+        latex_code += "\n" + block
 
     latex_code += "\n\n"
     for font in sorted(list(EXCLUDED_FONTS)):
@@ -653,6 +763,12 @@ def main():
         help="Filtra solo i font che contengono sottostringhe in TEST_FONTS",
     )
     parser.add_argument(
+        "--inventory",
+        type=str,
+        default=None,
+        help="Percorso a font_inventory_enriched.json (se omesso, usa il default se presente).",
+    )
+    parser.add_argument(
         "-n",
         "--number",
         type=int,
@@ -671,15 +787,29 @@ def main():
     if args.test:
         generate_test_output(args.number, args.TestFixed)
 
-    print("[1/3] Rilevamento font in corso...")
-    fonts = get_installed_fonts()
-    if not fonts:
-        print("✗ Nessun font da catalogare o errore di sistema.")
-        sys.exit(1)
+    print("[1/3] Caricamento inventario font (pipeline)...")
+    inv_path = None
+    if args.inventory:
+        inv_path = Path(args.inventory)
+    else:
+        default = Path(DEFAULT_INVENTORY)
+        if default.exists():
+            inv_path = default
 
+    if inv_path and inv_path.exists():
+        fonts = load_font_inventory(inv_path)
+        print(f"✓ Inventario caricato: {inv_path} ({len(fonts)} font)")
+    else:
+        print("[1/3] Inventario non trovato, fallback a rilevamento legacy...")
+        fonts = get_installed_fonts()
+        if not fonts:
+            print("✗ Nessun font da catalogare o errore di sistema.")
+            sys.exit(1)
     if args.TestFixed:
         fonts = [
-            f for f in fonts if any(sub.lower() in f.lower() for sub in TEST_FONTS)
+            f
+            for f in as_font_desc_list(fonts)
+            if any(sub.lower() in font_family(f).lower() for sub in TEST_FONTS)
         ]
 
     if args.number:
@@ -689,7 +819,7 @@ def main():
             fonts = fonts[args.number :]
 
     # Ordina alfabeticamente la lista dei font
-    fonts = sorted(fonts)
+    fonts = sorted(as_font_desc_list(fonts), key=font_family)
 
     latex_content = generate_latex(fonts)
 
