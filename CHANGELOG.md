@@ -1,3 +1,9 @@
+## [0.3.0](https://github.com/marco0560/Fontshow/compare/v0.2.0...v0.3.0) (2025-12-18)
+
+### Features
+
+* **core:** add advanced font inventory with fontTools and caching ([23e6d00](https://github.com/marco0560/Fontshow/commit/23e6d00dffc65e8622a9e159a2215725b40be354))
+
 ## [0.2.0](https://github.com/marco0560/Fontshow/compare/v0.1.0...v0.2.0) (2025-12-17)
 
 ### Features
