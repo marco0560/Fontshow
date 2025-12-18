@@ -44,10 +44,10 @@ lualatex catalogo_font_sistema.tex
 - `-T` : filter using the `TEST_FONTS` set.
 
 The flags have also a long form:
-- `-h` - `--help`
-- `-t` - `--test`
-- `-T` - `--TestFixed`
-- `-n N` - `--number N`
+- `--help ` for `-h`
+- `--test ` for `-t`
+- `--TestFixed ` for `-T`
+- `--number N ` for `-n N`
 
 Example (limit & test):
 
@@ -152,6 +152,18 @@ All commits must be signed with a verifiable signature.
 - `scripts/parse_fc_list.py` — parser helper and test harness for `fc-list` output.
 - `scripts/crea_catalogo_esclusi.py` — helper to manage excluded fonts.
 - `scripts/prova_aggiunte.py` — ad-hoc test additions.
+
+## Additional tools and documentation
+
+Fontshow also includes auxiliary scripts for font inspection and analysis.
+
+- `scripts/dump_fonts_fc.py` — advanced font inventory and metadata extraction
+  (FontConfig + fontTools, caching, WOFF/WOFF2 support).
+
+Detailed documentation is available in the `docs/` directory:
+
+- `docs/font-inventory.md`
+- `docs/fonttools-integration.md`
 
 ## Important symbols & conventions
 
