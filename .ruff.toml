@@ -1,0 +1,25 @@
+# Ruff configuration for Fontshow
+# https://docs.astral.sh/ruff/
+
+target-version = "py311"
+line-length = 88
+
+[lint]
+select = [
+  "E",    # pycodestyle errors
+  "F",    # pyflakes
+  "I",    # isort
+  "UP",   # pyupgrade
+]
+ignore = [
+  "E501", # line length handled by black
+]
+
+[lint.isort]
+known-first-party = ["fontshow"]
+combine-as-imports = true
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
