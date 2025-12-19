@@ -21,7 +21,6 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 # ============================================================
 # Inference thresholds
@@ -43,7 +42,7 @@ INFERENCE_THRESHOLDS = {
 # Unicode → script ranges
 # ============================================================
 
-UNICODE_SCRIPT_RANGES: Dict[str, List[Tuple[int, int]]] = {
+UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
     "latn": [(0x0041, 0x007A), (0x00C0, 0x024F)],
     "grek": [(0x0370, 0x03FF), (0x1F00, 0x1FFF)],
     "cyrl": [(0x0400, 0x04FF), (0x0500, 0x052F)],
@@ -87,7 +86,7 @@ SCRIPT_TO_LANGUAGES = {
 # ============================================================
 
 
-def infer_scripts(unicode_max: str | None, level: str) -> List[str]:
+def infer_scripts(unicode_max: str | None, level: str) -> list[str]:
     """
     Infer supported scripts from Unicode coverage.
 
@@ -102,7 +101,7 @@ def infer_scripts(unicode_max: str | None, level: str) -> List[str]:
     max_cp = int(unicode_max[2:], 16)
     threshold = INFERENCE_THRESHOLDS[level]["script_min_cp"]
 
-    scripts: List[str] = []
+    scripts: list[str] = []
     for script, ranges in UNICODE_SCRIPT_RANGES.items():
         count = 0
         for start, end in ranges:
@@ -114,13 +113,13 @@ def infer_scripts(unicode_max: str | None, level: str) -> List[str]:
     return sorted(set(scripts))
 
 
-def infer_languages(scripts: List[str]) -> List[str]:
+def infer_languages(scripts: list[str]) -> list[str]:
     """
     Infer language candidates from inferred scripts.
 
     Languages are *plausible examples*, not a certification of support.
     """
-    langs: List[str] = []
+    langs: list[str] = []
     for script in scripts:
         langs.extend(SCRIPT_TO_LANGUAGES.get(script, []))
     return sorted(set(langs))

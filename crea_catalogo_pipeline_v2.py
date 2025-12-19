@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import sys
-
 import json
+import sys
 from pathlib import Path
 
 if sys.platform == "win32":
@@ -22,12 +21,12 @@ else:
     IS_WINDOWS = False
     IS_LINUX = False
     winreg = None  # Placeholder for non-Windows systems
-import re
+import argparse
 import os
 import platform
-from datetime import datetime
+import re
 import subprocess
-import argparse
+from datetime import datetime
 
 
 def get_unique_filename(base_name, extension):

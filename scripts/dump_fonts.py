@@ -47,9 +47,9 @@ import os
 import platform
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # -----------------------
 # Optional dependency: fontTools
@@ -89,15 +89,10 @@ def font_cache_key(path: Path) -> str:
 # Low-level utilities
 # -----------------------
 def utc_now_iso() -> str:
-    return (
-        datetime.now(timezone.utc)
-        .replace(microsecond=0)
-        .isoformat()
-        .replace("+00:00", "Z")
-    )
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def run_command(cmd: List[str]) -> subprocess.CompletedProcess[str]:
+def run_command(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     """Run a subprocess and return the completed process."""
     return subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False
@@ -140,7 +135,7 @@ def detect_font_container(path: Path) -> str:
 # -----------------------
 # Font discovery
 # -----------------------
-def get_installed_font_files() -> List[Path]:
+def get_installed_font_files() -> list[Path]:
     """Return a list of installed font files for the current platform."""
     if IS_LINUX:
         return get_installed_font_files_linux()
@@ -149,7 +144,7 @@ def get_installed_font_files() -> List[Path]:
     raise RuntimeError(f"Unsupported platform: {sys.platform}")
 
 
-def get_installed_font_files_linux() -> List[Path]:
+def get_installed_font_files_linux() -> list[Path]:
     """Linux font discovery using FontConfig (fc-list)."""
     proc = run_command(["fc-list", "--format=%{file}\n"])
     if proc.returncode != 0:
@@ -162,9 +157,9 @@ def get_installed_font_files_linux() -> List[Path]:
     return sorted({p.resolve() for p in files})
 
 
-def _windows_font_dirs() -> List[Path]:
+def _windows_font_dirs() -> list[Path]:
     """Return known Windows font directories."""
-    dirs: List[Path] = []
+    dirs: list[Path] = []
     windir = os.environ.get("WINDIR")
     if windir:
         dirs.append(Path(windir) / "Fonts")
@@ -174,7 +169,7 @@ def _windows_font_dirs() -> List[Path]:
     return [d for d in dirs if d.exists()]
 
 
-def get_installed_font_files_windows() -> List[Path]:
+def get_installed_font_files_windows() -> list[Path]:
     """Windows font discovery using Registry + font directories."""
     registry_paths = [
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
@@ -182,7 +177,7 @@ def get_installed_font_files_windows() -> List[Path]:
     ]
 
     font_dirs = _windows_font_dirs()
-    found: List[Path] = []
+    found: list[Path] = []
 
     for reg_path in registry_paths:
         try:
@@ -224,18 +219,18 @@ def fc_query_raw(path: Path) -> str:
     return proc.stdout
 
 
-def fc_query_extract(path: Path, include_charset: bool = False) -> Dict[str, Any]:
+def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any]:
     """Extract a small set of useful FontConfig-derived fields."""
     raw = fc_query_raw(path)
 
-    def _find_line(prefix: str) -> Optional[str]:
+    def _find_line(prefix: str) -> str | None:
         for line in raw.splitlines():
             if line.startswith(prefix):
                 return line[len(prefix) :].strip()
         return None
 
     lang = _find_line("lang:")
-    languages: List[str] = []
+    languages: list[str] = []
     if lang:
         languages = [x.strip() for x in lang.split("|") if x.strip()]
 
@@ -244,20 +239,20 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> Dict[str, Any
     variable = (_find_line("variable:") or "").strip().lower() == "true"
     capability = _find_line("capability:")
 
-    scripts: List[str] = []
+    scripts: list[str] = []
     if capability:
         for token in capability.replace('"', "").split():
             if token.startswith("otlayout:"):
                 scripts.append(token.split(":", 1)[1])
 
-    charset_blob: Optional[str] = None
+    charset_blob: str | None = None
     if include_charset:
         lines = raw.splitlines()
         try:
             idx = next(
                 i for i, linea in enumerate(lines) if linea.startswith("charset:")
             )
-            blob: List[str] = [lines[idx]]
+            blob: list[str] = [lines[idx]]
             for j in range(idx + 1, len(lines)):
                 linea = lines[j]
                 if not linea.strip():
@@ -287,7 +282,7 @@ NAME_ID_LICENSE_URL = 14
 NAME_ID_POSTSCRIPT = 6
 
 
-def _best_name(names: Dict[str, List[str]], name_id: int) -> Optional[str]:
+def _best_name(names: dict[str, list[str]], name_id: int) -> str | None:
     vals = names.get(str(name_id), [])
     vals = [v for v in vals if v and v.strip()]
     return vals[0] if vals else None
@@ -295,9 +290,9 @@ def _best_name(names: Dict[str, List[str]], name_id: int) -> Optional[str]:
 
 def fonttools_extract(
     path: Path, cache_dir: Path, use_cache: bool = True
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Extract deep metadata via fontTools (robust, cached)."""
-    data: Dict[str, Any] = {"ok": False}
+    data: dict[str, Any] = {"ok": False}
 
     if not FONTTOOLS_AVAILABLE:
         return {"ok": False, "error": "fontTools not available"}
@@ -336,7 +331,7 @@ def fonttools_extract(
     color_tables = {"COLR", "CPAL", "CBDT", "CBLC", "sbix", "SVG "}
     data["color_tables"] = sorted([t for t in color_tables if t in tt])
 
-    names: Dict[str, Any] = {}
+    names: dict[str, Any] = {}
     if "name" in tt:
         for rec in tt["name"].names:
             try:
@@ -413,8 +408,8 @@ def fonttools_extract(
 # Normalization into canonical schema
 # -----------------------
 def classify_font(
-    format_block: Dict[str, Any], unicode_max: Optional[str]
-) -> Dict[str, bool]:
+    format_block: dict[str, Any], unicode_max: str | None
+) -> dict[str, bool]:
     is_color = bool(format_block.get("color"))
     has_emoji_range = False
     try:
@@ -433,10 +428,10 @@ def classify_font(
 def build_font_descriptor(
     font_path: Path,
     platform_name: str,
-    fonttools: Dict[str, Any],
-    fontconfig: Optional[Dict[str, Any]],
-) -> Dict[str, Any]:
-    names: Dict[str, List[str]] = (
+    fonttools: dict[str, Any],
+    fontconfig: dict[str, Any] | None,
+) -> dict[str, Any]:
+    names: dict[str, list[str]] = (
         fonttools.get("names", {})
         if isinstance(fonttools.get("names", {}), dict)
         else {}
@@ -445,9 +440,9 @@ def build_font_descriptor(
     style = _best_name(names, NAME_ID_SUBFAMILY)
     postscript = _best_name(names, NAME_ID_POSTSCRIPT)
 
-    languages: List[str] = []
-    scripts: List[str] = []
-    charset: Optional[str] = None
+    languages: list[str] = []
+    scripts: list[str] = []
+    charset: str | None = None
     decorative = False
     fc_color = False
     fc_variable = False
@@ -569,7 +564,7 @@ def dump_fonts(
 
     font_files = get_installed_font_files()
 
-    inventory: Dict[str, Any] = {
+    inventory: dict[str, Any] = {
         "metadata": {
             "generator": "Fontshow dump_fonts.py",
             "platform": platform_name,
@@ -595,7 +590,7 @@ def dump_fonts(
 
         ft = fonttools_extract(p, cache_dir=cache_dir, use_cache=use_cache)
 
-        fc: Optional[Dict[str, Any]] = None
+        fc: dict[str, Any] | None = None
         if IS_LINUX and include_fontconfig:
             try:
                 fc = fc_query_extract(p, include_charset=include_charset)
@@ -626,7 +621,7 @@ def dump_fonts(
     )
 
 
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description="Generate a canonical font inventory (JSON) for Fontshow.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -663,7 +658,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
     if not FONTTOOLS_AVAILABLE:

@@ -6,6 +6,7 @@ Usage:
 
 If N is omitted, prints 10 pairs.
 """
+
 import subprocess
 import sys
 

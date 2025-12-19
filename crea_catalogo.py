@@ -1,10 +1,9 @@
-import sys
+import argparse
 import os
 import platform
-from datetime import datetime
 import subprocess
-import argparse
-
+import sys
+from datetime import datetime
 
 if sys.platform == "win32":
     import winreg
@@ -24,7 +23,6 @@ else:
     IS_LINUX = False
     winreg = None  # Placeholder for non-Windows systems
 import re
-
 
 # ============================================================
 # Sample texts for rendering (language-aware)

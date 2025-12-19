@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import subprocess
-import json
 import hashlib
-from pathlib import Path
+import json
+import subprocess
 from datetime import datetime
+from pathlib import Path
 
 # =======================
 # Configurazione
