@@ -1,2 +1,11 @@
 #!/bin/sh
 exec pre-commit run --hook-stage commit
+# ------------------------------------------------------------
+# Python pre-commit framework (optional, non-blocking)
+# ------------------------------------------------------------
+if command -v pre-commit >/dev/null 2>&1; then
+    echo "▶ Running pre-commit framework hooks"
+    pre-commit run --hook-stage pre-commit
+else
+    echo "ℹ pre-commit not installed, skipping framework hooks"
+fi

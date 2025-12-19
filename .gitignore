@@ -1,5 +1,51 @@
-*.tex
+# Compiling artifacts
+__pycache__/
+*.pyc
+.venv/
+dist/
+build/
+# Packaging artifacts
+*.egg-info/
+# Artifacts
+*.synctex.gz
+*.synctex.gz(busy)
+*.synctex(busy)
+*.fls
+*.fdb_latexmk
+*.bak
+*.tmp
+# --------------------------------------------------
+# OS / Filesystem artifacts (Windows / WSL)
+# --------------------------------------------------
+*:Zone.Identifier
+*:Zone.Identifier:*
+*:$DATA
+
+# --------------------------------------------------
+# Dropbox extended attributes
+# --------------------------------------------------
+*:com.dropbox.attrs
+*:com.dropbox.attrs:*
+
+# --------------------------------------------------
+# Font inventory artifacts (generated)
+# --------------------------------------------------
+.font_cache/
+font_inventory.json
+font_inventory.txt
+font_inventory_enriched.json
+font_inventory_sample.txt
+
+# --------------------------------------------------
+# Generated LaTeX / output
+# --------------------------------------------------
+#catalogo_font_*.tex
+#catalogo_font_*.pdf
 !figure.pdf
+*.broken
+*.excluded
+*.working
+*.tex
 *.pdf
 *.dvi
 *.ps
@@ -20,24 +66,10 @@
 *.synctex.gz
 *.synctex.gz(busy)
 *.synctex(busy)
-# Compiling artifacts
+
+# --------------------------------------------------
+# Python
+# --------------------------------------------------
 __pycache__/
 *.pyc
 .venv/
-dist/
-build/
-# Packaging artifacts
-*.egg-info/
-# Artifacts
-*.synctex.gz
-*.synctex.gz(busy)
-*.synctex(busy)
-*.fls
-*.fdb_latexmk
-*.bak
-*.tmp
-# Package-specific
-*.broken
-*.excluded
-*.working
-.font_cache/

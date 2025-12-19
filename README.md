@@ -73,3 +73,24 @@ See the docs/ directory:
 ## Commit policy
 
 Conventional Commits are enforced via hooks and CI.
+
+Git hooks are managed via a versioned `.githooks/` directory to ensure
+consistent behavior across Linux, Windows, and WSL environments.
+
+---------------------------------------------------------------------
+
+## Development notes
+
+This repository uses a custom Git hooks directory (`.githooks/`).
+
+If you have `pre-commit` installed, hooks are automatically executed
+via the custom pre-commit hook wrapper.
+
+To enable full pre-commit support manually:
+
+```bash
+pip install pre-commit
+pre-commit run --all-files
+```
+
+On Windows + WSL, VS Code with the “Remote - WSL” extension is recommended.

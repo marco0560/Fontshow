@@ -13,3 +13,7 @@ Fontshow follows a strict layered pipeline.
 - Deterministic output
 - Cross-platform consistency
 - Clear separation of concerns
+
+
+The parsing and inference pipeline is platform-independent; OS-specific
+logic is confined to the font dumping stage.
