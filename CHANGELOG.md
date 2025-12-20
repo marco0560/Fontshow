@@ -1,3 +1,9 @@
+## [0.3.1](https://github.com/marco0560/Fontshow/compare/v0.3.0...v0.3.1) (2025-12-20)
+
+### Bug Fixes
+
+* **output:** group font faces by family to avoid duplicate catalog entries ([44af6f8](https://github.com/marco0560/Fontshow/commit/44af6f8e0a496e8aed74a339da63fc2b829fcaac))
+
 ## [0.3.0](https://github.com/marco0560/Fontshow/compare/v0.2.0...v0.3.0) (2025-12-18)
 
 ### Features
