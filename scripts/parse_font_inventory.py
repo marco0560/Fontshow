@@ -86,112 +86,86 @@ SCRIPT_TO_LANGUAGES = {
 # ============================================================
 
 
-def infer_scripts(
-    coverage: dict,
-    level: str = "medium",
-) -> list[str]:
+def infer_scripts(coverage: dict, level: str = "medium") -> list[str]:
     """
-    Infer supported scripts from coverage information.
+    Infer writing scripts from Unicode coverage.
 
-    Strategy:
-    - Prefer coverage.charset when available (Linux / FontConfig).
-    - Fallback to coverage.unicode.count when charset is missing.
-
-    Parameters
-    ----------
-    coverage : dict
-        coverage block from inventory:
-        {
-          "unicode": {"count": int, "min": int|None, "max": int|None},
-          "charset": str|None
-        }
-    level : str
-        "conservative" | "medium" | "aggressive"
-
-    Returns
-    -------
-    list[str]
-        List of inferred script tags (e.g. ["latin", "greek"])
+    Primary source: coverage["unicode_blocks"]
+    Fallback: coverage["unicode"]["max"]
     """
+    blocks: dict[str, int] = coverage.get("unicode_blocks", {}) or {}
 
-    level = level.lower()
-    assert level in {"conservative", "medium", "aggressive"}
+    # -------------------------------
+    # 1. Primary path: unicode_blocks
+    # -------------------------------
+    if blocks:
+        total = sum(blocks.values()) or 1
 
-    charset_blob = coverage.get("charset")
-    unicode_count = coverage.get("unicode", {}).get("count", 0)
+        def significant(count: int) -> bool:
+            if level == "conservative":
+                return count >= 50 or (count / total) >= 0.10
+            if level == "aggressive":
+                return count >= 5
+            # medium (default)
+            return count >= 20 or (count / total) >= 0.05
 
-    inferred: list[str] = []
+        scripts_found: set[str] = set()
 
-    # -------------------------
-    # Case 1: charset available
-    # -------------------------
-    if charset_blob:
-        # Parse charset ranges: e.g. "U+0000-00FF U+0400-04FF ..."
-        ranges: list[tuple[int, int]] = []
+        # --- block → script mapping
+        for block, count in blocks.items():
+            if not significant(count):
+                continue
 
-        for token in charset_blob.replace(",", " ").split():
-            if token.startswith("U+"):
-                part = token[2:]
-                if "-" in part:
-                    a, b = part.split("-", 1)
-                    try:
-                        ranges.append((int(a, 16), int(b, 16)))
-                    except ValueError:
-                        continue
-                else:
-                    try:
-                        cp = int(part, 16)
-                        ranges.append((cp, cp))
-                    except ValueError:
-                        continue
+            if block.startswith("Latin"):
+                scripts_found.add("latin")
+            elif block == "Greek and Coptic":
+                scripts_found.add("greek")
+            elif block == "Cyrillic":
+                scripts_found.add("cyrillic")
+            elif block == "Arabic":
+                scripts_found.add("arabic")
+            elif block == "Hebrew":
+                scripts_found.add("hebrew")
+            elif block == "Devanagari":
+                scripts_found.add("devanagari")
+            elif block in ("Hiragana", "Katakana"):
+                scripts_found.add("japanese")
+            elif block == "Hangul Syllables":
+                scripts_found.add("korean")
+            elif block.startswith("CJK Unified Ideographs"):
+                scripts_found.add("han")
 
-        # Thresholds per level (absolute codepoints)
-        min_hits = {
-            "conservative": 30,
-            "medium": 10,
-            "aggressive": 1,
-        }[level]
+        # --- CJK disambiguation
+        if "han" in scripts_found:
+            if "japanese" in scripts_found:
+                return ["japanese"]
+            if "korean" in scripts_found:
+                return ["korean"]
+            return ["han"]
 
-        for script, script_ranges in UNICODE_SCRIPT_RANGES.items():
-            hits = 0
-            for r_start, r_end in ranges:
-                for s_start, s_end in script_ranges:
-                    # overlap length
-                    lo = max(r_start, s_start)
-                    hi = min(r_end, s_end)
-                    if lo <= hi:
-                        hits += hi - lo + 1
-                        if hits >= min_hits:
-                            inferred.append(script)
-                            break
-                if script in inferred:
-                    break
+        return sorted(scripts_found) or ["unknown"]
 
-        return sorted(inferred)
-
-    # --------------------------------
-    # Case 2: fallback on unicode.count
-    # --------------------------------
-    if not isinstance(unicode_count, int) or unicode_count <= 0:
-        return []
-
-    # Very rough heuristics
-    if level == "aggressive":
-        # allow all scripts whose primary range could plausibly fit
-        return ["latin"] if unicode_count < 300 else ["latin", "symbol"]
-
-    if level == "medium":
-        if unicode_count < 2000:
+    # -------------------------------
+    # 2. Fallback: unicode.max
+    # -------------------------------
+    unicode_max = coverage.get("unicode", {}).get("max")
+    if isinstance(unicode_max, int):
+        if unicode_max <= 0x024F:
             return ["latin"]
-        if unicode_count < 5000:
-            return ["latin", "greek", "cyrillic"]
-        return []
+        if 0x0370 <= unicode_max <= 0x03FF:
+            return ["greek"]
+        if 0x0400 <= unicode_max <= 0x04FF:
+            return ["cyrillic"]
+        if 0x0590 <= unicode_max <= 0x05FF:
+            return ["hebrew"]
+        if 0x0600 <= unicode_max <= 0x06FF:
+            return ["arabic"]
+        if 0x0900 <= unicode_max <= 0x097F:
+            return ["devanagari"]
+        if unicode_max >= 0x4E00:
+            return ["han"]
 
-    # conservative
-    if unicode_count < 1000:
-        return ["latin"]
-
-    return []
+    return ["unknown"]
 
 
 def infer_languages(scripts: list[str]) -> list[str]:
@@ -223,8 +197,8 @@ def parse_inventory(data: dict, level: str) -> dict:
         declared_scripts = coverage.get("scripts", [])
         declared_languages = coverage.get("languages", [])
 
-        inferred_scripts = infer_scripts(coverage, level)
-        inferred_languages = infer_languages(inferred_scripts)
+        inferred_scripts = list(infer_scripts(coverage, level) or [])
+        inferred_languages = list(infer_languages(inferred_scripts) or [])
 
         font["inference"] = {
             "level": level,
@@ -232,6 +206,7 @@ def parse_inventory(data: dict, level: str) -> dict:
             "languages": inferred_languages,
             "declared_scripts": declared_scripts,
             "declared_languages": declared_languages,
+            "unicode_blocks": coverage.get("unicode_blocks", {}),
         }
 
     data.setdefault("metadata", {})["inference_level"] = level

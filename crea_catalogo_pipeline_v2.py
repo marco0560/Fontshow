@@ -29,6 +29,24 @@ import re
 import subprocess
 from datetime import datetime
 
+SCRIPT_BADGE_MAP = {
+    "latin": "LAT",
+    "greek": "GRK",
+    "cyrillic": "CYR",
+    "arabic": "ARB",
+    "hebrew": "HEB",
+    "devanagari": "DEV",
+    "han": "HAN",
+    "japanese": "JPN",
+    "korean": "KOR",
+    "emoji": "EMOJI",
+}
+
+
+def script_badges(font: dict) -> list[str]:
+    scripts = font.get("inference", {}).get("scripts", [])
+    return [SCRIPT_BADGE_MAP[s] for s in scripts if s in SCRIPT_BADGE_MAP]
+
 
 def get_unique_filename(base_name, extension):
     """Genera un nome file unico aggiungendo un contatore a tre cifre (000-999)."""
@@ -40,6 +58,10 @@ def get_unique_filename(base_name, extension):
     raise ValueError(
         f"Impossibile trovare un nome file unico per {base_name}.{extension} dopo 1000 tentativi."
     )
+
+
+def nfss_family_id(font: dict) -> str:
+    return "FS" + str(abs(hash(font.get("identity", {}).get("file", ""))) % 10**8)
 
 
 def fontspec_options(font: dict) -> str:
@@ -193,7 +215,7 @@ I font problematici noti sono stati esclusi preventivamente. La compilazione è 
 )
 # -------------------------------------------
 SAMPLE_1 = r"""\textbf{Test Latino (Lipsum):}
-    {\fontspec{"""
+    {\mdseries\upshape\fontspec{"""
 # --------------------------------------------
 SAMPLE_2 = r"""}
     \Li
@@ -344,14 +366,31 @@ def language_label(font: dict) -> str:
 
 
 def render_badges(font: dict) -> str:
-    # Keep badges ASCII-only to avoid bidi surprises.
-    return (
-        r"{\footnotesize\ttfamily "
-        f"[SCRIPTS: {script_label(font)}] "
-        f"[LANG: {language_label(font)}] "
-        f"[TYPE: {font_type_label(font)}]"
-        r"}"
-    )
+    """
+    Render informational badges for a font.
+
+    Badges are ASCII-only and typeset in monospace to avoid bidi
+    and script-direction issues. The returned string is valid LaTeX
+    and may be empty.
+    """
+    scripts = script_label(font)
+    languages = language_label(font)
+    ftype = font_type_label(font)
+
+    parts = []
+    if scripts:
+        parts.append(f"SCRIPTS: {scripts}")
+    if languages:
+        parts.append(f"LANG: {languages}")
+    if ftype:
+        parts.append(f"TYPE: {ftype}")
+
+    if not parts:
+        return ""
+
+    badge_text = " | ".join(parts)
+
+    return r"{\footnotesize\ttfamily " + badge_text + r"}" "\n"
 
 
 def render_sample_text(font: dict) -> str | None:
@@ -368,25 +407,22 @@ def render_sample_code(font: dict, fam: str) -> str:
     """
     Build the LaTeX snippet for the sample.
 
-    Critical point:
-    - For RTL scripts (Arabic / Hebrew) we MUST use \\TestNonLatin{...}
-      so polyglossia applies the correct direction and shaping context.
-    - For LTR scripts we use a standard \\fontspec block.
-    - If we cannot select a sample text, we fall back to the existing \\Li (lipsum)
-      mechanism via SAMPLE_1/SAMPLE_2.
+    For sample rendering we MUST be conservative:
+    - Never request Bold / Italic / BI shapes.
+    - Never propagate weight/width/style inferred metadata.
+    - For RTL scripts use TestNonLatin (polyglossia + harfbuzz).
+    - For LTR scripts use a minimal, NFSS-safe fontspec call.
     """
     txt = render_sample_text(font)
     ps = primary_script(font)
 
-    # RTL: always route through TestNonLatin and provide non-empty options
+    nfss_id = "FS" + str(abs(hash(fam)) % 10**8)
+
+    # RTL: unchanged (TestNonLatin already isolates fonts)
     if ps in RTL_SCRIPTS:
         lang, opts = SCRIPT_TO_POLYGLOSSIA.get(ps, ("arabic", "Script=Arabic"))
         if not txt:
-            # Guaranteed fallback; should rarely happen because SAMPLE_TEXTS includes ar/he
             txt = SAMPLE_TEXTS.get("ar" if ps == "arab" else "he", "")
-        fs_opts = fontspec_options(font)
-        if fs_opts:
-            opts = f"{opts},{fs_opts}"
         return (
             r"\TestNonLatin{"
             + escape_latex(fam)
@@ -399,26 +435,26 @@ def render_sample_code(font: dict, fam: str) -> str:
             + r"}"
         )
 
-    # LTR fallback to lipsum macro if no sample text available
     if not txt:
         return SAMPLE_1 + escape_latex(fam) + SAMPLE_2
 
-    # LTR: direct fontspec sample
-    fs_opts = fontspec_options(font)
     return (
         r"\textbf{Esempio:}"
         "\n"
-        + r"{\fontspec["
-        + fs_opts
-        + r"]{"
-        + escape_latex(fam)
-        + r"}"
-        + escape_latex(txt)
-        + r"}"
+        r"{\mdseries\upshape\fontspec["
+        r"Renderer=Harfbuzz,"
+        f"Family={nfss_id},"
+        r"UprightFont=*,"
+        r"BoldFont={},"
+        r"ItalicFont={},"
+        r"BoldItalicFont={}"
+        r"]{" + escape_latex(fam) + r"}" + escape_latex(txt) + r"}"
     )
 
 
 NORMAL_BLOCK = """\\subsection{{{safe_name}}}
+
+{badges}
 
 \\IfFontExistsTF{{{font}}}{{%
     \\LogWorking{{{safe_name}}}
@@ -433,7 +469,9 @@ NORMAL_BLOCK = """\\subsection{{{safe_name}}}
         Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
     \\end{{errorbox}}
 }}
-\\vspace{{1em}}"""
+
+\\vspace{{1em}}
+"""
 # --------------------------------------------
 LATEX_END_CODE_1 = r"""\newpage
 
@@ -514,7 +552,14 @@ if IS_WINDOWS:
     TEST_FONTS = {"Times New Roman", "Arial", "Calibri", "Noto Sans"}
 elif IS_LINUX:
     EXCLUDED_FONTS = {"Noto Emoji", "KacstScreen"}
-    TEST_FONTS = {"Times New Roman", "Arial", "Calibri", "Noto Sans"}
+    TEST_FONTS = {
+        "Times New Roman",
+        "Arial",
+        "Calibri",
+        "Noto Sans",
+        "KaitiM",
+        "Devanagari",
+    }
 else:
     EXCLUDED_FONTS = set()
     TEST_FONTS = set()

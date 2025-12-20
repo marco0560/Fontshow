@@ -46,6 +46,33 @@ from typing import Any
 
 from fontTools.ttLib import TTCollection, TTFont
 
+UNICODE_BLOCKS = [
+    ("Basic Latin", 0x0000, 0x007F),
+    ("Latin-1 Supplement", 0x0080, 0x00FF),
+    ("Latin Extended-A", 0x0100, 0x017F),
+    ("Latin Extended-B", 0x0180, 0x024F),
+    ("Greek and Coptic", 0x0370, 0x03FF),
+    ("Cyrillic", 0x0400, 0x04FF),
+    ("Arabic", 0x0600, 0x06FF),
+    ("Hebrew", 0x0590, 0x05FF),
+    ("Devanagari", 0x0900, 0x097F),
+    # --- CJK ---
+    ("CJK Unified Ideographs", 0x4E00, 0x9FFF),
+    ("CJK Unified Ideographs Extension A", 0x3400, 0x4DBF),
+    ("CJK Unified Ideographs Extension B", 0x20000, 0x2A6DF),
+    ("CJK Unified Ideographs Extension C", 0x2A700, 0x2B73F),
+    ("CJK Unified Ideographs Extension D", 0x2B740, 0x2B81F),
+    ("CJK Unified Ideographs Extension E", 0x2B820, 0x2CEAF),
+    ("CJK Unified Ideographs Extension F", 0x2CEB0, 0x2EBEF),
+    ("Hiragana", 0x3040, 0x309F),
+    ("Katakana", 0x30A0, 0x30FF),
+    ("Hangul Syllables", 0xAC00, 0xD7AF),
+    # --- Emoji / symbols ---
+    ("Miscellaneous Symbols", 0x2600, 0x26FF),
+    ("Emoticons", 0x1F600, 0x1F64F),
+]
+
+
 # -----------------------
 # Platform helpers
 # -----------------------
@@ -308,6 +335,20 @@ def detect_color_tables(tt: TTFont) -> list[str]:
     return [t for t in candidates if t in tt]
 
 
+def compute_unicode_blocks(codepoints: set[int]) -> dict[str, int]:
+    """
+    Count how many Unicode codepoints fall into each Unicode block.
+    """
+    blocks = {}
+
+    for name, start, end in UNICODE_BLOCKS:
+        count = sum(1 for cp in codepoints if start <= cp <= end)
+        if count > 0:
+            blocks[name] = count
+
+    return blocks
+
+
 def extract_unicode_coverage(tt: TTFont, limit: int = 200_000) -> dict[str, Any]:
     """Compute a lightweight Unicode coverage summary from cmap.
 
@@ -385,10 +426,40 @@ def _fonttools_extract_from_tt(
     except Exception as e:
         data["os2"] = {"error": f"OS/2: {e}"}
 
+    # -------------------------------
+    # Unicode coverage (min/max/count)
+    # -------------------------------
     try:
         data["unicode"] = extract_unicode_coverage(tt)
     except Exception as e:
         data["unicode"] = {"error": f"unicode: {e}"}
+
+    # -------------------------------
+    # Unicode blocks (NEW)
+    # -------------------------------
+    # We do not store the full cmap, but we can count coverage per Unicode block.
+    # This is essential for robust CJK/emoji/script inference later.
+    try:
+        codepoints: set[int] = set()
+        if "cmap" in tt:
+            cmap = tt["cmap"]
+            for sub in cmap.tables:  # type: ignore[attr-defined]
+                if not sub.isUnicode():
+                    continue
+                # sub.cmap is {codepoint:int -> glyphName:str}
+                for cp in sub.cmap.keys():  # type: ignore[attr-defined]
+                    codepoints.add(int(cp))
+                    # Guard rail: avoid pathological fonts exploding memory
+                    if len(codepoints) >= 200_000:
+                        break
+                if len(codepoints) >= 200_000:
+                    break
+
+        data["unicode_blocks"] = (
+            compute_unicode_blocks(codepoints) if codepoints else {}
+        )
+    except Exception as e:
+        data["unicode_blocks"] = {"error": f"unicode_blocks: {e}"}
 
     try:
         data["variable"] = {"fvar": ("fvar" in tt), "STAT": ("STAT" in tt)}
@@ -567,6 +638,11 @@ def build_font_descriptor(
             "min": unicode_block.get("min"),
             "max": unicode_max,
         },
+        "unicode_blocks": (
+            fonttools.get("unicode_blocks", {})
+            if isinstance(fonttools.get("unicode_blocks"), dict)
+            else {}
+        ),
         "scripts": scripts,
         "languages": languages,
         "charset": charset,
