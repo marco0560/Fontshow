@@ -1,3 +1,9 @@
+## [0.3.2](https://github.com/marco0560/Fontshow/compare/v0.3.1...v0.3.2) (2025-12-20)
+
+### Bug Fixes
+
+* **core:** deduplicate font families during LaTeX generation ([dfe9c71](https://github.com/marco0560/Fontshow/commit/dfe9c7158161913b544f83ca90c610a70ab1273b))
+
 ## [0.3.1](https://github.com/marco0560/Fontshow/compare/v0.3.0...v0.3.1) (2025-12-20)
 
 ### Bug Fixes
