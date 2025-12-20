@@ -86,31 +86,112 @@ SCRIPT_TO_LANGUAGES = {
 # ============================================================
 
 
-def infer_scripts(unicode_max: str | None, level: str) -> list[str]:
+def infer_scripts(
+    coverage: dict,
+    level: str = "medium",
+) -> list[str]:
     """
-    Infer supported scripts from Unicode coverage.
+    Infer supported scripts from coverage information.
 
     Strategy:
-    - use the maximum Unicode codepoint covered by the font
-    - match against known Unicode ranges
-    - require a minimum threshold depending on inference level
+    - Prefer coverage.charset when available (Linux / FontConfig).
+    - Fallback to coverage.unicode.count when charset is missing.
+
+    Parameters
+    ----------
+    coverage : dict
+        coverage block from inventory:
+        {
+          "unicode": {"count": int, "min": int|None, "max": int|None},
+          "charset": str|None
+        }
+    level : str
+        "conservative" | "medium" | "aggressive"
+
+    Returns
+    -------
+    list[str]
+        List of inferred script tags (e.g. ["latin", "greek"])
     """
-    if not unicode_max or not unicode_max.startswith("U+"):
+
+    level = level.lower()
+    assert level in {"conservative", "medium", "aggressive"}
+
+    charset_blob = coverage.get("charset")
+    unicode_count = coverage.get("unicode", {}).get("count", 0)
+
+    inferred: list[str] = []
+
+    # -------------------------
+    # Case 1: charset available
+    # -------------------------
+    if charset_blob:
+        # Parse charset ranges: e.g. "U+0000-00FF U+0400-04FF ..."
+        ranges: list[tuple[int, int]] = []
+
+        for token in charset_blob.replace(",", " ").split():
+            if token.startswith("U+"):
+                part = token[2:]
+                if "-" in part:
+                    a, b = part.split("-", 1)
+                    try:
+                        ranges.append((int(a, 16), int(b, 16)))
+                    except ValueError:
+                        continue
+                else:
+                    try:
+                        cp = int(part, 16)
+                        ranges.append((cp, cp))
+                    except ValueError:
+                        continue
+
+        # Thresholds per level (absolute codepoints)
+        min_hits = {
+            "conservative": 30,
+            "medium": 10,
+            "aggressive": 1,
+        }[level]
+
+        for script, script_ranges in UNICODE_SCRIPT_RANGES.items():
+            hits = 0
+            for r_start, r_end in ranges:
+                for s_start, s_end in script_ranges:
+                    # overlap length
+                    lo = max(r_start, s_start)
+                    hi = min(r_end, s_end)
+                    if lo <= hi:
+                        hits += hi - lo + 1
+                        if hits >= min_hits:
+                            inferred.append(script)
+                            break
+                if script in inferred:
+                    break
+
+        return sorted(inferred)
+
+    # --------------------------------
+    # Case 2: fallback on unicode.count
+    # --------------------------------
+    if not isinstance(unicode_count, int) or unicode_count <= 0:
         return []
 
-    max_cp = int(unicode_max[2:], 16)
-    threshold = INFERENCE_THRESHOLDS[level]["script_min_cp"]
+    # Very rough heuristics
+    if level == "aggressive":
+        # allow all scripts whose primary range could plausibly fit
+        return ["latin"] if unicode_count < 300 else ["latin", "symbol"]
 
-    scripts: list[str] = []
-    for script, ranges in UNICODE_SCRIPT_RANGES.items():
-        count = 0
-        for start, end in ranges:
-            if start <= max_cp <= end:
-                count += 1
-        if count >= threshold:
-            scripts.append(script)
+    if level == "medium":
+        if unicode_count < 2000:
+            return ["latin"]
+        if unicode_count < 5000:
+            return ["latin", "greek", "cyrillic"]
+        return []
 
-    return sorted(set(scripts))
+    # conservative
+    if unicode_count < 1000:
+        return ["latin"]
+
+    return []
 
 
 def infer_languages(scripts: list[str]) -> list[str]:
@@ -137,13 +218,12 @@ def parse_inventory(data: dict, level: str) -> dict:
     Adds an `inference` block to each font.
     """
     for font in data.get("fonts", []):
-        coverage = font.get("coverage", {})
-        unicode_max = coverage.get("unicode", {}).get("max")
+        coverage = font.get("coverage", {}) or {}
 
         declared_scripts = coverage.get("scripts", [])
         declared_languages = coverage.get("languages", [])
 
-        inferred_scripts = infer_scripts(unicode_max, level)
+        inferred_scripts = infer_scripts(coverage, level)
         inferred_languages = infer_languages(inferred_scripts)
 
         font["inference"] = {
@@ -171,6 +251,8 @@ def main() -> None:
     parser.add_argument(
         "input",
         type=Path,
+        nargs="?",
+        default=Path("font_inventory.json"),
         help="Input font_inventory.json generated by dump_fonts.py",
     )
     parser.add_argument(

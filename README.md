@@ -33,16 +33,16 @@ crea_catalogo.py
 ## Quick start
 
 1. Generate inventory
-   python3 scripts/dump_fonts.py
+   `python3 scripts/dump_fonts.py`
 
 2. Enrich inventory
-   python3 scripts/parse_font_inventory.py font_inventory.json
+   `python3 scripts/parse_font_inventory.py font_inventory.json`
 
 3. Generate LaTeX
-   python3 crea_catalogo.py font_inventory_enriched.json
+   `python3 crea_catalogo.py font_inventory_enriched.json`
 
 4. Build PDF
-   lualatex catalogo_font_sistema_*.tex (run twice)
+   `lualatex catalogo_font_sistema_*.tex` (run twice)
 
 ---------------------------------------------------------------------
 

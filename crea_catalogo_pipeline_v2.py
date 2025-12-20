@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from collections import OrderedDict
 from pathlib import Path
 
 if sys.platform == "win32":
@@ -39,6 +40,32 @@ def get_unique_filename(base_name, extension):
     raise ValueError(
         f"Impossibile trovare un nome file unico per {base_name}.{extension} dopo 1000 tentativi."
     )
+
+
+def fontspec_options(font: dict) -> str:
+    """
+    Build fontspec options string.
+
+    Uses TTC index if present, e.g.:
+      Index=3
+    """
+    ttc_index = font.get("identity", {}).get("ttc_index")
+    if ttc_index is not None:
+        return f"Index={ttc_index}"
+    return ""
+
+
+def group_fonts_by_family(fonts: list[dict]) -> list[dict]:
+    """
+    Reduce a list of font entries to one entry per family.
+    Keeps the first encountered font for each family
+    (usually Regular or ttc_index 0).
+    """
+    families = OrderedDict()
+    for font in fonts:
+        fam = font_family(font)
+        families.setdefault(fam, []).append(font)
+    return [entries[0] for entries in families.values()]
 
 
 # --- Configurazione ---
@@ -357,6 +384,9 @@ def render_sample_code(font: dict, fam: str) -> str:
         if not txt:
             # Guaranteed fallback; should rarely happen because SAMPLE_TEXTS includes ar/he
             txt = SAMPLE_TEXTS.get("ar" if ps == "arab" else "he", "")
+        fs_opts = fontspec_options(font)
+        if fs_opts:
+            opts = f"{opts},{fs_opts}"
         return (
             r"\TestNonLatin{"
             + escape_latex(fam)
@@ -374,9 +404,17 @@ def render_sample_code(font: dict, fam: str) -> str:
         return SAMPLE_1 + escape_latex(fam) + SAMPLE_2
 
     # LTR: direct fontspec sample
+    fs_opts = fontspec_options(font)
     return (
         r"\textbf{Esempio:}"
-        "\n" + r"{\fontspec{" + escape_latex(fam) + r"}" + escape_latex(txt) + r"}"
+        "\n"
+        + r"{\fontspec["
+        + fs_opts
+        + r"]{"
+        + escape_latex(fam)
+        + r"}"
+        + escape_latex(txt)
+        + r"}"
     )
 
 
@@ -724,7 +762,7 @@ def generate_latex(font_list):
         badges = render_badges(font)
         sample_code = render_sample_code(font, fam)
 
-        if idx % 50 == 0 or idx == total:
+        if idx % 500 == 0 or idx == total:
             print(f"  ... processati {idx}/{total}")
 
         block = NORMAL_BLOCK.format(
@@ -819,6 +857,7 @@ def main():
 
     # Ordina alfabeticamente la lista dei font
     fonts = sorted(as_font_desc_list(fonts), key=font_family)
+    fonts = group_fonts_by_family(fonts)
 
     latex_content = generate_latex(fonts)
 

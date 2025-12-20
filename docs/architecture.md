@@ -1,19 +1,47 @@
-# Fontshow architecture
+# Architettura: gestione delle TrueType Collections
 
-Fontshow follows a strict layered pipeline.
+## Posizionamento nella pipeline
 
-## Layers
+La gestione delle TrueType Collection avviene **nel primo stadio** della pipeline:
 
-- Discovery layer (OS-dependent)
-- Inference layer (JSON-only)
-- Rendering layer (LaTeX)
+```
+font files
+   ↓
+dump_fonts.py
+   ├─ .ttf / .otf  → 1 font descriptor
+   └─ .ttc         → N font descriptors (per-face)
+   ↓
+font_inventory.json
+   ↓
+parse_font_inventory.py
+   ↓
+crea_catalogo.py / pipeline LaTeX
+```
 
-## Benefits
+---
 
-- Deterministic output
-- Cross-platform consistency
-- Clear separation of concerns
+## Razionale architetturale
 
+La decisione di espandere le collection nel `dump` (e non a valle) garantisce:
 
-The parsing and inference pipeline is platform-independent; OS-specific
-logic is confined to the font dumping stage.
+- inventario canonico e normalizzato
+- parsing uniforme
+- assenza di logica specifica `.ttc` nei livelli successivi
+
+---
+
+## Responsabilità dei componenti
+
+| Componente | Responsabilità |
+|-----------|----------------|
+| dump_fonts.py | Espansione `.ttc`, estrazione per-face |
+| parse_font_inventory.py | Inferenza script/lingua |
+| crea_catalogo.py | Rendering corretto (Index=…) |
+
+---
+
+## Nota sulla retrocompatibilità
+
+L’aggiunta di `ttc_index` è:
+- backward compatible per font non-TTC
+- obbligatoria per i consumer che gestiscono collection

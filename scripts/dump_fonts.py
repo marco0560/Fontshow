@@ -1,41 +1,34 @@
 #!/usr/bin/env python3
 """
-Fontshow - cross-platform font inventory dumper
+Fontshow - cross-platform font inventory dumper (Linux + Windows)
 
-This script generates a *canonical* font inventory in JSON format, suitable for
-later parsing and for producing OS-agnostic outputs (e.g. LaTeX catalog).
+This script discovers installed font files and writes a canonical JSON inventory
+used by the rest of Fontshow (parsing + LaTeX rendering).
 
-Design goals
------------
-- One codebase for Linux and Windows.
-- OS-specific logic is limited to the "font discovery" phase.
-- Extraction is normalized into a stable JSON schema.
-- Rich OpenType/TrueType metadata via `fontTools`.
-- Optional Linux-only enrichment via FontConfig (`fc-query` / `fc-list`).
-- Persistent caching to keep re-runs fast.
+Key features
+------------
+- Cross-platform discovery:
+  - Linux: FontConfig (fc-list)
+  - Windows: common font directories (Windows Fonts + user fonts)
+- Deep metadata extraction via fontTools
+- TrueType Collections (.ttc) are fully supported:
+  - each face inside a TTC becomes a separate "font" entry
+  - identity carries (file + ttc_index)
+- Optional Linux-only enrichment via FontConfig (fc-query):
+  - scripts / languages / charset
+- Persistent caching to avoid repeated decompression/decompilation
 
 Output
 ------
-A single JSON file following the schema documented in:
+A single JSON file:
+  {
+    "metadata": {...},
+    "fonts": [ {font descriptor}, ... ]
+  }
+
+The JSON schema is documented in:
 - docs/font-inventory-schema.md
 - docs/dump-fonts.md
-
-Notes on Windows
-----------------
-Windows does not ship FontConfig. Therefore, "languages/scripts/charset" (which
-FontConfig can derive) are left empty unless you add a separate analyzer.
-However, most fields can still be computed via `fontTools` alone.
-
-Compatibility
--------------
-- Python: 3.10+
-- Linux: requires `fontconfig` for discovery and optional enrichment
-- Windows: uses Registry + Fonts directories for discovery
-- Optional: `fontTools` strongly recommended (needed for deep metadata)
-
-Usage
------
-    python3 scripts/dump_fonts.py --output font_inventory.json
 """
 
 from __future__ import annotations
@@ -51,92 +44,33 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-# -----------------------
-# Optional dependency: fontTools
-# -----------------------
-try:
-    from fontTools.ttLib import TTFont  # type: ignore
-
-    FONTTOOLS_AVAILABLE = True
-except Exception:
-    TTFont = None  # type: ignore
-    FONTTOOLS_AVAILABLE = False
+from fontTools.ttLib import TTCollection, TTFont
 
 # -----------------------
-# Platform detection
+# Platform helpers
 # -----------------------
-IS_WINDOWS = sys.platform == "win32"
 IS_LINUX = sys.platform.startswith("linux")
-
-if IS_WINDOWS:
-    import winreg  # type: ignore
+IS_WINDOWS = sys.platform.startswith("win")
 
 
-# -----------------------
-# Cache
-# -----------------------
-DEFAULT_CACHE_DIR = Path(".font_cache")
-
-
-def font_cache_key(path: Path) -> str:
-    """Compute a stable cache key for a font file."""
-    stat = path.stat()
-    key = f"{path.resolve()}|{stat.st_mtime_ns}|{stat.st_size}"
-    return hashlib.sha256(key.encode("utf-8")).hexdigest()
-
-
-# -----------------------
-# Low-level utilities
-# -----------------------
 def utc_now_iso() -> str:
-    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
-def run_command(cmd: list[str]) -> subprocess.CompletedProcess[str]:
-    """Run a subprocess and return the completed process."""
+def run_command(argv: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False
+        argv,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
     )
-
-
-def read_file_header4(path: Path) -> bytes:
-    try:
-        with path.open("rb") as f:
-            return f.read(4)
-    except Exception:
-        return b""
-
-
-def detect_font_container(path: Path) -> str:
-    """Detect the *container* format of a font file."""
-    suffix = path.suffix.lower()
-
-    if suffix == ".woff2":
-        return "WOFF2"
-    if suffix == ".woff":
-        return "WOFF"
-
-    header = read_file_header4(path)
-
-    if header == b"wOFF":
-        return "WOFF"
-    if header == b"wOF2":
-        return "WOFF2"
-    if header in (b"\x00\x01\x00\x00", b"true"):
-        return "TrueType"
-    if header == b"OTTO":
-        return "OpenType"
-    if header == b"ttcf":
-        return "TTC"
-
-    return "Unknown"
 
 
 # -----------------------
 # Font discovery
 # -----------------------
 def get_installed_font_files() -> list[Path]:
-    """Return a list of installed font files for the current platform."""
     if IS_LINUX:
         return get_installed_font_files_linux()
     if IS_WINDOWS:
@@ -149,79 +83,107 @@ def get_installed_font_files_linux() -> list[Path]:
     proc = run_command(["fc-list", "--format=%{file}\n"])
     if proc.returncode != 0:
         raise RuntimeError(f"fc-list failed:\n{proc.stdout}")
-    files = []
+
+    files: list[Path] = []
     for line in proc.stdout.splitlines():
         p = line.strip()
         if p:
             files.append(Path(p))
-    return sorted({p.resolve() for p in files})
+
+    # Resolve + unique
+    return sorted({p.resolve() for p in files if p.exists()})
 
 
 def _windows_font_dirs() -> list[Path]:
-    """Return known Windows font directories."""
+    r"""Known Windows font directories (system + user).
+
+    Note: Windows supports per-user font installs under:
+      %LOCALAPPDATA%\Microsoft\Windows\Fonts
+    """
     dirs: list[Path] = []
-    windir = os.environ.get("WINDIR")
+    windir = os.environ.get("WINDIR") or os.environ.get("SystemRoot")
     if windir:
         dirs.append(Path(windir) / "Fonts")
-    localappdata = os.environ.get("LOCALAPPDATA")
-    if localappdata:
-        dirs.append(Path(localappdata) / "Microsoft" / "Windows" / "Fonts")
+
+    local = os.environ.get("LOCALAPPDATA")
+    if local:
+        dirs.append(Path(local) / "Microsoft" / "Windows" / "Fonts")
+
+    # Fallback guess
+    dirs.append(Path("C:/Windows/Fonts"))
     return [d for d in dirs if d.exists()]
 
 
 def get_installed_font_files_windows() -> list[Path]:
-    """Windows font discovery using Registry + font directories."""
-    registry_paths = [
-        r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
-        r"SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Fonts",
-    ]
-
-    font_dirs = _windows_font_dirs()
-    found: list[Path] = []
-
-    for reg_path in registry_paths:
+    exts = {".ttf", ".otf", ".ttc", ".otc", ".woff", ".woff2"}
+    found: set[Path] = set()
+    for d in _windows_font_dirs():
         try:
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path) as key:  # type: ignore[name-defined]
-                nvals = winreg.QueryInfoKey(key)[1]  # type: ignore[name-defined]
-                for i in range(nvals):
-                    _name, value, _ = winreg.EnumValue(key, i)  # type: ignore[name-defined]
-                    if not isinstance(value, str):
-                        continue
-                    v = value.strip().strip('"')
-                    if not v:
-                        continue
-                    p = Path(v)
-                    if p.is_absolute():
-                        if p.exists():
-                            found.append(p)
-                        continue
-                    for d in font_dirs:
-                        candidate = d / v
-                        if candidate.exists():
-                            found.append(candidate)
-                            break
-        except FileNotFoundError:
+            for p in d.rglob("*"):
+                if p.is_file() and p.suffix.lower() in exts:
+                    found.add(p.resolve())
+        except Exception:
+            # ignore permission issues etc.
             continue
+    return sorted(found)
 
-    # Best-effort: include fonts present in directories but not in registry
-    for d in font_dirs:
-        for ext in (".ttf", ".otf", ".ttc", ".woff", ".woff2"):
-            found.extend(d.glob(f"*{ext}"))
 
-    return sorted({p.resolve() for p in found})
+# -----------------------
+# Container detection
+# -----------------------
+def detect_font_container(path: Path) -> str:
+    """Detect font container by header and extension.
+
+    Returns: "TTF", "OTF", "TTC", "WOFF", "WOFF2", or "UNKNOWN"
+    """
+    ext = path.suffix.lower()
+    try:
+        with path.open("rb") as f:
+            head = f.read(4)
+    except Exception:
+        head = b""
+
+    if head == b"ttcf":
+        return "TTC"
+    if head == b"wOFF" or ext == ".woff":
+        return "WOFF"
+    if head == b"wOF2" or ext == ".woff2":
+        return "WOFF2"
+    if head == b"OTTO" or ext == ".otf":
+        return "OTF"
+    if head in (b"\x00\x01\x00\x00", b"true", b"typ1") or ext == ".ttf":
+        return "TTF"
+    if ext == ".ttc":
+        return "TTC"
+    return "UNKNOWN"
+
+
+# -----------------------
+# Cache
+# -----------------------
+def font_cache_key(path: Path, ttc_index: int | None = None) -> str:
+    """Stable cache key for a font *face*.
+
+    For TTC, include the face index so each face gets its own cache entry.
+    """
+    st = path.stat()
+    idx = "" if ttc_index is None else f"|ttc:{ttc_index}"
+    key = f"{path.resolve()}|{st.st_mtime_ns}|{st.st_size}{idx}"
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
 
 # -----------------------
 # Linux-only: FontConfig enrichment
 # -----------------------
-def fc_query_raw(path: Path) -> str:
-    proc = run_command(["fc-query", str(path)])
-    return proc.stdout
-
-
 def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any]:
-    """Extract a small set of useful FontConfig-derived fields."""
-    raw = fc_query_raw(path)
+    """Extract a small set of useful FontConfig-derived fields (Linux only).
+
+    IMPORTANT: For TTC files FontConfig can describe multiple faces; this dumper
+    currently attaches a single (file-level) block. Per-face scripts/languages
+    are inferred downstream by parse_font_inventory.py when needed.
+    """
+    proc = run_command(["fc-query", str(path)])
+    raw = proc.stdout if proc.stdout else ""
 
     def _find_line(prefix: str) -> str | None:
         for line in raw.splitlines():
@@ -249,15 +211,13 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
     if include_charset:
         lines = raw.splitlines()
         try:
-            idx = next(
-                i for i, linea in enumerate(lines) if linea.startswith("charset:")
-            )
+            idx = next(i for i, ln in enumerate(lines) if ln.startswith("charset:"))
             blob: list[str] = [lines[idx]]
             for j in range(idx + 1, len(lines)):
-                linea = lines[j]
-                if not linea.strip():
+                ln = lines[j]
+                if not ln.strip():
                     break
-                blob.append(linea)
+                blob.append(ln)
             charset_blob = "\n".join(blob)
         except StopIteration:
             charset_blob = None
@@ -265,10 +225,10 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
     return {
         "languages": languages,
         "scripts": sorted(set(scripts)),
+        "charset": charset_blob,
         "decorative": decorative,
         "color": color,
         "variable": variable,
-        "charset": charset_blob,
     }
 
 
@@ -277,152 +237,284 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
 # -----------------------
 NAME_ID_FAMILY = 1
 NAME_ID_SUBFAMILY = 2
+NAME_ID_FULLNAME = 4
+NAME_ID_POSTSCRIPT = 6
 NAME_ID_LICENSE = 13
 NAME_ID_LICENSE_URL = 14
-NAME_ID_POSTSCRIPT = 6
 
 
 def _best_name(names: dict[str, list[str]], name_id: int) -> str | None:
     vals = names.get(str(name_id), [])
-    vals = [v for v in vals if v and v.strip()]
-    return vals[0] if vals else None
+    for v in vals:
+        if v and v.strip():
+            return v.strip()
+    return None
 
 
-def fonttools_extract(
-    path: Path, cache_dir: Path, use_cache: bool = True
-) -> dict[str, Any]:
-    """Extract deep metadata via fontTools (robust, cached)."""
-    data: dict[str, Any] = {"ok": False}
-
-    if not FONTTOOLS_AVAILABLE:
-        return {"ok": False, "error": "fontTools not available"}
-
-    key = font_cache_key(path)
-    cache_file = cache_dir / f"{key}.tt.json"
-    if use_cache and cache_file.exists():
+def extract_name_table(tt: TTFont) -> dict[str, list[str]]:
+    """Return name table as {nameID(str): [values...]} with duplicates removed."""
+    out: dict[str, list[str]] = {}
+    if "name" not in tt:
+        return out
+    name_table = tt["name"]
+    for rec in name_table.names:  # type: ignore[attr-defined]
         try:
-            return json.loads(cache_file.read_text(encoding="utf-8"))
+            s = rec.toUnicode()
+        except Exception:
+            try:
+                s = str(rec)
+            except Exception:
+                continue
+        if not s:
+            continue
+        key = str(int(rec.nameID))
+        out.setdefault(key, [])
+        if s not in out[key]:
+            out[key].append(s)
+    return out
+
+
+def extract_os2_table(tt: TTFont) -> dict[str, Any]:
+    """Extract small OS/2 subset, robust against malformed tables."""
+    if "OS/2" not in tt:
+        return {}
+    t = tt["OS/2"]
+    out: dict[str, Any] = {}
+    for attr, key in [
+        ("usWeightClass", "weight_class"),
+        ("usWidthClass", "width_class"),
+        ("fsType", "embedding_rights"),
+        ("achVendID", "vendor_id"),
+        ("version", "version"),
+    ]:
+        try:
+            out[key] = getattr(t, attr)
+        except Exception:
+            continue
+    # Normalize vendor ID
+    if "vendor_id" in out:
+        try:
+            vid = out["vendor_id"]
+            if isinstance(vid, bytes):
+                out["vendor_id"] = vid.decode("ascii", errors="replace")
         except Exception:
             pass
+    return out
 
-    container = detect_font_container(path)
-    data["container"] = container
+
+def detect_color_tables(tt: TTFont) -> list[str]:
+    """Return list of present color-related tables."""
+    candidates = ["COLR", "CPAL", "CBDT", "CBLC", "sbix", "SVG "]
+    return [t for t in candidates if t in tt]
+
+
+def extract_unicode_coverage(tt: TTFont, limit: int = 200_000) -> dict[str, Any]:
+    """Compute a lightweight Unicode coverage summary from cmap.
+
+    We do not store all codepoints (too big). We store min/max/count.
+    """
+    if "cmap" not in tt:
+        return {}
+    cmap = tt["cmap"]
+    cps: set[int] = set()
+    for sub in cmap.tables:  # type: ignore[attr-defined]
+        try:
+            cm = sub.cmap  # type: ignore[attr-defined]
+        except Exception:
+            continue
+        for cp in cm.keys():
+            if isinstance(cp, int):
+                cps.add(cp)
+        if len(cps) > limit:
+            break
+    if not cps:
+        return {"count": 0, "min": None, "max": None}
+    return {"count": len(cps), "min": min(cps), "max": max(cps)}
+
+
+def extract_opentype_features(tt: TTFont) -> list[str]:
+    """Best-effort extraction of GSUB/GPOS feature tags."""
+    feats: set[str] = set()
+    for tag in ("GSUB", "GPOS"):
+        if tag not in tt:
+            continue
+        tbl = tt[tag]
+        try:
+            fl = tbl.table.FeatureList  # type: ignore[attr-defined]
+            if not fl:
+                continue
+            for rec in fl.FeatureRecord:  # type: ignore[attr-defined]
+                feats.add(rec.FeatureTag)
+        except Exception:
+            continue
+    return sorted(feats)
+
+
+def _fonttools_extract_from_tt(
+    *,
+    path: Path,
+    container: str,
+    tt: TTFont,
+    ttc_index: int | None,
+) -> dict[str, Any]:
+    """Extract metadata from an already-open TTFont (single face)."""
+    data: dict[str, Any] = {"ok": True, "container": container, "ttc_index": ttc_index}
 
     try:
-        tt = TTFont(  # type: ignore[misc]
-            path, lazy=True, recalcBBoxes=False, recalcTimestamp=False
-        )
-    except Exception as e:
-        data["ok"] = False
-        data["error"] = f"Cannot open font: {e}"
-        cache_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
-        return data
+        data["tables"] = sorted(tt.keys())
+    except Exception:
+        data["tables"] = []
 
-    data["ok"] = True
-    data["tables"] = sorted(tt.keys())
-
-    if "CFF " in tt:
-        data["font_type"] = "OpenType CFF"
-    elif "glyf" in tt:
-        data["font_type"] = "TrueType"
-    else:
+    try:
+        if "CFF " in tt:
+            data["font_type"] = "OpenType CFF"
+        elif "glyf" in tt:
+            data["font_type"] = "TrueType"
+        else:
+            data["font_type"] = "Unknown"
+    except Exception:
         data["font_type"] = "Unknown"
 
-    color_tables = {"COLR", "CPAL", "CBDT", "CBLC", "sbix", "SVG "}
-    data["color_tables"] = sorted([t for t in color_tables if t in tt])
-
-    names: dict[str, Any] = {}
-    if "name" in tt:
-        for rec in tt["name"].names:
-            try:
-                value = rec.toUnicode()
-            except Exception:
-                try:
-                    value = rec.string.decode("utf-8", errors="ignore")
-                except Exception:
-                    value = str(rec.string)
-            names.setdefault(str(rec.nameID), set()).add(value)
-    data["names"] = {k: sorted(list(v)) for k, v in names.items()}
-
-    unicodes = set()
-    if "cmap" in tt:
-        try:
-            for table in tt["cmap"].tables:
-                unicodes.update(table.cmap.keys())
-        except Exception as e:
-            data["cmap_error"] = str(e)
-
-    if unicodes:
-        data["unicode"] = {
-            "count": len(unicodes),
-            "min": f"U+{min(unicodes):04X}",
-            "max": f"U+{max(unicodes):04X}",
-        }
-    else:
-        data["unicode"] = {"count": 0}
-
-    data["variable"] = {
-        "fvar": "fvar" in tt,
-        "STAT": "STAT" in tt,
-        "avar": "avar" in tt,
-        "gvar": "gvar" in tt,
-    }
-
-    features = set()
-    for table_tag in ("GSUB", "GPOS"):
-        if table_tag in tt:
-            try:
-                table = tt[table_tag].table
-                if getattr(table, "FeatureList", None):
-                    for feat in table.FeatureList.FeatureRecord:
-                        features.add(feat.FeatureTag)
-            except Exception as e:
-                data[f"{table_tag}_error"] = str(e)
-    data["opentype_features"] = sorted(features)
-
-    if "OS/2" in tt:
-        try:
-            os2 = tt["OS/2"]
-            data["os2"] = {
-                "weight_class": getattr(os2, "usWeightClass", None),
-                "width_class": getattr(os2, "usWidthClass", None),
-                "fs_type": getattr(os2, "fsType", None),
-                "vendor_id": getattr(os2, "achVendID", b"")
-                .decode("ascii", errors="ignore")
-                .strip(),
-                "version": getattr(os2, "version", None),
-            }
-        except Exception as e:
-            data["os2"] = {"error": f"OS/2 table unreadable: {e}"}
+    try:
+        data["names"] = extract_name_table(tt)
+    except Exception as e:
+        data["names"] = {"error": f"name: {e}"}
 
     try:
-        tt.close()
-    except Exception:
-        pass
+        data["os2"] = extract_os2_table(tt)
+    except Exception as e:
+        data["os2"] = {"error": f"OS/2: {e}"}
 
-    cache_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    try:
+        data["unicode"] = extract_unicode_coverage(tt)
+    except Exception as e:
+        data["unicode"] = {"error": f"unicode: {e}"}
+
+    try:
+        data["variable"] = {"fvar": ("fvar" in tt), "STAT": ("STAT" in tt)}
+    except Exception:
+        data["variable"] = {"fvar": False, "STAT": False}
+
+    try:
+        data["color_tables"] = detect_color_tables(tt)
+    except Exception:
+        data["color_tables"] = []
+
+    try:
+        data["opentype_features"] = extract_opentype_features(tt)
+    except Exception:
+        data["opentype_features"] = []
+
     return data
 
 
+def fonttools_extract_all(
+    path: Path, cache_dir: Path, use_cache: bool = True
+) -> list[dict[str, Any]]:
+    """Extract fontTools metadata for one file, returning one entry per face."""
+    container = detect_font_container(path)
+
+    # Single-face formats
+    if container != "TTC":
+        key = font_cache_key(path, None)
+        cache_file = cache_dir / f"{key}.json"
+        if use_cache and cache_file.exists():
+            try:
+                return [json.loads(cache_file.read_text(encoding="utf-8"))]
+            except Exception:
+                pass
+
+        out: dict[str, Any] = {"ok": False, "container": container, "ttc_index": None}
+        try:
+            tt = TTFont(path, lazy=True, recalcBBoxes=False, recalcTimestamp=False)  # type: ignore[misc]
+            out = _fonttools_extract_from_tt(
+                path=path, container=container, tt=tt, ttc_index=None
+            )
+        except Exception as e:
+            out["ok"] = False
+            out["error"] = f"Cannot open font: {e}"
+
+        cache_file.write_text(json.dumps(out, indent=2), encoding="utf-8")
+        return [out]
+
+    # TTC formats (multi-face)
+    results: list[dict[str, Any]] = []
+    try:
+        col = TTCollection(path)
+    except Exception as e:
+        out = {
+            "ok": False,
+            "container": "TTC",
+            "ttc_index": None,
+            "error": f"Cannot open TTC: {e}",
+        }
+        # cache file-level error
+        key = font_cache_key(path, None)
+        (cache_dir / f"{key}.json").write_text(
+            json.dumps(out, indent=2), encoding="utf-8"
+        )
+        return [out]
+
+    ttc_count = len(col.fonts)
+    for idx, tt in enumerate(col.fonts):
+        key = font_cache_key(path, idx)
+        cache_file = cache_dir / f"{key}.json"
+        if use_cache and cache_file.exists():
+            try:
+                cached = json.loads(cache_file.read_text(encoding="utf-8"))
+                if isinstance(cached, dict):
+                    cached.setdefault("container", "TTC")
+                    cached.setdefault("ttc_index", idx)
+                    cached.setdefault("ttc_count", ttc_count)
+                results.append(cached)
+                continue
+            except Exception:
+                pass
+
+        try:
+            out = _fonttools_extract_from_tt(
+                path=path, container="TTC", tt=tt, ttc_index=idx
+            )
+            out["ttc_count"] = ttc_count
+        except Exception as e:
+            out = {
+                "ok": False,
+                "container": "TTC",
+                "ttc_index": idx,
+                "ttc_count": ttc_count,
+                "error": f"TTC face extract failed: {e}",
+            }
+
+        cache_file.write_text(json.dumps(out, indent=2), encoding="utf-8")
+        results.append(out)
+
+    return results
+
+
 # -----------------------
-# Normalization into canonical schema
+# Descriptor build
 # -----------------------
 def classify_font(
-    format_block: dict[str, Any], unicode_max: str | None
-) -> dict[str, bool]:
-    is_color = bool(format_block.get("color"))
-    has_emoji_range = False
-    try:
-        if unicode_max and unicode_max.startswith("U+"):
-            max_cp = int(unicode_max[2:], 16)
-            has_emoji_range = max_cp >= 0x1F300
-    except Exception:
-        pass
+    format_block: dict[str, Any], unicode_max: int | None
+) -> dict[str, Any]:
+    """Simple format-based classification (downstream inference is richer)."""
+    container = format_block.get("container")
+    font_type = format_block.get("font_type")
+    color = bool(format_block.get("color"))
+    decorative = bool(format_block.get("decorative"))
+    variable = bool(format_block.get("variable"))
 
-    is_emoji = is_color or has_emoji_range
-    is_decorative = bool(format_block.get("decorative", False))
-    is_text = not is_emoji
-    return {"is_text": is_text, "is_decorative": is_decorative, "is_emoji": is_emoji}
+    # Emoji heuristics
+    is_emoji = bool(color and unicode_max and unicode_max >= 0x1F300)
+
+    return {
+        "is_variable": variable,
+        "is_color": color,
+        "is_decorative": decorative,
+        "is_emoji": is_emoji,
+        "container": container,
+        "font_type": font_type,
+    }
 
 
 def build_font_descriptor(
@@ -436,9 +528,11 @@ def build_font_descriptor(
         if isinstance(fonttools.get("names", {}), dict)
         else {}
     )
+
     family = _best_name(names, NAME_ID_FAMILY)
     style = _best_name(names, NAME_ID_SUBFAMILY)
     postscript = _best_name(names, NAME_ID_POSTSCRIPT)
+    fullname = _best_name(names, NAME_ID_FULLNAME)
 
     languages: list[str] = []
     scripts: list[str] = []
@@ -446,7 +540,6 @@ def build_font_descriptor(
     decorative = False
     fc_color = False
     fc_variable = False
-
     if fontconfig:
         languages = fontconfig.get("languages", []) or []
         scripts = fontconfig.get("scripts", []) or []
@@ -457,7 +550,7 @@ def build_font_descriptor(
 
     container = fonttools.get("container", detect_font_container(font_path))
     font_type = fonttools.get("font_type", "Unknown")
-    variable_flags = fonttools.get("variable", {})
+    variable_flags = fonttools.get("variable", {}) or {}
     variable = bool(
         variable_flags.get("fvar") or variable_flags.get("STAT") or fc_variable
     )
@@ -493,6 +586,8 @@ def build_font_descriptor(
     format_block = {
         "container": container,
         "font_type": font_type,
+        "ttc_index": fonttools.get("ttc_index"),
+        "ttc_count": fonttools.get("ttc_count"),
         "variable": variable,
         "color": color,
         "decorative": decorative,
@@ -507,62 +602,70 @@ def build_font_descriptor(
     embedding_rights = None
     if isinstance(os2, dict) and "error" not in os2:
         vendor = os2.get("vendor_id")
-        embedding_rights = os2.get("fs_type")
+        embedding_rights = os2.get("embedding_rights")
 
-    descriptor = {
+    return {
         "identity": {
             "file": str(font_path),
+            "ttc_index": fonttools.get("ttc_index"),
             "family": family,
             "style": style,
+            "fullname": fullname,
             "postscript_name": postscript,
         },
-        "format": {
-            "container": container,
-            "font_type": font_type,
-            "variable": variable,
-            "color": color,
-        },
+        "platform": {"name": platform_name},
+        "format": format_block,
         "coverage": coverage,
         "typography": typography,
         "classification": classification,
-        "license": {
-            "vendor": vendor,
-            "embedding_rights": embedding_rights,
-            "text": license_text,
-            "url": license_url,
-        },
-        "sources": {
-            "fonttools": bool(fonttools.get("ok", False)),
-            "fontconfig": bool(fontconfig is not None),
-            "windows_registry": platform_name == "windows",
+        "license": {"text": license_text, "url": license_url},
+        "vendor": vendor,
+        "embedding_rights": embedding_rights,
+        "source": {
+            "fonttools": {
+                "ok": bool(fonttools.get("ok", False)),
+                "error": fonttools.get("error"),
+            },
+            "fontconfig": (None if fontconfig is None else {"ok": True}),
         },
     }
 
-    if not fonttools.get("ok", False):
-        descriptor["sources"]["fonttools_error"] = fonttools.get("error", "unknown")
-
-    return descriptor
-
 
 # -----------------------
-# Main dump function
+# Main
 # -----------------------
-def dump_fonts(
-    output_path: Path,
-    cache_dir: Path = DEFAULT_CACHE_DIR,
-    include_fontconfig: bool = True,
-    include_charset: bool = False,
-    use_cache: bool = True,
-    strict: bool = False,
-) -> None:
-    """Generate a canonical font inventory JSON for the current platform."""
-    cache_dir.mkdir(exist_ok=True, parents=True)
-
-    platform_name = (
-        "windows" if IS_WINDOWS else "linux" if IS_LINUX else platform.system().lower()
+def main() -> None:
+    ap = argparse.ArgumentParser(
+        description="Dump a canonical JSON font inventory (Linux + Windows)."
+    )
+    ap.add_argument("--output", default="font_inventory.json", help="Output JSON path.")
+    ap.add_argument(
+        "--cache-dir",
+        default=".cache/fontshow-fonttools",
+        help="Cache directory for fontTools extraction.",
+    )
+    ap.add_argument("--no-cache", action="store_true", help="Disable cache (slower).")
+    ap.add_argument(
+        "--no-fontconfig",
+        action="store_true",
+        help="Disable Linux FontConfig enrichment (fc-query).",
+    )
+    ap.add_argument(
+        "--include-charset",
+        action="store_true",
+        help="Include raw FontConfig charset blob (Linux only).",
     )
 
-    font_files = get_installed_font_files()
+    args = ap.parse_args()
+
+    out_path = Path(args.output)
+    cache_dir = Path(args.cache_dir)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    use_cache = not args.no_cache
+    include_fontconfig = IS_LINUX and (not args.no_fontconfig)
+
+    platform_name = platform.system().lower()
 
     inventory: dict[str, Any] = {
         "metadata": {
@@ -574,115 +677,72 @@ def dump_fonts(
         "fonts": [],
     }
 
-    if IS_LINUX and include_fontconfig:
+    if include_fontconfig:
         try:
             inventory["metadata"]["fontconfig"] = run_command(
                 ["fc-list", "--version"]
             ).stdout.strip()
         except Exception:
-            inventory["metadata"]["fontconfig"] = "unknown"
+            pass
 
-    for p in font_files:
-        if not p.exists():
-            if strict:
-                raise FileNotFoundError(str(p))
-            continue
+    files = get_installed_font_files()
+    if not files:
+        raise SystemExit("No font files discovered.")
 
-        ft = fonttools_extract(p, cache_dir=cache_dir, use_cache=use_cache)
+    # Cache fc-query results per file (not per TTC face)
+    fc_cache: dict[str, Any] = {}
+
+    for i, p in enumerate(files, start=1):
+        if i % 500 == 0:
+            print(f"... {i}/{len(files)} files", file=sys.stderr)
 
         fc: dict[str, Any] | None = None
-        if IS_LINUX and include_fontconfig:
-            try:
-                fc = fc_query_extract(p, include_charset=include_charset)
-            except Exception as e:
-                if strict:
-                    raise
-                fc = {"error": str(e)}
+        if include_fontconfig:
+            key = str(p)
+            if key in fc_cache:
+                fc = fc_cache[key]
+            else:
+                try:
+                    fc = fc_query_extract(p, include_charset=bool(args.include_charset))
+                except Exception as e:
+                    fc = {"error": str(e)}
+                fc_cache[key] = fc
 
-        descriptor = build_font_descriptor(
-            p,
-            platform_name,
-            ft,
-            fc if isinstance(fc, dict) and "error" not in fc else None,
-        )
-        inventory["fonts"].append(descriptor)
+        ft_list = fonttools_extract_all(p, cache_dir, use_cache=use_cache)
+
+        for ft in ft_list:
+            desc = build_font_descriptor(
+                p,
+                platform_name,
+                (
+                    ft
+                    if isinstance(ft, dict)
+                    else {"ok": False, "error": "invalid fonttools block"}
+                ),
+                fc if isinstance(fc, dict) and "error" not in fc else None,
+            )
+            inventory["fonts"].append(desc)
 
     inventory["fonts"].sort(
         key=lambda d: (
             d["identity"].get("family") or "",
             d["identity"].get("style") or "",
             d["identity"].get("file") or "",
+            (
+                d["identity"].get("ttc_index")
+                if d["identity"].get("ttc_index") is not None
+                else -1
+            ),
         )
     )
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        json.dumps(inventory, ensure_ascii=False, indent=2), encoding="utf-8"
+    out_path.write_text(
+        json.dumps(inventory, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-
-
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(
-        description="Generate a canonical font inventory (JSON) for Fontshow.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    print(
+        f"Wrote {len(inventory['fonts'])} font entries to {out_path}", file=sys.stderr
     )
-    p.add_argument(
-        "-o",
-        "--output",
-        type=Path,
-        default=Path("font_inventory.json"),
-        help="Output JSON file",
-    )
-    p.add_argument(
-        "--cache-dir",
-        type=Path,
-        default=DEFAULT_CACHE_DIR,
-        help="Cache directory for per-font analyses",
-    )
-    p.add_argument("--no-cache", action="store_true", help="Disable cache reuse")
-    p.add_argument(
-        "--no-fontconfig",
-        action="store_true",
-        help="Linux only: disable FontConfig enrichment",
-    )
-    p.add_argument(
-        "--include-charset",
-        action="store_true",
-        help="Linux only: include the (large) FontConfig charset block",
-    )
-    p.add_argument(
-        "--strict",
-        action="store_true",
-        help="Abort on errors instead of recording them and continuing",
-    )
-    return p.parse_args(argv)
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
-
-    if not FONTTOOLS_AVAILABLE:
-        print(
-            "WARNING: fontTools not available. Inventory will be incomplete.",
-            file=sys.stderr,
-        )
-
-    try:
-        dump_fonts(
-            output_path=args.output,
-            cache_dir=args.cache_dir,
-            include_fontconfig=not args.no_fontconfig,
-            include_charset=args.include_charset,
-            use_cache=not args.no_cache,
-            strict=args.strict,
-        )
-    except Exception as e:
-        print(f"ERROR: {e}", file=sys.stderr)
-        return 2
-
-    print(f"OK: wrote inventory to {args.output}")
-    return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

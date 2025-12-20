@@ -1,96 +1,90 @@
-# dump_fonts.py
+# dump_fonts.py – Supporto TrueType Collections (.ttc)
 
-`dump_fonts.py` generates a *canonical* font inventory for Fontshow.
+## Panoramica
 
-The goal is to make the rest of the pipeline OS-agnostic:
+A partire da questa versione, `dump_fonts.py` supporta **completamente i file
+TrueType Collection (`.ttc`)**.
 
-- **Dump phase (OS-specific):** discover installed fonts and extract metadata
-- **Parsing / rendering (OS-agnostic):** consume a stable JSON schema
+Un file `.ttc` non rappresenta un singolo font, ma un **contenitore di più font
+indipendenti** (detti *faces*). Ogni face ha:
+- tabelle OpenType proprie
+- name table distinta
+- copertura Unicode potenzialmente diversa
 
-## Output
+Per questo motivo, Fontshow **espande ogni `.ttc` in più voci di inventario**.
 
-By default, the script writes:
+---
 
-- `font_inventory.json`
+## Espansione delle collection
 
-The JSON follows the schema described in `docs/font-inventory-schema.md`.
+Durante il dump:
 
-## Requirements
+- 1 file `.ttc`
+- ⟶ N descrittori di font
+- ⟶ uno per ciascun `ttc_index`
 
-### Common
+Esempio concettuale:
 
-- Python 3.10+
-- `fontTools` (strongly recommended)
+```
+NotoSansCJK.ttc
+ ├─ index 0 → Noto Sans CJK JP
+ ├─ index 1 → Noto Sans CJK KR
+ ├─ index 2 → Noto Sans CJK SC
+ └─ index 3 → Noto Sans CJK TC
+```
 
-### Linux
+---
 
-- `fontconfig` (`fc-list`, `fc-query`) for discovery and enrichment
+## Identificazione delle facce
 
-### Windows
+Ogni font derivato da una collection contiene:
 
-- Uses Windows Registry + Fonts directories for discovery
-- No FontConfig is required
+```json
+"identity": {
+  "file": "/path/to/NotoSansCJK.ttc",
+  "ttc_index": 2,
+  "family": "Noto Sans CJK SC"
+}
+```
 
-## Installation notes
+Il campo `ttc_index`:
+- identifica in modo univoco la faccia
+- è `null` per i font non provenienti da `.ttc`
+- **deve essere preservato** da tutti i consumer dell’inventario
 
-### Linux (Gentoo)
+---
 
-Install fontTools via Portage:
+## Cache fontTools
 
-    sudo emerge dev-python/fonttools
+Il caching di fontTools avviene a livello di *faccia*, non di file:
 
-To add WOFF2 support (recommended):
+```
+cache key = (path, mtime, size, ttc_index)
+```
 
-    echo "dev-python/fonttools brotli" | sudo tee /etc/portage/package.use/fonttools
-    sudo emerge --changed-use dev-python/fonttools
+Questo evita:
+- rianalisi inutili
+- decompressioni ripetute di grandi collection (es. Noto CJK)
 
-### Windows
+---
 
-In a virtual environment:
+## Implicazioni per i consumer
 
-    pip install fonttools
+Gli strumenti a valle (parser, generatori LaTeX, ecc.) devono:
 
-(Use a pinned version if you want reproducible inventories.)
+- trattare ogni entry come un font indipendente
+- usare `ttc_index` quando necessario per selezionare la faccia corretta
 
-## Usage
+In LaTeX con `fontspec`, questo significa usare:
 
-Basic:
+```latex
+\fontspec[Index=<ttc_index>]{<Family Name>}
+```
 
-    python3 scripts/dump_fonts.py --output font_inventory.json
+---
 
-Disable cache:
+## Compatibilità
 
-    python3 scripts/dump_fonts.py --no-cache
-
-Linux only: skip FontConfig enrichment:
-
-    python3 scripts/dump_fonts.py --no-fontconfig
-
-Linux only: include the FontConfig charset block (large output):
-
-    python3 scripts/dump_fonts.py --include-charset
-
-Strict mode (abort on errors):
-
-    python3 scripts/dump_fonts.py --strict
-
-## Caching
-
-The script caches per-font `fontTools` results under:
-
-- `.font_cache/`
-
-The cache key depends on:
-
-- file path
-- file size
-- modification time
-
-Cache is automatically invalidated when the file changes.
-
-## Design notes
-
-- Windows inventory will usually have empty `languages/scripts/charset` fields
-  because those are typically derived from FontConfig.
-- Most OpenType/TrueType metadata is extracted with `fontTools` and is
-  cross-platform.
+- Linux: supporto completo (fc-list + fontTools)
+- Windows: supporto completo (filesystem + fontTools)
+- macOS: non testato, ma il supporto fontTools per TTC è equivalente

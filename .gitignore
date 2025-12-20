@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 dist/
 build/
+luatex*
 # Packaging artifacts
 *.egg-info/
 # Artifacts
@@ -31,6 +32,7 @@ build/
 # Font inventory artifacts (generated)
 # --------------------------------------------------
 .font_cache/
+.cache/
 font_inventory.json
 font_inventory.txt
 font_inventory_enriched.json

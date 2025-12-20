@@ -1,77 +1,61 @@
-# Font inventory JSON schema
+# Estensione dello schema: TrueType Collections (.ttc)
 
-This document describes the canonical JSON produced by `scripts/dump_fonts.py`.
+Questa sezione documenta i campi aggiuntivi introdotti per supportare
+i file TrueType Collection (`.ttc`) nello schema di `font_inventory.json`.
 
-## Top-level object
+---
+
+## identity.ttc_index
 
 ```json
-{
-  "metadata": { "...": "..." },
-  "fonts": [ { "identity": {...}, "...": "..." } ]
+"identity": {
+  "file": "string",
+  "ttc_index": "integer | null"
 }
 ```
 
-### metadata
+- `ttc_index` è l’indice della faccia all’interno della collection
+- vale `null` per font non provenienti da `.ttc`
+- insieme a `file`, identifica **univocamente** un font reale
 
-- `generator`: string identifying the generator
-- `platform`: `linux` or `windows`
-- `generated_at`: ISO-8601 UTC timestamp
-- `python`: Python version string
-- `fontconfig`: (Linux only) reported `fc-list --version` output, if available
+---
 
-### fonts
+## format.ttc_index e format.ttc_count
 
-Array of **FontDescriptor** objects.
+```json
+"format": {
+  "container": "TTC",
+  "ttc_index": "integer",
+  "ttc_count": "integer"
+}
+```
 
-## FontDescriptor
+- `container == "TTC"` indica una TrueType Collection
+- `ttc_index`:
+  - indice della faccia corrente
+- `ttc_count`:
+  - numero totale di facce nella collection
 
-### identity
+---
 
-- `file`: full path to the font file
-- `family`: best-effort family name (from OpenType name table)
-- `style`: best-effort subfamily/style name (from OpenType name table)
-- `postscript_name`: best-effort PostScript name (name ID 6)
+## Invarianti semantiche
 
-### format
+- Ogni entry in `fonts[]` rappresenta **un font reale**
+- I file `.ttc` non sono mai trattati come singolo font
+- `ttc_index` è obbligatorio quando `container == "TTC"`
 
-- `container`: `TrueType`, `OpenType`, `WOFF`, `WOFF2`, `TTC`, `Unknown`
-- `font_type`: `TrueType`, `OpenType CFF`, `Unknown`
-- `variable`: boolean (best-effort)
-- `color`: boolean (best-effort)
+---
 
-### coverage
+## Uso nei consumer (LaTeX / fontspec)
 
-- `unicode.count`: number of Unicode codepoints in the cmap
-- `unicode.min`: minimum codepoint (`U+....`)
-- `unicode.max`: maximum codepoint (`U+....`)
-- `scripts`: list of OpenType script tags (Linux + FontConfig only)
-- `languages`: list of language tags (Linux + FontConfig only)
-- `charset`: optional raw FontConfig charset block (Linux only, if enabled)
+I consumer **devono** usare `ttc_index` per selezionare la faccia corretta.
 
-### typography
+Esempio:
 
-- `weight_class`: integer (OS/2 usWeightClass) or null
-- `width_class`: integer (OS/2 usWidthClass) or null
-- `opentype_features`: list of OpenType feature tags, derived from GSUB/GPOS
+```latex
+\fontspec[Index=3]{Noto Sans CJK}
+```
 
-### classification
-
-Best-effort flags useful for rendering decisions:
-
-- `is_text`
-- `is_decorative`
-- `is_emoji`
-
-### license
-
-- `vendor`: OS/2 vendor id, if available
-- `embedding_rights`: OS/2 fsType, if available
-- `text`: license text (name ID 13), if available
-- `url`: license URL (name ID 14), if available
-
-### sources
-
-- `fonttools`: boolean
-- `fontconfig`: boolean
-- `windows_registry`: boolean
-- optional `fonttools_error` may appear if fontTools extraction failed
+Ignorare `ttc_index` comporta:
+- selezione implicita della faccia 0
+- risultati errati per la maggior parte delle collection
