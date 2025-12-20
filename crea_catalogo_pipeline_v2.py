@@ -750,7 +750,20 @@ def escape_latex(text):
 
 def generate_latex(font_list):
     """Genera il codice LaTeX completo, usando metadati inferiti per esempi e badge."""
+
     font_list = as_font_desc_list(font_list)
+
+    # --- DEDUPLICAZIONE PER FAMIGLIA ---
+    seen_families = set()
+    unique_fonts = []
+    for font in font_list:
+        fam = font_family(font)
+        if fam not in seen_families:
+            seen_families.add(fam)
+            unique_fonts.append(font)
+
+    font_list = unique_fonts
+
     print(f"Generazione file LaTeX per {len(font_list)} font...")
 
     latex_code = LATEX_INITIAL_CODE
