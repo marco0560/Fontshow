@@ -93,4 +93,8 @@ pip install pre-commit
 pre-commit run --all-files
 ```
 
+fontTools is an optional dependency.
+When available, Fontshow extracts deep OpenType metadata (Unicode coverage, blocks, features).
+Without it, the pipeline still works with reduced inference quality.
+
 On Windows + WSL, VS Code with the “Remote - WSL” extension is recommended.

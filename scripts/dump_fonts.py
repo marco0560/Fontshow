@@ -44,7 +44,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from fontTools.ttLib import TTCollection, TTFont
+try:
+    from fontTools.ttLib import TTCollection, TTFont
+
+    FONTTOOLS_AVAILABLE = True
+except ImportError:
+    TTFont = None
+    FONTTOOLS_AVAILABLE = False
 
 UNICODE_BLOCKS = [
     ("Basic Latin", 0x0000, 0x007F),
@@ -483,6 +489,19 @@ def fonttools_extract_all(
     path: Path, cache_dir: Path, use_cache: bool = True
 ) -> list[dict[str, Any]]:
     """Extract fontTools metadata for one file, returning one entry per face."""
+
+    # -------------------------------
+    # Guard: fontTools not available
+    # -------------------------------
+    if not FONTTOOLS_AVAILABLE:
+        return [
+            {
+                "ok": False,
+                "container": detect_font_container(path),
+                "ttc_index": None,
+                "error": "fontTools not available",
+            }
+        ]
     container = detect_font_container(path)
 
     # Single-face formats

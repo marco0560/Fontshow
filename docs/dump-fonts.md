@@ -1,29 +1,27 @@
-# dump_fonts.py – Supporto TrueType Collections (.ttc)
+# dump_fonts.py – TrueType Collections (.ttc) Support
 
-## Panoramica
+## Overview
 
-A partire da questa versione, `dump_fonts.py` supporta **completamente i file
-TrueType Collection (`.ttc`)**.
+As of this version, `dump_fonts.py` **fully supports TrueType Collection (`.ttc`) files**.
 
-Un file `.ttc` non rappresenta un singolo font, ma un **contenitore di più font
-indipendenti** (detti *faces*). Ogni face ha:
-- tabelle OpenType proprie
-- name table distinta
-- copertura Unicode potenzialmente diversa
+A `.ttc` file does not represent a single font, but rather a **container for multiple independent fonts** (called *faces*). Each face has:
+- Its own OpenType tables
+- A distinct name table
+- Potentially different Unicode coverage
 
-Per questo motivo, Fontshow **espande ogni `.ttc` in più voci di inventario**.
+For this reason, Fontshow **expands each `.ttc` into multiple inventory entries**.
 
 ---
 
-## Espansione delle collection
+## Collection Expansion
 
-Durante il dump:
+During the dump:
 
-- 1 file `.ttc`
-- ⟶ N descrittori di font
-- ⟶ uno per ciascun `ttc_index`
+- 1 `.ttc` file
+- ⟶ N font descriptors
+- ⟶ one for each `ttc_index`
 
-Esempio concettuale:
+Conceptual example:
 
 ```
 NotoSansCJK.ttc
@@ -35,9 +33,9 @@ NotoSansCJK.ttc
 
 ---
 
-## Identificazione delle facce
+## Face Identification
 
-Ogni font derivato da una collection contiene:
+Each font derived from a collection contains:
 
 ```json
 "identity": {
@@ -47,35 +45,35 @@ Ogni font derivato da una collection contiene:
 }
 ```
 
-Il campo `ttc_index`:
-- identifica in modo univoco la faccia
-- è `null` per i font non provenienti da `.ttc`
-- **deve essere preservato** da tutti i consumer dell’inventario
+The `ttc_index` field:
+- Uniquely identifies the face
+- Is `null` for fonts not originating from a `.ttc`
+- **Must be preserved** by all inventory consumers
 
 ---
 
-## Cache fontTools
+## fontTools Cache
 
-Il caching di fontTools avviene a livello di *faccia*, non di file:
+fontTools caching occurs at the *face* level, not the file level:
 
 ```
 cache key = (path, mtime, size, ttc_index)
 ```
 
-Questo evita:
-- rianalisi inutili
-- decompressioni ripetute di grandi collection (es. Noto CJK)
+This avoids:
+- Unnecessary re-analysis
+- Repeated decompressions of large collections (e.g., Noto CJK)
 
 ---
 
-## Implicazioni per i consumer
+## Implications for Consumers
 
-Gli strumenti a valle (parser, generatori LaTeX, ecc.) devono:
+Downstream tools (parsers, LaTeX generators, etc.) must:
 
-- trattare ogni entry come un font indipendente
-- usare `ttc_index` quando necessario per selezionare la faccia corretta
+- Treat each entry as an independent font
+- Use `ttc_index` when necessary to select the correct face
 
-In LaTeX con `fontspec`, questo significa usare:
+In LaTeX with `fontspec`, this means using:
 
 ```latex
 \fontspec[Index=<ttc_index>]{<Family Name>}
@@ -83,8 +81,23 @@ In LaTeX con `fontspec`, questo significa usare:
 
 ---
 
-## Compatibilità
+## Compatibility
 
-- Linux: supporto completo (fc-list + fontTools)
-- Windows: supporto completo (filesystem + fontTools)
-- macOS: non testato, ma il supporto fontTools per TTC è equivalente
+- Linux: full support (fc-list + fontTools)
+- Windows: full support (filesystem + fontTools)
+- macOS: untested, but fontTools support for TTC is equivalent
+
+---
+
+## Dependencies
+
+- fontTools:
+    - **optional**
+    - Enables: Unicode coverage, unicode_blocks, OpenType features
+    - If absent:
+        - coverage.unicode is empty
+        - coverage.unicode_blocks is empty
+        - Inference quality degrades
+- fontconfig:
+    - Linux-only
+    - Optional

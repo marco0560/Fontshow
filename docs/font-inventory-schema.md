@@ -11,13 +11,20 @@ i file TrueType Collection (`.ttc`) nello schema di `font_inventory.json`.
 "identity": {
   "file": "string",
   "ttc_index": "integer | null"
+  "coverage": {
+    "unicode": { ... },          // optional
+    "unicode_blocks": { ... },   // optional
+    "scripts": [...],
+    "languages": [...],
+    "charset": "..."
+  }
 }
 ```
 
 - `ttc_index` è l’indice della faccia all’interno della collection
 - vale `null` per font non provenienti da `.ttc`
 - insieme a `file`, identifica **univocamente** un font reale
-
+- in `coverage` il consumatore **non** deve supporre che `unicode` e `unicode_blocks` siano presenti
 ---
 
 ## format.ttc_index e format.ttc_count
