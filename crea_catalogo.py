@@ -1,4 +1,29 @@
-"""Pipeline for creating a LuaLaTeX font catalog from a Fontshow inventory.
+"""
+Fontshow – crea_catalogo.py
+==========================
+
+LaTeX catalog generator for Fontshow.
+
+This module consumes the canonical font inventory JSON produced by
+``dump_fonts.py`` and generates a printable LaTeX catalog.
+
+Design principles
+-----------------
+- **Pure rendering stage**: this module never inspects font binaries.
+- **Inventory-driven**: all semantic information comes from the JSON inventory.
+- **Conservative defaults**: missing or partial metadata is handled gracefully.
+- **LaTeX-first**: output is optimized for XeLaTeX/LuaLaTeX workflows.
+
+This file intentionally mixes:
+- inventory glue logic,
+- rendering helpers,
+- platform-specific fallbacks,
+- CLI orchestration.
+
+The architecture is procedural by design and mirrors the historical evolution
+of the project.
+
+Pipeline for creating a LuaLaTeX font catalog from a Fontshow inventory.
 
 This module contains utilities for loading the JSON inventory, inferring
 rendering choices and producing the final LaTeX source used by the main
@@ -10,16 +35,24 @@ Keep changes minimal: the LaTeX templates in the module are whitespace-
 sensitive and used directly by the renderer.
 """
 
-from __future__ import annotations
-
+import argparse
 import json
+import os
+import platform
+import re
+import subprocess
 import sys
 from collections import OrderedDict
+from datetime import datetime
 from pathlib import Path
 
+# Platform-specific imports (deferred)
 if sys.platform == "win32":
     import winreg
+else:
+    winreg = None
 
+if sys.platform == "win32":
     # modulo specifico Windows
     IS_WINDOWS = True
     IS_LINUX = False
@@ -35,12 +68,6 @@ else:
     IS_LINUX = False
     winreg = None  # Placeholder for non-Windows systems
 
-import argparse
-import os
-import platform
-import re
-import subprocess
-from datetime import datetime
 
 SCRIPT_BADGE_MAP = {
     "latin": "LAT",
@@ -116,6 +143,25 @@ DATE_STR = datetime.now().strftime("%Y%m%d")
 TEST_FONTS = {"arial", "times", "courier", "helvetica", "dejavu"}
 
 # --- Definizione dei blocchi statici (o quasi) di coodice LATTEX ---
+# ============================================================
+# LaTeX rendering logic
+# ============================================================
+#
+# This section is responsible for transforming normalized font descriptors
+# into LaTeX source code. It deliberately contains *no font inspection logic*:
+# all decisions are based exclusively on the inventory JSON structure.
+#
+# Key design constraints:
+# - LaTeX output must be stable and reproducible.
+# - Missing metadata must never break rendering.
+# - Right-to-left scripts are handled conservatively.
+# - Templates are kept explicit (no metaprogramming) for debuggability.
+#
+# IMPORTANT:
+#   Whitespace inside LaTeX templates is semantically relevant.
+#   Changes here must avoid altering indentation or line breaks unless
+#   explicitly intended.
+#
 LATEX_INITIAL_CODE = (
     r"""% !TeX TS-program = lualatex
 % !TeX spellcheck = it_IT
@@ -895,6 +941,24 @@ def generate_latex(font_list: list[dict]) -> str:
     # Chiusura documento e stampa indici
     latex_code += LATEX_END_CODE_1 + str(total) + LATEX_END_CODE_2
     return latex_code
+
+
+# ============================================================
+# Platform integration and CLI orchestration
+# ============================================================
+#
+# This section contains:
+# - platform-specific helpers (Linux / Windows),
+# - optional legacy fallbacks,
+# - LaTeX escaping utilities,
+# - the CLI entry point (main).
+#
+# Design notes:
+# - Platform detection is best-effort and defensive.
+# - Failures in discovery or rendering should degrade gracefully,
+#   producing partial output rather than aborting the whole run.
+# - The CLI is intentionally thin: orchestration only, no business logic.
+#
 
 
 def main() -> None:
