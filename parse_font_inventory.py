@@ -3,17 +3,17 @@
 Fontshow – parse_font_inventory.py
 =================================
 
-Parse and enrich a font_inventory.json produced by dump_fonts.py by applying
-deterministic inference of scripts and languages.
+Parse and enrich a ``font_inventory.json`` produced by ``dump_fonts.py`` by
+applying deterministic inference of writing scripts and language candidates.
 
 Design principles
 -----------------
-- Cross-platform: works only on JSON, never touches font files.
-- Deterministic: same input → same output.
-- Non-destructive: declared metadata is never overwritten.
-- Configurable: inference aggressiveness selectable from CLI.
+- **Cross-platform**: works only on JSON data, never touches font files.
+- **Deterministic**: same input → same output.
+- **Non-destructive**: declared metadata is never overwritten.
+- **Configurable**: inference aggressiveness selectable from CLI.
 
-Default inference level: MEDIUM
+Default inference level: ``medium``.
 """
 
 from __future__ import annotations
@@ -21,12 +21,23 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 # ============================================================
 # Inference thresholds
 # ============================================================
 
-INFERENCE_THRESHOLDS = {
+#: Mapping of inference level → numeric thresholds.
+#:
+#: Structure::
+#:
+#:     {
+#:         "<level>": {
+#:             "script_min_cp": int,  # minimum code points to consider a script
+#:         }
+#:     }
+#:
+INFERENCE_THRESHOLDS: dict[str, dict[str, int]] = {
     "conservative": {
         "script_min_cp": 10,
     },
@@ -42,6 +53,14 @@ INFERENCE_THRESHOLDS = {
 # Unicode → script ranges
 # ============================================================
 
+#: Mapping of ISO 15924 script codes to Unicode code point ranges.
+#:
+#: Each value is a list of ``(start, end)`` integer tuples, inclusive.
+#:
+#: Example::
+#:
+#:     "latn": [(0x0041, 0x007A), (0x00C0, 0x024F)]
+#:
 UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
     "latn": [(0x0041, 0x007A), (0x00C0, 0x024F)],
     "grek": [(0x0370, 0x03FF), (0x1F00, 0x1FFF)],
@@ -64,7 +83,11 @@ UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
 # Script → language candidates
 # ============================================================
 
-SCRIPT_TO_LANGUAGES = {
+#: Mapping of inferred script identifiers to plausible language codes.
+#:
+#: Values are **examples**, not a guarantee of full language support.
+#:
+SCRIPT_TO_LANGUAGES: dict[str, list[str]] = {
     "latn": ["en", "it", "fr", "de", "es", "vi"],
     "grek": ["el"],
     "cyrl": ["ru", "uk", "bg"],
@@ -86,12 +109,25 @@ SCRIPT_TO_LANGUAGES = {
 # ============================================================
 
 
-def infer_scripts(coverage: dict, level: str = "medium") -> list[str]:
+def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
     """
-    Infer writing scripts from Unicode coverage.
+    Infer writing scripts from Unicode coverage metadata.
 
-    Primary source: coverage["unicode_blocks"]
-    Fallback: coverage["unicode"]["max"]
+    The function follows a two-step strategy:
+
+    1. **Primary path**: analyze ``coverage["unicode_blocks"]`` if present.
+    2. **Fallback path**: infer from ``coverage["unicode"]["max"]``.
+
+    Args:
+        coverage: Coverage block extracted from a font entry. Expected keys are
+            ``unicode_blocks`` (mapping block name → count) and/or
+            ``unicode.max`` (maximum code point).
+        level: Inference aggressiveness level. One of
+            ``"conservative"``, ``"medium"`` (default), or ``"aggressive"``.
+
+    Returns:
+        A list of inferred script identifiers (lowercase strings).
+        Returns ``["unknown"]`` if no reliable inference is possible.
     """
     blocks: dict[str, int] = coverage.get("unicode_blocks", {}) or {}
 
@@ -102,6 +138,7 @@ def infer_scripts(coverage: dict, level: str = "medium") -> list[str]:
         total = sum(blocks.values()) or 1
 
         def significant(count: int) -> bool:
+            """Check whether a block count is significant for the given level."""
             if level == "conservative":
                 return count >= 50 or (count / total) >= 0.10
             if level == "aggressive":
@@ -170,9 +207,13 @@ def infer_scripts(coverage: dict, level: str = "medium") -> list[str]:
 
 def infer_languages(scripts: list[str]) -> list[str]:
     """
-    Infer language candidates from inferred scripts.
+    Infer plausible language codes from inferred scripts.
 
-    Languages are *plausible examples*, not a certification of support.
+    Args:
+        scripts: List of script identifiers as returned by :func:`infer_scripts`.
+
+    Returns:
+        A sorted list of unique language codes.
     """
     langs: list[str] = []
     for script in scripts:
@@ -185,20 +226,39 @@ def infer_languages(scripts: list[str]) -> list[str]:
 # ============================================================
 
 
-def parse_inventory(data: dict, level: str) -> dict:
+def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     """
-    Enrich the inventory with inference results.
+    Enrich a font inventory with deterministic inference results.
 
-    Adds an `inference` block to each font.
+    The function iterates over ``data["fonts"]`` and adds an ``inference``
+    block to each font entry.
+
+    Added structure::
+
+        font["inference"] = {
+            "level": str,
+            "scripts": list[str],
+            "languages": list[str],
+            "declared_scripts": list[str],
+            "declared_languages": list[str],
+            "unicode_blocks": dict[str, int],
+        }
+
+    Args:
+        data: Parsed JSON inventory as a Python dictionary.
+        level: Inference aggressiveness level.
+
+    Returns:
+        The same inventory dictionary, enriched in place.
     """
     for font in data.get("fonts", []):
-        coverage = font.get("coverage", {}) or {}
+        coverage: dict[str, Any] = font.get("coverage", {}) or {}
 
-        declared_scripts = coverage.get("scripts", [])
-        declared_languages = coverage.get("languages", [])
+        declared_scripts: list[str] = coverage.get("scripts", [])
+        declared_languages: list[str] = coverage.get("languages", [])
 
-        inferred_scripts = list(infer_scripts(coverage, level) or [])
-        inferred_languages = list(infer_languages(inferred_scripts) or [])
+        inferred_scripts: list[str] = list(infer_scripts(coverage, level) or [])
+        inferred_languages: list[str] = list(infer_languages(inferred_scripts) or [])
 
         font["inference"] = {
             "level": level,
@@ -219,6 +279,7 @@ def parse_inventory(data: dict, level: str) -> dict:
 
 
 def main() -> None:
+    """CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Parse and enrich a Fontshow font_inventory.json with deterministic inference.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -246,7 +307,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    data = json.loads(args.input.read_text(encoding="utf-8"))
+    data: dict[str, Any] = json.loads(args.input.read_text(encoding="utf-8"))
     enriched = parse_inventory(data, args.infer_level)
 
     args.output.write_text(
