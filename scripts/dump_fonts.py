@@ -45,10 +45,19 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from fontTools.ttLib import TTCollection, TTFont
+    # fontTools does not provide type stubs/py.typed; tell mypy to ignore
+    # the import here to avoid "missing library stubs" errors.
+    from fontTools.ttLib import TTCollection, TTFont  # type: ignore[import]
 
     FONTTOOLS_AVAILABLE = True
 except ImportError:
+    # At runtime, when fontTools isn't available, leave `TTFont` as None.
+    # We do not annotate `TTFont` (e.g. `TTFont: Any = None`) nor add a
+    # separate `if TYPE_CHECKING: from fontTools.ttLib import TTFont` block
+    # because such patterns led to mypy "name already defined" or
+    # redefinition issues in this module. The runtime import above uses
+    # `# type: ignore[import]` to silence missing-stubs warnings from mypy,
+    # which is sufficient for our static checks.
     TTFont = None
     FONTTOOLS_AVAILABLE = False
 
@@ -277,6 +286,16 @@ NAME_ID_LICENSE_URL = 14
 
 
 def _best_name(names: dict[str, list[str]], name_id: int) -> str | None:
+    """Return the first non-empty value for a given nameID.
+
+    Args:
+        names: mapping of nameID (as string) to list of candidate strings.
+        name_id: the integer nameID to query.
+
+    Returns:
+        The first non-empty, stripped string for the given nameID, or
+        `None` if no usable value is found.
+    """
     vals = names.get(str(name_id), [])
     for v in vals:
         if v and v.strip():
@@ -613,6 +632,24 @@ def build_font_descriptor(
     fonttools: dict[str, Any],
     fontconfig: dict[str, Any] | None,
 ) -> dict[str, Any]:
+    """Build a canonical font descriptor used in the JSON inventory.
+
+    This assembles identity, platform, format, coverage, typography and
+    license/vendor metadata from `fonttools` and optional `fontconfig`
+    enrichment. The returned dict is the standard per-font descriptor used
+    across the project and expected by `parse_font_inventory.py` and
+    `crea_catalogo.py`.
+
+    Args:
+        font_path: path to the font file.
+        platform_name: normalized platform name (e.g., 'linux', 'windows').
+        fonttools: metadata block produced by `fonttools_extract_all` for
+            the face (may include error fields).
+        fontconfig: optional per-file fc-query enrichment (Linux only).
+
+    Returns:
+        A serializable dict describing the font.
+    """
     names: dict[str, list[str]] = (
         fonttools.get("names", {})
         if isinstance(fonttools.get("names", {}), dict)

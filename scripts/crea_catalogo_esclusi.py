@@ -1,4 +1,12 @@
+"""Generate a small LaTeX document listing fonts that should be excluded.
+
+This helper emits `catalogo_font_esclusi.tex` containing examples and a short
+reason list. It's used by the overall catalog generation to present excluded
+fonts for manual inspection.
+"""
+
 import sys
+from collections.abc import Iterable
 from datetime import date
 
 # --- Configurazione ---
@@ -25,8 +33,15 @@ TEST_STRING_ALPHA = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z a b c d
 LIPSUM_TEXT = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
 
 
-def generate_excluded_latex(excluded_fonts):
-    """Genera il codice LaTeX per il catalogo dei font esclusi."""
+def generate_excluded_latex(excluded_fonts: Iterable[str]) -> str:
+    """Generate LaTeX source for the excluded-fonts catalog.
+
+    Args:
+        excluded_fonts: iterable of font family names to include.
+
+    Returns:
+        The LaTeX document as a single string.
+    """
     latex_parts = []
 
     # Intestazione LaTeX
@@ -94,8 +109,8 @@ Questi font sono stati esclusi dal catalogo principale per i seguenti motivi:
     return "\n".join(latex_parts)
 
 
-def main():
-    """Generazione principale del catalogo dei font esclusi"""
+def main() -> None:
+    """Main entry: write the excluded-fonts LaTeX file to disk."""
     print("===========================================")
     print("  GENERATORE CATALOGO FONT ESCLUSI (Py)")
     print("===========================================")

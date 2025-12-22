@@ -1,3 +1,14 @@
+"""Create a LuaLaTeX catalog of system fonts.
+
+This module contains the main logic to render a LaTeX catalog from a
+Fontshow inventory. Important entry points and constants:
+- `TEST_FONTS`: small set used for fast tests
+- `LATEX_INITIAL_CODE`: LaTeX preamble used by the renderer
+
+Edit `crea_catalogo.py` to change rendering flow or templates. Use
+`python3 crea_catalogo.py -t` to run in test mode.
+"""
+
 import argparse
 import os
 import platform
@@ -74,8 +85,12 @@ def render_sample(font: dict) -> str:
     return choose_sample_text(font)
 
 
-def get_unique_filename(base_name, extension):
-    """Genera un nome file unico aggiungendo un contatore a tre cifre (000-999)."""
+def get_unique_filename(base_name: str, extension: str) -> str:
+    """Generate a unique filename by appending a 3-digit counter.
+
+    Returns a filename like `<base_name>_000.<extension>` that's not present
+    on disk (tries up to 1000 variants).
+    """
     for i in range(1000):
         suffix = f"_{i:03d}"
         filename = f"{base_name}{suffix}.{extension}"

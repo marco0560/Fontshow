@@ -1,3 +1,15 @@
+"""Pipeline for creating a LuaLaTeX font catalog from a Fontshow inventory.
+
+This module contains utilities for loading the JSON inventory, inferring
+rendering choices and producing the final LaTeX source used by the main
+`crea_catalogo` workflow. Key entrypoints:
+- `generate_latex(font_list)` — produce full LaTeX document
+- `get_installed_fonts()` — fallback discovery for legacy mode
+
+Keep changes minimal: the LaTeX templates in the module are whitespace-
+sensitive and used directly by the renderer.
+"""
+
 from __future__ import annotations
 
 import json
@@ -22,6 +34,7 @@ else:
     IS_WINDOWS = False
     IS_LINUX = False
     winreg = None  # Placeholder for non-Windows systems
+
 import argparse
 import os
 import platform
@@ -61,6 +74,11 @@ def get_unique_filename(base_name, extension):
 
 
 def nfss_family_id(font: dict) -> str:
+    """Return a short NFSS-safe identifier for a font (used as temporary family).
+
+    This produces a stable short id prefixed with 'FS' used in `fontspec`
+    calls when a normalized family name is required.
+    """
     return "FS" + str(abs(hash(font.get("identity", {}).get("file", ""))) % 10**8)
 
 
@@ -78,10 +96,10 @@ def fontspec_options(font: dict) -> str:
 
 
 def group_fonts_by_family(fonts: list[dict]) -> list[dict]:
-    """
-    Reduce a list of font entries to one entry per family.
-    Keeps the first encountered font for each family
-    (usually Regular or ttc_index 0).
+    """Reduce a list of font entries to one entry per family.
+
+    Keeps the first encountered font for each family (usually Regular or
+    `ttc_index` 0). Preserves order of first occurrence.
     """
     families = OrderedDict()
     for font in fonts:
@@ -569,8 +587,12 @@ else:
 # --- Funzioni di Sistema ---
 
 
-def clean_font_name(name):
-    """Pulisce il nome del font per ottenere il nome della famiglia."""
+def clean_font_name(name: str) -> str:
+    """Normalize a raw font name to a family-like base name.
+
+    Removes parenthetical hints like `(TrueType)`, and strips common
+    variant suffixes (Bold, Italic, etc.).
+    """
     # Rimuove "(TrueType)", "(OpenType)" e simili
     clean_name = re.sub(r"\s*\((TrueType|OpenType|True Type|Type 1)\)\s*$", "", name)
 
@@ -582,7 +604,11 @@ def clean_font_name(name):
 
 
 def get_installed_fonts_windows():
-    """Recupera la lista dei font installati dal registro di Windows."""
+    """Return a sorted list of installed font family names on Windows.
+
+    The function reads the Windows registry and normalizes names via
+    `clean_font_name`. Excluded names from `EXCLUDED_FONTS` are filtered out.
+    """
     print("Sistema: Windows. Scansione registro...")
     font_list = set()
     registry_paths = [
@@ -608,7 +634,11 @@ def get_installed_fonts_windows():
 
 
 def get_font_details_windows():
-    """Recupera dettagli dei font installati dal registro di Windows per test."""
+    """Return diagnostic details for installed Windows fonts (for tests).
+
+    The returned list contains small dicts with `raw_line`, `extracted_names`
+    and `base_names` useful for debugging parsing logic.
+    """
     details = []
     registry_paths = [
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
@@ -638,7 +668,11 @@ def get_font_details_windows():
 
 
 def extract_font_family(line):
-    """Linux only: Estrae il nome della famiglia del font da una riga di output fc-list"""
+    """Extract the family portion from a `fc-list` line.
+
+    Example input: '/usr/share/fonts/foo.ttf:Family Name:style'
+    Returns the family part (comma-separated families are left intact).
+    """
     parts = line.split(":")
 
     if len(parts) < 2:
@@ -652,8 +686,11 @@ def extract_font_family(line):
         return ":".join(parts[1:2]).strip()
 
 
-def get_installed_fonts_linux():
-    """Recupera la lista dei font installati su Linux usando fc-list."""
+def get_installed_fonts_linux() -> list[str]:
+    """Return a sorted list of installed font family names on Linux using `fc-list`.
+
+    Excluded families listed in `EXCLUDED_FONTS` are filtered out.
+    """
     print("Sistema: Linux. Uso 'fc-list' per l'estrazione dei font...")
     try:
         # Esegue fc-list e cattura l'output
@@ -683,8 +720,12 @@ def get_installed_fonts_linux():
         return []
 
 
-def get_font_details_linux():
-    """Recupera dettagli dei font installati su Linux usando fc-list per test."""
+def get_font_details_linux() -> list[dict]:
+    """Return diagnostic details for installed Linux fonts (for tests).
+
+    Each item contains `raw_line`, `extracted_names` and `base_names` for
+    easier inspection while tuning parsers.
+    """
     details = []
     try:
         # Esegue fc-list e cattura l'output
@@ -718,8 +759,11 @@ def get_font_details_linux():
     return details
 
 
-def get_installed_fonts():
-    """Richiama la funzione appropriata."""
+def get_installed_fonts() -> list[str]:
+    """Dispatch to platform-specific font discovery.
+
+    Returns a sorted list of family names or an empty list on unsupported OS.
+    """
     if IS_WINDOWS:
         return get_installed_fonts_windows()
     elif IS_LINUX:
@@ -729,8 +773,13 @@ def get_installed_fonts():
         return []
 
 
-def generate_test_output(limit=None, filter_test=False):
-    """Genera file di testo ausiliario con dettagli del parsing dei font."""
+def generate_test_output(limit: int | None = None, filter_test: bool = False) -> None:
+    """Produce a small text file with parsing details for manual inspection.
+
+    Args:
+        limit: if positive, limit first N items; if negative, take last |N|.
+        filter_test: if True, keep only fonts matching `TEST_FONTS` substrings.
+    """
     if IS_LINUX:
         details = get_font_details_linux()
     elif IS_WINDOWS:
@@ -774,8 +823,11 @@ def generate_test_output(limit=None, filter_test=False):
     print(f"File di test generato: {test_filename}")
 
 
-def escape_latex(text):
-    """Esegue l'escape dei caratteri speciali LaTeX."""
+def escape_latex(text: str) -> str:
+    """Escape LaTeX special characters in `text`.
+
+    Returns a string safe to embed in LaTeX source.
+    """
     replacements = {
         "&": r"\&",
         "%": r"\%",
@@ -793,8 +845,12 @@ def escape_latex(text):
 # --- Funzione di Generazione LaTeX Aggiornata ---
 
 
-def generate_latex(font_list):
-    """Genera il codice LaTeX completo, usando metadati inferiti per esempi e badge."""
+def generate_latex(font_list: list[dict]) -> str:
+    """Generate the full LaTeX document for the provided font descriptors.
+
+    The input may be a list of descriptors (as produced by
+    `parse_font_inventory.py`) or a legacy list of strings (family names).
+    """
 
     font_list = as_font_desc_list(font_list)
 
@@ -841,7 +897,7 @@ def generate_latex(font_list):
     return latex_code
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Genera catalogo font di sistema in LaTeX"
     )

@@ -11,8 +11,13 @@ import subprocess
 import sys
 
 
-def parse_fc_list(limit=10):
-    cmd = ["fc-list", "-f", "%{file}:%{family}\n"]
+def parse_fc_list(limit: int = 10) -> int:
+    """Parse `fc-list` and print the first `limit` file→family pairs.
+
+    Returns 0 on success, non-zero on error. Useful as a quick parser test
+    when tuning the main `crea_catalogo` parser.
+    """
+    cmd: list[str] = ["fc-list", "-f", "%{file}:%{family}\n"]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, check=True)
     except FileNotFoundError:

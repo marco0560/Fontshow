@@ -1,3 +1,9 @@
+"""Quick helper to produce a small LaTeX file listing excluded fonts.
+
+This is a development convenience used to preview the set of excluded fonts
+and produce an index file that can be included in the main catalog.
+"""
+
 import sys
 
 # --- Configurazione ---
