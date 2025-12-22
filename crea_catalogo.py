@@ -1,20 +1,21 @@
-"""Create a LuaLaTeX catalog of system fonts.
+"""Pipeline for creating a LuaLaTeX font catalog from a Fontshow inventory.
 
-This module contains the main logic to render a LaTeX catalog from a
-Fontshow inventory. Important entry points and constants:
-- `TEST_FONTS`: small set used for fast tests
-- `LATEX_INITIAL_CODE`: LaTeX preamble used by the renderer
+This module contains utilities for loading the JSON inventory, inferring
+rendering choices and producing the final LaTeX source used by the main
+`crea_catalogo` workflow. Key entrypoints:
+- `generate_latex(font_list)` — produce full LaTeX document
+- `get_installed_fonts()` — fallback discovery for legacy mode
 
-Edit `crea_catalogo.py` to change rendering flow or templates. Use
-`python3 crea_catalogo.py -t` to run in test mode.
+Keep changes minimal: the LaTeX templates in the module are whitespace-
+sensitive and used directly by the renderer.
 """
 
-import argparse
-import os
-import platform
-import subprocess
+from __future__ import annotations
+
+import json
 import sys
-from datetime import datetime
+from collections import OrderedDict
+from pathlib import Path
 
 if sys.platform == "win32":
     import winreg
@@ -33,64 +34,35 @@ else:
     IS_WINDOWS = False
     IS_LINUX = False
     winreg = None  # Placeholder for non-Windows systems
+
+import argparse
+import os
+import platform
 import re
+import subprocess
+from datetime import datetime
 
-# ============================================================
-# Sample texts for rendering (language-aware)
-# ============================================================
-
-SAMPLE_TEXTS = {
-    "en": "The quick brown fox jumps over the lazy dog",
-    "it": "Ma la volpe col suo balzo ha raggiunto il quieto Fido",
-    "fr": "Portez ce vieux whisky au juge blond qui fume",
-    "de": "Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich",
-    "es": "El veloz murciélago hindú comía feliz cardillo y kiwi",
-    "el": "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία",
-    "ru": "Съешь же ещё этих мягких французских булок",
-    "hy": "Վարդագույն աղվեսը ցատկում է ծույլ շան վրայով",
-    "ja": "いろはにほへと ちりぬるを",
-    "vi": "Chữ Việt rất phong phú và đa dạng",
-    "zh": "天地玄黃 宇宙洪荒",
-    "ar": "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ الشَّمْسِ",
-    "he": "דג סקרן שט בים מאוכזב ולפתע מצא לו חברה",
-    "ko": "키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다",
-    # Rare / liturgical
-    "cop": "Ⲡⲁⲓ ⲙⲉⲧⲁⲛⲟⲓⲁ",
-    "ti": "ሰላም እንታይ ከመይ ኢኻ",
+SCRIPT_BADGE_MAP = {
+    "latin": "LAT",
+    "greek": "GRK",
+    "cyrillic": "CYR",
+    "arabic": "ARB",
+    "hebrew": "HEB",
+    "devanagari": "DEV",
+    "han": "HAN",
+    "japanese": "JPN",
+    "korean": "KOR",
+    "emoji": "EMOJI",
 }
 
 
-def choose_sample_language(font: dict) -> str | None:
-    inference = font.get("inference", {})
-    langs = inference.get("languages", [])
-    return langs[0] if langs else None
+def script_badges(font: dict) -> list[str]:
+    scripts = font.get("inference", {}).get("scripts", [])
+    return [SCRIPT_BADGE_MAP[s] for s in scripts if s in SCRIPT_BADGE_MAP]
 
 
-def choose_sample_text(font: dict) -> str:
-    lang = choose_sample_language(font)
-    if lang and lang in SAMPLE_TEXTS:
-        return SAMPLE_TEXTS[lang]
-    return SAMPLE_TEXTS["en"]
-
-
-def render_sample(font: dict) -> str:
-    cls = font.get("classification", {})
-
-    if cls.get("is_emoji"):
-        return "😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🥳 🐻‍❄️ ❤️ 🐻"
-
-    if cls.get("is_decorative"):
-        return font.get("identity", {}).get("family", "Decorative Font")
-
-    return choose_sample_text(font)
-
-
-def get_unique_filename(base_name: str, extension: str) -> str:
-    """Generate a unique filename by appending a 3-digit counter.
-
-    Returns a filename like `<base_name>_000.<extension>` that's not present
-    on disk (tries up to 1000 variants).
-    """
+def get_unique_filename(base_name, extension):
+    """Genera un nome file unico aggiungendo un contatore a tre cifre (000-999)."""
     for i in range(1000):
         suffix = f"_{i:03d}"
         filename = f"{base_name}{suffix}.{extension}"
@@ -99,6 +71,41 @@ def get_unique_filename(base_name: str, extension: str) -> str:
     raise ValueError(
         f"Impossibile trovare un nome file unico per {base_name}.{extension} dopo 1000 tentativi."
     )
+
+
+def nfss_family_id(font: dict) -> str:
+    """Return a short NFSS-safe identifier for a font (used as temporary family).
+
+    This produces a stable short id prefixed with 'FS' used in `fontspec`
+    calls when a normalized family name is required.
+    """
+    return "FS" + str(abs(hash(font.get("identity", {}).get("file", ""))) % 10**8)
+
+
+def fontspec_options(font: dict) -> str:
+    """
+    Build fontspec options string.
+
+    Uses TTC index if present, e.g.:
+      Index=3
+    """
+    ttc_index = font.get("identity", {}).get("ttc_index")
+    if ttc_index is not None:
+        return f"Index={ttc_index}"
+    return ""
+
+
+def group_fonts_by_family(fonts: list[dict]) -> list[dict]:
+    """Reduce a list of font entries to one entry per family.
+
+    Keeps the first encountered font for each family (usually Regular or
+    `ttc_index` 0). Preserves order of first occurrence.
+    """
+    families = OrderedDict()
+    for font in fonts:
+        fam = font_family(font)
+        families.setdefault(fam, []).append(font)
+    return [entries[0] for entries in families.values()]
 
 
 # --- Configurazione ---
@@ -226,13 +233,246 @@ I font problematici noti sono stati esclusi preventivamente. La compilazione è 
 )
 # -------------------------------------------
 SAMPLE_1 = r"""\textbf{Test Latino (Lipsum):}
-    {\fontspec{"""
+    {\mdseries\upshape\fontspec{"""
 # --------------------------------------------
 SAMPLE_2 = r"""}
     \Li
     }"""
 # --------------------------------------------
+
+# ============================================================
+# Inventory loading (pipeline mode)
+# ============================================================
+
+DEFAULT_INVENTORY = "font_inventory_enriched.json"
+
+
+def load_font_inventory(path: Path) -> list[dict]:
+    """
+    Load a Fontshow inventory JSON file.
+
+    Expected structure:
+        { "fonts": [ { ...font descriptor... }, ... ], "metadata": { ... } }
+
+    Returns:
+        List of font descriptor dicts.
+
+    Notes:
+        - This function does not touch font files.
+        - It is safe to call on both Linux and Windows.
+    """
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    fonts = data.get("fonts", [])
+    if not isinstance(fonts, list):
+        raise TypeError("Invalid inventory JSON: expected key 'fonts' to be a list.")
+    return fonts
+
+
+def as_font_desc_list(fonts: list) -> list[dict]:
+    """
+    Normalize input fonts into a list of descriptors.
+
+    If `fonts` is already a list of dicts, it is returned as-is.
+    If `fonts` is a list of strings (legacy mode), each item becomes:
+        {"identity": {"family": "<name>"}, "classification": {}, "inference": {}}
+    """
+    out: list[dict] = []
+    for f in fonts:
+        if isinstance(f, dict):
+            out.append(f)
+        else:
+            out.append(
+                {
+                    "identity": {"family": str(f)},
+                    "classification": {},
+                    "inference": {},
+                    "coverage": {},
+                }
+            )
+    return out
+
+
+def font_family(font: dict) -> str:
+    """Best-effort family name for LaTeX rendering and sorting."""
+    ident = font.get("identity", {}) if isinstance(font, dict) else {}
+    return (
+        ident.get("family")
+        or ident.get("postscript_name")
+        or ident.get("fullname")
+        or "Unknown Font"
+    )
+
+
+# ============================================================
+# Sample texts (language-aware)
+# ============================================================
+
+SAMPLE_TEXTS = {
+    "en": "The quick brown fox jumps over the lazy dog",
+    "it": "Ma la volpe col suo balzo ha raggiunto il quieto Fido",
+    "fr": "Portez ce vieux whisky au juge blond qui fume",
+    "de": "Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich",
+    "es": "El veloz murciélago hindú comía feliz cardillo y kiwi",
+    "el": "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία",
+    "ru": "Съешь же ещё этих мягких французских булок",
+    "hy": "Վարդագույն աղվեսը ցատկում է ծույլ շան վրայով",
+    "ja": "いろはにほへと ちりぬるを",
+    "vi": "Chữ Việt rất phong phú và đa dạng",
+    "zh": "天地玄黃 宇宙洪荒",
+    "ar": "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ الشَّمْسِ",
+    "he": "דג סקרן שט בים מאוכזב ולפתע מצא לו חברה",
+    "ko": "키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다",
+    "cop": "Ⲡⲁⲓ ⲙⲉⲧⲁⲛⲟⲓⲁ",
+    "ti": "ሰላም እንታይ ከመይ ኢኻ",
+}
+
+RTL_SCRIPTS = {"arab", "hebr"}
+
+SCRIPT_TO_POLYGLOSSIA = {
+    "arab": ("arabic", "Script=Arabic"),
+    "hebr": ("hebrew", "Script=Hebrew"),
+}
+
+
+def choose_sample_language(font: dict) -> str | None:
+    inf = font.get("inference", {}) or {}
+    langs = inf.get("languages", []) or []
+    if langs:
+        return str(langs[0])
+    cov_langs = font.get("coverage", {}).get("languages", []) or []
+    return str(cov_langs[0]) if cov_langs else None
+
+
+def choose_sample_text(font: dict) -> str | None:
+    lang = choose_sample_language(font)
+    if lang and lang in SAMPLE_TEXTS:
+        return SAMPLE_TEXTS[lang]
+    return None
+
+
+def font_type_label(font: dict) -> str:
+    cls = font.get("classification", {}) or {}
+    if cls.get("is_emoji"):
+        return "EMOJI"
+    if cls.get("is_decorative"):
+        return "DECORATIVE"
+    return "TEXT"
+
+
+def primary_script(font: dict) -> str | None:
+    inf = font.get("inference", {}) or {}
+    scripts = inf.get("scripts", []) or []
+    if scripts:
+        return str(scripts[0])
+    cov_scripts = font.get("coverage", {}).get("scripts", []) or []
+    return str(cov_scripts[0]) if cov_scripts else None
+
+
+def script_label(font: dict, max_scripts: int = 2) -> str:
+    inf = font.get("inference", {}) or {}
+    scripts = inf.get("scripts", []) or []
+    if not scripts:
+        scripts = font.get("coverage", {}).get("scripts", []) or []
+    if not scripts:
+        return "UNKNOWN"
+    return ", ".join(str(s).upper() for s in scripts[:max_scripts])
+
+
+def language_label(font: dict) -> str:
+    lang = choose_sample_language(font)
+    return lang.upper() if lang else "N/A"
+
+
+def render_badges(font: dict) -> str:
+    """
+    Render informational badges for a font.
+
+    Badges are ASCII-only and typeset in monospace to avoid bidi
+    and script-direction issues. The returned string is valid LaTeX
+    and may be empty.
+    """
+    scripts = script_label(font)
+    languages = language_label(font)
+    ftype = font_type_label(font)
+
+    parts = []
+    if scripts:
+        parts.append(f"SCRIPTS: {scripts}")
+    if languages:
+        parts.append(f"LANG: {languages}")
+    if ftype:
+        parts.append(f"TYPE: {ftype}")
+
+    if not parts:
+        return ""
+
+    badge_text = " | ".join(parts)
+
+    return r"{\footnotesize\ttfamily " + badge_text + r"}" "\n"
+
+
+def render_sample_text(font: dict) -> str | None:
+    cls = font.get("classification", {}) or {}
+    fam = font_family(font)
+    if cls.get("is_emoji"):
+        return "😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇"
+    if cls.get("is_decorative"):
+        return fam
+    return choose_sample_text(font)
+
+
+def render_sample_code(font: dict, fam: str) -> str:
+    """
+    Build the LaTeX snippet for the sample.
+
+    For sample rendering we MUST be conservative:
+    - Never request Bold / Italic / BI shapes.
+    - Never propagate weight/width/style inferred metadata.
+    - For RTL scripts use TestNonLatin (polyglossia + harfbuzz).
+    - For LTR scripts use a minimal, NFSS-safe fontspec call.
+    """
+    txt = render_sample_text(font)
+    ps = primary_script(font)
+
+    nfss_id = "FS" + str(abs(hash(fam)) % 10**8)
+
+    # RTL: unchanged (TestNonLatin already isolates fonts)
+    if ps in RTL_SCRIPTS:
+        lang, opts = SCRIPT_TO_POLYGLOSSIA.get(ps, ("arabic", "Script=Arabic"))
+        if not txt:
+            txt = SAMPLE_TEXTS.get("ar" if ps == "arab" else "he", "")
+        return (
+            r"\TestNonLatin{"
+            + escape_latex(fam)
+            + r"}{"
+            + lang
+            + r"}{"
+            + opts
+            + r"}{"
+            + escape_latex(txt)
+            + r"}"
+        )
+
+    if not txt:
+        return SAMPLE_1 + escape_latex(fam) + SAMPLE_2
+
+    return (
+        r"\textbf{Esempio:}"
+        "\n"
+        r"{\mdseries\upshape\fontspec["
+        r"Renderer=Harfbuzz,"
+        f"Family={nfss_id},"
+        r"UprightFont=*,"
+        r"BoldFont={},"
+        r"ItalicFont={},"
+        r"BoldItalicFont={}"
+        r"]{" + escape_latex(fam) + r"}" + escape_latex(txt) + r"}"
+    )
+
+
 NORMAL_BLOCK = """\\subsection{{{safe_name}}}
+
+{badges}
 
 \\IfFontExistsTF{{{font}}}{{%
     \\LogWorking{{{safe_name}}}
@@ -247,7 +487,9 @@ NORMAL_BLOCK = """\\subsection{{{safe_name}}}
         Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
     \\end{{errorbox}}
 }}
-\\vspace{{1em}}"""
+
+\\vspace{{1em}}
+"""
 # --------------------------------------------
 LATEX_END_CODE_1 = r"""\newpage
 
@@ -328,58 +570,29 @@ if IS_WINDOWS:
     TEST_FONTS = {"Times New Roman", "Arial", "Calibri", "Noto Sans"}
 elif IS_LINUX:
     EXCLUDED_FONTS = {"Noto Emoji", "KacstScreen"}
-    TEST_FONTS = {"Times New Roman", "Arial", "Calibri", "Noto Sans"}
+    TEST_FONTS = {
+        "Times New Roman",
+        "Arial",
+        "Calibri",
+        "Noto Sans",
+        "KaitiM",
+        "Devanagari",
+    }
 else:
     EXCLUDED_FONTS = set()
     TEST_FONTS = set()
 
 # Font non-Latini con configurazione linguistica/script specifica (polyglossia + fontspec options)
 # NUOVO: Aggiunto il campo 'options' per specificare Script=...
-SPECIAL_SCRIPT_FONTS = {
-    # Font esistenti
-    "Noto Sans Arabic": {
-        "lang": "arabic",
-        "options": "Script=Arabic",
-        "text": "أهلا وسهلاً! هذا نص تجريبي باللغة العربية. (Scrittura RTL corretta)",
-    },  # Arabo (RTL)
-    "Noto Sans Hebrew": {
-        "lang": "hebrew",
-        "options": "Script=Hebrew",
-        "text": "שלום עולם! זה טקסט בדיקה בעברית. (Scrittura RTL corretta)",
-    },  # Ebraico (RTL)
-    "Noto Sans CJK JP": {
-        "lang": "japanese",
-        "options": "Script=CJK",
-        "text": "こんにちは、世界！これは日本語のテストテキストです。",
-    },  # Giapponese (CJK)
-    "Noto Sans Thai": {
-        "lang": "thai",
-        "options": "Script=Thai",
-        "text": "สวัสดีครับ นี่คือข้อความทดสอบภาษาไทย",
-    },  # Tailandese
-    "Yu Gothic": {
-        "lang": "japanese",
-        "options": "Script=Japanese",
-        "text": "こんにちは世界！これは日本語のテストテキストです。",
-    },  # Giapponese (Script=Japanese)
-    "Microsoft YaHei": {
-        "lang": "chinese",
-        "options": "Script=Han",
-        "text": "你好世界! 这是一个中文测试文本。",
-    },  # Cinese Semplificato (Script=Han)
-    "Nirmala UI": {
-        "lang": "hindi",
-        "options": "Script=Devanagari",
-        "text": "नमस्ते दुनिया! यह एक हिन्दी परीक्षण पाठ है।",
-    },  # Hindi (Devanagari)
-    # Aggiungi qui eventuali altri font speciali
-}
-
 # --- Funzioni di Sistema ---
 
 
-def clean_font_name(name):
-    """Pulisce il nome del font per ottenere il nome della famiglia."""
+def clean_font_name(name: str) -> str:
+    """Normalize a raw font name to a family-like base name.
+
+    Removes parenthetical hints like `(TrueType)`, and strips common
+    variant suffixes (Bold, Italic, etc.).
+    """
     # Rimuove "(TrueType)", "(OpenType)" e simili
     clean_name = re.sub(r"\s*\((TrueType|OpenType|True Type|Type 1)\)\s*$", "", name)
 
@@ -391,7 +604,11 @@ def clean_font_name(name):
 
 
 def get_installed_fonts_windows():
-    """Recupera la lista dei font installati dal registro di Windows."""
+    """Return a sorted list of installed font family names on Windows.
+
+    The function reads the Windows registry and normalizes names via
+    `clean_font_name`. Excluded names from `EXCLUDED_FONTS` are filtered out.
+    """
     print("Sistema: Windows. Scansione registro...")
     font_list = set()
     registry_paths = [
@@ -417,7 +634,11 @@ def get_installed_fonts_windows():
 
 
 def get_font_details_windows():
-    """Recupera dettagli dei font installati dal registro di Windows per test."""
+    """Return diagnostic details for installed Windows fonts (for tests).
+
+    The returned list contains small dicts with `raw_line`, `extracted_names`
+    and `base_names` useful for debugging parsing logic.
+    """
     details = []
     registry_paths = [
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
@@ -447,7 +668,11 @@ def get_font_details_windows():
 
 
 def extract_font_family(line):
-    """Linux only: Estrae il nome della famiglia del font da una riga di output fc-list"""
+    """Extract the family portion from a `fc-list` line.
+
+    Example input: '/usr/share/fonts/foo.ttf:Family Name:style'
+    Returns the family part (comma-separated families are left intact).
+    """
     parts = line.split(":")
 
     if len(parts) < 2:
@@ -461,8 +686,11 @@ def extract_font_family(line):
         return ":".join(parts[1:2]).strip()
 
 
-def get_installed_fonts_linux():
-    """Recupera la lista dei font installati su Linux usando fc-list."""
+def get_installed_fonts_linux() -> list[str]:
+    """Return a sorted list of installed font family names on Linux using `fc-list`.
+
+    Excluded families listed in `EXCLUDED_FONTS` are filtered out.
+    """
     print("Sistema: Linux. Uso 'fc-list' per l'estrazione dei font...")
     try:
         # Esegue fc-list e cattura l'output
@@ -492,8 +720,12 @@ def get_installed_fonts_linux():
         return []
 
 
-def get_font_details_linux():
-    """Recupera dettagli dei font installati su Linux usando fc-list per test."""
+def get_font_details_linux() -> list[dict]:
+    """Return diagnostic details for installed Linux fonts (for tests).
+
+    Each item contains `raw_line`, `extracted_names` and `base_names` for
+    easier inspection while tuning parsers.
+    """
     details = []
     try:
         # Esegue fc-list e cattura l'output
@@ -527,8 +759,11 @@ def get_font_details_linux():
     return details
 
 
-def get_installed_fonts():
-    """Richiama la funzione appropriata."""
+def get_installed_fonts() -> list[str]:
+    """Dispatch to platform-specific font discovery.
+
+    Returns a sorted list of family names or an empty list on unsupported OS.
+    """
     if IS_WINDOWS:
         return get_installed_fonts_windows()
     elif IS_LINUX:
@@ -538,8 +773,13 @@ def get_installed_fonts():
         return []
 
 
-def generate_test_output(limit=None, filter_test=False):
-    """Genera file di testo ausiliario con dettagli del parsing dei font."""
+def generate_test_output(limit: int | None = None, filter_test: bool = False) -> None:
+    """Produce a small text file with parsing details for manual inspection.
+
+    Args:
+        limit: if positive, limit first N items; if negative, take last |N|.
+        filter_test: if True, keep only fonts matching `TEST_FONTS` substrings.
+    """
     if IS_LINUX:
         details = get_font_details_linux()
     elif IS_WINDOWS:
@@ -583,8 +823,11 @@ def generate_test_output(limit=None, filter_test=False):
     print(f"File di test generato: {test_filename}")
 
 
-def escape_latex(text):
-    """Esegue l'escape dei caratteri speciali LaTeX."""
+def escape_latex(text: str) -> str:
+    """Escape LaTeX special characters in `text`.
+
+    Returns a string safe to embed in LaTeX source.
+    """
     replacements = {
         "&": r"\&",
         "%": r"\%",
@@ -602,42 +845,47 @@ def escape_latex(text):
 # --- Funzione di Generazione LaTeX Aggiornata ---
 
 
-def generate_latex(font_list):
-    """Genera il codice LaTeX completo, con la nuova macro per Script/Opzioni."""
+def generate_latex(font_list: list[dict]) -> str:
+    """Generate the full LaTeX document for the provided font descriptors.
+
+    The input may be a list of descriptors (as produced by
+    `parse_font_inventory.py`) or a legacy list of strings (family names).
+    """
+
+    font_list = as_font_desc_list(font_list)
+
+    # --- DEDUPLICAZIONE PER FAMIGLIA ---
+    seen_families = set()
+    unique_fonts = []
+    for font in font_list:
+        fam = font_family(font)
+        if fam not in seen_families:
+            seen_families.add(fam)
+            unique_fonts.append(font)
+
+    font_list = unique_fonts
+
     print(f"Generazione file LaTeX per {len(font_list)} font...")
 
     latex_code = LATEX_INITIAL_CODE
 
-    # Loop sui font
     total = len(font_list)
-    for idx, font in enumerate(font_list):
-        safe_name = escape_latex(font)
+    for idx, font in enumerate(font_list, start=1):
+        fam = font_family(font)
+        safe_name = escape_latex(fam)
+        badges = render_badges(font)
+        sample_code = render_sample_code(font, fam)
 
-        if idx % 50 == 0:
+        if idx % 500 == 0 or idx == total:
             print(f"  ... processati {idx}/{total}")
 
-        # Inizializza l'esempio di testo standard (Lipsum)
-        sample_code = SAMPLE_1 + font + SAMPLE_2
-
-        # Gestione Esempi: Testo specifico per lingua
-        if font in SPECIAL_SCRIPT_FONTS:
-            spec = SPECIAL_SCRIPT_FONTS[font]
-            sample_text = escape_latex(spec["text"])
-            lang_tag = spec["lang"]
-            font_options = spec["options"]  # <-- NUOVO: Opzioni Fontspec
-
-            sample_code = f"""\\TestNonLatin{{{font}}}{{{lang_tag}}}{{{font_options}}}{{{sample_text}}}
-            """
-        else:
-            # Usa il codice standard se non è un font con script speciale
-            sample_code = SAMPLE_1 + font + SAMPLE_2
-
-        # Blocco LaTeX per il singolo font
         block = NORMAL_BLOCK.format(
-            safe_name=safe_name, font=font, sample_code=sample_code
+            safe_name=safe_name,
+            font=fam,
+            badges=badges,
+            sample_code=sample_code,
         )
-        latex_code += "\n\n"
-        latex_code += block
+        latex_code += "\n" + block
 
     latex_code += "\n\n"
     for font in sorted(list(EXCLUDED_FONTS)):
@@ -649,7 +897,7 @@ def generate_latex(font_list):
     return latex_code
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Genera catalogo font di sistema in LaTeX"
     )
@@ -664,6 +912,12 @@ def main():
         "--TestFixed",
         action="store_true",
         help="Filtra solo i font che contengono sottostringhe in TEST_FONTS",
+    )
+    parser.add_argument(
+        "--inventory",
+        type=str,
+        default=None,
+        help="Percorso a font_inventory_enriched.json (se omesso, usa il default se presente).",
     )
     parser.add_argument(
         "-n",
@@ -684,15 +938,29 @@ def main():
     if args.test:
         generate_test_output(args.number, args.TestFixed)
 
-    print("[1/3] Rilevamento font in corso...")
-    fonts = get_installed_fonts()
-    if not fonts:
-        print("✗ Nessun font da catalogare o errore di sistema.")
-        sys.exit(1)
+    print("[1/3] Caricamento inventario font (pipeline)...")
+    inv_path = None
+    if args.inventory:
+        inv_path = Path(args.inventory)
+    else:
+        default = Path(DEFAULT_INVENTORY)
+        if default.exists():
+            inv_path = default
 
+    if inv_path and inv_path.exists():
+        fonts = load_font_inventory(inv_path)
+        print(f"✓ Inventario caricato: {inv_path} ({len(fonts)} font)")
+    else:
+        print("[1/3] Inventario non trovato, fallback a rilevamento legacy...")
+        fonts = get_installed_fonts()
+        if not fonts:
+            print("✗ Nessun font da catalogare o errore di sistema.")
+            sys.exit(1)
     if args.TestFixed:
         fonts = [
-            f for f in fonts if any(sub.lower() in f.lower() for sub in TEST_FONTS)
+            f
+            for f in as_font_desc_list(fonts)
+            if any(sub.lower() in font_family(f).lower() for sub in TEST_FONTS)
         ]
 
     if args.number:
@@ -702,7 +970,8 @@ def main():
             fonts = fonts[args.number :]
 
     # Ordina alfabeticamente la lista dei font
-    fonts = sorted(fonts)
+    fonts = sorted(as_font_desc_list(fonts), key=font_family)
+    fonts = group_fonts_by_family(fonts)
 
     latex_content = generate_latex(fonts)
 
