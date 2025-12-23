@@ -1,5 +1,9 @@
 # Fontshow
 
+
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://marco0560.github.io/Fontshow/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Fontshow is a font inventory and catalog generation toolchain.
 
 It discovers installed fonts, extracts low-level metadata, performs
