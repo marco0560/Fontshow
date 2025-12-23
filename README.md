@@ -1,100 +1,75 @@
 # Fontshow
 
-Fontshow generates a PDF catalog of the system fonts installed on the machine.
-The project is organized as a **multi-stage, cross-platform pipeline** that
-separates font discovery, metadata inference and LaTeX rendering.
+Fontshow is a font inventory and catalog generation toolchain.
 
----------------------------------------------------------------------
+It discovers installed fonts, extracts low-level metadata, performs
+script and language inference, and generates printable LaTeX catalogs.
+
+The project is designed as a linear, data-driven pipeline with explicit
+data contracts between stages.
+
+---
+
+## Features
+
+- Cross-platform font discovery (Linux and Windows)
+- Deep font metadata extraction using fontTools
+- Script and language inference based on Unicode coverage
+- Structured JSON font inventory
+- LaTeX catalog generation (XeLaTeX / LuaLaTeX)
+- Reproducible, inventory-driven workflow
+
+---
 
 ## Pipeline overview
 
-```text
-dump_fonts.py
-  → font_inventory.json
-parse_font_inventory.py
-  → font_inventory_enriched.json
-create_catalog.py
-  → catalogo_font_sistema_<PLATFORM>_<DATE>_<NNN>.pdf
-  ```
+\```text
+dump_fonts → parse_font_inventory → create_catalog
+\```
 
-### Stage responsibilities
+Each stage consumes structured data produced by the previous one and
+does not re-inspect font binaries unnecessarily.
 
-- dump_fonts.py
-  OS-dependent discovery and metadata extraction.
+---
 
-- parse_font_inventory.py
-  Cross-platform inference of scripts and languages.
+## Installation
 
-- create_catalog.py
-  Pure renderer producing LaTeX output.
+Fontshow is currently intended to be used from source.
 
----------------------------------------------------------------------
+\```bash
+git clone https://github.com/marco0560/Fontshow.git
+cd Fontshow
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+\```
 
-## Quick start
+---
 
-1. Generate inventory
-   `python3 scripts/dump_fonts.py`
+## Usage
 
-2. Enrich inventory
-   `python3 scripts/parse_font_inventory.py font_inventory.json`
+Typical usage follows the pipeline stages:
 
-3. Generate LaTeX
-   `python3 create_catalog.py font_inventory_enriched.json`
+\```bash
+python -m fontshow.dump_fonts
+python -m fontshow.parse_font_inventory
+python -m fontshow.create_catalog
+\```
 
-4. Build PDF
-   `lualatex catalogo_font_sistema_*.tex` (run twice)
+Each stage produces an explicit output artifact that can be inspected
+or reused independently.
 
----------------------------------------------------------------------
-
-## Sample text logic
-
-- Emoji fonts → emoji-only samples
-- Decorative fonts → family name
-- Text fonts → language-aware samples
-
-Languages supported include Arabic, Hebrew, Chinese, Japanese, Korean,
-Armenian, Vietnamese, Coptic and Tigrinya.
-
----------------------------------------------------------------------
+---
 
 ## Documentation
 
-See the docs/ directory:
+Full documentation, including architecture, data model, and API
+reference, is available at:
 
-- architecture.md
-- parse-font-inventory.md
-- font-inventory-schema.md
-- font-inventory.md
-- fonttools-integration.md
-- dump-fonts.md
+👉 https://marco0560.github.io/Fontshow/
 
----------------------------------------------------------------------
+---
 
-## Commit policy
+## License
 
-Conventional Commits are enforced via hooks and CI.
-
-Git hooks are managed via a versioned `.githooks/` directory to ensure
-consistent behavior across Linux, Windows, and WSL environments.
-
----------------------------------------------------------------------
-
-## Development notes
-
-This repository uses a custom Git hooks directory (`.githooks/`).
-
-If you have `pre-commit` installed, hooks are automatically executed
-via the custom pre-commit hook wrapper.
-
-To enable full pre-commit support manually:
-
-```bash
-pip install pre-commit
-pre-commit run --all-files
-```
-
-fontTools is an optional dependency.
-When available, Fontshow extracts deep OpenType metadata (Unicode coverage, blocks, features).
-Without it, the pipeline still works with reduced inference quality.
-
-On Windows + WSL, VS Code with the “Remote - WSL” extension is recommended.
+Fontshow is released under the MIT License.
