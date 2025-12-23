@@ -64,6 +64,7 @@ LaTeX catalog
 ```
 
 Each stage produces a JSON-compatible structure that can be:
+
 - inspected manually,
 - cached,
 - reused independently of the other stages.
@@ -102,12 +103,14 @@ explicitly documented.
 ### dump_fonts
 
 Responsible for:
+
 - discovering installed font files,
 - extracting per-face metadata using fontTools,
 - optional enrichment via FontConfig (Linux),
 - caching expensive extraction results.
 
 It does **not**:
+
 - perform semantic inference,
 - group fonts,
 - make rendering decisions.
@@ -117,6 +120,7 @@ It does **not**:
 ### parse_font_inventory
 
 Responsible for:
+
 - interpreting Unicode coverage,
 - inferring scripts and languages,
 - normalizing and enriching inventory entries.
@@ -128,6 +132,7 @@ It operates purely on structured data and never accesses font binaries.
 ### create_catalog
 
 Responsible for:
+
 - grouping fonts by family,
 - selecting representative samples,
 - rendering LaTeX source code.
@@ -145,6 +150,7 @@ Fontshow adopts a best-effort error handling strategy:
 - the pipeline continues unless a critical invariant is violated.
 
 This approach ensures that:
+
 - large font collections remain processable,
 - malformed fonts do not abort the entire run,
 - diagnostic information remains available for inspection.

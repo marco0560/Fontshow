@@ -9,6 +9,7 @@ The central artifact is the **font inventory**, a JSON-compatible
 structure that is progressively enriched by each pipeline stage.
 
 The purpose of this document is to:
+
 - describe the structure of the inventory,
 - define the meaning of each field,
 - clarify which module is responsible for producing each piece of data.
@@ -113,6 +114,7 @@ the font binary.
 This data is produced exclusively by **`dump_fonts`**.
 
 Typical contents include:
+
 - name table entries,
 - OS/2 table fields,
 - Unicode range flags,
@@ -133,6 +135,7 @@ This section is initially populated by **`dump_fonts`** and may be
 refined by **`parse_font_inventory`**.
 
 Typical fields include:
+
 - covered Unicode ranges,
 - lists of representative codepoints,
 - script-level coverage summaries.
@@ -173,6 +176,7 @@ Some fields are added or derived specifically to support rendering.
 
 These fields are typically consumed by **`create_catalog`** and may
 include:
+
 - grouping hints,
 - sample text selection metadata,
 - script prioritization flags.
@@ -186,6 +190,7 @@ Rendering-related fields must not affect upstream inference logic.
 Fontshow is designed to tolerate incomplete data.
 
 Rules:
+
 - optional fields may be missing,
 - missing fields must never cause downstream crashes,
 - absence of data should result in degraded output quality, not failure.
@@ -200,6 +205,7 @@ The inventory format is versioned implicitly via the generator version
 stored in `metadata.version`.
 
 Breaking changes to the inventory structure should be accompanied by:
+
 - a version bump,
 - explicit documentation updates,
 - migration notes if applicable.
@@ -211,6 +217,7 @@ Breaking changes to the inventory structure should be accompanied by:
 The Fontshow data model is intentionally explicit and extensible.
 
 It serves as:
+
 - a stable contract between pipeline stages,
 - a serialization format for caching and inspection,
 - a foundation for external tools consuming font metadata.
