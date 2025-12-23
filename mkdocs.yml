@@ -1,0 +1,35 @@
+site_name: Fontshow
+site_description: Font inventory and catalog generation toolchain
+site_author: Marco Coppola
+
+repo_name: fontshow
+repo_url: https://github.com/marco0560/Fontshow
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.top
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: false
+            show_root_heading: true
+            show_signature_annotations: true
+            separate_signature: true
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - Data dictionary: data_dictionary.md
+  - Modules:
+      - dump_fonts: dump_fonts.md
+      - parse_font_inventory: parse_font_inventory.md
+      - create_catalog: create_catalog.md
