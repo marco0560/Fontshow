@@ -15,7 +15,7 @@ font_inventory.json
    ↓
 parse_font_inventory.py
    ↓
-crea_catalogo.py / pipeline LaTeX
+create_catalog.py / pipeline LaTeX
 ```
 
 ---
@@ -36,7 +36,7 @@ La decisione di espandere le collection nel `dump` (e non a valle) garantisce:
 |-----------|----------------|
 | dump_fonts.py | Espansione `.ttc`, estrazione per-face |
 | parse_font_inventory.py | Inferenza script/lingua |
-| crea_catalogo.py | Rendering corretto (Index=…) |
+| create_catalog.py | Rendering corretto (Index=…) |
 
 ---
 

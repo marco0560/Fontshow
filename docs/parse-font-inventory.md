@@ -13,7 +13,7 @@ languages.
 
 - Compensate for missing metadata (especially on Windows).
 - Keep the pipeline OS-agnostic after the dump phase.
-- Prepare a stable, enriched structure for `crea_catalogo.py`.
+- Prepare a stable, enriched structure for `create_catalog.py`.
 
 Important:
 - No font files are accessed.
@@ -28,7 +28,7 @@ dump_fonts.py
   → font_inventory.json
 parse_font_inventory.py
   → font_inventory_enriched.json
-crea_catalogo.py
+create_catalog.py
   → LaTeX catalog
 
 This separation ensures that:

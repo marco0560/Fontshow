@@ -1,5 +1,5 @@
 """
-Fontshow – crea_catalogo.py
+Fontshow – create_catalog.py
 ==========================
 
 LaTeX catalog generator for Fontshow.
@@ -27,7 +27,7 @@ Pipeline for creating a LuaLaTeX font catalog from a Fontshow inventory.
 
 This module contains utilities for loading the JSON inventory, inferring
 rendering choices and producing the final LaTeX source used by the main
-`crea_catalogo` workflow. Key entrypoints:
+`create_catalog` workflow. Key entrypoints:
 - `generate_latex(font_list)` — produce full LaTeX document
 - `get_installed_fonts()` — fallback discovery for legacy mode
 

@@ -13,7 +13,7 @@ dump_fonts.py
   → font_inventory.json
 parse_font_inventory.py
   → font_inventory_enriched.json
-crea_catalogo.py
+create_catalog.py
   → catalogo_font_sistema_<PLATFORM>_<DATE>_<NNN>.pdf
   ```
 
@@ -25,7 +25,7 @@ crea_catalogo.py
 - parse_font_inventory.py
   Cross-platform inference of scripts and languages.
 
-- crea_catalogo.py
+- create_catalog.py
   Pure renderer producing LaTeX output.
 
 ---------------------------------------------------------------------
@@ -39,7 +39,7 @@ crea_catalogo.py
    `python3 scripts/parse_font_inventory.py font_inventory.json`
 
 3. Generate LaTeX
-   `python3 crea_catalogo.py font_inventory_enriched.json`
+   `python3 create_catalog.py font_inventory_enriched.json`
 
 4. Build PDF
    `lualatex catalogo_font_sistema_*.tex` (run twice)
