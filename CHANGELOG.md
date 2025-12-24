@@ -1,3 +1,9 @@
+## [0.6.0](https://github.com/marco0560/Fontshow/compare/v0.5.0...v0.6.0) (2025-12-24)
+
+### Features
+
+* **core:** add clean_repo script to remove ignored artifacts ([cef0937](https://github.com/marco0560/Fontshow/commit/cef09376ac141e4d61427ccf861740486c1e250a))
+
 ## [0.5.0](https://github.com/marco0560/Fontshow/compare/v0.4.0...v0.5.0) (2025-12-24)
 
 ### Features
