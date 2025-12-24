@@ -40,6 +40,8 @@ does not re-inspect font binaries unnecessarily.
 
 ---
 
+## Installation
+
 Clone the repository and create a virtual environment:
 
 ```bash
@@ -49,6 +51,34 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+## Repository cleanup utility
+
+The repository includes a helper script to remove generated artifacts and
+temporary files while keeping the working tree clean:
+
+```bash
+python scripts/clean_repo.py
+```
+
+The script removes **only files ignored by Git** (according to `.gitignore`)
+and never deletes tracked files.
+
+A dry-run mode is available to safely preview the cleanup:
+
+```bash
+python scripts/clean_repo.py --dry-run
+```
+
+### Safety guarantees
+
+Some paths are explicitly protected and will **never be removed**, even if
+ignored by Git. In particular:
+
+- `.venv` (Python virtual environment)
+
+This ensures that the cleanup process is safe to run during development
+without risking the local working environment.
 
 ---
 

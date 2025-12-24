@@ -18,6 +18,12 @@ cover:
 
 ---
 
+## Repository cleanup
+
+For development convenience, the repository provides a cleanup script
+(`scripts/clean_repo.py`) to remove generated artifacts while preserving
+the local virtual environment.
+
 ## Manual test: `--list-test-fonts`
 
 ### Purpose
