@@ -1,3 +1,9 @@
+## [0.5.0](https://github.com/marco0560/Fontshow/compare/v0.4.0...v0.5.0) (2025-12-24)
+
+### Features
+
+* **core:** package execution model, inventory validation, and docs update ([3965550](https://github.com/marco0560/Fontshow/commit/3965550574799a1d560b5c30defcebed635e85cf))
+
 ## [0.3.2](https://github.com/marco0560/Fontshow/compare/v0.3.1...v0.3.2) (2025-12-20)
 
 ### Bug Fixes
