@@ -31,18 +31,22 @@ The JSON schema is documented in:
 - docs/dump-fonts.md
 """
 
-from __future__ import annotations
+# from __future__ import annotations
 
 import argparse
+import getpass
 import hashlib
 import json
 import os
 import platform
+import socket
 import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+from fontshow import __version__ as FONTSHOW_VERSION
 
 try:
     # fontTools does not provide type stubs/py.typed; tell mypy to ignore
@@ -107,6 +111,34 @@ def run_command(argv: list[str]) -> subprocess.CompletedProcess[str]:
         stderr=subprocess.STDOUT,
         check=False,
     )
+
+
+def collect_environment_metadata() -> dict:
+    def is_wsl():
+        return "WSL_DISTRO_NAME" in os.environ or (
+            os.path.exists("/proc/version")
+            and "microsoft" in open("/proc/version").read().lower()
+        )
+
+    def is_container():
+        return os.path.exists("/.dockerenv") or os.path.exists("/run/.containerenv")
+
+    exec_type = "native"
+    if is_wsl():
+        exec_type = "wsl"
+    elif is_container():
+        exec_type = "container"
+
+    return {
+        "hostname": socket.gethostname(),
+        "username": getpass.getuser(),
+        "os": platform.system(),
+        "kernel": platform.release(),
+        "platform": platform.platform(),
+        "execution_context": {
+            "type": exec_type,
+        },
+    }
 
 
 # -----------------------
@@ -1020,8 +1052,11 @@ def main() -> None:
 
     inventory: dict[str, Any] = {
         "metadata": {
+            "schema_version": "1.0",
             "generated_at": utc_now_iso(),
-            "platform": platform_name,
+            "tool": "dump_fonts",
+            "tool_version": FONTSHOW_VERSION,
+            "environment": collect_environment_metadata(),
             "fonttools_available": FONTTOOLS_AVAILABLE,
         },
         "fonts": [],

@@ -16,10 +16,11 @@ Design principles
 Default inference level: ``medium``.
 """
 
-from __future__ import annotations
+# from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -103,6 +104,53 @@ SCRIPT_TO_LANGUAGES: dict[str, list[str]] = {
     "copt": ["cop"],
     "ethi": ["ti"],
 }
+
+
+# ============================================================
+# Helper functions
+# ============================================================
+
+
+def validate_inventory(data: dict) -> int:
+    errors = 0
+
+    if not isinstance(data, dict):
+        print("❌ Inventory root is not a JSON object")
+        return 1
+
+    metadata = data.get("metadata", {})
+    schema_version = metadata.get("schema_version")
+
+    if schema_version is None:
+        print("⚠️  Warning: missing schema_version")
+    elif schema_version != "1.0":
+        print(f"⚠️  Warning: unknown schema_version '{schema_version}'")
+
+    fonts = data.get("fonts")
+    if not isinstance(fonts, list):
+        print("❌ 'fonts' field missing or not a list")
+        return 1
+
+    for idx, font in enumerate(fonts):
+        if not isinstance(font, dict):
+            print(f"❌ Font entry #{idx} is not an object")
+            errors += 1
+            continue
+
+        identity = font.get("identity", {})
+        family = identity.get("family")
+        base_names = font.get("base_names")
+
+        if not family and not base_names:
+            print(f"⚠️  Warning: font entry #{idx} has no family or base_names")
+
+    if errors == 0:
+        print("✅ Inventory validation completed (no fatal errors)")
+    else:
+        print(f"❌ Inventory validation failed with {errors} errors")
+
+    return errors
+
 
 # ============================================================
 # Inference helpers
@@ -269,7 +317,10 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
             "unicode_blocks": coverage.get("unicode_blocks", {}),
         }
 
-    data.setdefault("metadata", {})["inference_level"] = level
+    metadata = data.setdefault("metadata", {})
+    metadata["inference_level"] = level
+    metadata.setdefault("schema_version", "1.0")
+
     return data
 
 
@@ -304,10 +355,37 @@ def main() -> None:
         default="medium",
         help="Inference aggressiveness level",
     )
+    parser.add_argument(
+        "--validate-inventory",
+        action="store_true",
+        help="Validate inventory structure and exit (no output generation)",
+    )
 
     args = parser.parse_args()
 
     data: dict[str, Any] = json.loads(args.input.read_text(encoding="utf-8"))
+
+    # --- Soft schema validation ---
+    metadata = data.setdefault("metadata", {})
+
+    schema_version = metadata.get("schema_version")
+    if schema_version is None:
+        print("⚠️  Warning: inventory has no 'schema_version'; assuming legacy format")
+        metadata["schema_version"] = "1.0"
+    elif schema_version != "1.0":
+        print(
+            f"⚠️  Warning: unsupported schema_version '{schema_version}', attempting best-effort parsing"
+        )
+
+    fonts = data.get("fonts")
+    if not isinstance(fonts, list):
+        raise TypeError("Invalid inventory JSON: 'fonts' must be a list")
+
+    # ------------------------------
+    if args.validate_inventory:
+        exit_code = validate_inventory(data)
+        sys.exit(exit_code)
+
     enriched = parse_inventory(data, args.infer_level)
 
     args.output.write_text(

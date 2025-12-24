@@ -33,6 +33,9 @@ At the top level, the font inventory is a JSON object with two main keys:
 }
 ```
 
+Derived values such as the total number of fonts must not be stored in
+metadata, as they can be recomputed by downstream stages.
+
 ---
 
 ## Global metadata
@@ -40,22 +43,48 @@ At the top level, the font inventory is a JSON object with two main keys:
 The `metadata` object contains information about the context in which
 the inventory was generated.
 
+### Inventory metadata and schema versioning
+
+The font inventory includes a `metadata` section describing the context in
+which the inventory was generated.
+
+This section contains:
+
+- a `schema_version` identifying the inventory format
+- the name and version of the tool that generated the inventory
+- environment information (host, OS, execution context)
+
+All metadata fields are optional and must be treated as non-authoritative.
+They are intended for debugging, reproducibility, and diagnostic purposes
+only.
+
+Downstream consumers must not assume the presence of any metadata field.
+
 ### Fields
 
-- **`generator`** (`string`)
-  Identifier of the tool that generated the inventory (e.g. `Fontshow`).
+- **`schema_version`** (`string`)
+  Version identifier of the inventory schema (e.g. `"1.0"`).
 
-- **`version`** (`string`)
-  Version of the generator.
+- **`tool`** (`string`)
+  Identifier of the tool that generated the inventory (e.g. `dump_fonts`).
 
-- **`timestamp`** (`string`, ISO 8601)
-  Generation time of the inventory.
+- **`tool_version`** (`string`)
+  Version of Fontshow used to generate the inventory.
 
-- **`platform`** (`string`)
-  Operating system identifier (e.g. `linux`, `windows`).
+- **`generated_at`** (`string`, ISO 8601, UTC)
+  Timestamp of inventory generation.
 
-- **`font_count`** (`integer`)
-  Total number of font faces discovered.
+- **`environment`** (`object`, optional)
+  Information about the execution environment.
+
+  Typical subfields include:
+
+  - `hostname`
+  - `username`
+  - `os`
+  - `kernel`
+  - `platform`
+  - `execution_context.type` (`native`, `wsl`, `container`, `vm`, `unknown`)
 
 ---
 
@@ -81,6 +110,14 @@ a font file or a font collection.
 
 Not all fields are mandatory. Optional fields may be absent if the
 corresponding information could not be determined.
+
+Some inventory entries may represent charset-only information rather than
+individual fonts. These entries may lack identifying fields such as
+`identity.family` or `base_names`.
+
+Such entries are valid and may appear when extended Fontconfig data is
+included, but they are not intended to be used for font selection or catalog
+generation.
 
 ---
 
@@ -201,14 +238,17 @@ Consumers of the inventory must always check for field presence.
 
 ## Versioning and compatibility
 
-The inventory format is versioned implicitly via the generator version
-stored in `metadata.version`.
+The inventory format is explicitly versioned via the `metadata.schema_version`
+field.
 
-Breaking changes to the inventory structure should be accompanied by:
+The schema version is independent from the Fontshow tool version.
 
-- a version bump,
-- explicit documentation updates,
-- migration notes if applicable.
+Non-breaking changes may add new optional fields without changing the schema
+version. Breaking changes require a schema version bump and corresponding
+documentation updates.
+
+Downstream consumers must tolerate unknown schema versions and missing fields,
+issuing warnings when appropriate but never aborting execution.
 
 ---
 

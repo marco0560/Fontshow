@@ -13,7 +13,7 @@ At a high level, Fontshow consists of three main stages:
 
 1. **Font discovery and raw metadata extraction**
 2. **Semantic inference and normalization**
-3. **Rendering and catalog generation**
+3. **Catalog generation and rendering**
 
 The architecture intentionally avoids tight coupling between stages and
 relies on explicit data contracts instead of shared state.
@@ -79,6 +79,11 @@ The inventory is a JSON document with two main sections:
 
 - `metadata`: global information about the generation context
 - `fonts`: a list of per-font (or per-face) descriptors
+
+Metadata fields may include environment and tool information intended for
+debugging and reproducibility purposes. Downstream stages must treat metadata
+as informative and non-authoritative.
+
 
 Each stage respects the following contract:
 
@@ -172,6 +177,23 @@ This choice prioritizes clarity and debuggability over extensibility through
 inheritance.
 
 ---
+
+### Inventory schema evolution
+
+Fontshow uses a versioned JSON inventory as the central data contract
+between pipeline stages.
+
+Each inventory declares a `schema_version` in its metadata. Downstream
+stages must remain tolerant to missing or unknown fields and must not
+assume the presence of optional metadata.
+
+Schema validation is intentionally *soft*: unknown schema versions or missing
+fields may trigger warnings but must not abort execution. This allows older
+inventories to remain usable and supports incremental schema evolution.
+
+This design allows the inventory format to evolve without breaking
+existing pipelines and supports reproducibility across different
+execution environments.
 
 ## Non-goals and future extensions
 
