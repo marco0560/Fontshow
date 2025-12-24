@@ -33,3 +33,4 @@ nav:
       - dump_fonts: dump_fonts.md
       - parse_font_inventory: parse_font_inventory.md
       - create_catalog: create_catalog.md
+  - Manual Testing: testing.md
