@@ -262,6 +262,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../testing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Manual Testing
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -460,6 +479,17 @@
   
     <nav class="md-nav" aria-label="Global metadata">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inventory-metadata-and-schema-versioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inventory metadata and schema versioning
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#fields" class="md-nav__link">
@@ -725,6 +755,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -784,6 +841,17 @@
   
     <nav class="md-nav" aria-label="Global metadata">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inventory-metadata-and-schema-versioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inventory metadata and schema versioning
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#fields" class="md-nav__link">
@@ -946,32 +1014,56 @@ definitions provided here.</p>
   &quot;fonts&quot;: [ ... ]
 }
 </code></pre>
+<p>Derived values such as the total number of fonts must not be stored in
+metadata, as they can be recomputed by downstream stages.</p>
 <hr />
 <h2 id="global-metadata">Global metadata</h2>
 <p>The <code>metadata</code> object contains information about the context in which
 the inventory was generated.</p>
+<h3 id="inventory-metadata-and-schema-versioning">Inventory metadata and schema versioning</h3>
+<p>The font inventory includes a <code>metadata</code> section describing the context in
+which the inventory was generated.</p>
+<p>This section contains:</p>
+<ul>
+<li>a <code>schema_version</code> identifying the inventory format</li>
+<li>the name and version of the tool that generated the inventory</li>
+<li>environment information (host, OS, execution context)</li>
+</ul>
+<p>All metadata fields are optional and must be treated as non-authoritative.
+They are intended for debugging, reproducibility, and diagnostic purposes
+only.</p>
+<p>Downstream consumers must not assume the presence of any metadata field.</p>
 <h3 id="fields">Fields</h3>
 <ul>
 <li>
-<p><strong><code>generator</code></strong> (<code>string</code>)
-  Identifier of the tool that generated the inventory (e.g. <code>Fontshow</code>).</p>
+<p><strong><code>schema_version</code></strong> (<code>string</code>)
+  Version identifier of the inventory schema (e.g. <code>"1.0"</code>).</p>
 </li>
 <li>
-<p><strong><code>version</code></strong> (<code>string</code>)
-  Version of the generator.</p>
+<p><strong><code>tool</code></strong> (<code>string</code>)
+  Identifier of the tool that generated the inventory (e.g. <code>dump_fonts</code>).</p>
 </li>
 <li>
-<p><strong><code>timestamp</code></strong> (<code>string</code>, ISO 8601)
-  Generation time of the inventory.</p>
+<p><strong><code>tool_version</code></strong> (<code>string</code>)
+  Version of Fontshow used to generate the inventory.</p>
 </li>
 <li>
-<p><strong><code>platform</code></strong> (<code>string</code>)
-  Operating system identifier (e.g. <code>linux</code>, <code>windows</code>).</p>
+<p><strong><code>generated_at</code></strong> (<code>string</code>, ISO 8601, UTC)
+  Timestamp of inventory generation.</p>
 </li>
 <li>
-<p><strong><code>font_count</code></strong> (<code>integer</code>)
-  Total number of font faces discovered.</p>
+<p><strong><code>environment</code></strong> (<code>object</code>, optional)
+  Information about the execution environment.</p>
 </li>
+</ul>
+<p>Typical subfields include:</p>
+<ul>
+<li><code>hostname</code></li>
+<li><code>username</code></li>
+<li><code>os</code></li>
+<li><code>kernel</code></li>
+<li><code>platform</code></li>
+<li><code>execution_context.type</code> (<code>native</code>, <code>wsl</code>, <code>container</code>, <code>vm</code>, <code>unknown</code>)</li>
 </ul>
 <hr />
 <h2 id="font-entries">Font entries</h2>
@@ -991,6 +1083,12 @@ a font file or a font collection.</p>
 </code></pre>
 <p>Not all fields are mandatory. Optional fields may be absent if the
 corresponding information could not be determined.</p>
+<p>Some inventory entries may represent charset-only information rather than
+individual fonts. These entries may lack identifying fields such as
+<code>identity.family</code> or <code>base_names</code>.</p>
+<p>Such entries are valid and may appear when extended Fontconfig data is
+included, but they are not intended to be used for font selection or catalog
+generation.</p>
 <hr />
 <h2 id="file-and-identity-fields">File and identity fields</h2>
 <p>These fields identify the physical font resource.</p>
@@ -1093,14 +1191,14 @@ include:</p>
 <p>Consumers of the inventory must always check for field presence.</p>
 <hr />
 <h2 id="versioning-and-compatibility">Versioning and compatibility</h2>
-<p>The inventory format is versioned implicitly via the generator version
-stored in <code>metadata.version</code>.</p>
-<p>Breaking changes to the inventory structure should be accompanied by:</p>
-<ul>
-<li>a version bump,</li>
-<li>explicit documentation updates,</li>
-<li>migration notes if applicable.</li>
-</ul>
+<p>The inventory format is explicitly versioned via the <code>metadata.schema_version</code>
+field.</p>
+<p>The schema version is independent from the Fontshow tool version.</p>
+<p>Non-breaking changes may add new optional fields without changing the schema
+version. Breaking changes require a schema version bump and corresponding
+documentation updates.</p>
+<p>Downstream consumers must tolerate unknown schema versions and missing fields,
+issuing warnings when appropriate but never aborting execution.</p>
 <hr />
 <h2 id="summary">Summary</h2>
 <p>The Fontshow data model is intentionally explicit and extensible.</p>

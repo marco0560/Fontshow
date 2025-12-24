@@ -16,6 +16,8 @@
         <link rel="prev" href="../parse_font_inventory/">
       
       
+        <link rel="next" href="../testing/">
+      
       
         
       
@@ -257,6 +259,25 @@
         </a>
       </li>
     
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../testing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Manual Testing
+
+      </a>
+    </li>
   
 
       
@@ -681,6 +702,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fontshow.create_catalog.font_matches_test_set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        font_matches_test_set
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fontshow.create_catalog.fontspec_options" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -855,6 +887,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -992,6 +1051,17 @@
     <span class="md-ellipsis">
       
         font_family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fontshow.create_catalog.font_matches_test_set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        font_matches_test_set
       
     </span>
   </a>
@@ -1355,6 +1425,27 @@ Returns the family part (comma-separated families are left intact).</p>
     <div class="doc doc-contents ">
 
         <p>Best-effort family name for LaTeX rendering and sorting.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="fontshow.create_catalog.font_matches_test_set" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">font_matches_test_set</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">font_matches_test_set</span><span class="p">(</span><span class="n">font_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">test_fonts</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return True if the given font name matches TEST_FONTS.</p>
+<p>Matching is currently case-insensitive and substring-based.</p>
 
 
     </div>

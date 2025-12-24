@@ -262,6 +262,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../testing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Manual Testing
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -514,6 +533,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Why a procedural architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inventory-schema-evolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inventory schema evolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -703,6 +739,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -843,6 +906,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Why a procedural architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inventory-schema-evolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inventory schema evolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -887,7 +967,7 @@ its responsibility.</p>
 <ol>
 <li><strong>Font discovery and raw metadata extraction</strong></li>
 <li><strong>Semantic inference and normalization</strong></li>
-<li><strong>Rendering and catalog generation</strong></li>
+<li><strong>Catalog generation and rendering</strong></li>
 </ol>
 <p>The architecture intentionally avoids tight coupling between stages and
 relies on explicit data contracts instead of shared state.</p>
@@ -949,6 +1029,9 @@ LaTeX catalog
 <li><code>metadata</code>: global information about the generation context</li>
 <li><code>fonts</code>: a list of per-font (or per-face) descriptors</li>
 </ul>
+<p>Metadata fields may include environment and tool information intended for
+debugging and reproducibility purposes. Downstream stages must treat metadata
+as informative and non-authoritative.</p>
 <p>Each stage respects the following contract:</p>
 <ul>
 <li>
@@ -1029,6 +1112,18 @@ explicitly documented.</p>
 <p>This choice prioritizes clarity and debuggability over extensibility through
 inheritance.</p>
 <hr />
+<h3 id="inventory-schema-evolution">Inventory schema evolution</h3>
+<p>Fontshow uses a versioned JSON inventory as the central data contract
+between pipeline stages.</p>
+<p>Each inventory declares a <code>schema_version</code> in its metadata. Downstream
+stages must remain tolerant to missing or unknown fields and must not
+assume the presence of optional metadata.</p>
+<p>Schema validation is intentionally <em>soft</em>: unknown schema versions or missing
+fields may trigger warnings but must not abort execution. This allows older
+inventories to remain usable and supports incremental schema evolution.</p>
+<p>This design allows the inventory format to evolve without breaking
+existing pipelines and supports reproducibility across different
+execution environments.</p>
 <h2 id="non-goals-and-future-extensions">Non-goals and future extensions</h2>
 <p>Fontshow explicitly does not aim to:</p>
 <ul>
