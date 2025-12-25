@@ -1,3 +1,9 @@
+## [0.6.1](https://github.com/marco0560/Fontshow/compare/v0.6.0...v0.6.1) (2025-12-25)
+
+### Bug Fixes
+
+* **core:** improve inventory validation errors and mark fc-charset as experimental ([ce0df0c](https://github.com/marco0560/Fontshow/commit/ce0df0c4c8a199994f23dafa8696ad87a95089c3))
+
 ## [0.6.0](https://github.com/marco0560/Fontshow/compare/v0.5.0...v0.6.0) (2025-12-24)
 
 ### Features
