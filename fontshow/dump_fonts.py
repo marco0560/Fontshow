@@ -31,8 +31,6 @@ The JSON schema is documented in:
 - docs/dump-fonts.md
 """
 
-# from __future__ import annotations
-
 import argparse
 import getpass
 import hashlib
@@ -44,7 +42,7 @@ import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fontshow import __version__ as FONTSHOW_VERSION
 
@@ -62,8 +60,12 @@ except ImportError:
     # redefinition issues in this module. The runtime import above uses
     # `# type: ignore[import]` to silence missing-stubs warnings from mypy,
     # which is sufficient for our static checks.
-    TTFont = None
     FONTTOOLS_AVAILABLE = False
+
+if TYPE_CHECKING:
+    from fontTools.ttLib import TTCollection, TTFont
+
+# -----------------------
 
 UNICODE_BLOCKS = [
     ("Basic Latin", 0x0000, 0x007F),
@@ -91,6 +93,16 @@ UNICODE_BLOCKS = [
     ("Emoticons", 0x1F600, 0x1F64F),
 ]
 
+
+# -----------------------
+# fontTools extraction
+# -----------------------
+NAME_ID_FAMILY = 1
+NAME_ID_SUBFAMILY = 2
+NAME_ID_FULLNAME = 4
+NAME_ID_POSTSCRIPT = 6
+NAME_ID_LICENSE = 13
+NAME_ID_LICENSE_URL = 14
 
 # -----------------------
 # Platform helpers
@@ -144,6 +156,8 @@ def collect_environment_metadata() -> dict:
 # -----------------------
 # Font discovery
 # -----------------------
+
+
 def get_installed_font_files() -> list[Path]:
     if IS_LINUX:
         return get_installed_font_files_linux()
@@ -205,6 +219,8 @@ def get_installed_font_files_windows() -> list[Path]:
 # -----------------------
 # Container detection
 # -----------------------
+
+
 def detect_font_container(path: Path) -> str:
     """Detect font container by header and extension.
 
@@ -235,6 +251,8 @@ def detect_font_container(path: Path) -> str:
 # -----------------------
 # Cache
 # -----------------------
+
+
 def font_cache_key(path: Path, ttc_index: int | None = None) -> str:
     """Return a stable cache key for a font *face*.
 
@@ -263,6 +281,28 @@ def font_cache_key(path: Path, ttc_index: int | None = None) -> str:
 # -----------------------
 # Linux-only: FontConfig enrichment
 # -----------------------
+
+
+def _parse_fc_charset_ranges(raw: str) -> list[str]:
+    """
+    Extract compact Unicode ranges from a FontConfig charset block.
+
+    Example input:
+        charset: 0000-007F 0100-017F
+
+    Returns:
+        A list of Unicode ranges as strings, e.g. ["0000-007F", "0100-017F"].
+    """
+    ranges: list[str] = []
+    for line in raw.splitlines():
+        line = line.strip()
+        if line.startswith("charset:"):
+            payload = line[len("charset:") :].strip()
+            if payload:
+                ranges.extend(payload.split())
+    return ranges
+
+
 def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any]:
     """Extract a limited set of FontConfig-derived metadata (Linux only).
 
@@ -304,6 +344,8 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
 
     lang = _find_line("lang:")
     languages: list[str] = []
+    charset: dict[str, Any] | None = None
+
     if lang:
         languages = [x.strip() for x in lang.split("|") if x.strip()]
 
@@ -318,42 +360,25 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
             if token.startswith("otlayout:"):
                 scripts.append(token.split(":", 1)[1])
 
-    charset_blob: str | None = None
     if include_charset:
-        lines = raw.splitlines()
         try:
-            idx = next(i for i, ln in enumerate(lines) if ln.startswith("charset:"))
-            blob: list[str] = [lines[idx]]
-            for ln in lines[idx + 1 :]:
-                if not ln.strip():
-                    break
-                blob.append(ln)
-            charset_blob = "\n".join(blob)
-        except StopIteration:
-            charset_blob = None
+            ranges = _parse_fc_charset_ranges(raw)
+            if ranges:
+                charset = {
+                    "source": "fontconfig",
+                    "ranges": ranges,
+                }
+        except Exception:
+            charset = None
 
     return {
         "languages": languages,
         "scripts": sorted(set(scripts)),
-        "charset": charset_blob,
+        "charset": charset,
         "decorative": decorative,
         "color": color,
         "variable": variable,
     }
-
-
-# -----------------------
-# fontTools extraction
-# -----------------------
-# -----------------------
-# fontTools extraction
-# -----------------------
-NAME_ID_FAMILY = 1
-NAME_ID_SUBFAMILY = 2
-NAME_ID_FULLNAME = 4
-NAME_ID_POSTSCRIPT = 6
-NAME_ID_LICENSE = 13
-NAME_ID_LICENSE_URL = 14
 
 
 def _best_name(names: dict[str, list[str]], name_id: int) -> str | None:
@@ -775,9 +800,6 @@ def fonttools_extract_all(
 # -----------------------
 # Descriptor build
 # -----------------------
-# -----------------------
-# Descriptor build
-# -----------------------
 def classify_font(
     format_block: dict[str, Any], unicode_max: int | None
 ) -> dict[str, Any]:
@@ -994,9 +1016,6 @@ def build_font_descriptor(
 # -----------------------
 # Main
 # -----------------------
-# -----------------------
-# Main
-# -----------------------
 def main() -> None:
     """CLI entry point for font inventory generation.
 
@@ -1036,7 +1055,7 @@ def main() -> None:
     parser.add_argument(
         "--include-fc-charset",
         action="store_true",
-        help="Include raw FontConfig charset blob (Linux only)",
+        help="Include Fontconfig-declared Unicode charset information (experimental, best-effort)",
     )
     parser.add_argument(
         "--verbose",
@@ -1057,6 +1076,7 @@ def main() -> None:
             "tool": "dump_fonts",
             "tool_version": FONTSHOW_VERSION,
             "environment": collect_environment_metadata(),
+            "fontconfig_charset_included": bool(args.include_fc_charset and IS_LINUX),
             "fonttools_available": FONTTOOLS_AVAILABLE,
         },
         "fonts": [],

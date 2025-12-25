@@ -119,6 +119,31 @@ Such entries are valid and may appear when extended Fontconfig data is
 included, but they are not intended to be used for font selection or catalog
 generation.
 
+### charset (optional)
+
+The `charset` field contains Unicode coverage information as reported by
+Fontconfig when the inventory is generated with the option
+`--include-fc-charset`.
+
+This field is optional and may be `null` when:
+
+- Fontconfig is not available (e.g. Windows native)
+- the font does not expose charset information
+- the option `--include-fc-charset` is not used
+
+When present, the structure is:
+
+```json
+"charset": {
+  "source": "fontconfig",
+  "ranges": ["0000-007F", "0100-017F"]
+}
+```
+
+The ranges represent **declared Unicode coverage** as advertised by
+Fontconfig and should be considered complementary to the `coverage`
+field, which is derived directly from font tables using FontTools.
+
 ---
 
 ## File and identity fields

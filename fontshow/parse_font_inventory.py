@@ -16,8 +16,6 @@ Design principles
 Default inference level: ``medium``.
 """
 
-# from __future__ import annotations
-
 import argparse
 import json
 import sys
@@ -142,7 +140,16 @@ def validate_inventory(data: dict) -> int:
         base_names = font.get("base_names")
 
         if not family and not base_names:
-            print(f"⚠️  Warning: font entry #{idx} has no family or base_names")
+            errors += 1
+            font_path = (
+                font.get("path")
+                or font.get("file")
+                or font.get("source", {}).get("path")
+                or "<unknown path>"
+            )
+            print(
+                f"⚠️  Warning: font entry #{idx} ({font_path}) has no family or base_names"
+            )
 
     if errors == 0:
         print("✅ Inventory validation completed (no fatal errors)")
@@ -362,6 +369,13 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+
+    if not args.input.exists():
+        print(f"❌ Error: input file not found: {args.input}", file=sys.stderr)
+        print(
+            "Hint: run dump_fonts.py first to generate the inventory.", file=sys.stderr
+        )
+        sys.exit(1)
 
     data: dict[str, Any] = json.loads(args.input.read_text(encoding="utf-8"))
 

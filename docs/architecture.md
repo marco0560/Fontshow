@@ -103,6 +103,26 @@ explicitly documented.
 
 ---
 
+### FontConfig charset integration
+
+Fontshow can optionally enrich the font inventory with Unicode charset
+information provided by Fontconfig using the option
+`--include-fc-charset` in the `dump_fonts` tool.
+
+Fontconfig charset data:
+
+- represents *advertised* Unicode coverage
+- is provided as compact Unicode ranges
+- is considered a secondary, non-authoritative source
+
+The primary source of Unicode coverage in Fontshow remains the
+`coverage` field computed via FontTools.
+
+The integration is optional, non-breaking, and designed for future
+extensions of the inventory schema.
+
+---
+
 ## Module responsibilities
 
 ### dump_fonts
