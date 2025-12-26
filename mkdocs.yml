@@ -1,9 +1,9 @@
 site_name: Fontshow
-site_description: Font inventory and catalog generation toolchain
+site_description: Analisi, normalizzazione e catalogazione dei font di sistema
 site_author: Marco Coppola
 
 repo_name: fontshow
-repo_url: https://github.com/marco0560/Fontshow
+repo_url: https://github.com/marco0560/fontshow
 edit_uri: edit/main/docs/
 
 theme:
@@ -11,8 +11,18 @@ theme:
   language: en
   features:
     - navigation.tabs
+    - navigation.sections
+    - navigation.expand
     - navigation.top
     - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - tables
+  - fenced_code
+  - footnotes
 
 plugins:
   - search
@@ -27,10 +37,21 @@ plugins:
 
 nav:
   - Home: index.md
-  - Architecture: architecture.md
-  - Data dictionary: data_dictionary.md
-  - Modules:
-      - dump_fonts: dump_fonts.md
-      - parse_font_inventory: parse_font_inventory.md
-      - create_catalog: create_catalog.md
-  - Manual Testing: testing.md
+
+  - Architecture:
+      - Overview: architecture.md
+      - Pipeline: pipeline.md
+
+  - Data Dictionary:
+      - Data Dictionary: data_dictionary.md
+
+  - Pipeline:
+      - Fonts dump: tools/dump_fonts.md
+      - Inventory parsing: tools/parse_font_inventory.md
+      - Catalog creation: tools/create_catalog.md
+
+  - Quality:
+      - Manual Testing: testing.md
+
+  - Development:
+      - Active decisions: decisions.md
