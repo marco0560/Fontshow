@@ -3,6 +3,7 @@
 
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://marco0560.github.io/Fontshow/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![CI](https://github.com/marco0560/fontshow/actions/workflows/ci.yml/badge.svg)](https://github.com/marco0560/fontshow/actions/workflows/ci.yml)
 
 Fontshow is a Python-based toolchain for inspecting system fonts and generating
 LaTeX font catalogs in a reproducible and debuggable way.
