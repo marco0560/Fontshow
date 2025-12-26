@@ -1,0 +1,32 @@
+name: Technical Debt
+description: Track and resolve technical debt items
+title: "techdebt: "
+labels: ["tech-debt"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to track technical debt extracted from the manual.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is the technical debt?
+      placeholder: Clear and concise description.
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: Why does this matter?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: When can this be considered resolved?
+      placeholder: Bullet points recommended.
+    validations:
+      required: true
