@@ -1,3 +1,9 @@
+## [0.7.0](https://github.com/marco0560/Fontshow/compare/v0.6.1...v0.7.0) (2025-12-26)
+
+### Features
+
+* **parser:** enrich dump phase and strengthen parsing validation ([4976a19](https://github.com/marco0560/Fontshow/commit/4976a19b8e15c06dcd763bd6fe6b5ddf97c41636))
+
 ## [0.6.1](https://github.com/marco0560/Fontshow/compare/v0.6.0...v0.6.1) (2025-12-25)
 
 ### Bug Fixes
