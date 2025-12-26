@@ -103,6 +103,8 @@ NAME_ID_FULLNAME = 4
 NAME_ID_POSTSCRIPT = 6
 NAME_ID_LICENSE = 13
 NAME_ID_LICENSE_URL = 14
+NAME_ID_TYPOGRAPHIC_SUBFAMILY = 17
+NAME_ID_SAMPLE_TEXT = 19
 
 # -----------------------
 # Platform helpers
@@ -283,6 +285,50 @@ def font_cache_key(path: Path, ttc_index: int | None = None) -> str:
 # -----------------------
 
 
+def extract_sample_text(font_path: str):
+    """
+    Extract embedded sample text from the font, if present.
+
+    Returns:
+        list[str] | None
+    """
+    try:
+        tt = TTFont(font_path)
+    except Exception:
+        return None
+
+    if "name" not in tt:
+        return None
+
+    name_table = tt["name"]
+    samples = []
+
+    for record in name_table.names:
+        if record.nameID != NAME_ID_SAMPLE_TEXT:
+            continue
+
+        try:
+            text = record.toUnicode().strip()
+        except Exception:
+            continue
+
+        if text:
+            samples.append(text)
+
+    if not samples:
+        return None
+
+    # Deduplicate while preserving order
+    seen = set()
+    unique_samples = []
+    for s in samples:
+        if s not in seen:
+            seen.add(s)
+            unique_samples.append(s)
+
+    return unique_samples
+
+
 def _parse_fc_charset_ranges(raw: str) -> list[str]:
     """
     Extract compact Unicode ranges from a FontConfig charset block.
@@ -320,6 +366,7 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
     - ``languages``: list of BCP-47-like language tags.
     - ``scripts``: OpenType script tags derived from ``otlayout`` capability.
     - ``charset``: raw FontConfig charset blob (optional, Linux only).
+    - ``sample_text``: sample text string (if available).
     - ``decorative``: whether the font is marked decorative.
     - ``color``: whether the font is marked as color.
     - ``variable``: whether the font is marked variable.
@@ -894,6 +941,23 @@ def build_font_descriptor(
     fullname = _best_name(names, NAME_ID_FULLNAME)
 
     # -------------------------------
+    # Embedded sample text (font-level)
+    # -------------------------------
+    sample_text = None
+    try:
+        samples = extract_sample_text(str(font_path))
+        if samples:
+            sample_text = {
+                "source": "font",
+                # Use the first sample only for simplicity
+                # (usually there's only one anyway)
+                # TODO: consider storing all samples?
+                "text": samples[0],
+            }
+    except Exception:
+        sample_text = None
+
+    # -------------------------------
     # FontConfig enrichment (optional)
     # -------------------------------
     languages: list[str] = []
@@ -1003,6 +1067,7 @@ def build_font_descriptor(
         "license": {"text": license_text, "url": license_url},
         "vendor": vendor,
         "embedding_rights": embedding_rights,
+        "sample_text": sample_text,
         "source": {
             "fonttools": {
                 "ok": bool(fonttools.get("ok", False)),

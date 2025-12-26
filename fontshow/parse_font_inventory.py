@@ -109,8 +109,84 @@ SCRIPT_TO_LANGUAGES: dict[str, list[str]] = {
 # ============================================================
 
 
+def validate_font_entry(entry: dict, *, index: int) -> list[str]:
+    """
+    Validate a single font entry from the inventory.
+
+    Returns a list of human-readable error messages.
+    An empty list means the entry is valid.
+    """
+    errors: list[str] = []
+
+    # --- Required structural fields ---
+    if not isinstance(entry, dict):
+        return ["entry is not an object"]
+
+    path = entry.get("path")
+    if not isinstance(path, str) or not path:
+        errors.append("missing or invalid 'path'")
+
+    family = entry.get("family")
+    if not isinstance(family, str) or not family:
+        errors.append("missing or invalid 'family'")
+
+    style = entry.get("style")
+    if not isinstance(style, str) or not style:
+        errors.append("missing or invalid 'style'")
+
+    # --- sample_text validation (optional) ---
+    if "sample_text" in entry:
+        st = entry["sample_text"]
+
+        if st is not None:
+            if not isinstance(st, dict):
+                errors.append("sample_text must be an object or null")
+            else:
+                source = st.get("source")
+                text = st.get("text")
+
+                if source != "font":
+                    errors.append("sample_text.source must be 'font'")
+
+                if not isinstance(text, str) or not text.strip():
+                    errors.append("sample_text.text must be a non-empty string")
+
+    return errors
+
+
 def validate_inventory(data: dict) -> int:
-    errors = 0
+    """
+    Validate a Fontshow font inventory.
+
+    This function performs two distinct classes of checks:
+
+    1. Fatal validation errors:
+       These indicate that one or more font entries are structurally or
+       semantically invalid according to the current data model.
+       Fatal errors are reported as ERROR and cause the validation to fail
+       (non-zero return value).
+
+    2. Non-fatal consistency warnings:
+       These highlight incomplete or suspicious entries that may still be
+       usable, but are worth reporting to the user.
+       Warnings do not cause validation failure.
+
+    Validation is best-effort and exhaustive:
+    all font entries are inspected and all issues are reported in a single run.
+
+    This function does not raise exceptions and does not modify the inventory.
+    It is intended to be used by the '--validate-inventory' CLI option, where
+    the caller decides how to handle the returned error count and exit status.
+
+    Args:
+        data: Parsed inventory JSON object.
+
+    Returns:
+        The number of font entries with fatal validation errors.
+    """
+
+    fatal_errors = 0
+    warnings = 0
 
     if not isinstance(data, dict):
         print("❌ Inventory root is not a JSON object")
@@ -130,9 +206,22 @@ def validate_inventory(data: dict) -> int:
         return 1
 
     for idx, font in enumerate(fonts):
+        # ---------- Fatal entry validation ----------
+        entry_errors = validate_font_entry(font, index=idx)
+        if entry_errors:
+            fatal_errors += 1
+            path = font.get("path") if isinstance(font, dict) else None
+
+            print(f"ERROR font[{idx}]")
+            print(f"  path: {path}")
+            for err in entry_errors:
+                print(f"  - {err}")
+            print()
+
+        # ---------- Non-fatal consistency warnings ----------
         if not isinstance(font, dict):
-            print(f"❌ Font entry #{idx} is not an object")
-            errors += 1
+            warnings += 1
+            print(f"⚠️  Warning: font entry #{idx} is not an object")
             continue
 
         identity = font.get("identity", {})
@@ -140,7 +229,7 @@ def validate_inventory(data: dict) -> int:
         base_names = font.get("base_names")
 
         if not family and not base_names:
-            errors += 1
+            warnings += 1
             font_path = (
                 font.get("path")
                 or font.get("file")
@@ -151,17 +240,41 @@ def validate_inventory(data: dict) -> int:
                 f"⚠️  Warning: font entry #{idx} ({font_path}) has no family or base_names"
             )
 
-    if errors == 0:
+    if fatal_errors == 0:
         print("✅ Inventory validation completed (no fatal errors)")
     else:
-        print(f"❌ Inventory validation failed with {errors} errors")
+        print(f"❌ Inventory validation failed with {fatal_errors} invalid entries")
 
-    return errors
+    return fatal_errors
 
 
 # ============================================================
 # Inference helpers
 # ============================================================
+
+# ============================================================
+# Script normalization
+# ============================================================
+
+#: Normalize human-readable script names to ISO 15924 codes.
+#: This mapping enforces a single canonical representation
+#: across the entire pipeline.
+SCRIPT_NAME_TO_ISO: dict[str, str] = {
+    "latin": "latn",
+    "greek": "grek",
+    "cyrillic": "cyrl",
+    "arabic": "arab",
+    "hebrew": "hebr",
+    "devanagari": "deva",
+    "japanese": "jpan",
+    "korean": "hang",
+    "han": "hani",
+}
+
+# NOTE:
+# Script identifiers emitted by infer_scripts() MUST be ISO 15924 codes.
+# Human-readable names (e.g. "latin", "greek") are considered internal-only
+# and must never appear in the enriched inventory.
 
 
 def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
@@ -230,12 +343,15 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
         # --- CJK disambiguation
         if "han" in scripts_found:
             if "japanese" in scripts_found:
-                return ["japanese"]
+                return ["jpan"]
             if "korean" in scripts_found:
-                return ["korean"]
-            return ["han"]
+                return ["hang"]
+            return ["hani"]
 
-        return sorted(scripts_found) or ["unknown"]
+        # Normalize to ISO 15924 codes
+        normalized = [SCRIPT_NAME_TO_ISO.get(s, s) for s in scripts_found]
+
+        return sorted(set(normalized)) or ["unknown"]
 
     # -------------------------------
     # 2. Fallback: unicode.max
@@ -243,19 +359,19 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
     unicode_max = coverage.get("unicode", {}).get("max")
     if isinstance(unicode_max, int):
         if unicode_max <= 0x024F:
-            return ["latin"]
+            return ["latn"]
         if 0x0370 <= unicode_max <= 0x03FF:
-            return ["greek"]
+            return ["grek"]
         if 0x0400 <= unicode_max <= 0x04FF:
-            return ["cyrillic"]
+            return ["cyrl"]
         if 0x0590 <= unicode_max <= 0x05FF:
-            return ["hebrew"]
+            return ["hebr"]
         if 0x0600 <= unicode_max <= 0x06FF:
-            return ["arabic"]
+            return ["arab"]
         if 0x0900 <= unicode_max <= 0x097F:
-            return ["devanagari"]
+            return ["deva"]
         if unicode_max >= 0x4E00:
-            return ["han"]
+            return ["hani"]
 
     return ["unknown"]
 

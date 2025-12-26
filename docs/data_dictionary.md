@@ -102,6 +102,7 @@ a font file or a font collection.
   "family": "...",
   "style": "...",
   "format": "...",
+  "sample_text": null,
   "raw": { ... },
   "coverage": { ... },
   "classification": { ... }
@@ -143,6 +144,82 @@ When present, the structure is:
 The ranges represent **declared Unicode coverage** as advertised by
 Fontconfig and should be considered complementary to the `coverage`
 field, which is derived directly from font tables using FontTools.
+
+## Sample text
+
+Some font files may include an **embedded sample or demonstration text** intended to showcase the font.
+
+This information is **optional** and **not guaranteed to be present** in all font files.
+
+When available, it is extracted verbatim from the font metadata without modification.
+
+---
+
+### Field: `sample_text`
+
+| Attribute | Type | Description |
+|---------|------|-------------|
+| `sample_text` | object \| null | Optional sample text information embedded in the font |
+
+If the font does not provide any sample text, this field is set to `null`.
+
+---
+
+### `sample_text` object structure
+
+| Field | Type | Description |
+|------|------|-------------|
+| `source` | string | Origin of the sample text |
+| `text` | string | The sample text content |
+
+---
+
+### `sample_text.source`
+
+Allowed values:
+
+- `font`
+  The sample text is embedded directly in the font metadata.
+
+- `system`
+  The sample text is generated externally by the system or tooling.
+
+- `none`
+  No sample text is available.
+  In the inventory, this condition is represented by `sample_text: null`.
+
+---
+
+### Example (sample text available)
+
+```json
+{
+  "sample_text": {
+    "source": "font",
+    "text": "The quick brown fox jumps over the lazy dog"
+  }
+}
+```
+
+---
+
+### Example (no sample text)
+
+```json
+{
+  "sample_text": null
+}
+```
+
+---
+
+### Notes and constraints
+
+- The sample text is **not normalized**, translated, or altered.
+- Absence of sample text is **not considered an error**.
+- Downstream stages (catalog generation, previews) may choose whether and how to use this field.
+- The presence or absence of this field must not affect pipeline correctness.
+
 
 ---
 
