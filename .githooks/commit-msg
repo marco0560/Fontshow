@@ -6,11 +6,11 @@ ALLOWED_TYPES = {
     "feat",
     "fix",
     "docs",
+    "perf",
     "refactor",
     "test",
     "chore",
 }
-
 ALLOWED_SCOPES = {
     "core",
     "cli",
@@ -19,6 +19,8 @@ ALLOWED_SCOPES = {
     "output",
     "config",
     "build",
+    "dump",
+    "catalog",
     "git",
     "release",
     "docs",
