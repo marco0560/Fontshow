@@ -40,7 +40,7 @@ Each stage consumes structured data produced by the previous one and
 does not re-inspect font binaries unnecessarily.
 
 ---
-
+<!-- cheatsheet:start -->
 ## Installation
 
 Clone the repository and create a virtual environment:
@@ -52,7 +52,9 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+<!-- cheatsheet:end -->
 
+<!-- cheatsheet:start -->
 ## Repository cleanup utility
 
 The repository includes a helper script to remove generated artifacts and
@@ -61,16 +63,18 @@ temporary files while keeping the working tree clean:
 ```bash
 python scripts/clean_repo.py
 ```
+<!-- cheatsheet:end -->
 
 The script removes **only files ignored by Git** (according to `.gitignore`)
 and never deletes tracked files.
 
 A dry-run mode is available to safely preview the cleanup:
 
+<!-- cheatsheet:start -->
 ```bash
 python scripts/clean_repo.py --dry-run
 ```
-
+<!-- cheatsheet:end -->
 ### Safety guarantees
 
 Some paths are explicitly protected and will **never be removed**, even if
@@ -82,7 +86,7 @@ This ensures that the cleanup process is safe to run during development
 without risking the local working environment.
 
 ---
-
+<!-- cheatsheet:start -->
 ## Execution model (important)
 
 Fontshow is a Python package named `fontshow`.
@@ -92,6 +96,7 @@ All tools **must be executed as modules**, using the `-m` flag:
 ```bash
 python -m fontshow.<tool>
 ```
+<!-- cheatsheet:end -->
 
 Direct execution of files such as:
 
@@ -103,6 +108,7 @@ is **not supported** and will result in import errors.
 
 ---
 
+<!-- cheatsheet:start -->
 ## Available tools
 
 ### Dump system fonts
@@ -113,6 +119,7 @@ Generate a JSON inventory of installed fonts:
 python -m fontshow.dump_fonts \
   --output font_inventory.json
 ```
+<!-- cheatsheet:end -->
 
 This command produces a versioned inventory including:
 
@@ -122,34 +129,37 @@ This command produces a versioned inventory including:
 
 ---
 
+<!-- cheatsheet:start -->
 ### Parse and normalize inventory
 
 Normalize and enrich a previously generated inventory:
 
 ```bash
 python -m fontshow.parse_font_inventory \
-  font_inventory.json \
   --output font_inventory_enriched.json
 ```
+<!-- cheatsheet:end -->
 
+<!-- cheatsheet:start -->
 An optional soft validation of the inventory structure can be performed with:
 
 ```bash
 python -m fontshow.parse_font_inventory \
-  font_inventory.json \
   --validate-inventory
 ```
+<!-- cheatsheet:end -->
 
 ---
 
+<!-- cheatsheet:start -->
 ### Generate LaTeX catalog
 
 Generate a LaTeX catalog from a parsed inventory:
 
 ```bash
-python -m fontshow.create_catalog \
-  font_inventory_enriched.json
+python -m fontshow.create_catalog
 ```
+<!-- cheatsheet:end -->
 
 Additional options are available for:
 

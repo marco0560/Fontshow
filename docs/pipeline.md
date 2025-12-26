@@ -17,6 +17,7 @@ Il principio guida è la **separazione delle responsabilità**: ogni fase può e
 
 La pipeline logica può essere riassunta come:
 
+<!-- cheatsheet:start -->
 ```
 Sistema
   ↓
@@ -30,6 +31,7 @@ Normalizzazione
   ↓
 Generazione catalogo
 ```
+<!-- cheatsheet:end -->
 
 Ogni fase produce uno o più artefatti intermedi, che possono essere conservati per analisi successive.
 
