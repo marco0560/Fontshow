@@ -1,7 +1,6 @@
 # Compiling artifacts
 __pycache__/
-*.pyc
-.venv/
+*.py[cod]
 dist/
 build/
 site/
