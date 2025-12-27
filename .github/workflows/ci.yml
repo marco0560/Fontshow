@@ -23,8 +23,14 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
+      - name: Install documentation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install \
+            ruff \
+            mkdocs \
+            mkdocs-material \
+            mkdocstrings[python]
 
       - name: Install pre-commit
         run: pip install pre-commit

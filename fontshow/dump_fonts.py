@@ -285,7 +285,7 @@ def font_cache_key(path: Path, ttc_index: int | None = None) -> str:
 # -----------------------
 
 
-def extract_sample_text(font_path: str):
+def extract_sample_text(font_path: str) -> list[str] | None:
     """
     Extract embedded sample text from the font, if present.
 

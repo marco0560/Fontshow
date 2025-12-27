@@ -55,3 +55,6 @@ nav:
 
   - Development:
       - Active decisions: decisions.md
+
+  - Cheatsheet:
+      - Cheatsheet: cheatsheet.md
