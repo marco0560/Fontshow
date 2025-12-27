@@ -43,6 +43,7 @@ import socket
 import subprocess
 import sys
 from datetime import UTC, datetime
+from hashlib import sha1
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -127,6 +128,18 @@ def run_command(argv: list[str]) -> subprocess.CompletedProcess[str]:
         stderr=subprocess.STDOUT,
         check=False,
     )
+
+
+def make_font_id(path: str, ttc_index: int | None) -> str:
+    """
+    Build a stable, reproducible identifier for a font face.
+
+    The identifier is derived solely from the font file path and the
+    TTC face index (if any). It is intended for comparison, caching,
+    and debugging purposes.
+    """
+    key = f"{path}|{ttc_index if ttc_index is not None else 'single'}"
+    return sha1(key.encode("utf-8")).hexdigest()[:12]
 
 
 def collect_environment_metadata() -> dict:
@@ -1052,12 +1065,15 @@ def build_font_descriptor(
         vendor = os2.get("vendor_id")
         embedding_rights = os2.get("embedding_rights")
 
+    ttc_index = fonttools.get("ttc_index")
+
     return {
         "identity": {
             "file": str(font_path),
-            "ttc_index": fonttools.get("ttc_index"),
+            "ttc_index": ttc_index,
             "family": family,
             "style": style,
+            "id": make_font_id(str(font_path), ttc_index),
             "fullname": fullname,
             "postscript_name": postscript,
         },

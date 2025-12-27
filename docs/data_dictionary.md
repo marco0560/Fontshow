@@ -245,6 +245,11 @@ These fields identify the physical font resource.
   Face index within a TrueType Collection (TTC).
   For single-face fonts, this is usually `0`.
 
+- **id** (string, derived)
+  Stable identifier derived from `(identity.file, identity.ttc_index)`.
+  Used for comparison, caching, and debugging.
+  Not guaranteed to be globally unique.
+
 - **`family`** (`string`)
   Font family name as reported by the font metadata.
 

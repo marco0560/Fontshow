@@ -206,6 +206,31 @@ Accepted
 
 ---
 
+## Deferred Warning Emission via Structured Collection
+
+**Decision**
+The dump phase does not emit warnings directly to stdout or stderr. Instead,
+warnings are collected internally as structured records and returned to the
+caller.
+
+**Rationale**
+Direct emission of warnings complicates testing, logging control, and future
+CLI ergonomics. A structured accumulator allows warnings to be:
+- tested deterministically,
+- filtered or suppressed,
+- logged at configurable verbosity levels,
+- exported in machine-readable form.
+
+**Consequences**
+At this stage, warnings are collected but not yet exposed through CLI options.
+Future steps may introduce flags such as `--quiet`, `--verbose`, or
+`--warnings-json` without refactoring the core logic.
+
+**Status**
+Accepted (implementation pending)
+
+---
+
 ## Decision status
 
 The decisions listed in this document are to be considered **binding** for current project development.

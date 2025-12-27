@@ -103,6 +103,40 @@ explicitly documented.
 
 ---
 
+#### Font Descriptor Contract (Dump Phase)
+
+The `dump_fonts` stage produces *raw font descriptors* that follow a strict
+contract. This contract defines what information must be present, what may be
+missing, and how incomplete data is handled.
+
+**Identity**
+- `identity.file` (**required**)
+  Absolute or canonical path of the font file. Its absence is considered a
+  fatal error.
+- `identity.family` (**optional, warned**)
+  The typographic family name. Fonts lacking a family name are accepted but
+  generate a warning.
+
+**Coverage**
+- `coverage.scripts` (**optional, warned**)
+  Script information as reported by FontConfig. The field may be empty when
+  FontConfig is unavailable or the font does not expose script metadata.
+
+**Sample Text**
+- `sample_text` (**optional**)
+  Treated as *content*, not metadata. Intended for downstream consumers such
+  as `create_catalog`, and not used for font identification or inference.
+
+**Error vs Warning Policy**
+- Missing mandatory identity fields (e.g. `identity.file`) are fatal.
+- Missing semantic fields (e.g. family name, scripts) generate warnings but do
+  not prevent inventory generation.
+
+This contract intentionally separates *observation* (dump phase) from
+*interpretation* (parse/inference phase).
+
+---
+
 ### FontConfig charset integration
 
 Fontshow can optionally enrich the font inventory with Unicode charset
