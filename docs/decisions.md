@@ -231,6 +231,26 @@ Accepted (implementation pending)
 
 ---
 
+### Decision: CLI Verbosity Control
+
+Fontshow provides basic verbosity control through CLI flags.
+
+- By default, only validation errors are printed.
+- `--verbose` enables printing of validation warnings.
+- `--quiet` suppresses all validation output.
+
+Warnings are always collected internally as structured data and are not
+discarded when output is suppressed.
+
+This approach keeps the default behavior clean while allowing users to
+inspect validation issues when needed.
+
+Warning handling via structured accumulator
+
+No printing in leaf validators
+
+---
+
 ## Decision status
 
 The decisions listed in this document are to be considered **binding** for current project development.

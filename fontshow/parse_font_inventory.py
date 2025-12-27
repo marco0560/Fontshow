@@ -109,6 +109,30 @@ SCRIPT_TO_LANGUAGES: dict[str, list[str]] = {
 # ============================================================
 
 
+def add_inventory_warning(data: dict, code: str, message: str) -> None:
+    """Attach a structured warning to the inventory root."""
+    warnings = data.setdefault("warnings", [])
+    warnings.append(
+        {
+            "code": code,
+            "message": message,
+            "severity": "warning",
+        }
+    )
+
+
+def add_warning(entry: dict, code: str, message: str) -> None:
+    """Attach a structured warning to a font entry."""
+    warnings = entry.setdefault("warnings", [])
+    warnings.append(
+        {
+            "code": code,
+            "message": message,
+            "severity": "warning",
+        }
+    )
+
+
 def validate_font_entry(entry: dict, *, index: int) -> list[str]:
     """
     Validate a single font entry from the inventory.
@@ -154,7 +178,12 @@ def validate_font_entry(entry: dict, *, index: int) -> list[str]:
     return errors
 
 
-def validate_inventory(data: dict) -> int:
+def validate_inventory(
+    data: dict,
+    *,
+    verbose: bool = False,
+    quiet: bool = False,
+) -> int:
     """
     Validate a Fontshow font inventory.
 
@@ -189,20 +218,30 @@ def validate_inventory(data: dict) -> int:
     warnings = 0
 
     if not isinstance(data, dict):
-        print("❌ Inventory root is not a JSON object")
+        if not quiet:
+            print("❌ Inventory root is not a JSON object")
         return 1
 
     metadata = data.get("metadata", {})
     schema_version = metadata.get("schema_version")
 
     if schema_version is None:
-        print("⚠️  Warning: missing schema_version")
+        add_inventory_warning(
+            data,
+            code="missing_schema_version",
+            message="Inventory has no schema_version",
+        )
     elif schema_version != "1.0":
-        print(f"⚠️  Warning: unknown schema_version '{schema_version}'")
+        add_inventory_warning(
+            data,
+            code="unknown_schema_version",
+            message=f"Unknown schema_version '{schema_version}'",
+        )
 
     fonts = data.get("fonts")
     if not isinstance(fonts, list):
-        print("❌ 'fonts' field missing or not a list")
+        if not quiet:
+            print("❌ 'fonts' field missing or not a list")
         return 1
 
     for idx, font in enumerate(fonts):
@@ -221,7 +260,11 @@ def validate_inventory(data: dict) -> int:
         # ---------- Non-fatal consistency warnings ----------
         if not isinstance(font, dict):
             warnings += 1
-            print(f"⚠️  Warning: font entry #{idx} is not an object")
+            add_warning(
+                font,
+                code="missing_family",
+                message="Font entry has no family or base_names",
+            )
             continue
 
         identity = font.get("identity", {})
@@ -230,20 +273,25 @@ def validate_inventory(data: dict) -> int:
 
         if not family and not base_names:
             warnings += 1
-            font_path = (
-                font.get("path")
-                or font.get("file")
-                or font.get("source", {}).get("path")
-                or "<unknown path>"
-            )
-            print(
-                f"⚠️  Warning: font entry #{idx} ({font_path}) has no family or base_names"
+            add_warning(
+                font,
+                code="missing_family",
+                message="Font entry has no family or base_names",
             )
 
-    if fatal_errors == 0:
-        print("✅ Inventory validation completed (no fatal errors)")
-    else:
-        print(f"❌ Inventory validation failed with {fatal_errors} invalid entries")
+    if verbose:
+        for idx, font in enumerate(fonts):
+            for warning in font.get("warnings", []):
+                print(
+                    f"⚠️  Warning font[{idx}]: "
+                    f"{warning['code']} - {warning['message']}"
+                )
+
+    if not quiet:
+        if fatal_errors == 0:
+            print("✅ Inventory validation completed (no fatal errors)")
+        else:
+            print(f"❌ Inventory validation failed with {fatal_errors} invalid entries")
 
     return fatal_errors
 
@@ -483,8 +531,21 @@ def main() -> None:
         action="store_true",
         help="Validate inventory structure and exit (no output generation)",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Show validation warnings",
+    )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Suppress all validation output",
+    )
 
     args = parser.parse_args()
+
+    if args.verbose and args.quiet:
+        parser.error("--verbose and --quiet are mutually exclusive")
 
     if not args.input.exists():
         print(f"❌ Error: input file not found: {args.input}", file=sys.stderr)
@@ -500,11 +561,17 @@ def main() -> None:
 
     schema_version = metadata.get("schema_version")
     if schema_version is None:
-        print("⚠️  Warning: inventory has no 'schema_version'; assuming legacy format")
+        add_inventory_warning(
+            data,
+            code="missing_schema_version",
+            message="Inventory has no schema_version",
+        )
         metadata["schema_version"] = "1.0"
     elif schema_version != "1.0":
-        print(
-            f"⚠️  Warning: unsupported schema_version '{schema_version}', attempting best-effort parsing"
+        add_inventory_warning(
+            data,
+            code="unsupported_schema_version",
+            message=f"Unsupported schema_version '{schema_version}'",
         )
 
     fonts = data.get("fonts")
@@ -513,7 +580,11 @@ def main() -> None:
 
     # ------------------------------
     if args.validate_inventory:
-        exit_code = validate_inventory(data)
+        exit_code = validate_inventory(
+            data,
+            verbose=args.verbose,
+            quiet=args.quiet,
+        )
         sys.exit(exit_code)
 
     enriched = parse_inventory(data, args.infer_level)

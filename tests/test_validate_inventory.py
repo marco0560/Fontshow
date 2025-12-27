@@ -51,3 +51,32 @@ def test_validate_inventory_missing_schema_version():
 
     result = validate_inventory(data)
     assert result == 0
+
+
+def test_missing_family_adds_warning():
+    entry = {
+        "identity": {},
+        "base_names": [],
+        "path": "/tmp/font.ttf",
+    }
+
+    data = {"fonts": [entry], "metadata": {}}
+    validate_inventory(data)
+
+    assert "warnings" in entry
+    assert entry["warnings"][0]["code"] == "missing_family"
+
+
+def test_quiet_suppresses_output(capsys):
+    data = {"fonts": [], "metadata": {}}
+    validate_inventory(data, quiet=True)
+    captured = capsys.readouterr()
+    assert captured.out == ""
+
+
+def test_verbose_shows_warning(capsys):
+    entry = {"identity": {}, "base_names": []}
+    data = {"fonts": [entry], "metadata": {}}
+    validate_inventory(data, verbose=True)
+    captured = capsys.readouterr()
+    assert "missing_family" in captured.out
