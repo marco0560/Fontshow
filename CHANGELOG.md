@@ -1,3 +1,9 @@
+## [0.7.2](https://github.com/marco0560/Fontshow/compare/v0.7.1...v0.7.2) (2025-12-27)
+
+### Bug Fixes
+
+* **dump:** add stable font identity id field and test ([cf849f6](https://github.com/marco0560/Fontshow/commit/cf849f613f123ef825bb957f900a073343fc502e))
+
 ## [0.7.1](https://github.com/marco0560/Fontshow/compare/v0.7.0...v0.7.1) (2025-12-27)
 
 ### Bug Fixes
