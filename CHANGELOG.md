@@ -1,3 +1,9 @@
+## [0.7.3](https://github.com/marco0560/Fontshow/compare/v0.7.2...v0.7.3) (2025-12-27)
+
+### Bug Fixes
+
+* **parser:** honor quiet flag in inventory validation output ([a7dc6e0](https://github.com/marco0560/Fontshow/commit/a7dc6e0eb1adabd243ad48da0a61e44f7911900b))
+
 ## [0.7.2](https://github.com/marco0560/Fontshow/compare/v0.7.1...v0.7.2) (2025-12-27)
 
 ### Bug Fixes
