@@ -7,6 +7,12 @@ site/
 luatex*
 # Packaging artifacts
 *.egg-info/
+# pytest / coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
 # Artifacts
 *.fls
 *.fdb_latexmk

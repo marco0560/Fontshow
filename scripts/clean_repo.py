@@ -12,8 +12,6 @@ By default, the script removes files that are:
 Use --dry-run to preview what would be removed without deleting anything.
 """
 
-from __future__ import annotations
-
 import argparse
 import shutil
 import subprocess
