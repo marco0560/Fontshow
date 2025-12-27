@@ -137,6 +137,33 @@ This contract intentionally separates *observation* (dump phase) from
 
 ---
 
+#### Coverage vs Inference Semantics
+
+Fontshow distinguishes strictly between *coverage* and *inference* data.
+
+**Coverage** represents raw observations gathered from font files or external
+tools (e.g. FontConfig). Coverage data is:
+- incomplete and tool-dependent,
+- never corrected or normalized,
+- allowed to be missing or empty.
+
+Examples of coverage data include Unicode ranges, Unicode blocks, raw script
+information reported by FontConfig, and sample text extracted from the font.
+
+**Inference** represents Fontshow’s interpretation of coverage and metadata.
+Inference data is:
+- normalized and consistent,
+- independent from the original tool,
+- guaranteed to be present in a usable form.
+
+For example, inferred script lists are always present and use ISO 15924 tags.
+When no script can be inferred, the special value `"unknown"` is used.
+
+The value `"unknown"` is never emitted in coverage data and only appears as the
+result of inference.
+
+---
+
 ### FontConfig charset integration
 
 Fontshow can optionally enrich the font inventory with Unicode charset

@@ -65,3 +65,9 @@ def test_infer_scripts_cyrillic():
 
     scripts = infer_scripts(coverage)
     assert scripts == ["cyrl"]
+
+
+def test_coverage_scripts_never_unknown():
+    coverage = {}
+    scripts = coverage.get("scripts", [])
+    assert "unknown" not in scripts
