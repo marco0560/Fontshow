@@ -1,13 +1,8 @@
 # Testing
 
-This document describes the current **manual testing procedures** used to
-validate Fontshow behavior.
-
-At this stage, testing focuses on:
-
-- CLI correctness
-- configuration introspection
-- reproducibility and debuggability
+This document describes the testing strategy adopted in the Fontshow project.
+It covers both automated tests (executed via Continuous Integration) and
+manual or exploratory tests that require a real system environment.
 
 As the project evolves, this document will be progressively extended to
 cover:
@@ -15,6 +10,88 @@ cover:
 - automated tests
 - non-regression tests
 - CI-based validation on commits or releases
+
+## Automated Tests (pytest)
+
+Fontshow includes an automated test suite based on **pytest**.
+These tests validate the internal data model and inference logic using
+minimal, deterministic mock inputs.
+
+Automated tests are designed to be:
+
+- fast
+- reproducible
+- independent from the local font environment
+- suitable for Continuous Integration (CI)
+
+They do **not** rely on real font files, Fontconfig, or system-specific
+configuration.
+
+---
+
+### Scope of automated tests
+
+The automated test suite currently covers:
+
+- script inference (`infer_scripts`)
+- language inference (`infer_languages`)
+- validation of individual font entries (`validate_font_entry`)
+- validation of complete inventories (`validate_inventory`)
+
+These tests ensure the stability of Fontshow’s internal data contracts
+and protect against regressions during refactoring.
+
+---
+
+### Running tests locally
+
+To run the full automated test suite in a development environment:
+
+```bash
+pytest -q
+```
+
+The command must terminate without errors.
+
+---
+
+### Continuous Integration
+
+The automated test suite is executed as part of the GitHub Actions
+Continuous Integration pipeline.
+
+On every push or pull request:
+
+- the package is installed in editable mode
+- code quality checks are enforced via `pre-commit`
+- the full pytest test suite is executed
+
+A failing automated test causes the CI pipeline to fail and prevents
+documentation deployment.
+
+---
+
+### Relationship with manual tests
+
+Automated tests and manual tests serve **complementary purposes**:
+
+- automated tests validate internal logic and data integrity
+- manual tests validate real-world behavior, integration with external
+  tools, and environment-specific scenarios
+
+Manual test procedures are documented in the following sections.
+
+## Manual and Exploratory Tests
+
+Some aspects of Fontshow require manual testing, including:
+
+- Font discovery via Fontconfig (`fc-list`, `fc-query`)
+- Cross-platform behavior (Linux native vs WSL vs Windows)
+- LaTeX compilation and font loading
+- Rendering and visual inspection of generated catalogs
+
+These tests depend on the local environment and available fonts and are
+therefore not suitable for full automation.
 
 ---
 
@@ -287,17 +364,3 @@ The test suite is considered **successful** if:
 - warnings are understandable and documented
 - the output correctly reflects the inventory structure and configuration
 - no unintended side effects are observed
-
----
-
-## Project note
-
-Manual testing currently complements the absence of automated tests.
-The procedures documented here are intended to support reproducibility
-and controlled evolution of the Fontshow pipeline.
-
-As the project matures, this document will be extended to describe:
-
-- automated test strategies
-- non-regression testing
-- CI integration for validation on commits and releases

@@ -120,6 +120,17 @@ Such entries are valid and may appear when extended Fontconfig data is
 included, but they are not intended to be used for font selection or catalog
 generation.
 
+---
+
+### identity.family
+
+- **Type**: string
+- **Required**: no
+- **Description**: Human-readable family name as extracted from font metadata.
+  This field is not used for structural validation.
+
+---
+
 ### charset (optional)
 
 The `charset` field contains Unicode coverage information as reported by
@@ -244,6 +255,13 @@ These fields identify the physical font resource.
   Font format identifier (e.g. `TTF`, `OTF`, `TTC`).
 
 ---
+
+### family
+
+- **Type**: string
+- **Required**: yes
+- **Description**: Canonical font family name used for validation, grouping
+  and indexing. This field is mandatory for a font entry to be considered valid.
 
 ## Raw metadata
 
