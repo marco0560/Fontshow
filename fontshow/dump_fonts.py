@@ -31,6 +31,8 @@ The JSON schema is documented in:
 - docs/dump-fonts.md
 """
 
+from __future__ import annotations
+
 import argparse
 import getpass
 import hashlib
