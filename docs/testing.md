@@ -78,8 +78,9 @@ Test coverage is measured using `pytest-cov`.
 Coverage reports are generated during Continuous Integration to help
 identify untested code paths and guide future test additions.
 
-At this stage, coverage thresholds are informational and do not block
-the CI pipeline.
+Coverage metrics are used to highlight untested code paths and guide
+testing efforts. At this stage, no minimum coverage threshold is enforced
+in order to preserve development velocity.
 
 Generated artifacts such as `.coverage`, `coverage.xml`, and `htmlcov/`
 are considered local and are not tracked in version control.

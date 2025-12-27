@@ -173,22 +173,18 @@ ensuring that each job enforces only the responsibilities relevant to its scope.
 
 ---
 
-## Use coverage metrics without enforcement
+## Coverage reporting without enforcement
 
 **Decision**
-
-Test coverage is measured using `pytest-cov`, but no minimum coverage
-threshold is enforced at this stage.
+Test coverage is measured using `pytest-cov` and reported in CI logs,
+but no minimum coverage threshold is enforced.
 
 **Rationale**
-
-The project is still evolving and some modules interact with external
-tools and environments that are difficult to test automatically.
-Coverage metrics are used to guide testing efforts without slowing
-development.
+Fontshow includes logic interacting with external tools and system
+configuration, which is difficult to test exhaustively. Coverage is
+used to guide testing priorities without blocking development.
 
 **Status**
-
 Accepted
 
 ---
