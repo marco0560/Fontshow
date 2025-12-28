@@ -66,10 +66,10 @@ Downstream consumers must not assume the presence of any metadata field.
   Version identifier of the inventory schema (e.g. `"1.0"`).
 
 - **`tool`** (`string`)
-  Identifier of the tool that generated the inventory (e.g. `dump_fonts`).
+  Name of the tool that generated or processed the inventory (e.g. `dump_fonts`).
 
 - **`tool_version`** (`string`)
-  Version of Fontshow used to generate the inventory.
+  Fontshow version used by the tool
 
 - **`generated_at`** (`string`, ISO 8601, UTC)
   Timestamp of inventory generation.

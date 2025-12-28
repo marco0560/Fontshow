@@ -251,6 +251,33 @@ No printing in leaf validators
 
 ---
 
+#### Versioning strategy
+
+Fontshow uses a **single-source-of-truth versioning model** based on
+Python package metadata.
+
+- The project version is defined in `pyproject.toml`.
+- At runtime, the version is retrieved via `importlib.metadata.version()`:
+
+```python
+  from importlib.metadata import version, PackageNotFoundError
+
+  try:
+      __version__ = version("fontshow")
+  except PackageNotFoundError:
+      __version__ = "0.0.0"
+```
+
+- All tools (`dump_fonts`, `parse_font_inventory`, `create_catalog`) import
+  the version from `fontshow.__version__`.
+- The version is exposed via the `--version` CLI option and embedded in
+  generated artifacts.
+
+This guarantees consistency between Git tags, packaging metadata,
+CLI tools, and generated inventories.
+
+---
+
 ## Decision status
 
 The decisions listed in this document are to be considered **binding** for current project development.

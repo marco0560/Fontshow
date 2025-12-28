@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from fontshow import __version__
 from fontshow.cli_utils import add_version_argument
 
 # ============================================================
@@ -494,7 +495,8 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     metadata = data.setdefault("metadata", {})
     metadata["inference_level"] = level
     metadata.setdefault("schema_version", "1.0")
-
+    metadata.setdefault("input_inventory_tool", "parse_font_inventory")
+    metadata.setdefault("input_inventory_tool_version", __version__)
     return data
 
 
