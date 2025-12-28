@@ -1,3 +1,9 @@
+## [0.8.1](https://github.com/marco0560/Fontshow/compare/v0.8.0...v0.8.1) (2025-12-28)
+
+### Bug Fixes
+
+* **build:** adjust setuptools-scm version scheme ([733f6c7](https://github.com/marco0560/Fontshow/commit/733f6c7eddc58558bf446ca7c3e5b3e68fc2dd21))
+
 ## [0.8.0](https://github.com/marco0560/Fontshow/compare/v0.7.3...v0.8.0) (2025-12-28)
 
 ### Features
