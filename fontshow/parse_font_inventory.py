@@ -438,6 +438,12 @@ def infer_languages(scripts: list[str]) -> list[str]:
     Returns:
         A sorted list of unique language codes.
     """
+
+    # NOTE:
+    # This function derives languages *only* from inferred scripts.
+    # Declared language metadata (e.g. from FontConfig) is preserved
+    # separately as coverage.languages and must never be merged here.
+
     langs: list[str] = []
     for script in scripts:
         langs.extend(SCRIPT_TO_LANGUAGES.get(script, []))
@@ -477,8 +483,15 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     for font in data.get("fonts", []):
         coverage: dict[str, Any] = font.get("coverage", {}) or {}
 
-        declared_scripts: list[str] = coverage.get("scripts", [])
-        declared_languages: list[str] = coverage.get("languages", [])
+        declared_scripts: list[str] = list(coverage.get("scripts", []) or [])
+        declared_languages: list[str] = list(coverage.get("languages", []) or [])
+        if not declared_languages:
+            add_warning(
+                font,
+                "No declared languages available from FontConfig; inference.languages "
+                "will be derived solely from scripts",
+                level="info",
+            )
 
         inferred_scripts: list[str] = list(infer_scripts(coverage, level) or [])
         inferred_languages: list[str] = list(infer_languages(inferred_scripts) or [])
@@ -487,6 +500,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
             "level": level,
             "scripts": inferred_scripts,
             "languages": inferred_languages,
+            # Declared metadata (never overwritten, informational only)
             "declared_scripts": declared_scripts,
             "declared_languages": declared_languages,
             "unicode_blocks": coverage.get("unicode_blocks", {}),

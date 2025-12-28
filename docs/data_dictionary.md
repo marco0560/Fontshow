@@ -1,30 +1,17 @@
 # Data Dictionary
 
-## Overview
+This document defines the **normative JSON schema** used by Fontshow.
+All inventories generated or processed by Fontshow tools MUST conform
+to the structures described here.
 
-This document defines the **data model and contracts** used throughout
-the Fontshow pipeline.
-
-The central artifact is the **font inventory**, a JSON-compatible
-structure that is progressively enriched by each pipeline stage.
-
-The purpose of this document is to:
-
-- describe the structure of the inventory,
-- define the meaning of each field,
-- clarify which module is responsible for producing each piece of data.
-
-This document is normative: downstream consumers should rely on the
-definitions provided here.
+The dictionary describes:
+- extracted metadata
+- pass-through metadata
+- inferred / derived metadata
 
 ---
 
-## Inventory structure
-
-At the top level, the font inventory is a JSON object with two main keys:
-
-- `metadata`
-- `fonts`
+## Top-level structure
 
 ```json
 {
@@ -33,385 +20,215 @@ At the top level, the font inventory is a JSON object with two main keys:
 }
 ```
 
-Derived values such as the total number of fonts must not be stored in
-metadata, as they can be recomputed by downstream stages.
-
 ---
 
-## Global metadata
+## metadata
 
-The `metadata` object contains information about the context in which
-the inventory was generated.
-
-### Inventory metadata and schema versioning
-
-The font inventory includes a `metadata` section describing the context in
-which the inventory was generated.
-
-This section contains:
-
-- a `schema_version` identifying the inventory format
-- the name and version of the tool that generated the inventory
-- environment information (host, OS, execution context)
-
-All metadata fields are optional and must be treated as non-authoritative.
-They are intended for debugging, reproducibility, and diagnostic purposes
-only.
-
-Downstream consumers must not assume the presence of any metadata field.
+Metadata about how and when the inventory was generated or enriched.
 
 ### Fields
 
-- **`schema_version`** (`string`)
-  Version identifier of the inventory schema (e.g. `"1.0"`).
+- `schema_version` (string)
+  Inventory schema version.
 
-- **`tool`** (`string`)
-  Name of the tool that generated or processed the inventory (e.g. `dump_fonts`).
+- `generated_at` (string, ISO 8601)
 
-- **`tool_version`** (`string`)
-  Fontshow version used by the tool
+- `tool` (string)
+  Name of the tool that produced the inventory (`dump_fonts`,
+  `parse_font_inventory`, `create_catalog`).
 
-- **`generated_at`** (`string`, ISO 8601, UTC)
-  Timestamp of inventory generation.
+- `tool_version` (string)
+  Fontshow version used by the tool.
 
-- **`environment`** (`object`, optional)
-  Information about the execution environment.
+- `environment` (object)
+  - `hostname` (string)
+  - `username` (string)
+  - `os` (string)
+  - `kernel` (string)
+  - `platform` (string)
+  - `execution_context` (object)
+    - `type` (string, e.g. `native`, `wsl`, `container`)
 
-  Typical subfields include:
+- `fontconfig_charset_included` (boolean)
 
-  - `hostname`
-  - `username`
-  - `os`
-  - `kernel`
-  - `platform`
-  - `execution_context.type` (`native`, `wsl`, `container`, `vm`, `unknown`)
+- `fonttools_available` (boolean)
 
----
+- `inference_level` (string, optional)
+  Inference strategy used when enriching the inventory.
 
-### Inventory warnings
-
-The inventory root object may include a `warnings` field.
-
-This field contains structured warnings related to the inventory as a whole
-(e.g. schema compatibility issues), as opposed to font-specific warnings.
-
-Each warning has the following structure:
-
-- `code` (string): machine-readable identifier
-- `message` (string): human-readable description
-- `severity` (string): currently always `"warning"`
-
-The presence of inventory warnings does not invalidate the inventory.
+- `input_inventory_tool` (string, optional)
+- `input_inventory_tool_version` (string, optional)
 
 ---
 
-## Font entries
+## fonts
 
-The `fonts` array contains one entry per font face.
-
-Each entry is a dictionary describing a single font face extracted from
-a font file or a font collection.
-
-```json
-{
-  "file": "...",
-  "index": 0,
-  "family": "...",
-  "style": "...",
-  "format": "...",
-  "sample_text": null,
-  "raw": { ... },
-  "coverage": { ... },
-  "classification": { ... }
-}
-```
-
-Not all fields are mandatory. Optional fields may be absent if the
-corresponding information could not be determined.
-
-Some inventory entries may represent charset-only information rather than
-individual fonts. These entries may lack identifying fields such as
-`identity.family` or `base_names`.
-
-Such entries are valid and may appear when extended Fontconfig data is
-included, but they are not intended to be used for font selection or catalog
-generation.
+List of font entries.
+Each entry represents a **font file**, not an individual face.
 
 ---
 
-### identity.family
+## Font entry
 
-- **Type**: string
-- **Required**: no
-- **Description**: Human-readable family name as extracted from font metadata.
-  This field is not used for structural validation.
+### identity
 
----
+Font identity and naming metadata.
 
-### charset (optional)
+- `file` (string)
+  Canonical path to the font file.
 
-The `charset` field contains Unicode coverage information as reported by
-Fontconfig when the inventory is generated with the option
-`--include-fc-charset`.
+- `ttc_index` (integer or null)
 
-This field is optional and may be `null` when:
+- `family` (string or null)
 
-- Fontconfig is not available (e.g. Windows native)
-- the font does not expose charset information
-- the option `--include-fc-charset` is not used
+- `style` (string or null)
 
-When present, the structure is:
+- `fullname` (string or null)
 
-```json
-"charset": {
-  "source": "fontconfig",
-  "ranges": ["0000-007F", "0100-017F"]
-}
-```
+- `postscript_name` (string or null)
 
-The ranges represent **declared Unicode coverage** as advertised by
-Fontconfig and should be considered complementary to the `coverage`
-field, which is derived directly from font tables using FontTools.
-
-## Sample text
-
-Some font files may include an **embedded sample or demonstration text** intended to showcase the font.
-
-This information is **optional** and **not guaranteed to be present** in all font files.
-
-When available, it is extracted verbatim from the font metadata without modification.
+- `id` (string)
+  Stable internal identifier.
 
 ---
 
-### Field: `sample_text`
+### platform
 
-| Attribute | Type | Description |
-|---------|------|-------------|
-| `sample_text` | object \| null | Optional sample text information embedded in the font |
-
-If the font does not provide any sample text, this field is set to `null`.
+- `name` (string)
+  Platform where the font was discovered (e.g. `linux`, `windows`).
 
 ---
 
-### `sample_text` object structure
+### format
 
-| Field | Type | Description |
-|------|------|-------------|
-| `source` | string | Origin of the sample text |
-| `text` | string | The sample text content |
+Font container and format classification.
 
----
-
-### `sample_text.source`
-
-Allowed values:
-
-- `font`
-  The sample text is embedded directly in the font metadata.
-
-- `system`
-  The sample text is generated externally by the system or tooling.
-
-- `none`
-  No sample text is available.
-  In the inventory, this condition is represented by `sample_text: null`.
+- `container` (string, e.g. `TTF`, `OTF`, `TTC`)
+- `font_type` (string)
+- `ttc_index` (integer or null)
+- `ttc_count` (integer or null)
+- `variable` (boolean)
+- `color` (boolean)
+- `decorative` (boolean)
 
 ---
 
-### Example (sample text available)
+### coverage
 
-```json
-{
-  "sample_text": {
-    "source": "font",
-    "text": "The quick brown fox jumps over the lazy dog"
-  }
-}
-```
+Raw, declarative coverage metadata.
+No inference or normalization is performed here.
 
----
+- `unicode`
+  - `count` (integer)
+  - `min` (integer)
+  - `max` (integer)
 
-### Example (no sample text)
+- `unicode_blocks` (object)
+  Mapping of Unicode block names to approximate coverage metrics.
 
-```json
-{
-  "sample_text": null
-}
-```
+- `scripts` (list of strings)
+  Script tags declared by FontConfig (ISO 15924 / OpenType).
 
----
+- `languages` (list of strings)
+  Language tags declared by FontConfig (`lang:`), BCP-47 style.
 
-### Font entry warnings
-
-Each font entry may include a `warnings` field.
-
-This field contains structured warnings related to the specific font entry,
-such as missing or incomplete metadata.
-
-Warnings do not indicate fatal errors and do not prevent the font from being
-included in the inventory.
+- `charset` (object or null)
+  Raw FontConfig charset ranges.
 
 ---
 
-### Notes and constraints
+### typography
 
-- The sample text is **not normalized**, translated, or altered.
-- Absence of sample text is **not considered an error**.
-- Downstream stages (catalog generation, previews) may choose whether and how to use this field.
-- The presence or absence of this field must not affect pipeline correctness.
+Typography-related metadata.
 
-
----
-
-## File and identity fields
-
-These fields identify the physical font resource.
-
-- **`file`** (`string`)
-  Absolute or normalized path to the font file.
-
-- **`index`** (`integer`)
-  Face index within a TrueType Collection (TTC).
-  For single-face fonts, this is usually `0`.
-
-- **id** (string, derived)
-  Stable identifier derived from `(identity.file, identity.ttc_index)`.
-  Used for comparison, caching, and debugging.
-  Not guaranteed to be globally unique.
-
-- **`family`** (`string`)
-  Font family name as reported by the font metadata.
-
-- **`style`** (`string`)
-  Style or subfamily name (e.g. `Regular`, `Bold Italic`).
-
-- **`format`** (`string`)
-  Font format identifier (e.g. `TTF`, `OTF`, `TTC`).
+- `weight_class` (integer)
+- `width_class` (integer)
+- `opentype_features` (list of strings)
 
 ---
 
-### family
+### classification
 
-- **Type**: string
-- **Required**: yes
-- **Description**: Canonical font family name used for validation, grouping
-  and indexing. This field is mandatory for a font entry to be considered valid.
+High-level font classification flags.
 
-## Raw metadata
-
-The `raw` section contains low-level metadata extracted directly from
-the font binary.
-
-This data is produced exclusively by **`dump_fonts`**.
-
-Typical contents include:
-
-- name table entries,
-- OS/2 table fields,
-- Unicode range flags,
-- basic typographic metrics.
-
-The structure of `raw` is intentionally flexible and may vary depending
-on font format and available tables.
-
-Downstream modules must treat this section as opaque and read-only.
+- `is_variable` (boolean)
+- `is_color` (boolean)
+- `is_decorative` (boolean)
+- `is_emoji` (boolean)
+- `container` (string)
+- `font_type` (string)
 
 ---
 
-## Coverage information
+### license
 
-The `coverage` section describes Unicode coverage information.
+Font license information.
 
-This section is initially populated by **`dump_fonts`** and may be
-refined by **`parse_font_inventory`**.
-
-Typical fields include:
-
-- covered Unicode ranges,
-- lists of representative codepoints,
-- script-level coverage summaries.
-
-Coverage data is used as the basis for script and language inference.
+- `text` (string or null)
+- `url` (string or null)
 
 ---
 
-## Classification and inference
+### vendor
 
-The `classification` section contains semantic information inferred
-from coverage and metadata.
-
-This section is produced by **`parse_font_inventory`**.
-
-Typical fields include:
-
-- **`scripts`** (`list[string]`)
-  Writing systems supported by the font (e.g. `Latin`, `Cyrillic`).
-
-- **`languages`** (`list[string]`)
-  Languages likely supported by the font.
-
-- **`primary_script`** (`string`, optional)
-  The dominant script inferred for the font.
-
-- **`confidence`** (`float`, optional)
-  Confidence score associated with inference results.
-
-Inference fields are heuristic by nature and should be interpreted as
-best-effort indicators rather than absolute guarantees.
+- `vendor` (string or null)
 
 ---
 
-## Rendering-related fields
+### embedding_rights
 
-Some fields are added or derived specifically to support rendering.
-
-These fields are typically consumed by **`create_catalog`** and may
-include:
-
-- grouping hints,
-- sample text selection metadata,
-- script prioritization flags.
-
-Rendering-related fields must not affect upstream inference logic.
+- `embedding_rights` (integer)
 
 ---
 
-## Optional and missing fields
+### sample_text
 
-Fontshow is designed to tolerate incomplete data.
-
-Rules:
-
-- optional fields may be missing,
-- missing fields must never cause downstream crashes,
-- absence of data should result in degraded output quality, not failure.
-
-Consumers of the inventory must always check for field presence.
+- `sample_text` (string or null)
+  Optional sample text extracted from the font.
 
 ---
 
-## Versioning and compatibility
+### source
 
-The inventory format is explicitly versioned via the `metadata.schema_version`
-field.
+Extraction diagnostics.
 
-The schema version is independent from the Fontshow tool version.
+- `fonttools`
+  - `ok` (boolean)
+  - `error` (string or null)
 
-Non-breaking changes may add new optional fields without changing the schema
-version. Breaking changes require a schema version bump and corresponding
-documentation updates.
-
-Downstream consumers must tolerate unknown schema versions and missing fields,
-issuing warnings when appropriate but never aborting execution.
+- `fontconfig`
+  - `ok` (boolean)
 
 ---
 
-## Summary
+## inference
 
-The Fontshow data model is intentionally explicit and extensible.
+Derived metadata computed by `parse_font_inventory`.
 
-It serves as:
+Inference is deterministic and reproducible.
 
-- a stable contract between pipeline stages,
-- a serialization format for caching and inspection,
-- a foundation for external tools consuming font metadata.
+- `level` (string)
+
+- `scripts` (list of strings)
+  Inferred ISO 15924 scripts.
+
+- `languages` (list of strings)
+  Languages inferred from scripts.
+
+- `declared_scripts` (list of strings)
+  Raw scripts copied from `coverage.scripts`.
+
+- `declared_languages` (list of strings)
+  Raw languages copied from `coverage.languages`.
+
+- `unicode_blocks` (object)
+  Unicode blocks reused for inference diagnostics.
+
+---
+
+## Notes
+
+- `coverage.*` fields are never modified by inference.
+- `inference.*` fields may evolve as inference logic improves.
+- Consumers SHOULD rely on `inference` rather than `coverage`
+  unless raw metadata is explicitly required.
