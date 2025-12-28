@@ -13,10 +13,8 @@ authors = [{ name = "Marco Coppola" }]
 
 [tool.setuptools_scm]
 tag_regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
-version_scheme = "release-branch-semver"
+version_scheme = "post-release"
 local_scheme = "no-local-version"
-
-dependencies = []
 
 [project.optional-dependencies]
 dev = ["black", "ruff", "pre-commit"]
