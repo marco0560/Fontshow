@@ -90,12 +90,12 @@ UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
 #: Values are **examples**, not a guarantee of full language support.
 #:
 SCRIPT_TO_LANGUAGES: dict[str, list[str]] = {
-    "latn": ["en", "it", "fr", "de", "es", "vi"],
+    "latn": ["en", "fr", "de", "it", "es", "pt", "nl", "sv", "no", "da", "fi"],
     "grek": ["el"],
-    "cyrl": ["ru", "uk", "bg"],
+    "cyrl": ["ru", "uk", "bg", "sr", "mk"],
     "arab": ["ar"],
     "hebr": ["he"],
-    "deva": ["hi"],
+    "deva": ["hi", "ne"],
     "hani": ["zh"],
     "hang": ["ko"],
     "thai": ["th"],
@@ -104,8 +104,8 @@ SCRIPT_TO_LANGUAGES: dict[str, list[str]] = {
     "viet": ["vi"],
     "copt": ["cop"],
     "ethi": ["ti"],
+    # expandable, intentionally conservative
 }
-
 
 # ============================================================
 # Helper functions
@@ -444,10 +444,14 @@ def infer_languages(scripts: list[str]) -> list[str]:
     # Declared language metadata (e.g. from FontConfig) is preserved
     # separately as coverage.languages and must never be merged here.
 
-    langs: list[str] = []
+    languages: set[str] = set()
     for script in scripts:
-        langs.extend(SCRIPT_TO_LANGUAGES.get(script, []))
-    return sorted(set(langs))
+        if script == "unknown":
+            continue
+        for lang in SCRIPT_TO_LANGUAGES.get(script, []):
+            languages.add(lang)
+
+    return sorted(languages)
 
 
 # ============================================================

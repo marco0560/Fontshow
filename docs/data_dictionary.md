@@ -226,6 +226,57 @@ Inference is deterministic and reproducible.
 
 ---
 
+### `fonts[].inference.scripts`
+
+**Type:** `array[string]`
+**Required:** no
+**Values:** ISO 15924 script codes (lowercase)
+**Example:** `["latn"]`, `["cyrl", "grek"]`, `["jpan"]`
+
+This field contains the list of writing systems inferred for a font, expressed
+using **ISO 15924** script codes.
+
+#### Derivation rules
+
+The value is derived by `parse_font_inventory` using a best-effort strategy
+based on Unicode coverage metadata:
+
+1. **Primary source**: `coverage.unicode_blocks`
+   If available, Unicode block usage statistics are analyzed to infer scripts.
+   Only blocks with significant coverage are considered.
+
+2. **Fallback source**: `coverage.unicode.max`
+   If block-level data is unavailable, the maximum Unicode code point supported
+   by the font is used as a heuristic indicator.
+
+3. **Normalization**
+   All inferred scripts are normalized to ISO 15924 codes:
+   - `Latin` → `latn`
+   - `Greek` → `grek`
+   - `Cyrillic` → `cyrl`
+   - `Arabic` → `arab`
+   - `Hebrew` → `hebr`
+   - `Devanagari` → `deva`
+   - CJK disambiguation:
+     - Han only → `hani`
+     - Han + Japanese kana → `jpan`
+     - Han + Hangul → `hang`
+
+4. **Unknown**
+   If no reliable inference is possible, the value defaults to:
+   ```
+   ["unknown"]
+   ```
+
+#### Notes
+
+- This field represents **inferred** information and may differ from
+  language declarations.
+- The absence of this field does not invalidate a font entry.
+- Downstream tools must treat `"unknown"` as a valid placeholder.
+
+---
+
 ## Notes
 
 - `coverage.*` fields are never modified by inference.

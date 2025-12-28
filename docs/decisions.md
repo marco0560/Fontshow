@@ -278,6 +278,79 @@ CLI tools, and generated inventories.
 
 ---
 
+### Decision: Version bumps driven by Conventional Commits
+
+**Decision**
+Fontshow version increments are driven exclusively by commit types
+following the Conventional Commits specification, in combination with
+semantic-release.
+
+- `fix:` commits trigger a **patch** version bump (e.g. `0.8.0 → 0.8.1`)
+- `feat:` commits trigger a **minor** version bump (e.g. `0.8.0 → 0.9.0`)
+- `BREAKING CHANGE` triggers a **major** version bump
+
+The effective version is materialized via Git tags and resolved at runtime
+using `setuptools-scm`.
+
+**Rationale**
+This ensures that:
+- version numbers reflect actual semantic changes;
+- tooling (`pip install -e .`, CLI `--version`, generated artifacts)
+  always reports a version consistent with Git history;
+- no manual version editing is required in source files.
+
+**Consequences**
+- A commit type mismatch (e.g. using `feat:` instead of `fix:`)
+  will intentionally produce a higher version number.
+- Version correctness depends on clean Git history and correct commit semantics.
+- Developers must treat commit messages as part of the public API contract.
+
+---
+
+## Decision C4.2.2 — Script inference based on Unicode coverage
+
+### Context
+
+Fontshow needs a consistent and portable way to infer the writing systems
+supported by a font, independently of platform-specific metadata and
+language declarations.
+
+Available inputs include:
+- Unicode block usage statistics (FontConfig / fc-query)
+- Unicode code point coverage (fontTools)
+
+### Decision
+
+Script inference is performed exclusively in `parse_font_inventory` using
+Unicode coverage metadata and produces **ISO 15924** script codes.
+
+The inference strategy follows a two-step approach:
+
+1. **Primary source**: Unicode block statistics (`coverage.unicode_blocks`)
+2. **Fallback**: Maximum Unicode code point (`coverage.unicode.max`)
+
+All outputs are normalized to ISO 15924 codes and stored in
+`fonts[].inference.scripts`.
+
+If no reliable inference is possible, the value `["unknown"]` is emitted.
+
+### Rationale
+
+- Unicode coverage is more stable and portable than language tags.
+- ISO 15924 provides a compact, standardized representation of writing systems.
+- Separating scripts from languages avoids false assumptions and simplifies
+  downstream processing.
+- The fallback mechanism ensures robustness when block-level data is unavailable.
+
+### Consequences
+
+- `fonts[].inference.scripts` is best-effort and non-authoritative.
+- Downstream tools must tolerate `"unknown"` and missing values.
+- Language inference is handled separately and may not align one-to-one with
+  script inference.
+
+---
+
 ## Decision status
 
 The decisions listed in this document are to be considered **binding** for current project development.
