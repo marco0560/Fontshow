@@ -1,3 +1,9 @@
+## [0.8.0](https://github.com/marco0560/Fontshow/compare/v0.7.3...v0.8.0) (2025-12-28)
+
+### Features
+
+* **parser:** extend inference model with declared languages ([81b6432](https://github.com/marco0560/Fontshow/commit/81b6432d3ab679f8221efb47bf31accbba3079e2))
+
 ## [0.7.3](https://github.com/marco0560/Fontshow/compare/v0.7.2...v0.7.3) (2025-12-27)
 
 ### Bug Fixes
