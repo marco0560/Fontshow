@@ -46,6 +46,9 @@ from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
 
+from fontshow import __version__
+from fontshow.cli_utils import add_version_argument
+
 # Platform-specific imports (deferred)
 if sys.platform == "win32":
     import winreg
@@ -267,7 +270,9 @@ LATEX_INITIAL_CODE = (
 \newcommand{\Li}{\lipsum[1][1-4]}
 
 \title{\Huge\textbf{\color{titlecolor}Catalogo Font di Sistema}}
-\author{Generato da Python in \texttt{"""
+\author{Generato da fontshow.create_catalog """
+    + __version__
+    + """ \texttt{"""
     + platform.system()
     + r"""}}
 \date{\today}
@@ -1017,6 +1022,8 @@ def main() -> None:
         type=int,
         help="Limit the number of processed fonts to the first N (if positive) or the last |N| (if negative)",
     )
+    add_version_argument(parser)
+
     args = parser.parse_args()
 
     TEST_FONTS = set()

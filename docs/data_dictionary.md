@@ -88,6 +88,23 @@ Downstream consumers must not assume the presence of any metadata field.
 
 ---
 
+### Inventory warnings
+
+The inventory root object may include a `warnings` field.
+
+This field contains structured warnings related to the inventory as a whole
+(e.g. schema compatibility issues), as opposed to font-specific warnings.
+
+Each warning has the following structure:
+
+- `code` (string): machine-readable identifier
+- `message` (string): human-readable description
+- `severity` (string): currently always `"warning"`
+
+The presence of inventory warnings does not invalidate the inventory.
+
+---
+
 ## Font entries
 
 The `fonts` array contains one entry per font face.
@@ -221,6 +238,18 @@ Allowed values:
   "sample_text": null
 }
 ```
+
+---
+
+### Font entry warnings
+
+Each font entry may include a `warnings` field.
+
+This field contains structured warnings related to the specific font entry,
+such as missing or incomplete metadata.
+
+Warnings do not indicate fatal errors and do not prevent the font from being
+included in the inventory.
 
 ---
 

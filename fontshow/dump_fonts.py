@@ -47,7 +47,8 @@ from hashlib import sha1
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from fontshow import __version__ as FONTSHOW_VERSION
+from fontshow import __version__
+from fontshow.cli_utils import add_version_argument
 
 try:
     # fontTools does not provide type stubs/py.typed; tell mypy to ignore
@@ -1145,6 +1146,7 @@ def main() -> None:
         action="store_true",
         help="Enable verbose logging to stdout",
     )
+    add_version_argument(parser)
 
     args = parser.parse_args()
 
@@ -1157,7 +1159,7 @@ def main() -> None:
             "schema_version": "1.0",
             "generated_at": utc_now_iso(),
             "tool": "dump_fonts",
-            "tool_version": FONTSHOW_VERSION,
+            "tool_version": __version__,
             "environment": collect_environment_metadata(),
             "fontconfig_charset_included": bool(args.include_fc_charset and IS_LINUX),
             "fonttools_available": FONTTOOLS_AVAILABLE,

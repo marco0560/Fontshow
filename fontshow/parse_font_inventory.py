@@ -22,6 +22,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from fontshow.cli_utils import add_version_argument
+
 # ============================================================
 # Inference thresholds
 # ============================================================
@@ -222,6 +224,9 @@ def validate_inventory(
             print("❌ Inventory root is not a JSON object")
         return 1
 
+    # Ensure inventory-level warnings container exists
+    data.setdefault("warnings", [])
+
     metadata = data.get("metadata", {})
     schema_version = metadata.get("schema_version")
 
@@ -300,9 +305,7 @@ def validate_inventory(
 # Inference helpers
 # ============================================================
 
-# ============================================================
 # Script normalization
-# ============================================================
 
 #: Normalize human-readable script names to ISO 15924 codes.
 #: This mapping enforces a single canonical representation
@@ -521,26 +524,31 @@ def main() -> None:
         help="Output enriched JSON file",
     )
     parser.add_argument(
+        "-i",
         "--infer-level",
         choices=["conservative", "medium", "aggressive"],
         default="medium",
         help="Inference aggressiveness level",
     )
     parser.add_argument(
+        "-I",
         "--validate-inventory",
         action="store_true",
         help="Validate inventory structure and exit (no output generation)",
     )
     parser.add_argument(
+        "-v",
         "--verbose",
         action="store_true",
         help="Show validation warnings",
     )
     parser.add_argument(
+        "-q",
         "--quiet",
         action="store_true",
         help="Suppress all validation output",
     )
+    add_version_argument(parser)
 
     args = parser.parse_args()
 

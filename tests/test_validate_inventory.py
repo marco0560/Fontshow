@@ -80,3 +80,13 @@ def test_verbose_shows_warning(capsys):
     validate_inventory(data, verbose=True)
     captured = capsys.readouterr()
     assert "missing_family" in captured.out
+
+
+def test_inventory_warnings_are_serialized():
+    entry = {"identity": {}, "base_names": []}
+    data = {"fonts": [entry], "metadata": {}}
+
+    validate_inventory(data)
+
+    assert "warnings" in data
+    assert isinstance(data["warnings"], list)
