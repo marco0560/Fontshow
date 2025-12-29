@@ -42,6 +42,13 @@ def validate_inventory_schema(data: dict[str, Any]) -> list[dict[str, Any]]:
     """
     warnings: list[dict[str, Any]] = []
 
+    # --- Backward compatibility for raw inventories ----------------------
+    if "metadata" not in data:
+        data["metadata"] = {"schema_version": "1.0"}
+    elif "schema_version" not in data.get("metadata", {}):
+        data["metadata"]["schema_version"] = "1.0"
+    # ---------------------------------------------------------------------
+
     schema = _load_schema()
     validator = Draft202012Validator(schema)
 

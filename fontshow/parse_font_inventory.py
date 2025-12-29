@@ -25,6 +25,7 @@ from typing import Any
 from fontshow import __version__
 from fontshow.cli_utils import add_version_argument
 from fontshow.infer_languages import infer_languages
+from fontshow.schema_validation import validate_inventory_schema
 
 # ============================================================
 # Inference thresholds
@@ -597,6 +598,17 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     Extended in C4.2 (script inference)
     Extended in C4.3 (language inference)
     """
+
+    # --- Schema validation (C4.4) -----------------------------------------
+    schema_warnings = validate_inventory_schema(data)
+    for warning in schema_warnings:
+        add_structured_warning(
+            data,
+            code=warning["code"],
+            message=warning["message"],
+            severity=warning["severity"],
+        )
+    # ----------------------------------------------------------------------
 
     for font in data.get("fonts", []):
         # Unicode coverage metadata extracted upstream
