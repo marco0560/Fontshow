@@ -17,7 +17,14 @@ version_scheme = "post-release"
 local_scheme = "no-local-version"
 
 [project.optional-dependencies]
-dev = ["black", "ruff", "pre-commit"]
+dev = [
+  "black",
+  "ruff",
+  "pre-commit",
+  "pytest",
+  "pytest-cov",
+  "packaging"
+]
 
 [tool.black]
 line-length = 88
