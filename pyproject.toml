@@ -10,14 +10,14 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Marco Coppola" }]
+dependencies = [
+    "jsonschema>=4.23.0"
+]
 
 [tool.setuptools_scm]
 tag_regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
 version_scheme = "post-release"
 local_scheme = "no-local-version"
-
-[project.dependencies]
-jsonschema = "^4.23.0"
 
 [project.optional-dependencies]
 dev = [
@@ -28,6 +28,9 @@ dev = [
   "pytest-cov",
   "packaging"
 ]
+
+[project.scripts]
+fontshow-validate = "fontshow.cli_utils:cli_validate_inventory"
 
 [tool.black]
 line-length = 88

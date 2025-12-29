@@ -654,8 +654,11 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         }
 
     metadata = data.setdefault("metadata", {})
+
+    # Inventory produced by parse_inventory is schema 1.1 compliant
+    metadata["schema_version"] = "1.1"
+
     metadata["inference_level"] = level
-    metadata.setdefault("schema_version", "1.0")
     metadata.setdefault("input_inventory_tool", "parse_font_inventory")
     metadata.setdefault("input_inventory_tool_version", __version__)
     return data
