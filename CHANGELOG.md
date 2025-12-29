@@ -1,3 +1,9 @@
+## [0.11.0](https://github.com/marco0560/Fontshow/compare/v0.10.1...v0.11.0) (2025-12-29)
+
+### Features
+
+* **parser:** mark enriched inventories as schema version 1.1 ([d425ff1](https://github.com/marco0560/Fontshow/commit/d425ff17b641b9e8a54423d0c70c0708c8eeba40))
+
 ## [0.10.1](https://github.com/marco0560/Fontshow/compare/v0.10.0...v0.10.1) (2025-12-29)
 
 ### Bug Fixes
