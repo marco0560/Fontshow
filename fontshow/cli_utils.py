@@ -7,6 +7,7 @@ from jsonschema.exceptions import ValidationError
 
 from fontshow import __version__
 from fontshow.schema_validation import validate_inventory_schema
+from fontshow.semantic_validation import validate_language_codes
 
 
 def add_version_argument(parser: argparse.ArgumentParser) -> None:
@@ -51,6 +52,11 @@ def cli_validate_inventory() -> int:
         print("Schema validation failed:", file=sys.stderr)
         print(str(e), file=sys.stderr)
         return 1
+
+    semantic_warnings = validate_language_codes(data)
+
+    for w in semantic_warnings:
+        print(f"[{w['severity']}] {w['code']} ({w['font']}): {w['message']}")
 
     for w in warnings:
         print(f"[{w['severity']}] {w['code']}: {w['message']}")

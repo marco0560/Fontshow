@@ -113,6 +113,25 @@ unambiguous warning model across the entire codebase.
 
 ---
 
+### Semantic validation of language codes
+
+In addition to JSON Schema validation, Fontshow provides semantic checks
+to ensure that all declared and inferred language codes are valid ISO 639
+identifiers.
+
+This validation step detects issues that cannot be expressed in JSON Schema,
+such as invalid or mistyped language codes.
+
+The following sources are checked:
+
+- `coverage.languages` (declared languages)
+- `inference.languages` (inferred languages)
+
+Semantic validation is performed by the `fontshow-validate` command and
+emits structured warnings without failing the validation process.
+
+---
+
 ### Design notes
 
 - Warnings are **informational only** and never block processing.
