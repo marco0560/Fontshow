@@ -1,3 +1,9 @@
+## [0.8.2](https://github.com/marco0560/Fontshow/compare/v0.8.1...v0.8.2) (2025-12-29)
+
+### Bug Fixes
+
+* **build:** add packaging dependency for version tests ([93ff942](https://github.com/marco0560/Fontshow/commit/93ff9425650f80f6ae4f65aa72c1f92e4f96c468))
+
 ## [0.8.1](https://github.com/marco0560/Fontshow/compare/v0.8.0...v0.8.1) (2025-12-28)
 
 ### Bug Fixes
