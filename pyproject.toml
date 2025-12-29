@@ -16,6 +16,9 @@ tag_regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
 version_scheme = "post-release"
 local_scheme = "no-local-version"
 
+[project.dependencies]
+jsonschema = "^4.23.0"
+
 [project.optional-dependencies]
 dev = [
   "black",
