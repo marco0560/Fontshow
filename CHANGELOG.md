@@ -1,3 +1,9 @@
+## [0.10.0](https://github.com/marco0560/Fontshow/compare/v0.9.0...v0.10.0) (2025-12-29)
+
+### Features
+
+* **dev:** add inventory schema validation against JSON Schema v1.1 ([48666ba](https://github.com/marco0560/Fontshow/commit/48666ba1397c165bfec17922bd8a299c9bb69adb))
+
 ## [0.9.0](https://github.com/marco0560/Fontshow/compare/v0.8.2...v0.9.0) (2025-12-29)
 
 ### Features
