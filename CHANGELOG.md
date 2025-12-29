@@ -1,3 +1,13 @@
+## [0.9.0](https://github.com/marco0560/Fontshow/compare/v0.8.2...v0.9.0) (2025-12-29)
+
+### Features
+
+* **core:** define JSON Schema v1.1 for enriched inventory ([e205494](https://github.com/marco0560/Fontshow/commit/e20549401c4a5974fba01233e5eacf5bf51d88a1))
+
+### Bug Fixes
+
+* **cli:** add short options for existing arguments ([2aa3218](https://github.com/marco0560/Fontshow/commit/2aa32185d0233434e6a48b91f9fdaa437858540a))
+
 ## [0.8.2](https://github.com/marco0560/Fontshow/compare/v0.8.1...v0.8.2) (2025-12-29)
 
 ### Bug Fixes
