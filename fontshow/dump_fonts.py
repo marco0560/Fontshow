@@ -1126,22 +1126,26 @@ def main() -> None:
         help="Output JSON file",
     )
     parser.add_argument(
+        "-c",
         "--cache-dir",
         type=Path,
         default=Path(".fontshow_cache"),
         help="Directory used to cache per-face fontTools results",
     )
     parser.add_argument(
+        "-n",
         "--no-cache",
         action="store_true",
         help="Disable fontTools cache reuse",
     )
     parser.add_argument(
+        "-i",
         "--include-fc-charset",
         action="store_true",
         help="Include Fontconfig-declared Unicode charset information (experimental, best-effort)",
     )
     parser.add_argument(
+        "-v",
         "--verbose",
         action="store_true",
         help="Enable verbose logging to stdout",

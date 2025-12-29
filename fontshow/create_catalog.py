@@ -1003,6 +1003,7 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "-l",
         "--list-test-fonts",
         action="store_true",
         help=(
@@ -1011,6 +1012,7 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "-i",
         "--inventory",
         type=str,
         default=None,
