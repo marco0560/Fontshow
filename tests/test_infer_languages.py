@@ -2,46 +2,55 @@ from fontshow.parse_font_inventory import infer_languages
 
 
 def test_infer_languages_latn():
-    scripts = ["latn"]
+    coverage = {
+        "unicode_blocks": {
+            "Basic Latin": 95,
+        }
+    }
 
-    languages = infer_languages(scripts)
+    result = infer_languages(coverage)
+    languages = result.keys()
 
-    # We do not enforce ordering, only content
     assert "en" in languages
-    assert "it" in languages
-    assert "fr" in languages
 
 
 def test_infer_languages_cyrillic():
-    scripts = ["cyrl"]
+    coverage = {
+        "unicode_blocks": {
+            "Cyrillic": 128,
+        }
+    }
 
-    languages = infer_languages(scripts)
+    result = infer_languages(coverage)
+    languages = result.keys()
 
     assert "ru" in languages
-    assert "uk" in languages
 
 
 def test_infer_languages_mixed_scripts():
-    scripts = ["latn", "grek"]
+    coverage = {
+        "unicode_blocks": {
+            "Basic Latin": 95,
+            "Greek and Coptic": 120,
+        }
+    }
 
-    languages = infer_languages(scripts)
+    result = infer_languages(coverage)
+    languages = result.keys()
 
     assert "en" in languages
-    assert "it" in languages
     assert "el" in languages
 
 
 def test_infer_languages_unknown_script():
-    scripts = ["unknown"]
+    coverage = {"unicode_blocks": {}}
 
-    languages = infer_languages(scripts)
+    result = infer_languages(coverage)
 
-    assert languages == []
+    assert result == {}
 
 
 def test_infer_languages_empty_input():
-    scripts = []
+    result = infer_languages({})
 
-    languages = infer_languages(scripts)
-
-    assert languages == []
+    assert result == {}

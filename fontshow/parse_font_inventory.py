@@ -24,6 +24,7 @@ from typing import Any
 
 from fontshow import __version__
 from fontshow.cli_utils import add_version_argument
+from fontshow.infer_languages import infer_languages
 
 # ============================================================
 # Inference thresholds
@@ -112,36 +113,66 @@ SCRIPT_TO_LANGUAGES: dict[str, list[str]] = {
 # ============================================================
 
 
-def add_inventory_warning(data: dict, code: str, message: str) -> None:
-    """Attach a structured warning to the inventory root."""
-    warnings = data.setdefault("warnings", [])
+def add_structured_warning(
+    target: dict,
+    *,
+    code: str,
+    message: str,
+    severity: str = "warning",
+) -> None:
+    """
+    Attach a structured warning to an inventory node.
+
+    Parameters
+    ----------
+    target : dict
+        Inventory root or font entry.
+    code : str
+        Machine-readable warning code.
+    message : str
+        Human-readable warning message.
+    severity : str, optional
+        Severity level (default: ``"warning"``).
+
+    Notes
+    -----
+    - Warnings are appended to the ``warnings`` list of the target.
+    - The target dictionary is modified in place.
+    """
+    warnings = target.setdefault("warnings", [])
     warnings.append(
         {
             "code": code,
             "message": message,
-            "severity": "warning",
-        }
-    )
-
-
-def add_warning(entry: dict, code: str, message: str) -> None:
-    """Attach a structured warning to a font entry."""
-    warnings = entry.setdefault("warnings", [])
-    warnings.append(
-        {
-            "code": code,
-            "message": message,
-            "severity": "warning",
+            "severity": severity,
         }
     )
 
 
 def validate_font_entry(entry: dict, *, index: int) -> list[str]:
     """
-    Validate a single font entry from the inventory.
+    Validate the structural integrity of a single font entry.
 
-    Returns a list of human-readable error messages.
-    An empty list means the entry is valid.
+    This function performs schema-level validation of a font entry
+    independently of any inference logic.
+
+    Parameters
+    ----------
+    entry : dict
+        Font entry object to validate.
+    index : int
+        Index of the font entry in the inventory (for diagnostics only).
+
+    Returns
+    -------
+    list[str]
+        A list of human-readable error messages.
+        An empty list indicates a valid entry.
+
+    Notes
+    -----
+    - This function does not modify the entry.
+    - Inference results are not required to be present.
     """
     errors: list[str] = []
 
@@ -215,6 +246,9 @@ def validate_inventory(
 
     Returns:
         The number of font entries with fatal validation errors.
+
+    Notes:
+    - This function is validation-only and never mutates inference results.
     """
 
     fatal_errors = 0
@@ -232,16 +266,18 @@ def validate_inventory(
     schema_version = metadata.get("schema_version")
 
     if schema_version is None:
-        add_inventory_warning(
+        add_structured_warning(
             data,
             code="missing_schema_version",
             message="Inventory has no schema_version",
+            severity="warning",
         )
     elif schema_version != "1.0":
-        add_inventory_warning(
+        add_structured_warning(
             data,
             code="unknown_schema_version",
             message=f"Unknown schema_version '{schema_version}'",
+            severity="warning",
         )
 
     fonts = data.get("fonts")
@@ -266,10 +302,11 @@ def validate_inventory(
         # ---------- Non-fatal consistency warnings ----------
         if not isinstance(font, dict):
             warnings += 1
-            add_warning(
+            add_structured_warning(
                 font,
                 code="missing_family",
                 message="Font entry has no family or base_names",
+                severity="warning",
             )
             continue
 
@@ -279,10 +316,11 @@ def validate_inventory(
 
         if not family and not base_names:
             warnings += 1
-            add_warning(
+            add_structured_warning(
                 font,
                 code="missing_family",
                 message="Font entry has no family or base_names",
+                severity="warning",
             )
 
     if verbose:
@@ -348,6 +386,8 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
     Returns:
         A list of inferred script identifiers (lowercase strings).
         Returns ``["unknown"]`` if no reliable inference is possible.
+        The value ``"unknown"`` is a sentinel and must not be used
+        for downstream language inference.
     """
     blocks: dict[str, int] = coverage.get("unicode_blocks", {}) or {}
 
@@ -428,15 +468,39 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
     return ["unknown"]
 
 
-def infer_languages(scripts: list[str]) -> list[str]:
+def _infer_languages_from_scripts_legacy(scripts: list[str]) -> list[str]:
     """
-    Infer plausible language codes from inferred scripts.
+    Infer plausible language codes from Unicode scripts (legacy helper).
 
-    Args:
-        scripts: List of script identifiers as returned by :func:`infer_scripts`.
+    This function maps inferred Unicode script identifiers to a set of
+    plausible ISO 639 language codes.
 
-    Returns:
-        A sorted list of unique language codes.
+    The inference is intentionally permissive and conservative:
+    - it operates only at script level
+    - it does not inspect Unicode blocks
+    - it does not provide confidence or evidence
+
+    Parameters
+    ----------
+    scripts : list[str]
+        List of Unicode script identifiers (e.g. ``"latn"``, ``"cyrl"``)
+        as returned by :func:`infer_scripts`.
+
+    Returns
+    -------
+    list[str]
+        Sorted list of inferred language codes.
+
+    Notes
+    -----
+    - This function is kept for backward compatibility and comparison.
+    - It MUST NOT be used as the authoritative language inference.
+    - It will be removed after full migration to ``fontshow.infer_languages``.
+
+    Deprecated
+    ----------
+    Since C4.3
+    This function is no longer called by any core processing path.
     """
 
     # NOTE:
@@ -447,7 +511,10 @@ def infer_languages(scripts: list[str]) -> list[str]:
     languages: set[str] = set()
     for script in scripts:
         if script == "unknown":
+            # Unknown scripts cannot be mapped meaningfully
             continue
+        # Script-to-language mapping is intentionally coarse:
+        # multiple languages may share the same script.
         for lang in SCRIPT_TO_LANGUAGES.get(script, []):
             languages.add(lang)
 
@@ -463,10 +530,19 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     """
     Enrich a font inventory with deterministic inference results.
 
-    The function iterates over ``data["fonts"]`` and adds an ``inference``
-    block to each font entry.
+    This function iterates over the ``fonts`` entries of an inventory and
+    augments each font with an ``inference`` block. The original inventory
+    data is preserved and never overwritten.
 
-    Added structure::
+    Inference is entirely deterministic and based on Unicode metadata
+    already present in the inventory (e.g. Unicode blocks, declared scripts).
+
+    The enrichment is performed *in place*.
+
+    Added structure
+    ---------------
+    Each font entry gains an ``inference`` dictionary with the following
+    structure::
 
         font["inference"] = {
             "level": str,
@@ -477,28 +553,82 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
             "unicode_blocks": dict[str, int],
         }
 
-    Args:
-        data: Parsed JSON inventory as a Python dictionary.
-        level: Inference aggressiveness level.
+    Semantic meaning of fields
+    --------------------------
+    - ``scripts``:
+        Scripts inferred from Unicode coverage (C4.2).
+    - ``languages``:
+        Languages inferred deterministically from Unicode *block coverage*
+        (C4.3, authoritative inference).
+    - ``declared_scripts`` / ``declared_languages``:
+        Metadata declared by FontConfig or upstream tools.
+        These fields are informational only and are never modified.
+    - ``unicode_blocks``:
+        Raw Unicode block coverage used as inference evidence.
 
-    Returns:
-        The same inventory dictionary, enriched in place.
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Parsed JSON font inventory as a Python dictionary.
+        The dictionary is modified in place.
+
+    level : str
+        Inference aggressiveness level. This parameter controls how
+        conservative or permissive the inference logic should be.
+        It is propagated to all inference steps.
+
+    Returns
+    -------
+    dict[str, Any]
+        The same inventory dictionary, enriched with inference results.
+
+    Notes
+    -----
+    - This function does not perform any I/O.
+    - No declared metadata is ever overwritten.
+    - Inference results are reproducible for the same input inventory.
+    - This function represents the main inference orchestration layer
+      of Fontshow.
+    - Legacy script-only language inference is intentionally not used.
+
+    Introduced in
+    -------------
+    C4.1 (initial version)
+    Extended in C4.2 (script inference)
+    Extended in C4.3 (language inference)
     """
+
     for font in data.get("fonts", []):
+        # Unicode coverage metadata extracted upstream
         coverage: dict[str, Any] = font.get("coverage", {}) or {}
 
+        # Declared metadata provided by FontConfig or inventory tools
+        # These values are informational and never overwritten
         declared_scripts: list[str] = list(coverage.get("scripts", []) or [])
         declared_languages: list[str] = list(coverage.get("languages", []) or [])
         if not declared_languages:
-            add_warning(
+            add_structured_warning(
                 font,
-                "No declared languages available from FontConfig; inference.languages "
-                "will be derived solely from scripts",
-                level="info",
+                code="missing_declared_languages",
+                message=(
+                    "No declared languages available from FontConfig; "
+                    "inference.languages will be derived solely from Unicode data"
+                ),
+                severity="info",
             )
 
+        # C4.2 – Infer Unicode scripts from coverage metadata
         inferred_scripts: list[str] = list(infer_scripts(coverage, level) or [])
-        inferred_languages: list[str] = list(infer_languages(inferred_scripts) or [])
+
+        # C4.3 – Infer human languages from Unicode coverage.
+        # This is the authoritative language inference mechanism.
+        # Legacy script-only inference is no longer used here.
+        inferred_languages_map: dict[str, dict[str, Any]] = infer_languages(
+            coverage,
+            policy="permissive",
+        )
+
+        inferred_languages: list[str] = sorted(inferred_languages_map.keys())
 
         font["inference"] = {
             "level": level,
@@ -507,6 +637,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
             # Declared metadata (never overwritten, informational only)
             "declared_scripts": declared_scripts,
             "declared_languages": declared_languages,
+            # Raw evidence used for inference
             "unicode_blocks": coverage.get("unicode_blocks", {}),
         }
 
@@ -524,7 +655,25 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
 
 
 def main() -> None:
-    """CLI entry point."""
+    """
+    Command-line interface entry point for inventory parsing and inference.
+
+    This function:
+    - parses CLI arguments
+    - loads a Fontshow font inventory from JSON
+    - optionally validates the inventory structure
+    - enriches the inventory with deterministic inference results
+    - writes the enriched inventory back to disk
+
+    The function handles all user-facing error reporting and exit codes,
+    while delegating validation and inference logic to dedicated helpers.
+
+    Notes
+    -----
+    - This function performs file I/O.
+    - Core inference logic is implemented in :func:`parse_inventory`.
+    - Validation logic is implemented in :func:`validate_inventory`.
+    """
     parser = argparse.ArgumentParser(
         description="Parse and enrich a Fontshow font_inventory.json with deterministic inference.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -589,17 +738,19 @@ def main() -> None:
 
     schema_version = metadata.get("schema_version")
     if schema_version is None:
-        add_inventory_warning(
+        add_structured_warning(
             data,
             code="missing_schema_version",
             message="Inventory has no schema_version",
+            severity="warning",
         )
         metadata["schema_version"] = "1.0"
     elif schema_version != "1.0":
-        add_inventory_warning(
+        add_structured_warning(
             data,
             code="unsupported_schema_version",
             message=f"Unsupported schema_version '{schema_version}'",
+            severity="warning",
         )
 
     fonts = data.get("fonts")
