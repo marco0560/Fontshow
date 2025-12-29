@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fontshow.org/schema/inventory-1.1.json",
+  "title": "Fontshow Inventory Schema",
+  "description": "Schema for Fontshow font inventory files (v1.1). Supports raw and enriched inventories.",
+  "type": "object",
+
+  "required": ["metadata", "fonts"],
+
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["schema_version"],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "enum": ["1.0", "1.1"],
+          "description": "Inventory schema version. Version 1.1 introduces structured warnings and formal inference blocks."
+        },
+        "input_inventory_tool": {
+          "type": "string"
+        },
+        "input_inventory_tool_version": {
+          "type": "string"
+        },
+        "inference_level": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "fonts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/font_entry"
+      }
+    },
+
+    "warnings": {
+      "type": "array",
+      "description": "Inventory-level warnings.",
+      "items": {
+        "$ref": "#/$defs/warning"
+      }
+    }
+  },
+
+  "additionalProperties": true,
+
+  "$defs": {
+    "font_entry": {
+      "type": "object",
+      "required": ["coverage"],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "family": {
+          "type": "string"
+        },
+        "style": {
+          "type": "string"
+        },
+
+        "coverage": {
+          "type": "object",
+          "description": "Raw coverage information extracted from font analysis tools.",
+          "properties": {
+            "unicode_blocks": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "scripts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "languages": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+
+        "inference": {
+          "type": "object",
+          "description": "Deterministic inference results derived from coverage data.",
+          "required": ["level", "scripts", "languages", "unicode_blocks"],
+          "properties": {
+            "level": {
+              "type": "string",
+              "description": "Inference aggressiveness level."
+            },
+            "scripts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "languages": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "declared_scripts": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Scripts declared by upstream tools (informational)."
+            },
+            "declared_languages": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Languages declared by upstream tools (informational)."
+            },
+            "unicode_blocks": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+
+        "warnings": {
+          "type": "array",
+          "description": "Font-level warnings.",
+          "items": {
+            "$ref": "#/$defs/warning"
+          }
+        }
+      },
+
+      "additionalProperties": true
+    },
+
+    "warning": {
+      "type": "object",
+      "required": ["code", "message", "severity"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable warning identifier."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable warning message."
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["info", "warning", "error"],
+          "description": "Warning severity level."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

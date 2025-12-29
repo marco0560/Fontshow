@@ -1,184 +1,184 @@
-# Pipeline Fontshow
+# Fontshow Pipeline
 
-## Panoramica
+## Overview
 
-La pipeline di Fontshow è progettata come una **sequenza di fasi distinte**, ciascuna con una responsabilità chiara e con output espliciti.
+The Fontshow pipeline is designed as a **sequence of distinct stages**, each with a clear responsibility and explicit outputs.
 
-L’obiettivo della pipeline è:
-- raccogliere informazioni sui font installati nel sistema;
-- normalizzare e validare tali informazioni;
-- produrre un catalogo finale utilizzabile (attualmente in formato LaTeX).
+The goal of the pipeline is to:
+- collect information about fonts installed on the system;
+- normalize and validate this information;
+- produce a final, usable catalog (currently in LaTeX format).
 
-Il principio guida è la **separazione delle responsabilità**: ogni fase può essere eseguita, verificata e debuggata in modo indipendente.
+The guiding principle is **separation of concerns**: each stage can be executed, verified, and debugged independently.
 
 ---
 
-## Flusso generale
+## General Flow
 
-La pipeline logica può essere riassunta come:
+The logical pipeline can be summarized as:
 
 <!-- cheatsheet:start -->
 ```
-Sistema
+System
   ↓
-Dump dei font
+Font dump
   ↓
-Inventario
+Inventory
   ↓
-Parsing e validazione
+Parsing and validation
   ↓
-Normalizzazione
+Normalization
   ↓
-Generazione catalogo
+Catalog generation
 ```
 <!-- cheatsheet:end -->
 
-Ogni fase produce uno o più artefatti intermedi, che possono essere conservati per analisi successive.
+Each stage produces one or more intermediate artifacts, which can be retained for later analysis.
 
 ---
 
-## Fase 1 — Dump dei font di sistema
+## Stage 1 — System font dump
 
-La prima fase consiste nella raccolta delle informazioni grezze sui font installati nel sistema.
+The first stage consists of collecting raw information about fonts installed on the system.
 
-Questa fase:
-- interroga il sistema tramite `fontconfig`;
-- raccoglie il percorso dei file dei font e i metadati disponibili;
-- **non applica alcuna normalizzazione o correzione**.
+This stage:
+- queries the system via `fontconfig`;
+- collects font file paths and available metadata;
+- **does not apply any normalization or correction**.
 
-Il risultato è un dump che riflette fedelmente lo stato del sistema in un determinato momento.
+The result is a dump that faithfully reflects the state of the system at a specific point in time.
 
-👉 Per i dettagli di implementazione, vedi:
+👉 For implementation details, see:
 - [`dump_fonts.md`](tools/dump_fonts.md)
 
 ---
 
-## Fase 2 — Creazione dell’inventario
+## Stage 2 — Inventory creation
 
-Il dump dei font viene trasformato in un **inventario strutturato**, che rappresenta una fotografia coerente dei font di sistema.
+The font dump is transformed into a **structured inventory**, representing a coherent snapshot of system fonts.
 
-Caratteristiche dell’inventario:
-- formato leggibile dall’uomo;
-- struttura stabile;
-- assenza di “correzioni silenziose”.
+Inventory characteristics:
+- human-readable format;
+- stable structure;
+- absence of “silent corrections”.
 
-L’inventario può contenere:
-- dati incompleti;
-- nomi non normalizzati;
-- irregolarità provenienti dal sistema.
+The inventory may contain:
+- incomplete data;
+- non-normalized names;
+- irregularities originating from the system.
 
-Questo è intenzionale: l’inventario descrive la realtà, non una versione idealizzata.
+This is intentional: the inventory describes reality, not an idealized version of it.
 
 ---
 
-## Fase 3 — Parsing e validazione dell’inventario
+## Stage 3 — Inventory parsing and validation
 
-In questa fase l’inventario viene analizzato e trasformato in strutture dati più ricche.
+At this stage, the inventory is analyzed and transformed into richer data structures.
 
-Il parsing:
-- interpreta le singole voci dell’inventario;
-- associa i font ai rispettivi file;
-- segnala errori e anomalie.
+Parsing:
+- interprets individual inventory entries;
+- associates fonts with their corresponding files;
+- reports errors and anomalies.
 
-È disponibile una modalità di **validazione esplicita**, che:
-- individua le righe problematiche;
-- associa ogni errore al percorso del font coinvolto;
-- consente di decidere se interrompere o meno l’elaborazione.
+An explicit **validation mode** is available, which:
+- identifies problematic entries;
+- associates each error with the affected font path;
+- allows deciding whether processing should stop or continue.
 
-👉 Dettagli in:
+👉 Details in:
 - [`parse_font_inventory.md`](tools/parse_font_inventory.md)
 
 ---
 
-## Fase 4 — Normalizzazione dei dati
+## Stage 4 — Data normalization
 
-Dopo il parsing, i dati vengono normalizzati per ridurre ambiguità e incoerenze.
+After parsing, data is normalized to reduce ambiguity and inconsistency.
 
-La normalizzazione riguarda principalmente:
-- nomi delle famiglie tipografiche;
-- stili (Regular, Bold, Italic, ecc.);
-- variazioni nominali equivalenti.
+Normalization mainly concerns:
+- font family names;
+- styles (Regular, Bold, Italic, etc.);
+- equivalent naming variations.
 
-Una scelta progettuale importante è che:
-- i valori originali vengono **conservati**;
-- le versioni normalizzate vengono **aggiunte**, non sostituite.
+An important design choice is that:
+- original values are **preserved**;
+- normalized versions are **added**, not replaced.
 
-Questo consente di mantenere tracciabilità e facilita il debugging.
+This preserves traceability and facilitates debugging.
 
 ---
 
-## Fase 5 — Generazione del catalogo
+## Stage 5 — Catalog generation
 
-L’ultima fase della pipeline è la generazione del catalogo finale, attualmente in formato **LaTeX**.
+The final stage of the pipeline is the generation of the final catalog, currently in **LaTeX** format.
 
-In questa fase:
-- vengono selezionati i font effettivamente utilizzabili;
-- i font incompatibili o problematici vengono esclusi o segnalati;
-- viene generato un file `.tex` pronto per la compilazione.
+At this stage:
+- fonts that are effectively usable are selected;
+- incompatible or problematic fonts are excluded or reported;
+- a `.tex` file ready for compilation is generated.
 
-È normale che:
-- il numero di font nel catalogo finale sia inferiore a quello presente nel dump iniziale;
-- alcuni font causino problemi in fase di compilazione LaTeX.
+It is normal that:
+- the number of fonts in the final catalog is lower than in the initial dump;
+- some fonts cause issues during LaTeX compilation.
 
-👉 Dettagli in:
+👉 Details in:
 - [`create_catalog.md`](tools/create_catalog.md)
 
 ---
 
-## Artefatti della pipeline
+## Pipeline artifacts
 
-La pipeline produce diversi artefatti intermedi, tra cui:
-- dump dei font;
-- inventari;
-- file JSON intermedi;
-- file LaTeX finali.
+The pipeline produces several intermediate artifacts, including:
+- font dumps;
+- inventories;
+- intermediate JSON files;
+- final LaTeX files.
 
-Questi artefatti:
-- non sono solo output temporanei;
-- possono essere utilizzati per confronti tra sistemi;
-- facilitano test, debugging e validazione.
+These artifacts:
+- are not merely temporary outputs;
+- can be used to compare different systems;
+- facilitate testing, debugging, and validation.
 
 ---
 
-## Considerazioni sull’ambiente
+## Environment considerations
 
-Il comportamento della pipeline può variare in funzione dell’ambiente:
-- Linux nativo;
+Pipeline behavior may vary depending on the environment:
+- native Linux;
 - WSL;
-- configurazione di `fontconfig`.
+- `fontconfig` configuration.
 
-Per questo motivo:
-- alcune funzionalità sono marcate come *experimental*;
-- la validazione completa su Linux nativo è considerata un passo necessario.
+For this reason:
+- some features are marked as *experimental*;
+- full validation on native Linux is considered a required step.
 
 ---
 
-## Collegamenti
+## Links
 
-Per approfondire i singoli componenti:
+For further details on individual components:
 
-- Architettura generale:
+- General architecture:
   [`architecture.md`](architecture.md)
 
-- Dizionario dei dati:
+- Data dictionary:
   [`data_dictionary.md`](data_dictionary.md)
 
-- Dump dei font:
+- Font dump:
   [`dump_fonts.md`](tools/dump_fonts.md)
 
-- Parsing dell’inventario:
+- Inventory parsing:
   [`parse_font_inventory.md`](tools/parse_font_inventory.md)
 
-- Creazione del catalogo:
+- Catalog creation:
   [`create_catalog.md`](tools/create_catalog.md)
 
 ---
 
-## Stato della pipeline
+## Pipeline status
 
-La pipeline è considerata **funzionalmente completa**, ma ancora in evoluzione per quanto riguarda:
-- robustezza su ambienti diversi;
-- test automatici;
-- gestione dei casi limite.
+The pipeline is considered **functionally complete**, but still evolving with respect to:
+- robustness across different environments;
+- automated testing;
+- handling of edge cases.
 
-Le attività aperte sono tracciate tramite **GitHub Issues**.
+Open activities are tracked via **GitHub Issues**.

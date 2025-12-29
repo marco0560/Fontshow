@@ -45,6 +45,9 @@ nav:
   - Data Dictionary:
       - Data Dictionary: data_dictionary.md
 
+  - Schema:
+      - Inventory Schema: schema/index.md
+
   - Pipeline:
       - Fonts dump: tools/dump_fonts.md
       - Inventory parsing: tools/parse_font_inventory.md
@@ -54,6 +57,7 @@ nav:
       - Manual Testing: testing.md
 
   - Development:
+      - Roadmap: roadmap.md
       - Active decisions: decisions.md
 
   - Cheatsheet:
