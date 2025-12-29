@@ -1,3 +1,9 @@
+## [0.12.0](https://github.com/marco0560/Fontshow/compare/v0.11.0...v0.12.0) (2025-12-29)
+
+### Features
+
+* **dev:** add semantic validation for ISO language codes ([5e790be](https://github.com/marco0560/Fontshow/commit/5e790be8c7c283d0dd0c792b390a151778de2063))
+
 ## [0.11.0](https://github.com/marco0560/Fontshow/compare/v0.10.1...v0.11.0) (2025-12-29)
 
 ### Features
