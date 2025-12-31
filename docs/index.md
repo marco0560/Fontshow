@@ -1,61 +1,61 @@
 # Fontshow
 
-Fontshow è un progetto Python per l’analisi, la normalizzazione e la catalogazione dei font installati su un sistema.
+Fontshow is a Python project for the analysis, normalization, and cataloging of fonts installed on a system.
 
-Il progetto nasce con l’obiettivo di:
-- ottenere una visione strutturata dei font di sistema;
-- individuare incoerenze e anomalie nei metadati;
-- generare un catalogo finale utilizzabile (attualmente in formato LaTeX);
-- mantenere separati dati grezzi, dati normalizzati e output finale.
+The project was created with the following goals:
+- obtain a structured overview of system fonts;
+- identify inconsistencies and anomalies in font metadata;
+- generate a usable final catalog (currently in LaTeX format);
+- keep raw data, normalized data, and final output clearly separated.
 
-La documentazione è organizzata in modo modulare, seguendo le diverse fasi della pipeline e i componenti principali del progetto.
-
----
-
-## Panoramica della pipeline
-
-La pipeline di Fontshow è composta da più fasi indipendenti, ciascuna con una responsabilità chiara.
-
-Una descrizione concettuale e completa del flusso è disponibile in:
-
-- [Pipeline Fontshow](pipeline.md)
+The documentation is organized in a modular way, reflecting the different stages of the pipeline and the main components of the project.
 
 ---
 
-## Architettura del progetto
+## Pipeline overview
 
-La struttura generale del progetto, le responsabilità dei moduli e le scelte architetturali sono descritte in:
+The Fontshow pipeline is composed of several independent stages, each with a clearly defined responsibility.
 
-- [Architettura](architecture.md)
+A complete conceptual description of the workflow is available in:
 
----
-
-## Componenti della pipeline
-
-Ogni fase della pipeline è documentata separatamente:
-
-- [Dump dei font di sistema](tools/dump_fonts.md)
-  Raccolta delle informazioni grezze sui font installati.
-
-- [Parsing dell’inventario](tools/parse_font_inventory.md)
-  Analisi, validazione e strutturazione dei dati dell’inventario.
-
-- [Creazione del catalogo](tools/create_catalog.md)
-  Generazione del catalogo finale a partire dai dati normalizzati.
+- [Fontshow Pipeline](pipeline.md)
 
 ---
 
-## Modello dei dati
+## Project architecture
 
-Il formato e il significato dei dati utilizzati all’interno del progetto sono descritti nel dizionario dei dati:
+The overall project structure, module responsibilities, and architectural decisions are described in:
+
+- [Architecture](architecture.md)
+
+---
+
+## Pipeline components
+
+Each pipeline stage is documented separately:
+
+- [System font dump](tools/dump_fonts.md)
+  Collection of raw information about installed system fonts.
+
+- [Inventory parsing](tools/parse_font_inventory.md)
+  Analysis, validation, and structuring of inventory data.
+
+- [Catalog creation](tools/create_catalog.md)
+  Generation of the final catalog from normalized data.
+
+---
+
+## Data model
+
+The format and meaning of the data used within the project are described in the data dictionary:
 
 - [Data Dictionary](data_dictionary.md)
 
 ---
 
-## Testing e qualità
+## Testing and quality
 
-Le modalità di test, validazione e controllo qualità del progetto sono descritte in:
+Testing strategies, validation procedures, and quality control are described in:
 
 - [Testing](testing.md)
 
@@ -63,23 +63,27 @@ Le modalità di test, validazione e controllo qualità del progetto sono descrit
 
 ## Development & Security
 
-Alcune indicazoni per i contributors si trovano in:
+Guidelines for contributors can be found in:
 
-- [Ambiente di sviluppo](development_security/dev-environment.md)
--  [Key rotation policy](development_security/key-rotation.md)
----
-
-## Stato del progetto
-
-Il progetto è in sviluppo attivo.
-
-Le attività aperte, il debito tecnico e le evoluzioni pianificate sono tracciate tramite **GitHub Issues**.
-La documentazione viene aggiornata progressivamente per riflettere lo stato corrente del progetto.
+- [General contribution guidelines](CONTRIBUTING.md)
+- [Development environment](development_security/dev-environment.md)
+- [Security and Commit Policy](development_security/security-policy.md)
+- [Key rotation policy](development_security/key-rotation.md)
 
 ---
 
-## Note sulla documentazione
+## Project status
 
-Questa documentazione rappresenta il **manuale operativo del progetto**.
+The project is under active development.
 
-Le decisioni progettuali storiche, i problemi incontrati e il contesto di sviluppo sono documentati separatamente nel **Diario di sviluppo**, che non fa parte della documentazione pubblica del repository.
+Open tasks, technical debt, and planned evolutions are tracked via **GitHub Issues**.
+The documentation is progressively updated to reflect the current state of the project.
+
+---
+
+## Documentation notes
+
+This documentation represents the **operational manual of the project**.
+
+Historical design decisions, encountered issues, and development context are documented
+separately in the **Development Log**, which is not part of the public documentation of the repository.
