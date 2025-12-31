@@ -1,3 +1,9 @@
+## [0.12.1](https://github.com/marco0560/Fontshow/compare/v0.12.0...v0.12.1) (2025-12-31)
+
+### Bug Fixes
+
+* **catalog:** escape LaTeX special characters in author and version strings ([acf7528](https://github.com/marco0560/Fontshow/commit/acf7528cd8001ff32b4179d9a73b994580bf1d69))
+
 ## [0.12.0](https://github.com/marco0560/Fontshow/compare/v0.11.0...v0.12.0) (2025-12-29)
 
 ### Features
