@@ -351,6 +351,13 @@ If no reliable inference is possible, the value `["unknown"]` is emitted.
 
 ---
 
+## Signed commits
+
+Signed commits enforcement was enabled on 2025-12-31.
+Earlier commits may not be signed.
+
+---
+
 ## Decision status
 
 The decisions listed in this document are to be considered **binding** for current project development.
