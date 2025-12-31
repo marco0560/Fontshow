@@ -1,0 +1,57 @@
+<type>(<scope>): <summary>
+
+Why:
+-
+
+What:
+-
+
+Notes:
+-
+
+Refs: #
+# <type>(<scope>): <short summary>
+#
+# Types:
+#   feat     = new feature (minor version bump)
+#   fix      = bug fix (patch version bump)
+#   docs     = documentation only changes
+#   perf     = performance improvement
+#   refactor = code change that neither fixes a bug nor adds a feature
+#   test     = adding or updating tests
+#   chore    = maintenance, tooling, formatting, packaging
+#
+# Scopes (Fontshow):
+#   core       = core pipeline, data flow, orchestration
+#   cli        = cli interface
+#   dev        = development and debug tools, scripts
+#   schema     = json schema definition and data validation
+#   dump       = dump_fonts tool
+#   parser     = parse_font_inventory tool
+#   catalog    = create_catalog tool
+#   validation = validation tools
+#   docs       = documentation (MkDocs, README, architecture)
+#   output     = output format
+#   config     = configuration files
+#   build      = build system / github
+#   git        = git configuration
+#   dev        = development (tooling, hooks, scripts)
+#   ci         = CI / GitHub Actions
+#   release    = versioning, tags, changelog
+#
+# Examples:
+#   feat(core): add inventory validation option
+#   docs(docs): document schema evolution rules
+#   fix(catalog): handle missing family names gracefully
+#   chore(core): convert Fontshow into a proper Python package
+#
+# Breaking changes:
+#   Add "!" after the type or include "BREAKING CHANGE:" in the body.
+#
+#   feat!(core): change inventory schema to v2.0
+#
+# Body (optional):
+#   Explain WHY, not WHAT.
+#
+# Footer (optional):
+#   BREAKING CHANGE: <description>

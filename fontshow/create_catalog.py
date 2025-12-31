@@ -159,6 +159,7 @@ SCRIPT_TO_POLYGLOSSIA = {
 # LaTeX escaping utility
 # ============================================================
 
+
 def escape_latex(text: str) -> str:
     """Escape LaTeX special characters in `text`.
 
@@ -176,6 +177,7 @@ def escape_latex(text: str) -> str:
         "^": r"\textasciicircum{}",
     }
     return "".join(replacements.get(c, c) for c in text)
+
 
 # ============================================================
 # LaTeX rendering logic

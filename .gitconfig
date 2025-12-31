@@ -1,0 +1,11 @@
+[include]
+    path = ~/.gitconfig.shared
+
+[core]
+    editor = code --wait
+
+[diff]
+    tool = winmerge
+
+[merge]
+    tool = winmerge

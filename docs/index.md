@@ -61,6 +61,14 @@ Le modalità di test, validazione e controllo qualità del progetto sono descrit
 
 ---
 
+## Development & Security
+
+Alcune indicazoni per i contributors si trovano in:
+
+- [Ambiente di sviluppo](development_security/dev-environment.md)
+-  [Key rotation policy](development_security/key-rotation.md)
+---
+
 ## Stato del progetto
 
 Il progetto è in sviluppo attivo.

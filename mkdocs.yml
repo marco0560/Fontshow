@@ -59,6 +59,8 @@ nav:
   - Development:
       - Roadmap: roadmap.md
       - Active decisions: decisions.md
+      - Development environment: development_security/dev-environment.md
+      - Key rotation: development_security/key-rotation.md
 
   - Cheatsheet:
       - Cheatsheet: cheatsheet.md
