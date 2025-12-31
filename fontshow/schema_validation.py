@@ -49,6 +49,24 @@ def validate_inventory_schema(data: dict[str, Any]) -> list[dict[str, Any]]:
         data["metadata"]["schema_version"] = "1.0"
     # ---------------------------------------------------------------------
 
+    SUPPORTED_SCHEMA_VERSIONS = {"1.0", "1.1"}
+
+    schema_version = data.get("metadata", {}).get("schema_version")
+
+    if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
+        warnings.append(
+            {
+                "code": "schema_version_unknown",
+                "message": (
+                    f"Unknown schema_version '{schema_version}'. "
+                    "Proceeding with schema 1.1 validation."
+                ),
+                "schema_version": schema_version,
+            }
+        )
+        # Normalize to latest known schema for validation
+        data["metadata"]["schema_version"] = "1.1"
+
     schema = _load_schema()
     validator = Draft202012Validator(schema)
 
