@@ -77,3 +77,4 @@ font_inventory_sample.txt
 __pycache__/
 *.pyc
 .venv/
+.gitconfig
