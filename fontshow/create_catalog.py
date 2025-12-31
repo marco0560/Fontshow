@@ -156,6 +156,28 @@ SCRIPT_TO_POLYGLOSSIA = {
 }
 
 # ============================================================
+# LaTeX escaping utility
+# ============================================================
+
+def escape_latex(text: str) -> str:
+    """Escape LaTeX special characters in `text`.
+
+    Returns a string safe to embed in LaTeX source.
+    """
+    replacements = {
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\textasciicircum{}",
+    }
+    return "".join(replacements.get(c, c) for c in text)
+
+# ============================================================
 # LaTeX rendering logic
 # ============================================================
 #
@@ -270,10 +292,10 @@ LATEX_INITIAL_CODE = (
 \newcommand{\Li}{\lipsum[1][1-4]}
 
 \title{\Huge\textbf{\color{titlecolor}Catalogo Font di Sistema}}
-\author{Generato da fontshow.create_catalog """
-    + __version__
-    + """ \texttt{"""
-    + platform.system()
+\author{Generato da fontshow.create\_catalog """
+    + escape_latex(__version__)
+    + r""" \texttt{"""
+    + escape_latex(platform.system())
     + r"""}}
 \date{\today}
 
@@ -875,25 +897,6 @@ def generate_test_output(limit: int | None = None, filter_test: bool = False) ->
             f.write(f"Base names: {', '.join(item['base_names'])}\n")
             f.write("\n")
     print(f"Test file generated: {test_filename}")
-
-
-def escape_latex(text: str) -> str:
-    """Escape LaTeX special characters in `text`.
-
-    Returns a string safe to embed in LaTeX source.
-    """
-    replacements = {
-        "&": r"\&",
-        "%": r"\%",
-        "$": r"\$",
-        "#": r"\#",
-        "_": r"\_",
-        "{": r"\{",
-        "}": r"\}",
-        "~": r"\textasciitilde{}",
-        "^": r"\textasciicircum{}",
-    }
-    return "".join(replacements.get(c, c) for c in text)
 
 
 def generate_latex(font_list: list[dict]) -> str:
