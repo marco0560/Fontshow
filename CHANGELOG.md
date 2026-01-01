@@ -1,3 +1,9 @@
+## [0.12.2](https://github.com/marco0560/Fontshow/compare/v0.12.1...v0.12.2) (2026-01-01)
+
+### Bug Fixes
+
+* **validation:** handle unknown schema versions gracefully ([754cea1](https://github.com/marco0560/Fontshow/commit/754cea184cdbaa1825d62e11c352f282f08349c9))
+
 ## [0.12.1](https://github.com/marco0560/Fontshow/compare/v0.12.0...v0.12.1) (2025-12-31)
 
 ### Bug Fixes
