@@ -47,6 +47,7 @@ nav:
       - Data Dictionary: data_dictionary.md
 
   - Pipeline:
+      - Environment Matrix: environment-matrix.md
       - Fonts dump: tools/dump_fonts.md
       - Inventory parsing: tools/parse_font_inventory.md
       - Catalog creation: tools/create_catalog.md

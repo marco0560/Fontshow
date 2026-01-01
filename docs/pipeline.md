@@ -11,7 +11,16 @@ The goal of the pipeline is to:
 
 The guiding principle is **separation of concerns**: each stage can be executed, verified, and debugged independently.
 
----
+## Execution Environment
+
+The pipeline described in this document assumes execution within a
+well-defined environment.
+
+Supported, partial, and experimental environments are documented separately
+in [`environment-matrix.md`](environment-matrix.md).
+
+Environmental mismatches are a common source of pipeline failures and should
+be evaluated before investigating application-level issues.
 
 ## General Flow
 
@@ -35,8 +44,6 @@ Catalog generation
 
 Each stage produces one or more intermediate artifacts, which can be retained for later analysis.
 
----
-
 ## Stage 1 — System font dump
 
 The first stage consists of collecting raw information about fonts installed on the system.
@@ -50,8 +57,6 @@ The result is a dump that faithfully reflects the state of the system at a speci
 
 👉 For implementation details, see:
 - [`dump_fonts.md`](tools/dump_fonts.md)
-
----
 
 ## Stage 2 — Inventory creation
 
@@ -68,8 +73,6 @@ The inventory may contain:
 - irregularities originating from the system.
 
 This is intentional: the inventory describes reality, not an idealized version of it.
-
----
 
 ## Stage 3 — Inventory parsing and validation
 
@@ -88,8 +91,6 @@ An explicit **validation mode** is available, which:
 👉 Details in:
 - [`parse_font_inventory.md`](tools/parse_font_inventory.md)
 
----
-
 ## Stage 4 — Data normalization
 
 After parsing, data is normalized to reduce ambiguity and inconsistency.
@@ -104,8 +105,6 @@ An important design choice is that:
 - normalized versions are **added**, not replaced.
 
 This preserves traceability and facilitates debugging.
-
----
 
 ## Stage 5 — Catalog generation
 
@@ -123,8 +122,6 @@ It is normal that:
 👉 Details in:
 - [`create_catalog.md`](tools/create_catalog.md)
 
----
-
 ## Pipeline artifacts
 
 The pipeline produces several intermediate artifacts, including:
@@ -138,8 +135,6 @@ These artifacts:
 - can be used to compare different systems;
 - facilitate testing, debugging, and validation.
 
----
-
 ## Environment considerations
 
 Pipeline behavior may vary depending on the environment:
@@ -150,8 +145,6 @@ Pipeline behavior may vary depending on the environment:
 For this reason:
 - some features are marked as *experimental*;
 - full validation on native Linux is considered a required step.
-
----
 
 ## Links
 
@@ -171,8 +164,6 @@ For further details on individual components:
 
 - Catalog creation:
   [`create_catalog.md`](tools/create_catalog.md)
-
----
 
 ## Pipeline status
 
