@@ -42,11 +42,9 @@ nav:
       - Overview: architecture.md
       - Pipeline: pipeline.md
 
-  - Data Dictionary:
-      - Data Dictionary: data_dictionary.md
-
-  - Schema:
+  - Schema and Data Dictionary:
       - Inventory Schema: schema/index.md
+      - Data Dictionary: data_dictionary.md
 
   - Pipeline:
       - Fonts dump: tools/dump_fonts.md
@@ -57,10 +55,12 @@ nav:
       - Manual Testing: testing.md
 
   - Development:
+      - Contribution guidelines: CONTRIBUTING.md
       - Roadmap: roadmap.md
       - Active decisions: decisions.md
-      - Development environment: development_security/dev-environment.md
-      - Key rotation: development_security/key-rotation.md
+      - Development environment: dev-environment.md
+      - Security and release policy: security-and-release-policy.md
+      - Key rotation: key-rotation.md
 
   - Cheatsheet:
       - Cheatsheet: cheatsheet.md

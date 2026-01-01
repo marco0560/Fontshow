@@ -2,8 +2,37 @@
 
 This project uses **SSH-based commit signing**.
 
+> This document is part of the Fontshow security policy.
+> See `security-and-release-policy.md` for the full enforcement model.
+
 To maintain a high security level, contributors and maintainers
 must follow the key rotation policy described below.
+
+---
+
+## Key Rotation and Trust Model
+
+This project distinguishes between **human-authored commits** and **CI-generated commits**.
+
+### Human Commits
+
+- All human contributors must use personal SSH keys for commit signing
+- Keys must be rotated according to this document
+- Compromised keys must be revoked immediately
+
+### CI and Automation
+
+Automated processes (e.g. GitHub Actions) do not use cryptographic commit signing.
+
+CI-generated commits are trusted based on:
+- Restricted write access to protected branches
+- Mandatory CI checks
+- Auditable workflows
+
+This separation is intentional and documented.
+
+See also:
+- [Development environment and commit policy](dev-environment.md#commit-signing-and-release-model)
 
 ---
 

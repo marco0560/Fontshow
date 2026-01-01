@@ -9,16 +9,12 @@ It does **not** include:
 
 For historical context and the evolution of decisions, refer to the **Development Diary**.
 
----
-
 ## Language and project structure
 
 - **Python** is the primary language of the project.
 - The project is structured as a **package**, not as a collection of standalone scripts.
 - Module execution is preferably performed using:
   - `python -m <module>`
-
----
 
 ## Pipeline architecture
 
@@ -29,8 +25,6 @@ For historical context and the evolution of decisions, refer to the **Developmen
   - well-defined responsibilities.
 - Intermediate artifacts (inventories, JSON files, LaTeX files) are considered an **integral part of the project**, not temporary by-products.
 
----
-
 ## Data handling
 
 - Raw data is not modified or “cleaned” silently.
@@ -39,8 +33,6 @@ For historical context and the evolution of decisions, refer to the **Developmen
   - adds normalized versions alongside the original data.
 - The **Data Dictionary** is the normative reference for the meaning of data fields.
 
----
-
 ## Documentation
 
 - Official project documentation is maintained using **MkDocs**.
@@ -48,15 +40,11 @@ For historical context and the evolution of decisions, refer to the **Developmen
 - Automatically generated documentation based on code extraction is **not used**.
 - The README and cheat-sheets are derived from the MkDocs documentation.
 
----
-
 ## Testing and quality
 
 - Automated tests are based on **pytest**.
 - Quality checks include linting and static validation tools.
 - CI is considered the final authority on code quality.
-
----
 
 ## Work tracking and technical debt
 
@@ -64,15 +52,11 @@ For historical context and the evolution of decisions, refer to the **Developmen
 - Static TODO files in the repository are not used.
 - Issues represent the operational state of the work.
 
----
-
 ## Development environment
 
 - Development takes place in Linux and Linux-like environments (including WSL).
 - Differences between environments are considered part of the problem domain.
 - Validation on native Linux is considered necessary for critical functionality.
-
----
 
 ## Decision: font entry `family` field is required at top-level
 
@@ -98,8 +82,6 @@ for structural validation.
 - Test fixtures must include `family` at top-level
 - Future refactors may unify `family` and `identity.family`
 - A compatibility migration may be required if validation rules change
-
----
 
 ## Decision: Separate CI jobs for tests and documentation
 
@@ -130,8 +112,6 @@ of the test job.
 - CI execution remains deterministic and easier to maintain
 - The pipeline can be extended later (coverage, linting)
   without affecting existing jobs
-
----
 
 ## Decision: CI quality gates via pre-commit and pytest
 
@@ -171,8 +151,6 @@ and does not run pre-commit or test checks.
 This decision complements the separation of CI jobs for tests and documentation,
 ensuring that each job enforces only the responsibilities relevant to its scope.
 
----
-
 ## Coverage reporting without enforcement
 
 **Decision**
@@ -186,8 +164,6 @@ used to guide testing priorities without blocking development.
 
 **Status**
 Accepted
-
----
 
 ## Exclude coverage artifacts from version control
 
@@ -203,8 +179,6 @@ without long-term value.
 
 **Status**
 Accepted
-
----
 
 ## Deferred Warning Emission via Structured Collection
 
@@ -229,8 +203,6 @@ Future steps may introduce flags such as `--quiet`, `--verbose`, or
 **Status**
 Accepted (implementation pending)
 
----
-
 ### Decision: CLI Verbosity Control
 
 Fontshow provides basic verbosity control through CLI flags.
@@ -248,8 +220,6 @@ inspect validation issues when needed.
 Warning handling via structured accumulator
 
 No printing in leaf validators
-
----
 
 #### Versioning strategy
 
@@ -275,8 +245,6 @@ Python package metadata.
 
 This guarantees consistency between Git tags, packaging metadata,
 CLI tools, and generated inventories.
-
----
 
 ### Decision: Version bumps driven by Conventional Commits
 
@@ -304,8 +272,6 @@ This ensures that:
   will intentionally produce a higher version number.
 - Version correctness depends on clean Git history and correct commit semantics.
 - Developers must treat commit messages as part of the public API contract.
-
----
 
 ## Decision C4.2.2 — Script inference based on Unicode coverage
 
@@ -349,14 +315,63 @@ If no reliable inference is possible, the value `["unknown"]` is emitted.
 - Language inference is handled separately and may not align one-to-one with
   script inference.
 
----
+## Decision: Commit Signing Enforcement and CI Automation
 
-## Signed commits
+### Context
 
-Signed commits enforcement was enabled on 2025-12-31.
-Earlier commits may not be signed.
+The project requires strong guarantees about the integrity and provenance
+of commits on the `main` branch.
 
----
+The initial goal was to achieve **all of the following simultaneously**:
+
+1. All commits cryptographically signed and verified by GitHub
+2. Fully automated releases using `semantic-release` running in GitHub Actions
+3. GitHub acting as the sole enforcer and source of truth
+
+### Attempted Approaches
+
+Several configurations were evaluated:
+
+#### A. Branch Protection Rules with "Require signed commits"
+
+- Result: ❌ CI commits rejected
+- Reason: GitHub Actions cannot produce verified signatures
+
+#### B. Repository Rulesets with signed-commit enforcement
+
+- Result: ❌ Same limitation as above
+- Rulesets correctly enforce signing, but do not distinguish CI-generated commits
+
+#### C. GPG / SSH signing inside GitHub Actions
+
+- Result: ❌ Not viable
+- GitHub does not support associating CI-generated signatures
+  with a verified GitHub identity
+
+#### D. Forcing semantic-release to avoid commits
+
+- Result: ⚠️ Partial
+- Would require abandoning `@semantic-release/git`
+- Incompatible with current release workflow
+
+### Decision
+
+The project adopts the following model:
+
+- GitHub Repository Rulesets enforce commit signing
+- Human-authored commits **must** be signed
+- Trusted CI automation is granted a **documented bypass**
+- GitHub remains the authoritative enforcement layer
+
+This is the **only configuration that is both technically feasible
+and auditable** with current GitHub capabilities.
+
+### Consequences
+
+- Local hooks are advisory, not authoritative
+- CI automation is explicitly trusted and documented
+- The policy may be revisited if GitHub adds support
+  for verified CI signatures
 
 ## Decision status
 
