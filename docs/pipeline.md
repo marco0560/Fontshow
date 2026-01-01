@@ -2,7 +2,11 @@
 
 ## Overview
 
-The Fontshow pipeline is designed as a **sequence of distinct stages**, each with a clear responsibility and explicit outputs.
+This document describes the Fontshow processing pipeline, from font discovery to catalog creation.
+
+The pipeline is designed as a **sequence of distinct stages**, each with a distinct responsibility.
+Understanding stage boundaries is essential for debugging, validation, and
+environment-related issue analysis.
 
 The goal of the pipeline is to:
 - collect information about fonts installed on the system;
@@ -28,21 +32,39 @@ The logical pipeline can be summarized as:
 
 <!-- cheatsheet:start -->
 ```
-System
+Preflight checks
   ↓
-Font dump
+System font dump
   ↓
-Inventory
+Inventory parsing, validation and enrichment
   ↓
-Parsing and validation
+Catalog creation (.tex generation)
   ↓
-Normalization
-  ↓
-Catalog generation
+LuaLaTeX compilation (multi-pass)
 ```
 <!-- cheatsheet:end -->
 
 Each stage produces one or more intermediate artifacts, which can be retained for later analysis.
+
+## Stage 0 — Preflight Checks
+
+Before executing any pipeline stage, Fontshow performs a set of **preflight checks**
+to validate that the execution environment satisfies the minimum requirements.
+
+Preflight checks are intended to:
+- detect missing or incompatible system-level dependencies early,
+- distinguish environment-related failures from application-level issues,
+- fail fast with clear diagnostics when execution cannot proceed safely.
+
+Preflight checks do not inspect user data and do not perform any font processing.
+
+Typical preflight validations include:
+- identification of the execution environment,
+- availability of a supported font discovery backend,
+- availability of the LaTeX engine required for catalog creation,
+- consistency between the environment used for font discovery and LaTeX compilation.
+
+Failures detected at this stage are classified as **environment-level errors**.
 
 ## Stage 1 — System font dump
 
@@ -55,10 +77,7 @@ This stage:
 
 The result is a dump that faithfully reflects the state of the system at a specific point in time.
 
-👉 For implementation details, see:
-- [`dump_fonts.md`](tools/dump_fonts.md)
-
-## Stage 2 — Inventory creation
+### Inventory representation
 
 The font dump is transformed into a **structured inventory**, representing a coherent snapshot of system fonts.
 
@@ -74,24 +93,36 @@ The inventory may contain:
 
 This is intentional: the inventory describes reality, not an idealized version of it.
 
-## Stage 3 — Inventory parsing and validation
+👉 For implementation details, see:
+- [`dump_fonts.md`](tools/dump_fonts.md)
 
-At this stage, the inventory is analyzed and transformed into richer data structures.
+## Stage 2 — Inventory parsing, validation and enrichment
+
+At this stage, the inventory is analyzed and transformed into richer data structures by applying additional analysis and inference steps.
 
 Parsing:
 - interprets individual inventory entries;
 - associates fonts with their corresponding files;
 - reports errors and anomalies.
 
+### Inventory enrichment
+
+Inventory enrichment operates exclusively on inventory data and does not interact
+with system-level font discovery or rendering mechanisms.
+
+This stage is responsible for:
+- validating inventory structure and consistency,
+- inferring additional properties from existing metadata,
+- preparing the inventory for downstream consumption.
+
+### Inventory validation
+
 An explicit **validation mode** is available, which:
 - identifies problematic entries;
 - associates each error with the affected font path;
 - allows deciding whether processing should stop or continue.
 
-👉 Details in:
-- [`parse_font_inventory.md`](tools/parse_font_inventory.md)
-
-## Stage 4 — Data normalization
+### Data normalization
 
 After parsing, data is normalized to reduce ambiguity and inconsistency.
 
@@ -106,9 +137,14 @@ An important design choice is that:
 
 This preserves traceability and facilitates debugging.
 
-## Stage 5 — Catalog generation
+---
 
-The final stage of the pipeline is the generation of the final catalog, currently in **LaTeX** format.
+👉 Details in:
+- [`parse_font_inventory.md`](tools/parse_font_inventory.md)
+
+## Stage 3 — Catalog creation
+
+The final stage of the pipeline is the creation of the final catalog, currently in **LaTeX** format.
 
 At this stage:
 - fonts that are effectively usable are selected;
@@ -121,6 +157,19 @@ It is normal that:
 
 👉 Details in:
 - [`create_catalog.md`](tools/create_catalog.md)
+
+## Stage 4 — LaTeX compilation
+
+The final catalog is compiled using LuaLaTeX.
+
+Although LuaLaTeX may require multiple compilation passes to resolve indices and
+auxiliary constructs, this process is treated as a single logical stage in the
+pipeline.
+
+Failures at this stage may be caused by:
+- missing or incomplete LaTeX toolchains,
+- font rendering issues,
+- environment mismatches between discovery and compilation.
 
 ## Pipeline artifacts
 
