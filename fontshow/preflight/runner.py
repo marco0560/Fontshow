@@ -1,4 +1,11 @@
+from fontshow.preflight.checks.environment import detect_execution_mode, detect_os
+
 from .model import CheckResult, PreflightResult
+
+os_name = detect_os()
+mode = detect_execution_mode()
+
+# la traduzione in CheckResult arriverà nel prossimo step
 
 
 def run_preflight() -> PreflightResult:
