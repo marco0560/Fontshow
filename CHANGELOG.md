@@ -1,3 +1,9 @@
+## [0.12.3](https://github.com/marco0560/Fontshow/compare/v0.12.2...v0.12.3) (2026-01-02)
+
+### Bug Fixes
+
+* **git:** update .gitignore to excude .patch files ([14a729c](https://github.com/marco0560/Fontshow/commit/14a729c4409986428881086cefb519505bfd265b))
+
 ## [0.12.2](https://github.com/marco0560/Fontshow/compare/v0.12.1...v0.12.2) (2026-01-01)
 
 ### Bug Fixes
