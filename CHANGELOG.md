@@ -1,3 +1,9 @@
+## [0.13.0](https://github.com/marco0560/Fontshow/compare/v0.12.3...v0.13.0) (2026-01-02)
+
+### Features
+
+* **core:** add preflight scaffolding and result model ([0257da0](https://github.com/marco0560/Fontshow/commit/0257da0f2fbd2dfe9885d818265590b5bfb434b6))
+
 ## [0.12.3](https://github.com/marco0560/Fontshow/compare/v0.12.2...v0.12.3) (2026-01-02)
 
 ### Bug Fixes
