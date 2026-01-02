@@ -1,11 +1,11 @@
-from fontshow.preflight.checks.environment import detect_execution_mode, detect_os
-
-from .model import CheckResult, PreflightResult
+from fontshow.preflight.checks.environment import (
+    detect_execution_mode,
+    detect_os,
+)
+from fontshow.preflight.model import CheckResult, PreflightResult, Severity
 
 os_name = detect_os()
 mode = detect_execution_mode()
-
-# la traduzione in CheckResult arriverà nel prossimo step
 
 
 def run_preflight() -> PreflightResult:
@@ -16,5 +16,53 @@ def run_preflight() -> PreflightResult:
     """
     results: list[CheckResult] = []
 
-    # Placeholder: real checks will be added incrementally
+    os_name = detect_os()
+    execution_mode = detect_execution_mode()
+
+    # Environment support check
+    if os_name == "linux":
+        if execution_mode == "bare-metal":
+            results.append(
+                CheckResult(
+                    check_id="environment.support",
+                    severity=Severity.OK,
+                    message="Running on supported Linux environment",
+                )
+            )
+        else:
+            results.append(
+                CheckResult(
+                    check_id="environment.support",
+                    severity=Severity.WARN,
+                    message="Running on Linux in a virtualized environment",
+                )
+            )
+
+    elif os_name == "windows":
+        results.append(
+            CheckResult(
+                check_id="environment.support",
+                severity=Severity.WARN,
+                message="Running on experimental Windows environment",
+            )
+        )
+
+    elif os_name == "macos":
+        results.append(
+            CheckResult(
+                check_id="environment.support",
+                severity=Severity.ERROR,
+                message="macOS is not supported in the current version",
+            )
+        )
+
+    else:
+        results.append(
+            CheckResult(
+                check_id="environment.support",
+                severity=Severity.ERROR,
+                message="Unsupported operating system",
+            )
+        )
+
     return PreflightResult(results=results)
