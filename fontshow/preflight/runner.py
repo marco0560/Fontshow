@@ -1,11 +1,5 @@
-from fontshow.preflight.checks.environment import (
-    detect_execution_mode,
-    detect_os,
-)
+import fontshow.preflight.checks.environment as environment
 from fontshow.preflight.model import CheckResult, PreflightResult, Severity
-
-os_name = detect_os()
-mode = detect_execution_mode()
 
 
 def run_preflight() -> PreflightResult:
@@ -16,8 +10,8 @@ def run_preflight() -> PreflightResult:
     """
     results: list[CheckResult] = []
 
-    os_name = detect_os()
-    execution_mode = detect_execution_mode()
+    os_name = environment.detect_os()
+    execution_mode = environment.detect_execution_mode()
 
     # Environment support check
     if os_name == "linux":
