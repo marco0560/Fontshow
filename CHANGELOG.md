@@ -1,3 +1,9 @@
+## [0.14.0](https://github.com/marco0560/Fontshow/compare/v0.13.0...v0.14.0) (2026-01-02)
+
+### Features
+
+* **core:** add environment and execution mode detection to preflight ([1b35996](https://github.com/marco0560/Fontshow/commit/1b35996d2de6e33580a7219f019633de0810374e))
+
 ## [0.13.0](https://github.com/marco0560/Fontshow/compare/v0.12.3...v0.13.0) (2026-01-02)
 
 ### Features
