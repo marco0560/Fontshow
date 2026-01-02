@@ -48,23 +48,96 @@ Each stage produces one or more intermediate artifacts, which can be retained fo
 
 ## Stage 0 — Preflight Checks
 
-Before executing any pipeline stage, Fontshow performs a set of **preflight checks**
-to validate that the execution environment satisfies the minimum requirements.
+### Purpose
 
-Preflight checks are intended to:
+The preflight stage validates that the execution environment satisfies the
+minimum requirements needed to run the Fontshow pipeline safely.
+
+Its primary goals are to:
 - detect missing or incompatible system-level dependencies early,
-- distinguish environment-related failures from application-level issues,
-- fail fast with clear diagnostics when execution cannot proceed safely.
+- distinguish environment-related issues from application-level failures,
+- fail fast with clear diagnostics when execution cannot proceed meaningfully.
 
-Preflight checks do not inspect user data and do not perform any font processing.
+Preflight checks are intentionally conservative and do not attempt to fix or
+work around detected issues.
 
-Typical preflight validations include:
-- identification of the execution environment,
-- availability of a supported font discovery backend,
-- availability of the LaTeX engine required for catalog creation,
-- consistency between the environment used for font discovery and LaTeX compilation.
+### Scope
 
-Failures detected at this stage are classified as **environment-level errors**.
+Preflight checks are limited to environment validation and capability detection.
+
+They do not:
+- inspect or modify user data,
+- parse or validate font inventories,
+- perform font discovery,
+- run LaTeX compilations,
+- execute any pipeline stage beyond basic environment inspection.
+
+All data processing and validation remain the responsibility of subsequent
+pipeline stages.
+
+### Supported environments
+
+The preflight stage classifies execution environments according to their level
+of support:
+
+- **Linux (bare metal)**: fully supported and considered the reference environment.
+- **Linux VM / WSL / container / chroot**: supported with limitations; additional
+  warnings may be emitted.
+- **Windows 11**: experimental support; execution is allowed but not fully guaranteed.
+- **macOS**: not supported in the current version; support is planned for a future
+  v2.x.y release.
+
+### Checks performed
+
+The preflight stage performs a fixed set of checks, including:
+
+- detection of the operating system and execution mode,
+- verification of a supported font discovery backend being available,
+- verification of the required LuaLaTeX engine,
+- detection of potential mismatches between font discovery and LaTeX compilation
+  environments.
+
+The exact checks executed may vary depending on the detected environment
+(e.g. interactive execution versus CI).
+
+### Severity levels
+
+Each preflight check produces one of the following severity levels:
+
+- **INFO**: contextual information useful for debugging; never blocks execution
+  and is only shown when verbose output is enabled.
+- **OK**: the requirement is satisfied.
+- **WARN**: a known risk or limitation has been detected; execution is allowed
+  but may lead to reduced functionality or failures in later stages.
+- **ERROR**: a required capability is missing or incompatible; execution is
+  aborted immediately.
+
+The overall preflight result is derived from the most severe check outcome.
+Informational results do not contribute to the overall preflight outcome.
+
+### CLI behavior
+
+By default, the CLI displays only warnings, errors, and the final preflight
+summary.
+
+When the `--verbose` flag is enabled, additional informational and successful
+checks are displayed.
+
+Warnings do not prevent execution, while errors always abort the pipeline with
+a non-zero exit code.
+
+The `--verbose` flag does not alter the execution flow or exit codes.
+
+### CI behavior
+
+When executed in a CI environment (such as GitHub Actions), the preflight stage
+runs in a reduced mode tailored for non-interactive environments.
+
+Checks that require access to real system fonts or a full LaTeX toolchain are
+skipped and reported as informational output.
+
+In CI, the preflight stage only fails on errors that indicate a misconfigured
+runtime environment (e.g. unsupported Python version or invalid CLI usage).
 
 ## Stage 1 — System font dump
 
