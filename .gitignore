@@ -1,6 +1,11 @@
-# Compiling artifacts
+# --------------------------------------------------
+# Python
+# --------------------------------------------------
 __pycache__/
 *.py[cod]
+.venv/
+.gitconfig
+*.patch
 dist/
 build/
 site/
@@ -70,11 +75,3 @@ font_inventory_sample.txt
 *.synctex.gz
 *.synctex.gz(busy)
 *.synctex(busy)
-
-# --------------------------------------------------
-# Python
-# --------------------------------------------------
-__pycache__/
-*.pyc
-.venv/
-.gitconfig
