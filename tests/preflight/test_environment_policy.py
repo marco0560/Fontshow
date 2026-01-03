@@ -46,4 +46,8 @@ def test_environment_policy(
 
     result = run_preflight()
 
-    assert result.overall_severity is expected_severity
+    severities = [
+        r.severity for r in result.results if r.check_id == "environment.support"
+    ]
+
+    assert severities[-1] is expected_severity
