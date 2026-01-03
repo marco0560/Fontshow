@@ -1,5 +1,6 @@
 import fontshow.preflight.checks.environment as environment
 import fontshow.preflight.checks.font_discovery as font_discovery
+import fontshow.preflight.checks.latex as latex
 from fontshow.preflight.model import CheckResult, PreflightResult, Severity
 
 
@@ -93,6 +94,59 @@ def run_preflight() -> PreflightResult:
                 check_id="font_discovery.capability",
                 severity=Severity.ERROR,
                 message="No supported font discovery backend for this operating system",
+            )
+        )
+
+    # --- latex.capability ---
+    if execution_mode == "ci":
+        results.append(
+            CheckResult(
+                check_id="latex.capability",
+                severity=Severity.INFO,
+                message="LuaLaTeX checks skipped in CI environment",
+                skipped=True,
+            )
+        )
+    elif os_name == "linux":
+        if latex.has_lualatex():
+            results.append(
+                CheckResult(
+                    check_id="latex.capability",
+                    severity=Severity.OK,
+                    message="LuaLaTeX engine available",
+                )
+            )
+        else:
+            results.append(
+                CheckResult(
+                    check_id="latex.capability",
+                    severity=Severity.ERROR,
+                    message="LuaLaTeX engine not found (lualatex missing)",
+                )
+            )
+    elif os_name == "windows":
+        if latex.has_lualatex():
+            results.append(
+                CheckResult(
+                    check_id="latex.capability",
+                    severity=Severity.WARN,
+                    message="LuaLaTeX available on experimental Windows environment",
+                )
+            )
+        else:
+            results.append(
+                CheckResult(
+                    check_id="latex.capability",
+                    severity=Severity.ERROR,
+                    message="LuaLaTeX engine not found on Windows",
+                )
+            )
+    else:
+        results.append(
+            CheckResult(
+                check_id="latex.capability",
+                severity=Severity.ERROR,
+                message="LuaLaTeX is not supported on this operating system",
             )
         )
 
