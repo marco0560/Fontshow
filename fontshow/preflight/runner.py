@@ -1,19 +1,15 @@
 import fontshow.preflight.checks.environment as environment
+import fontshow.preflight.checks.font_discovery as font_discovery
 from fontshow.preflight.model import CheckResult, PreflightResult, Severity
 
 
 def run_preflight() -> PreflightResult:
-    """
-    Execute preflight checks and return aggregated results.
-
-    This function performs no I/O and does not raise SystemExit.
-    """
-    results: list[CheckResult] = []
+    results = []
 
     os_name = environment.detect_os()
     execution_mode = environment.detect_execution_mode()
 
-    # Environment support check
+    # --- Environment support (già esistente) ---
     if os_name == "linux":
         if execution_mode == "bare-metal":
             results.append(
@@ -31,7 +27,6 @@ def run_preflight() -> PreflightResult:
                     message="Running on Linux in a virtualized environment",
                 )
             )
-
     elif os_name == "windows":
         results.append(
             CheckResult(
@@ -40,7 +35,6 @@ def run_preflight() -> PreflightResult:
                 message="Running on experimental Windows environment",
             )
         )
-
     elif os_name == "macos":
         results.append(
             CheckResult(
@@ -49,13 +43,56 @@ def run_preflight() -> PreflightResult:
                 message="macOS is not supported in the current version",
             )
         )
-
     else:
         results.append(
             CheckResult(
                 check_id="environment.support",
                 severity=Severity.ERROR,
                 message="Unsupported operating system",
+            )
+        )
+
+    # --- Font discovery capability ---
+    if execution_mode == "ci":
+        results.append(
+            CheckResult(
+                check_id="font_discovery.capability",
+                severity=Severity.INFO,
+                message="Font discovery checks skipped in CI environment",
+                skipped=True,
+            )
+        )
+    elif os_name == "linux":
+        if font_discovery.has_fontconfig():
+            results.append(
+                CheckResult(
+                    check_id="font_discovery.capability",
+                    severity=Severity.OK,
+                    message="Fontconfig backend available",
+                )
+            )
+        else:
+            results.append(
+                CheckResult(
+                    check_id="font_discovery.capability",
+                    severity=Severity.ERROR,
+                    message="Fontconfig backend not found (fc-list missing)",
+                )
+            )
+    elif os_name == "windows":
+        results.append(
+            CheckResult(
+                check_id="font_discovery.capability",
+                severity=Severity.WARN,
+                message="Font discovery backend availability is experimental on Windows",
+            )
+        )
+    else:
+        results.append(
+            CheckResult(
+                check_id="font_discovery.capability",
+                severity=Severity.ERROR,
+                message="No supported font discovery backend for this operating system",
             )
         )
 
