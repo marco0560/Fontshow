@@ -25,6 +25,14 @@ def main() -> int:
         for line in lines:
             print(line)
 
+        # Summary finale
+        if result.overall_severity.name == "ERROR":
+            print("Preflight failed.")
+        elif any(r.severity.name == "WARN" for r in result.results):
+            print("Preflight passed with warnings.")
+        else:
+            print("Preflight passed.")
+
     return preflight_exit_code(result)
 
 
