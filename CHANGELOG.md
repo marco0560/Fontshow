@@ -1,3 +1,9 @@
+## [0.15.0](https://github.com/marco0560/Fontshow/compare/v0.14.0...v0.15.0) (2026-01-03)
+
+### Features
+
+* **core:** add font discovery capability to preflight check ([9bdf8b8](https://github.com/marco0560/Fontshow/commit/9bdf8b82f77446d675b533f904c9402fee542f19))
+
 ## [0.14.0](https://github.com/marco0560/Fontshow/compare/v0.13.0...v0.14.0) (2026-01-02)
 
 ### Features
