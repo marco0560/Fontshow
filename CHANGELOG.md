@@ -1,3 +1,9 @@
+## [0.18.0](https://github.com/marco0560/Fontshow/compare/v0.17.0...v0.18.0) (2026-01-03)
+
+### Features
+
+* **cli:** apply --quiet flag and add preflight summary ([c508003](https://github.com/marco0560/Fontshow/commit/c5080036a259407d3d2c7ebb6e255c41165e2b7d))
+
 ## [0.17.0](https://github.com/marco0560/Fontshow/compare/v0.16.0...v0.17.0) (2026-01-03)
 
 ### Features
