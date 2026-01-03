@@ -1,3 +1,10 @@
+## [0.16.0](https://github.com/marco0560/Fontshow/compare/v0.15.0...v0.16.0) (2026-01-03)
+
+### Features
+
+* **core:** add LuaLaTeX capability detection ([1cd5fae](https://github.com/marco0560/Fontshow/commit/1cd5faee45c719b7c20597bfd46a5f53af20c054))
+* **core:** add preflight policy for LuaLaTeX capability ([5e7da46](https://github.com/marco0560/Fontshow/commit/5e7da462226a8378f1720833e02b5a70ee150fb8))
+
 ## [0.15.0](https://github.com/marco0560/Fontshow/compare/v0.14.0...v0.15.0) (2026-01-03)
 
 ### Features
