@@ -48,7 +48,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from fontshow import __version__
-from fontshow.cli_utils import add_version_argument
+from fontshow.cli_utils import add_common_arguments
 
 try:
     # fontTools does not provide type stubs/py.typed; tell mypy to ignore
@@ -1144,13 +1144,7 @@ def main() -> None:
         action="store_true",
         help="Include Fontconfig-declared Unicode charset information (experimental, best-effort)",
     )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Enable verbose logging to stdout",
-    )
-    add_version_argument(parser)
+    add_common_arguments(parser)
 
     args = parser.parse_args()
 

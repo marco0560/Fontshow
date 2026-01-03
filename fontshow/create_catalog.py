@@ -47,7 +47,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fontshow import __version__
-from fontshow.cli_utils import add_version_argument
+from fontshow.cli_utils import add_common_arguments
 
 # Platform-specific imports (deferred)
 if sys.platform == "win32":
@@ -1029,7 +1029,7 @@ def main() -> None:
         type=int,
         help="Limit the number of processed fonts to the first N (if positive) or the last |N| (if negative)",
     )
-    add_version_argument(parser)
+    add_common_arguments(parser)
 
     args = parser.parse_args()
 

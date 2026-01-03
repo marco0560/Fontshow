@@ -19,6 +19,34 @@ def add_version_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_verbose_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose mode",
+    )
+
+
+def add_quiet_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Enable quiet mode",
+    )
+
+
+def add_common_arguments(parser: argparse.ArgumentParser) -> None:
+    """
+    Add CLI arguments common to all Fontshow commands
+    (e.g. --version, --verbose, --quiet).
+    """
+    add_version_argument(parser)
+    add_verbose_argument(parser)
+    add_quiet_argument(parser)
+
+
 def cli_validate_inventory() -> int:
     """
     CLI entry point for validating a Fontshow inventory against the JSON schema.

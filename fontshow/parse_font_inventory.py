@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from fontshow import __version__
-from fontshow.cli_utils import add_version_argument
+from fontshow.cli_utils import add_common_arguments
 from fontshow.infer_languages import infer_languages
 from fontshow.schema_validation import validate_inventory_schema
 
@@ -720,19 +720,7 @@ def main() -> None:
         action="store_true",
         help="Validate inventory structure and exit (no output generation)",
     )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Show validation warnings",
-    )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        help="Suppress all validation output",
-    )
-    add_version_argument(parser)
+    add_common_arguments(parser)
 
     args = parser.parse_args()
 
