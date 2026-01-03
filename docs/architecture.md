@@ -18,6 +18,36 @@ At a high level, Fontshow consists of three main stages:
 The architecture intentionally avoids tight coupling between stages and
 relies on explicit data contracts instead of shared state.
 
+## Repository Layout
+
+The Fontshow repository is organized as follows:
+
+- `fontshow/`
+  Core Fontshow package. Contains the stable implementation of the pipeline,
+  including preflight checks, validation logic, and CLI entry points.
+
+- `tests/`
+  Automated test suite covering core functionality, preflight policies,
+  CLI behavior, and validation logic.
+
+- `docs/`
+  Project documentation, including architecture notes, pipeline design,
+  CLI usage, design decisions, and development guidelines.
+
+- `scripts/`
+  Development and maintenance scripts used by project maintainers.
+  These scripts are **not part of the public API** and are not required for
+  normal Fontshow usage.
+
+- `pyproject.toml`
+  Project configuration, dependencies, and tooling configuration.
+
+- `mkdocs.yml`
+  Documentation build configuration.
+
+- `CHANGELOG.md`
+  Automatically generated changelog maintained by semantic-release.
+
 ---
 
 ## Design principles
