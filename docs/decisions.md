@@ -17,6 +17,53 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision: Font discovery preflight checks rely on fc-list only
+
+**Status**: Accepted
+**Context**: Preflight stage (C5.3)
+**Date**: 2026-01-03
+
+### Decision
+
+The preflight stage checks for font discovery capability by verifying the
+presence of `fc-list` (fontconfig).
+
+The presence of `fc-query` is intentionally **not** verified at preflight time.
+
+### Rationale
+
+- In standard Linux distributions, `fc-list` and `fc-query` are installed
+  together as part of fontconfig.
+- The preflight stage is intended to perform *capability checks*, not full
+  runtime validation.
+- Full font inspection (which requires `fc-query`) is performed during the
+  pipeline execution and validated at runtime.
+- Checking `fc-query` at preflight time could lead to premature failures in
+  minimal or CI environments without providing actionable benefit.
+
+### Consequences
+
+- Preflight may succeed even if `fc-query` is missing.
+- Missing `fc-query` will be detected later by the pipeline stages that require it.
+- This decision simplifies the preflight logic and keeps it aligned with its
+  intended scope.
+
+### Future considerations
+
+A pluggable font discovery backend architecture is planned for v2.x.y.
+At that stage, backend-specific requirements (including `fc-query`) will be
+validated as part of backend selection and runtime readiness checks.
+
+## Decision: Font Discovery
+
+### Context
+
+Font discovery is currently capability-based.
+
+### Decision
+
+A pluggable backend architecture is intentionally deferred to v2.x.y.
+
 ## Decision: Commit Signing Enforcement and CI Automation
 
 ### Context
