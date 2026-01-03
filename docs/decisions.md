@@ -17,6 +17,123 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision: Transition to a Class-Based Model for Preflight Checks
+
+**Status:** Accepted
+**Area:** Preflight / Testing / Architecture
+**Date:** 2026-01-xx
+
+### Context
+
+The preflight checking system was initially implemented using a
+**function-based model**, where the runner directly invoked functions
+such as `check_environment()`, `check_font_discovery()`, etc.
+
+As the project evolved and a more comprehensive test suite was introduced
+— especially *policy-oriented tests* — several structural limitations
+became evident:
+
+- difficulty performing **selective monkeypatching** of dependencies
+- implicit coupling between the runner and check implementations
+- lack of a shared abstraction representing the concept of a “check”
+- weaker domain semantics: a function does not model a first-class entity
+
+In particular, the test suite required:
+
+- explicit access to `check_id`
+- fine-grained inspection of `CheckResult` objects
+- controlled simulation of OS, execution mode, and tool availability
+- long-term stability of the API used by tests
+
+### Decision
+
+The preflight subsystem was refactored to adopt a **class-based model**,
+where each check is represented by a class exposing a `run()` method
+that returns a `CheckResult`.
+
+The runner maintains an **explicit registry of check classes** and is
+responsible solely for orchestration.
+
+Conceptual example:
+
+\```python
+class FontDiscoveryCheck:
+    check_id = "font_discovery.capability"
+
+    def run(self) -> CheckResult:
+        ...
+\```
+
+### Rationale
+
+The class-based model provides:
+
+- an explicit representation of the *check* domain concept
+- clearer execution flow
+- more readable, stable, and less fragile tests
+- a clean separation between:
+  - check logic
+  - orchestration (runner)
+  - output rendering (CLI)
+
+This approach also enables the future introduction of an
+**abstract base class (`BaseCheck`)** to serve as a formal contract
+for all preflight checks.
+
+### Consequences
+
+- Slightly increased verbosity in the implementation
+- Significantly improved robustness, extensibility, and maintainability
+- Easier and safer addition of new checks
+
+
+---
+
+## Decision: Explicit Exposure of Check Modules in the Runner
+
+**Status:** Accepted
+**Area:** Testing / Public API
+**Date:** 2026-01-xx
+
+### Context
+
+The test suite relies on `pytest.monkeypatch` to simulate different
+environmental conditions (OS, execution mode, tool availability).
+
+To do so, tests intentionally reference symbols such as:
+
+\```python
+runner.environment.detect_os
+runner.font_discovery.has_fontconfig
+runner.latex.has_lualatex
+\```
+
+Linting tools such as **ruff** tend to flag these imports as unused or
+attempt to remove them, as their usage is indirect.
+
+### Decision
+
+The `fontshow.preflight.runner` module explicitly exposes the following
+modules as part of its **intentional public API**:
+
+- `environment`
+- `font_discovery`
+- `latex`
+
+This is a deliberate design choice and is documented as such.
+
+### Rationale
+
+- the test suite intentionally depends on these symbols
+- the runner acts as a stable *facade* for the preflight subsystem
+- this avoids fragile solutions (`# noqa`, dynamic imports, test-only hacks)
+
+### Consequences
+
+- the runner exposes a slightly broader public surface
+- the relationship between tests and code becomes explicit and understandable
+- instability between linting and runtime behavior is eliminated
+
 ## Decision: Font discovery preflight checks rely on fc-list only
 
 **Status**: Accepted
