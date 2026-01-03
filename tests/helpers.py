@@ -1,5 +1,7 @@
 from types import SimpleNamespace
 
+from fontshow.preflight.model import CheckResult, Severity
+
 
 def minimal_valid_entry(extra: dict | None = None) -> dict:
     entry = {
@@ -13,6 +15,10 @@ def minimal_valid_entry(extra: dict | None = None) -> dict:
     if extra:
         entry.update(extra)
     return entry
+
+
+# Environment-matrix tests must not depend on host capabilities
+# (LuaLaTeX, fontconfig, etc.). We remove capability checks entirely.
 
 
 def make_fc_query_output(
@@ -48,3 +54,54 @@ def make_fc_query_output(
         lines.append(f"variable: {'true' if variable else 'false'}")
 
     return SimpleNamespace(stdout="\n".join(lines))
+
+
+def _ok_result(check_id: str):
+    return CheckResult(
+        check_id=check_id,
+        severity=Severity.OK,
+        message="stubbed OK",
+        skipped=False,
+    )
+
+
+def run_preflight_with_environment(
+    monkeypatch,
+    *,
+    os_name: str,
+    execution_mode: str,
+):
+    # Environment detection
+    monkeypatch.setattr(
+        "fontshow.preflight.checks.environment.detect_os",
+        lambda: os_name,
+    )
+    monkeypatch.setattr(
+        "fontshow.preflight.checks.environment.detect_execution_mode",
+        lambda: execution_mode,
+    )
+
+    from fontshow.preflight.runner import CHECKS
+
+    monkeypatch.setattr(
+        "fontshow.preflight.runner.CHECKS",
+        [
+            check
+            for check in CHECKS
+            if check.__name__ not in {"LuaLatexCheck", "FontDiscoveryCheck"}
+        ],
+    )
+
+    monkeypatch.setattr(
+        "fontshow.preflight.checks.font_discovery.FontDiscoveryCheck.run",
+        lambda self: CheckResult(
+            check_id="font.discovery",
+            severity=Severity.OK,
+            message="Font discovery mocked as available",
+        ),
+    )
+
+    from fontshow.preflight.checks.environment import EnvironmentSupportCheck
+    from fontshow.preflight.runner import run_preflight
+
+    return run_preflight(checks=[EnvironmentSupportCheck])

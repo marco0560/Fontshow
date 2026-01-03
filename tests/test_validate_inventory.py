@@ -1,6 +1,5 @@
-from helpers import minimal_valid_entry
-
 from fontshow.parse_font_inventory import validate_inventory
+from tests.helpers import minimal_valid_entry
 
 
 def test_validate_inventory_valid_minimal():

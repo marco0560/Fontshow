@@ -1,79 +1,56 @@
-import os
-import platform
-from typing import Literal
+# fontshow/preflight/checks/environment.py
 
-OSName = Literal["linux", "windows", "macos", "unknown"]
-
-ExecutionMode = Literal[
-    "ci",
-    "wsl",
-    "container",
-    "bare-metal",
-]
+from fontshow.preflight.model import CheckResult, Severity
 
 
-def detect_os() -> OSName:
-    """
-    Detect the operating system in a normalized form.
+def detect_os() -> str:
+    import platform
 
-    Returns:
-        "linux", "windows", "macos", or "unknown"
-    """
     system = platform.system().lower()
-
-    if system == "linux":
+    if system.startswith("linux"):
         return "linux"
-    if system == "windows":
+    if system.startswith("windows"):
         return "windows"
-    if system == "darwin":
+    if system.startswith("darwin"):
         return "macos"
-
-    return "unknown"  # fallback for unsupported or unrecognized systems
-
-
-def is_ci() -> bool:
-    """
-    Detect whether the code is running in a CI environment.
-    """
-    return os.environ.get("GITHUB_ACTIONS") == "true"
+    return "unknown"
 
 
-def is_wsl() -> bool:
-    """
-    Detect Windows Subsystem for Linux (WSL).
-    """
-    if platform.system().lower() != "linux":
-        return False
+def detect_execution_mode() -> str:
+    import os
 
-    try:
-        with open("/proc/version", encoding="utf-8") as f:
-            return "microsoft" in f.read().lower()
-    except OSError:
-        return False
-
-
-def is_container() -> bool:
-    """
-    Best-effort detection of containerized execution.
-    """
-    if os.path.exists("/.dockerenv"):
-        return True
-
-    try:
-        with open("/proc/1/cgroup", encoding="utf-8") as f:
-            return any("docker" in line or "container" in line for line in f)
-    except OSError:
-        return False
-
-
-def detect_execution_mode() -> ExecutionMode:
-    """
-    Detect the execution mode of the current environment.
-    """
-    if is_ci():
+    if os.environ.get("CI"):
         return "ci"
-    if is_wsl():
+    if "WSL_DISTRO_NAME" in os.environ:
         return "wsl"
-    if is_container():
+    if os.path.exists("/.dockerenv"):
         return "container"
     return "bare-metal"
+
+
+class EnvironmentSupportCheck:
+    check_id = "environment.support"
+
+    def run(self) -> CheckResult:
+        os_name = detect_os()
+        execution_mode = detect_execution_mode()
+
+        if os_name == "linux" and execution_mode == "bare-metal":
+            return CheckResult(
+                self.check_id,
+                Severity.OK,
+                "Running on supported Linux bare-metal environment",
+            )
+
+        if os_name in {"linux", "windows"}:
+            return CheckResult(
+                self.check_id,
+                Severity.WARN,
+                f"Running on {os_name} in a {execution_mode} environment",
+            )
+
+        return CheckResult(
+            self.check_id,
+            Severity.ERROR,
+            f"Unsupported operating system: {os_name}",
+        )

@@ -1,8 +1,7 @@
 from pathlib import Path
 
-from helpers import make_fc_query_output
-
 from fontshow.dump_fonts import fc_query_extract
+from tests.helpers import make_fc_query_output
 
 
 def test_fc_query_extract_basic(monkeypatch):
