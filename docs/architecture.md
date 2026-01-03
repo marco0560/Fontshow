@@ -48,7 +48,9 @@ The Fontshow repository is organized as follows:
 - `CHANGELOG.md`
   Automatically generated changelog maintained by semantic-release.
 
----
+For details about development-only tooling, see
+[Development scripts](scripts.md).
+
 
 ## Design principles
 

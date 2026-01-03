@@ -1,12 +1,18 @@
 # Fontshow Documentation
 
-## Development
-- CONTRIBUTING.md
-- dev-environment.md
+## Development and maintenance
+- [Repository architecture](architecture.md)
+- [Development environment](dev-environment.md)
+- [Development scripts](scripts.md)
+- [Contributing guidelines](CONTRIBUTING.md)
 
 ## Security & Release
-- security-and-release-policy.md
-- key-rotation.md
+- [Security and Release Policy](security-and-release-policy.md)
+- [Key Rotation](key-rotation.md)
+
+## Data Schema
+- [Schema](schema/index.md)
+- [Data Dictionary](data_dictionary.md)
 
 ## Decisions
-- decisions.md
+- [Decisions](decisions.md)

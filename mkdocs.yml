@@ -41,6 +41,7 @@ nav:
   - Architecture:
       - Overview: architecture.md
       - Pipeline: pipeline.md
+      - Environment Matrix: environment-matrix.md
 
   - Schema and Data Dictionary:
       - Inventory Schema: schema/index.md
@@ -60,6 +61,7 @@ nav:
       - Roadmap: roadmap.md
       - Active decisions: decisions.md
       - Development environment: dev-environment.md
+      - Development Scripts: scripts.md
       - Security and release policy: security-and-release-policy.md
       - Key rotation: key-rotation.md
 
