@@ -1,3 +1,10 @@
+## [0.17.0](https://github.com/marco0560/Fontshow/compare/v0.16.0...v0.17.0) (2026-01-03)
+
+### Features
+
+* **cli:** add preflight-only CLI entry point ([f85ef90](https://github.com/marco0560/Fontshow/commit/f85ef90863afb088778ba55eccc7a25db8788e82))
+* **core:** add preflight result renderer and exit code helper ([7d4d152](https://github.com/marco0560/Fontshow/commit/7d4d1529965bef09049f033b73a1a455de013dca))
+
 ## [0.16.0](https://github.com/marco0560/Fontshow/compare/v0.15.0...v0.16.0) (2026-01-03)
 
 ### Features
