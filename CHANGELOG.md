@@ -1,3 +1,13 @@
+## [0.19.0](https://github.com/marco0560/Fontshow/compare/v0.18.0...v0.19.0) (2026-01-04)
+
+### Features
+
+* **validation:** stabilize class-based checks and runner API ([79b7183](https://github.com/marco0560/Fontshow/commit/79b7183dd786ce7eaeeecd867ec4f87b814f0283))
+
+### Bug Fixes
+
+* **release:** remove @semantic-release/exec plugin ([af27035](https://github.com/marco0560/Fontshow/commit/af2703551fbe84d006a565636141c422346302d5))
+
 ## [0.18.0](https://github.com/marco0560/Fontshow/compare/v0.17.0...v0.18.0) (2026-01-03)
 
 ### Features
