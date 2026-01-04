@@ -1,3 +1,9 @@
+## [0.19.2](https://github.com/marco0560/Fontshow/compare/v0.19.1...v0.19.2) (2026-01-04)
+
+### Bug Fixes
+
+* **docs:** correct mkdocs repository metadata ([1425c1c](https://github.com/marco0560/Fontshow/commit/1425c1c152beb788d736c061adc6a994723d3f1f))
+
 ## [0.19.1](https://github.com/marco0560/Fontshow/compare/v0.19.0...v0.19.1) (2026-01-04)
 
 ### Bug Fixes
