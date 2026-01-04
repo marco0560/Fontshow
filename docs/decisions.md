@@ -21,7 +21,7 @@ Any changes to these decisions must be:
 
 **Status:** Accepted
 **Area:** Preflight / Testing / Architecture
-**Date:** 2026-01-xx
+**Date:** 2026-01-03
 
 ### Context
 
@@ -56,13 +56,13 @@ responsible solely for orchestration.
 
 Conceptual example:
 
-\```python
+```python
 class FontDiscoveryCheck:
     check_id = "font_discovery.capability"
 
     def run(self) -> CheckResult:
         ...
-\```
+```
 
 ### Rationale
 
@@ -87,8 +87,6 @@ for all preflight checks.
 - Easier and safer addition of new checks
 
 
----
-
 ## Decision: Explicit Exposure of Check Modules in the Runner
 
 **Status:** Accepted
@@ -102,11 +100,11 @@ environmental conditions (OS, execution mode, tool availability).
 
 To do so, tests intentionally reference symbols such as:
 
-\```python
+```python
 runner.environment.detect_os
 runner.font_discovery.has_fontconfig
 runner.latex.has_lualatex
-\```
+```
 
 Linting tools such as **ruff** tend to flag these imports as unused or
 attempt to remove them, as their usage is indirect.
