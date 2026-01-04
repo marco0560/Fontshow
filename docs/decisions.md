@@ -17,6 +17,106 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision: Preflight checks refactoring to a class-based, registry-backed model
+
+**Status**: Accepted
+**Date**: 2026-01-04
+**Scope**: `fontshow.preflight`
+
+### Context
+
+The original preflight subsystem started as a function-based implementation,
+where each check was exposed as a standalone function and orchestrated by the
+runner through a static dispatch table.
+
+As the number of checks and policies grew, several issues emerged:
+
+- Tests required extensive monkeypatching of internal functions.
+- There was no explicit contract defining what a “check” was.
+- Adding or composing checks for testing purposes was fragile.
+- Static analysis tools (ruff, pylance) conflicted with dynamic dispatch.
+- The runner API became increasingly difficult to reason about.
+
+At the same time, we needed to preserve:
+- Deterministic execution order
+- `enabled` / `disabled` filtering semantics
+- Test isolation and safety
+- Backward-compatible CLI behavior
+
+### Decision
+
+We refactored the preflight subsystem to a **class-based model**, centered around
+an explicit abstract base class and a lightweight registration mechanism.
+
+The main elements of the new design are:
+
+#### 1. `BaseCheck` abstract contract
+
+All preflight checks now subclass a common abstract base class:
+
+- Enforces the presence of:
+  - a `check_id` class attribute
+  - a `run()` method returning a `CheckResult`
+- Provides a clear, inspectable contract for both production code and tests
+- Enables static tooling to reason about the system
+
+This makes the notion of “a check” explicit and verifiable.
+
+#### 2. Explicit registry for checks
+
+Checks are registered automatically when their class is defined.
+
+The registry:
+- Tracks all known check classes
+- Allows test-only or experimental checks to exist without polluting the runner
+- Supports controlled extensibility without dynamic imports
+
+Importantly, **built-in checks remain explicitly listed** in the runner via
+`CHECKS`, preserving clarity and determinism.
+
+#### 3. Runner as a stable, testable orchestration layer
+
+The runner now:
+
+- Exposes its dependent modules (`environment`, `font_discovery`, `latex`)
+  explicitly to support safe and explicit monkeypatching in tests
+- Resolves checks using a clear priority order:
+  1. Explicit `checks` argument (advanced usage, tests)
+  2. Registered checks
+  3. Built-in `CHECKS` fallback
+- Preserves `enabled` / `disabled` filtering semantics
+
+This results in a runner that is:
+- Predictable
+- Test-friendly
+- Statistically analyzable
+- Backward-compatible
+
+### Consequences
+
+**Positive**
+- Stronger contracts and clearer architecture
+- Tests assert behavior, not implementation details
+- Reduced friction between runtime flexibility and static analysis
+- Preflight subsystem is now considered **stable**, not experimental
+
+**Trade-offs**
+- Slightly higher upfront complexity compared to a function-based approach
+- Requires discipline to keep test-only checks isolated
+
+### Notes
+
+- Sentinel or test-only checks may exist in the registry but are never executed
+  by the runner unless explicitly requested.
+- Contract tests ensure all production checks comply with `BaseCheck`.
+- This design intentionally avoids implicit auto-discovery via imports.
+
+### References
+
+- `fontshow/preflight/checks/base.py`
+- `fontshow/preflight/runner.py`
+- `tests/preflight/test_base_check_contract.py`
+
 ## Decision: Move preflight subsystem to a class-based design
 
 ### Context
