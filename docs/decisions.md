@@ -17,6 +17,77 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision: Move preflight subsystem to a class-based design
+
+### Context
+
+The initial implementation of the preflight subsystem was function-based.
+While simple, this approach quickly showed limitations when introducing:
+
+- Fine-grained policy tests (environment matrix, capability checks)
+- Selective execution (enabled / disabled checks)
+- Deterministic ordering and extensibility
+- Robust monkeypatching in tests without relying on import hacks
+
+Several iterations revealed that a purely function-based model made the
+runner harder to test and reason about as the system grew.
+
+### Decision
+
+We refactored the preflight subsystem to a **class-based design**, centered on
+an explicit `BaseCheck` abstract contract.
+
+Each preflight check is now represented by a class that:
+
+- Exposes a stable `check_id`
+- Implements a `run() -> CheckResult` method
+- Encapsulates its own execution logic
+
+The runner (`run_preflight`) executes checks by instantiating these classes
+from a deterministic registry (`CHECKS`).
+
+### Why a BaseCheck abstract class
+
+Introducing `BaseCheck` provides:
+
+- A clear and enforceable contract for all checks
+- Static guarantees (via typing) about the check interface
+- A foundation for future validation and tooling
+
+A dedicated test ensures that all registered checks comply with this contract,
+preventing silent divergence over time.
+
+### Why the runner exposes modules explicitly
+
+The runner intentionally exposes the following modules as part of its public API:
+
+- `environment`
+- `font_discovery`
+- `latex`
+
+This design allows tests to safely monkeypatch environment detection and
+capability probes without relying on fragile import-path tricks.
+
+This is a deliberate trade-off favoring **testability and transparency**
+over strict encapsulation.
+
+### Check selection semantics
+
+The runner supports selective execution through:
+
+- `enabled`: run only checks whose `check_id` is included
+- `disabled`: skip checks whose `check_id` is included
+
+If both are provided, `enabled` is applied first, then `disabled`.
+
+The `CHECKS` registry remains the authoritative list of built-in checks and is
+not dynamically extended at runtime.
+
+### Status
+
+With this refactor and the accompanying test coverage, the preflight subsystem
+is now considered **stable** rather than experimental.
+
 ## Decision: Transition to a Class-Based Model for Preflight Checks
 
 **Status:** Accepted
