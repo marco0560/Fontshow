@@ -1,3 +1,9 @@
+## [0.20.0](https://github.com/marco0560/Fontshow/compare/v0.19.2...v0.20.0) (2026-01-04)
+
+### Features
+
+* **validation:** stabilize class-based checks with BaseCheck and registry ([abf01c8](https://github.com/marco0560/Fontshow/commit/abf01c8cca39590329ddf46e41a3681f7322644b))
+
 ## [0.19.2](https://github.com/marco0560/Fontshow/compare/v0.19.1...v0.19.2) (2026-01-04)
 
 ### Bug Fixes
