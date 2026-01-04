@@ -8,10 +8,9 @@ import pytest
 
 from fontshow.preflight.checks.base import BaseCheck
 from fontshow.preflight.model import CheckResult
-from fontshow.preflight.runner import CHECKS
 
 
-@pytest.mark.parametrize("check_cls", CHECKS)
+@pytest.mark.parametrize("check_cls", BaseCheck.registry)
 def test_preflight_checks_respect_contract(check_cls: type[BaseCheck]) -> None:
     # 1) Must inherit from BaseCheck
     assert issubclass(

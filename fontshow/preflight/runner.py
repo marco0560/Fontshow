@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from fontshow.preflight.checks.base import BaseCheck
-
 import fontshow.preflight.checks.environment as environment
 import fontshow.preflight.checks.font_discovery as font_discovery
 import fontshow.preflight.checks.latex as latex
+from fontshow.preflight.model import CheckResult, PreflightResult
+from fontshow.preflight.registry import get_registered_checks
+
+if TYPE_CHECKING:
+    from fontshow.preflight.checks.base import BaseCheck
 
 # NOTE:
-# The following imports are part of the public runner API and are
-# intentionally exposed for test monkeypatching.
-
+# The following symbols are part of the public runner API and are
+# intentionally exposed for test monkeypatching (tests patch
+# runner.environment / runner.font_discovery / runner.latex).
 __all__ = [
     "run_preflight",
     "CHECKS",
@@ -21,20 +23,14 @@ __all__ = [
     "latex",
 ]
 
+# Import built-in check classes (must exist before CHECKS is defined)
 from fontshow.preflight.checks.environment import EnvironmentSupportCheck
 from fontshow.preflight.checks.font_discovery import FontDiscoveryCheck
 from fontshow.preflight.checks.latex import LuaLatexCheck
-from fontshow.preflight.model import CheckResult, PreflightResult
 
-# Public check registry (source of truth).
-#
-# - Used by the runner to define default execution order.
-# - Used by tests to assert the BaseCheck contract and expected coverage.
-# - Keep this list deterministic: no dynamic discovery here.
-#
-# Selection (enable/disable subsets) is handled by run_preflight(), but CHECKS
-# remains the authoritative registry of built-in checks.
-CHECKS = [
+# Built-in checks (stable, explicit). Registry may add more checks at runtime,
+# but CHECKS remains the authoritative list of built-in checks for tests/docs.
+CHECKS: list[type[BaseCheck]] = [
     EnvironmentSupportCheck,
     FontDiscoveryCheck,
     LuaLatexCheck,
@@ -43,12 +39,13 @@ CHECKS = [
 
 def _select_checks(
     *,
+    checks: list[type[BaseCheck]],
     enabled: set[str] | None,
     disabled: set[str] | None,
 ) -> list[type[BaseCheck]]:
-    selected = []
+    selected: list[type[BaseCheck]] = []
 
-    for check_cls in CHECKS:
+    for check_cls in checks:
         cid = check_cls.check_id
 
         if enabled is not None and cid not in enabled:
@@ -59,6 +56,18 @@ def _select_checks(
         selected.append(check_cls)
 
     return selected
+
+
+def _resolve_checks() -> list[type[BaseCheck]]:
+    """
+    Resolve the effective list of checks to execute.
+
+    Priority:
+    1. Registered checks (if any)
+    2. Built-in CHECKS fallback
+    """
+    registered = get_registered_checks()
+    return registered if registered else CHECKS
 
 
 def run_preflight(
@@ -73,7 +82,8 @@ def run_preflight(
     Selection precedence:
     1. If `checks` is provided, only those check classes are executed.
        (Intended for tests and advanced usage.)
-    2. Otherwise, checks are selected from CHECKS using `enabled` / `disabled`.
+    2. Otherwise, checks are selected from the resolved registry using
+       `enabled` / `disabled`.
 
     By default, all checks listed in CHECKS are executed in deterministic order.
     """
@@ -82,7 +92,12 @@ def run_preflight(
     if checks is not None:
         active_checks = checks
     else:
-        active_checks = _select_checks(enabled=enabled, disabled=disabled)
+        base_checks = _resolve_checks()
+        active_checks = _select_checks(
+            checks=base_checks,
+            enabled=enabled,
+            disabled=disabled,
+        )
 
     for check_cls in active_checks:
         check = check_cls()
