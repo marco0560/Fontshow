@@ -3,7 +3,7 @@ site_description: Analisi, normalizzazione e catalogazione dei font di sistema
 site_author: Marco Coppola
 
 repo_name: fontshow
-repo_url: https://github.com/marco0560/fontshow
+repo_url: https://github.com/marco0560/Fontshow
 edit_uri: edit/main/docs/
 
 theme:
