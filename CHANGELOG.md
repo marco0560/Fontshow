@@ -1,3 +1,9 @@
+## [0.19.1](https://github.com/marco0560/Fontshow/compare/v0.19.0...v0.19.1) (2026-01-04)
+
+### Bug Fixes
+
+* **release:** cancel-in-progress to false in docs.yml ([0a8d566](https://github.com/marco0560/Fontshow/commit/0a8d566e6d5f81fe3712d8813d982b409f35424d))
+
 ## [0.19.0](https://github.com/marco0560/Fontshow/compare/v0.18.0...v0.19.0) (2026-01-04)
 
 ### Features
