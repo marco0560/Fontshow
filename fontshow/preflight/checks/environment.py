@@ -1,5 +1,6 @@
 # fontshow/preflight/checks/environment.py
 
+from fontshow.preflight.checks.base import BaseCheck
 from fontshow.preflight.model import CheckResult, Severity
 
 
@@ -28,7 +29,7 @@ def detect_execution_mode() -> str:
     return "bare-metal"
 
 
-class EnvironmentSupportCheck:
+class EnvironmentSupportCheck(BaseCheck):
     check_id = "environment.support"
 
     def run(self) -> CheckResult:

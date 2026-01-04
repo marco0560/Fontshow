@@ -3,6 +3,7 @@
 import shutil
 
 from fontshow.preflight.checks import environment
+from fontshow.preflight.checks.base import BaseCheck
 from fontshow.preflight.model import CheckResult, Severity
 
 
@@ -13,7 +14,7 @@ def has_lualatex() -> bool:
     return shutil.which("lualatex") is not None
 
 
-class LuaLatexCheck:
+class LuaLatexCheck(BaseCheck):
     """
     Preflight check for LuaLaTeX availability.
     """

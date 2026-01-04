@@ -3,6 +3,7 @@
 import shutil
 
 from fontshow.preflight.checks import environment
+from fontshow.preflight.checks.base import BaseCheck
 from fontshow.preflight.model import CheckResult, Severity
 
 
@@ -14,7 +15,7 @@ def has_fontconfig() -> bool:
     return shutil.which("fc-list") is not None
 
 
-class FontDiscoveryCheck:
+class FontDiscoveryCheck(BaseCheck):
     """
     Preflight check for font discovery capability.
     """
