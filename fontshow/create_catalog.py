@@ -213,6 +213,7 @@ LATEX_INITIAL_CODE = (
 \usepackage{hyperref}
 \usepackage{booktabs}
 \usepackage{multicol}
+\usepackage{pdftexcmds}
 
 \setmainlanguage{italian}
 % Definisci le lingue secondarie necessarie per il test dei font complessi
@@ -220,11 +221,42 @@ LATEX_INITIAL_CODE = (
 \setotherlanguage{arabic}
 \setotherlanguage{hebrew}
 \setotherlanguage{japanese}
-\setotherlanguage{chinese}  % Aggiunto Cinese
-\setotherlanguage{hindi}    % Aggiunto Hindi
+\setotherlanguage{chinese}
+\setotherlanguage{hindi}
 \setotherlanguage{thai}
 
 \geometry{margin=2cm}
+
+% --- Macro di utilità ---
+\makeatletter
+\newcommand{\ifFileNotEmpty}[3]{%
+	\IfFileExists{#1}{%
+		% \pdf@filesize restituisce la dimensione in byte
+		\ifnum\pdf@filesize{#1}>0
+		#2% Se esiste e ha almeno 1 byte
+		\else
+		#3% Se esiste ma è 0 byte
+		\fi
+	}{%
+		#3% Se il file non esiste proprio
+	}%
+}
+\makeatother
+
+% --- Macro per sezioni riepilogative ---
+% #1 nome del file #2 Titolo della sezione
+\newcommand{\FileSec}[2]{%
+	\ifFileNotEmpty{#1}{%
+		\section{#2}
+		\begin{multicols}{2}
+			\begin{itemize}
+				\input{#1}
+			\end{itemize}
+		\end{multicols}
+	}
+	{}
+}
+% ---------------------------------------
 
 % Colori
 \definecolor{titlecolor}{HTML}{667eea}
@@ -374,26 +406,11 @@ LATEX_END_CODE_2 = r""" \\
 \end{center}
 \end{tcolorbox}
 
-\section{Indice: Font Funzionanti}
-\begin{multicols}{2}
-\begin{itemize}
-    \input{\jobname.working}
-\end{itemize}
-\end{multicols}
+\FileSec{\jobname.working}{Indice: Font Funzionanti}
 
-\section{Indice: Font Problematici}
-\begin{multicols}{2}
-\begin{itemize}
-    \input{\jobname.broken}
-\end{itemize}
-\end{multicols}
+\FileSec{\jobname.broken}{Indice: Font Problematici}
 
-\section{Indice: Font Esclusi}
-\begin{multicols}{2}
-\begin{itemize}
-    \input{\jobname.excluded}
-\end{itemize}
-\end{multicols}
+\FileSec{\jobname.excluded}{Indice: Font Esclusi}
 
 \end{document}
 """
@@ -542,9 +559,33 @@ def choose_sample_language(font: dict) -> str | None:
 
 
 def choose_sample_text(font: dict) -> str | None:
-    lang = choose_sample_language(font)
+    """
+    Choose a sample text for rendering.
+
+    Priority:
+    1. Embedded sample text extracted from the font itself,
+       but only if its language matches the primary inferred language.
+    2. Inferred language-based sample text (fallback).
+    """
+
+    inference = font.get("inference", {})
+    inferred_languages = inference.get("languages") or []
+
+    # --- 1. Embedded sample text (if present and compatible) ---
+    embedded = font.get("sample_text")
+    if (
+        isinstance(embedded, dict)
+        and inferred_languages
+        and embedded.get("lang") == inferred_languages[0]
+        and embedded.get("text")
+    ):
+        return embedded["text"]
+
+    # --- 2. Inferred language fallback ---
+    lang = inferred_languages[0] if inferred_languages else None
     if lang and lang in SAMPLE_TEXTS:
         return SAMPLE_TEXTS[lang]
+
     return None
 
 

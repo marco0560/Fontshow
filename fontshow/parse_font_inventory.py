@@ -60,27 +60,29 @@ INFERENCE_THRESHOLDS: dict[str, dict[str, int]] = {
 #: Mapping of ISO 15924 script codes to Unicode code point ranges.
 #:
 #: Each value is a list of ``(start, end)`` integer tuples, inclusive.
+# NOTE:
+# All script identifiers MUST be uppercase ISO-15924-like codes
+# (e.g. LATN, HANI, JPAN).
 #:
 #: Example::
 #:
-#:     "latn": [(0x0041, 0x007A), (0x00C0, 0x024F)]
+#:     "LATN": [(0x0041, 0x007A), (0x00C0, 0x024F)]
 #:
 UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
-    "latn": [(0x0041, 0x007A), (0x00C0, 0x024F)],
-    "grek": [(0x0370, 0x03FF), (0x1F00, 0x1FFF)],
-    "cyrl": [(0x0400, 0x04FF), (0x0500, 0x052F)],
-    "arab": [(0x0600, 0x06FF), (0x0750, 0x077F), (0x08A0, 0x08FF)],
-    "hebr": [(0x0590, 0x05FF)],
-    "deva": [(0x0900, 0x097F)],
-    "hani": [(0x4E00, 0x9FFF)],
-    "hang": [(0xAC00, 0xD7AF)],
-    "thai": [(0x0E00, 0x0E7F)],
-    # Requested additions
-    "armn": [(0x0530, 0x058F)],  # Armenian
-    "jpan": [(0x3040, 0x30FF)],  # Japanese (Hiragana + Katakana)
-    "viet": [(0x1EA0, 0x1EFF)],  # Vietnamese extensions
-    "copt": [(0x2C80, 0x2CFF)],  # Coptic
-    "ethi": [(0x1200, 0x137F)],  # Ethiopic (incl. Tigrinya)
+    "LATN": [(0x0041, 0x007A), (0x00C0, 0x024F)],
+    "GREK": [(0x0370, 0x03FF), (0x1F00, 0x1FFF)],
+    "CYRL": [(0x0400, 0x04FF), (0x0500, 0x052F)],
+    "ARAB": [(0x0600, 0x06FF), (0x0750, 0x077F), (0x08A0, 0x08FF)],
+    "HEBR": [(0x0590, 0x05FF)],  # Hebrew
+    "DEVA": [(0x0900, 0x097F)],  # Devanagari
+    "HANI": [(0x4E00, 0x9FFF)],  # CJK Unified Ideographs
+    "HANG": [(0xAC00, 0xD7AF)],  # Hangul Syllables
+    "THAI": [(0x0E00, 0x0E7F)],  # Thai
+    "ARMN": [(0x0530, 0x058F)],  # Armenian
+    "JPAN": [(0x3040, 0x30FF)],  # Japanese (Hiragana + Katakana)
+    "VIET": [(0x1EA0, 0x1EFF)],  # Vietnamese extensions
+    "COPT": [(0x2C80, 0x2CFF)],  # Coptic
+    "ETHI": [(0x1200, 0x137F)],  # Ethiopic (incl. Tigrinya)
 }
 
 # ============================================================
@@ -92,22 +94,54 @@ UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
 #: Values are **examples**, not a guarantee of full language support.
 #:
 SCRIPT_TO_LANGUAGES: dict[str, list[str]] = {
-    "latn": ["en", "fr", "de", "it", "es", "pt", "nl", "sv", "no", "da", "fi"],
-    "grek": ["el"],
-    "cyrl": ["ru", "uk", "bg", "sr", "mk"],
-    "arab": ["ar"],
-    "hebr": ["he"],
-    "deva": ["hi", "ne"],
-    "hani": ["zh"],
-    "hang": ["ko"],
-    "thai": ["th"],
-    "armn": ["hy"],
-    "jpan": ["ja"],
-    "viet": ["vi"],
-    "copt": ["cop"],
-    "ethi": ["ti"],
-    # expandable, intentionally conservative
+    "LATN": ["en", "fr", "de", "it", "es", "pt", "nl", "sv", "no", "da", "fi", "vi"],
+    "GREK": ["el"],
+    "CYRL": ["ru", "uk", "bg", "sr", "mk"],
+    "ARAB": ["ar"],
+    "HEBR": ["he"],
+    "DEVA": ["hi", "ne"],
+    "HANI": ["zh"],
+    "HANG": ["ko"],
+    "JPAN": ["ja"],
+    "THAI": ["th"],
+    "ARMN": ["hy"],
+    "COPT": ["cop"],
+    "ETHI": ["ti"],
 }
+
+#: Mapping of primary language codes to their primary script.
+LANGUAGE_PRIMARY_SCRIPT: dict[str, str] = {
+    "en": "LATN",
+    "fr": "LATN",
+    "de": "LATN",
+    "it": "LATN",
+    "es": "LATN",
+    "pt": "LATN",
+    "nl": "LATN",
+    "sv": "LATN",
+    "no": "LATN",
+    "da": "LATN",
+    "fi": "LATN",
+    "vi": "LATN",
+    "el": "GREK",
+    "ru": "CYRL",
+    "uk": "CYRL",
+    "bg": "CYRL",
+    "sr": "CYRL",
+    "mk": "CYRL",
+    "ar": "ARAB",
+    "he": "HEBR",
+    "hi": "DEVA",
+    "ne": "DEVA",
+    "zh": "HANI",
+    "ja": "JPAN",
+    "ko": "HANG",
+    "th": "THAI",
+    "hy": "ARMN",
+    "cop": "COPT",
+    "ti": "ETHI",
+}
+
 
 # ============================================================
 # Helper functions
@@ -598,6 +632,9 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     Extended in C4.2 (script inference)
     Extended in C4.3 (language inference)
     """
+    # Standard library imports for debug purposes
+    import os
+    import pprint
 
     # --- Schema validation (C4.4) -----------------------------------------
     schema_warnings = validate_inventory_schema(data)
@@ -632,19 +669,79 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         # C4.2 – Infer Unicode scripts from coverage metadata
         inferred_scripts: list[str] = list(infer_scripts(coverage, level) or [])
 
-        # C4.3 – Infer human languages from Unicode coverage.
-        # This is the authoritative language inference mechanism.
-        # Legacy script-only inference is no longer used here.
+        # Infer candidate languages from Unicode coverage
         inferred_languages_map: dict[str, dict[str, Any]] = infer_languages(
             coverage,
             policy="permissive",
         )
 
-        inferred_languages: list[str] = sorted(inferred_languages_map.keys())
+        # Normalize inferred scripts to canonical uppercase form (ISO-15924-like)
+        # inferred_scripts may come from different sources and must not be trusted
+        # to already be normalized.
+        normalized_scripts: list[str] = [str(s).upper() for s in inferred_scripts]
+        font_scripts = set(normalized_scripts)
 
+        def _language_sort_key(lang: str) -> tuple[int, str]:
+            """
+            Sort languages by compatibility with the font primary scripts.
+
+            Priority rules:
+            1. Languages whose PRIMARY script matches one of the inferred font scripts
+            2. Fallback to alphabetical order for deterministic behavior
+            """
+            primary_script = LANGUAGE_PRIMARY_SCRIPT.get(lang)
+            return (
+                0 if primary_script and primary_script in font_scripts else 1,
+                lang,
+            )
+
+        # Order languages deterministically, preferring script-compatible ones
+        inferred_languages: list[str] = sorted(
+            inferred_languages_map.keys(),
+            key=_language_sort_key,
+        )
+
+        # ------------------------------------------------------------
+        # DEBUG: inference inspection (opt-in via env var)
+        # ------------------------------------------------------------
+        if os.environ.get("FONTSHOW_DEBUG_INFERENCE") == "1":
+            print("\n[DEBUG] Font inference diagnostics")
+            print(
+                "  font identity:",
+                font.get("identity", {}).get("family"),
+                font.get("identity", {}).get("style"),
+            )
+            print("  unicode blocks:")
+            for block, count in coverage.get("unicode_blocks", {}).items():
+                print(f"    {block}: {count}")
+            print("  inferred_languages_map:")
+            for lang, info in inferred_languages_map.items():
+                print(f"    {lang}: {info}")
+            print("  language primary script matching:")
+            for lang in inferred_languages_map.keys():
+                primary_script = LANGUAGE_PRIMARY_SCRIPT.get(lang)
+                matches = primary_script in font_scripts if primary_script else False
+                print(
+                    f"    {lang}: primary_script={primary_script}, "
+                    f"matches_font={matches}"
+                )
+            print(f"  inferred_scripts (raw): {inferred_scripts}")
+            print(f"  inferred_scripts (normalized): {normalized_scripts}")
+            print("  inferred_languages_map:")
+            pprint.pprint(inferred_languages_map)
+            print("  language primary scripts:")
+            for lang in inferred_languages_map.keys():
+                ps = LANGUAGE_PRIMARY_SCRIPT.get(lang)
+                match = ps in font_scripts if ps else False
+                print(f"    - {lang}: primary_script={ps}, matches_font={match}")
+            print(f"  final language order: {inferred_languages}")
+            print()
+        # ------------------------------------------------------------
+
+        # Persist inference results (rich, audit-friendly structure)
         font["inference"] = {
             "level": level,
-            "scripts": inferred_scripts,
+            "scripts": normalized_scripts,
             "languages": inferred_languages,
             # Declared metadata (never overwritten, informational only)
             "declared_scripts": declared_scripts,
