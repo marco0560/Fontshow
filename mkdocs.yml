@@ -70,5 +70,3 @@ nav:
       - Design Decisions: decisions.md
       - Security & Release Policy: security-and-release-policy.md
       - Key Rotation: key-rotation.md
-
-  - Changelog: changelog.md
