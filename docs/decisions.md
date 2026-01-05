@@ -17,6 +17,95 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Coverage Strategy and Rationale
+
+**Status:** Accepted
+**Date:** 2026-01-05
+**Scope:** Test coverage policy for Fontshow
+
+### Context
+
+Fontshow includes a mix of:
+
+- **Core logic modules** (validation, inference, preflight checks)
+- **I/O-heavy pipeline components** (font discovery, catalog generation, LaTeX integration)
+- **CLI entry points** and orchestration code
+
+A full test suite is in place and currently executed on Linux (Gentoo) using `pytest` and `pytest-cov`.
+
+At the time of this decision, the global coverage percentage reported by the tooling is relatively low (≈36%), despite all tests passing.
+
+### Observations
+
+Analysis of the coverage report shows that the low global percentage is primarily caused by two large modules:
+
+- `fontshow/create_catalog.py`
+- `fontshow/dump_fonts.py`
+
+These modules:
+- are heavily dependent on the host system (installed fonts, fontconfig, filesystem layout)
+- interact with external tools (LuaLaTeX)
+- perform long-running, side-effect-heavy operations
+- are designed as **integration pipelines**, not as pure logic units
+
+By contrast, the following areas show high coverage (typically 90–100%):
+
+- Language and script inference
+- Schema and semantic validation
+- Inventory parsing and validation
+- Preflight architecture (checks, registry, runner, rendering)
+- Contract tests and policy enforcement
+
+### Decision
+
+The project **intentionally prioritizes meaningful, high-signal coverage** over a high global percentage.
+
+Specifically:
+
+- High coverage is required and enforced for:
+  - core inference logic
+  - validation and policy code
+  - preflight checks and their contracts
+- Low or zero coverage is currently accepted for:
+  - CLI entry points
+  - I/O-heavy pipeline modules
+  - system-dependent integration code
+
+The reported global coverage value is therefore considered **informational**, not a quality gate.
+
+### Rationale
+
+Attempting to raise global coverage by aggressively testing pipeline code would require:
+- extensive mocking of system resources
+- brittle test setups tied to specific Linux distributions
+- tests that increase maintenance cost without improving confidence
+
+Instead, the chosen approach:
+- maximizes confidence in correctness where it matters
+- keeps the test suite fast and deterministic
+- aligns with the project’s long-term maintainability goals
+
+### Consequences
+
+- A low global coverage percentage is accepted and documented.
+- Contributors are encouraged to add tests to core logic modules, not to inflate coverage numbers.
+- Coverage reports must be interpreted per-module, not as a single aggregate metric.
+
+### Future Work
+
+Planned follow-up actions include:
+
+- Introducing a `.coveragerc` file to:
+  - exclude CLI entry points and selected pipeline modules
+  - clarify the intended coverage scope
+- Adding targeted tests for additional edge cases on native Linux (Gentoo)
+- Potentially introducing integration-test markers for system-dependent paths
+
+These improvements are explicitly deferred to a later phase.
+
+**Decision summary:**
+Coverage is treated as a qualitative signal, not a numerical target. The current strategy is intentional, documented, and aligned with the architecture of Fontshow.
+
 ## Decision: Script-aware sample text selection
 
 **Status:** Accepted

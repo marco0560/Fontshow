@@ -30,6 +30,12 @@ dev = [
   "packaging"
 ]
 
+docs = [
+  "mkdocs>=1.6",
+  "mkdocs-material>=9.7",
+  "mkdocstrings[python]>=0.24"
+]
+
 [project.scripts]
 fontshow-validate = "fontshow.cli_utils:cli_validate_inventory"
 
