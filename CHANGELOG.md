@@ -1,3 +1,9 @@
+## [0.21.1](https://github.com/marco0560/Fontshow/compare/v0.21.0...v0.21.1) (2026-01-05)
+
+### Bug Fixes
+
+* **validation:** add module entry point for preflight runner ([ae8f436](https://github.com/marco0560/Fontshow/commit/ae8f436613370b0633f12bb4ea71b120ea973cd3))
+
 ## [0.21.0](https://github.com/marco0560/Fontshow/compare/v0.20.1...v0.21.0) (2026-01-05)
 
 ### Features
