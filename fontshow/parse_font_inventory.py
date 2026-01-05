@@ -503,59 +503,6 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
     return ["unknown"]
 
 
-def _infer_languages_from_scripts_legacy(scripts: list[str]) -> list[str]:
-    """
-    Infer plausible language codes from Unicode scripts (legacy helper).
-
-    This function maps inferred Unicode script identifiers to a set of
-    plausible ISO 639 language codes.
-
-    The inference is intentionally permissive and conservative:
-    - it operates only at script level
-    - it does not inspect Unicode blocks
-    - it does not provide confidence or evidence
-
-    Parameters
-    ----------
-    scripts : list[str]
-        List of Unicode script identifiers (e.g. ``"latn"``, ``"cyrl"``)
-        as returned by :func:`infer_scripts`.
-
-    Returns
-    -------
-    list[str]
-        Sorted list of inferred language codes.
-
-    Notes
-    -----
-    - This function is kept for backward compatibility and comparison.
-    - It MUST NOT be used as the authoritative language inference.
-    - It will be removed after full migration to ``fontshow.infer_languages``.
-
-    Deprecated
-    ----------
-    Since C4.3
-    This function is no longer called by any core processing path.
-    """
-
-    # NOTE:
-    # This function derives languages *only* from inferred scripts.
-    # Declared language metadata (e.g. from FontConfig) is preserved
-    # separately as coverage.languages and must never be merged here.
-
-    languages: set[str] = set()
-    for script in scripts:
-        if script == "unknown":
-            # Unknown scripts cannot be mapped meaningfully
-            continue
-        # Script-to-language mapping is intentionally coarse:
-        # multiple languages may share the same script.
-        for lang in SCRIPT_TO_LANGUAGES.get(script, []):
-            languages.add(lang)
-
-    return sorted(languages)
-
-
 # ============================================================
 # Core processing
 # ============================================================
