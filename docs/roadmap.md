@@ -1,94 +1,86 @@
 # Roadmap – Fontshow
 
-Questa roadmap descrive lo stato attuale del progetto Fontshow,
-le attività completate e il piano di lavoro per le prossime fasi.
-È un documento vivo e verrà aggiornato manualmente nel tempo.
+This document describes the **actual state of the Fontshow project** as of version **v0.20.0**,
+aligning milestones, GitHub issues, and the intended evolution path.
+It is a **living document**, manually updated whenever a milestone is closed or redefined.
 
 ---
 
-## ✅ Attività completate (da chiudere su GitHub)
+## 📍 Current status
 
-Le seguenti issue possono essere chiuse in quanto assorbite o
-risolte dal lavoro svolto fino a C4.3:
-
-- #2 – parse_font_inventory: Validation & Resilience (baseline completata)
-- #3 – parse_font_inventory: Validation & Resilience (`--validate-inventory` baseline)
-- #14 – create_catalog (task troppo generico, da scomporre)
+- **Version**: v0.20.0
+- **Milestone**: **C5 – COMPLETED**
+- **Current focus**: consolidation, manual testing, robustness
 
 ---
 
-## 🔥 Priorità immediate (C4.4)
+## ✅ Completed work
 
-### 1. JSON Schema & Versioning
-**Riferimento:** Issue #6
+The following activities should be considered **completed or absorbed** in the current codebase:
 
-- Formalizzare `schema_version`
-- Definire regole di backward compatibility (1.x)
-- Distinguere campi obbligatori vs opzionali
-- Fornire esempi JSON per ogni versione
-- Allineare codice, documentazione e test
+- **C5** – Stable end-to-end pipeline (preflight → dump → parse → LaTeX)
+- Font inventory validation (versioned schema, explicit validation)
+- Clear separation between:
+  - preflight (capability-based checks)
+  - Linux/fontconfig-based pipeline
+- Deterministic LaTeX generation
+- Baseline architectural documentation (`docs/`)
 
----
-
-### 2. create_catalog & qualità LaTeX
-**Riferimenti:** Issue #4, #5
-
-- Migliorare diagnostica LaTeX
-- Gestire font problematici
-- Aggiungere opzioni di debug:
-  - `--dump-tex-per-font`
-  - `--keep-temp`
-  - `--debug-font`
+> Note: not all historical GitHub issues are formally closed,
+> but the code reflects a coherent and consolidated state.
 
 ---
 
-### 3. LuaLaTeX robustness tests
-**Riferimento:** Issue #5
+## 🧪 Ongoing activities (post-C5)
 
-- Test su font:
-  - solo simboli
-  - senza ASCII
-  - con encoding non comuni
-  - noti per crash LuaTeX
+These activities **do not introduce new features**, but aim to improve reliability
+and documentation quality:
 
----
+- **#8 – Manual Testing Documentation**
+  Manual test documentation for:
+  - Gentoo
+  - Fedora
+  - WSL
+  - Windows (if applicable)
 
-## 🐧 Native Linux & System Testing
-
-**Riferimenti:** Issue #1, #8
-Derivato dalla conversazione “Linux System questions”.
-
-### Obiettivi
-- Test reali su Gentoo
-- Confronto con Fedora e WSL
-- Verifica comportamento `fc-query`
-- Valutazione `--include-fc-charset`
-
-### Output attesi
-- Documentazione dei risultati
-- Elenco di edge cases
-- Raccomandazioni pratiche
+- **#1 – Native Linux testing**
+  Validation of `fc-query` behavior and charset extraction on Gentoo
 
 ---
 
-## 🔁 Priorità media
+## ⏳ Planned / pending activities
 
-- #7 – Tool versioning alignment
-- #11 – Repository hygiene (enhancements)
-- #8 – Manual testing documentation (completamento)
+- **#4 – LaTeX debugging facilities**
+  Debug and diagnostic options (no implementation started yet)
 
----
+- **#5 – LuaLaTeX robustness tests**
+  Tests targeting problematic or edge-case fonts
 
-## 🕐 Attività future / parcheggiate
-
-- #12 – CI & Automation
-- #9 – Packaging & CLI UX
-- #10 – CLI consistency
+- **#9 – Packaging & CLI UX**
+  CLI entry-point rationalization (explicitly deferred)
 
 ---
 
-## 📌 Note finali
+## 💤 Parked activities (future milestones)
 
-- Questa roadmap non sostituisce le issue GitHub
-- Serve come visione d’insieme e strumento di pianificazione
-- Le milestone (C4.4, C5, …) verranno aggiornate qui
+- **#12 – CI & Automation**
+  Planned only after manual testing has stabilized
+
+- **#25 – Pluggable font discovery backend**
+  Future architecture (v2.x.y), **explicitly out of scope** for the 0.x series
+
+---
+
+## 📌 Governance notes
+
+- This roadmap **does not replace** GitHub issues
+- It serves as:
+  - a high-level overview
+  - an orientation tool for upcoming milestones
+- Future milestones (C6, C7, …) will be defined **only after**:
+  - completion of manual testing
+  - LaTeX robustness consolidation
+
+---
+
+*Last updated: post-C5, v0.20.0*
