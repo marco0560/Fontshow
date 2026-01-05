@@ -38,32 +38,37 @@ plugins:
 nav:
   - Home: index.md
 
-  - Architecture:
-      - Overview: architecture.md
+  - Overview:
+      - Architecture: architecture.md
       - Pipeline: pipeline.md
-      - Environment Matrix: environment-matrix.md
+      - Roadmap: roadmap.md
 
-  - Schema and Data Dictionary:
-      - Inventory Schema: schema/index.md
+  - Usage:
+      - CLI Overview: cli.md
+      - Cheatsheet: cheatsheet.md
+      - Tools:
+          - dump_fonts: tools/dump_fonts.md
+          - parse_font_inventory: tools/parse_font_inventory.md
+          - create_catalog: tools/create_catalog.md
+
+  - Data Model:
       - Data Dictionary: data_dictionary.md
+      - Schema:
+          - Overview: schema/index.md
+          - Inventory v1.1: schema/inventory-1.1.schema.json
 
-  - Pipeline:
+  - Validation & Testing:
+      - Testing Strategy: testing.md
       - Environment Matrix: environment-matrix.md
-      - Fonts dump: tools/dump_fonts.md
-      - Inventory parsing: tools/parse_font_inventory.md
-      - Catalog creation: tools/create_catalog.md
-
-  - Quality:
-      - Manual Testing: testing.md
 
   - Development:
-      - Contribution guidelines: CONTRIBUTING.md
-      - Roadmap: roadmap.md
-      - Active decisions: decisions.md
-      - Development environment: dev-environment.md
-      - Development Scripts: scripts.md
-      - Security and release policy: security-and-release-policy.md
-      - Key rotation: key-rotation.md
+      - Dev Environment: dev-environment.md
+      - Scripts: scripts.md
+      - Contributing: CONTRIBUTING.md
 
-  - Cheatsheet:
-      - Cheatsheet: cheatsheet.md
+  - Decisions:
+      - Design Decisions: decisions.md
+      - Security & Release Policy: security-and-release-policy.md
+      - Key Rotation: key-rotation.md
+
+  - Changelog: changelog.md
