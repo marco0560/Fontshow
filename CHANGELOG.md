@@ -1,3 +1,9 @@
+## [0.20.1](https://github.com/marco0560/Fontshow/compare/v0.20.0...v0.20.1) (2026-01-05)
+
+### Bug Fixes
+
+* **catalog:** ignore embedded sample text when language-incompatible ([356e618](https://github.com/marco0560/Fontshow/commit/356e6182bec0e82a749378a672a90cea9b5f6f50))
+
 ## [0.20.0](https://github.com/marco0560/Fontshow/compare/v0.19.2...v0.20.0) (2026-01-04)
 
 ### Features
