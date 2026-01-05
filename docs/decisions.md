@@ -17,6 +17,73 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision: Script-aware sample text selection
+
+**Status:** Accepted
+**Context:** Font catalog generation (`create_catalog`)
+**Related versions:** v0.20.0+
+
+### Context
+
+Fontshow supports rendering sample text for each font in the generated
+catalog. Sample text can originate from two different sources:
+
+1. **Embedded sample text**, extracted directly from the font file
+   during `dump_fonts`.
+2. **Inferred sample text**, selected at catalog generation time based
+   on language inference results derived from Unicode coverage.
+
+Previously, embedded sample text was always preferred whenever present,
+regardless of its language or script compatibility with the dominant
+font script. This behavior caused incoherent rendering for non-Latin
+fonts (e.g. CJK fonts rendered with German or other Latin pangrams),
+leading to cascading LuaLaTeX warnings and unreadable output.
+
+### Decision
+
+Embedded sample text is now used **only if its language matches the
+primary inferred language** of the font.
+
+If the embedded sample text language is incompatible with the dominant
+inferred language, it is ignored and Fontshow falls back to selecting a
+sample text based on language inference results.
+
+Formally:
+
+- Let `L₀` be the primary inferred language
+  (`font["inference"]["languages"][0]`).
+- Embedded sample text is used **only if**
+  `sample_text.lang == L₀`.
+- Otherwise, sample text is selected using inferred language-based
+  fallback logic.
+
+### Rationale
+
+- Fontshow is an **analysis and cataloging tool**, not a raw font viewer.
+- Script and language coherence is more important than strict fidelity
+  to embedded font metadata.
+- Embedded sample text is often Latin-based even in fonts whose dominant
+  coverage is non-Latin.
+- Using script-incompatible sample text leads to misleading output and
+  LaTeX compilation issues.
+
+This decision keeps inference policy centralized in
+`parse_font_inventory` and ensures that `create_catalog` remains a pure
+consumer of inference results.
+
+### Consequences
+
+- Catalog rendering is now consistent across scripts.
+- Non-Latin fonts reliably render appropriate sample text.
+- Embedded sample text is still preserved and used when compatible.
+- No behavior change for purely Latin fonts.
+
+### Alternatives considered
+
+- Always prefer embedded sample text (rejected: causes incoherent output).
+- Add user-facing flags to choose precedence (postponed; increases
+  complexity without clear immediate benefit).
+
 ## Decision: Preflight checks refactoring to a class-based, registry-backed model
 
 **Status**: Accepted
