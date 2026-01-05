@@ -8,14 +8,14 @@ Allows running preflight checks via:
 
 import sys
 
-from .render import render_preflight_result
+from .render import preflight_exit_code, render_preflight_results
 from .runner import run_preflight
 
 
 def main() -> None:
     result = run_preflight()
-    render_preflight_result(result)
-    sys.exit(0 if result.ok else 1)
+    render_preflight_results(result.results)
+    sys.exit(preflight_exit_code(result))
 
 
 if __name__ == "__main__":
