@@ -1,3 +1,9 @@
+## [0.22.0](https://github.com/marco0560/Fontshow/compare/v0.21.1...v0.22.0) (2026-01-06)
+
+### Features
+
+* **core:** add structured logging infrastructure and INFO logs ([3b494ad](https://github.com/marco0560/Fontshow/commit/3b494ada2df389bd8a44ff5708c35918ddb39e03))
+
 ## [0.21.1](https://github.com/marco0560/Fontshow/compare/v0.21.0...v0.21.1) (2026-01-05)
 
 ### Bug Fixes
