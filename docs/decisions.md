@@ -17,6 +17,62 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision — Charset lifecycle and current non-consumption
+
+### Context
+
+FontConfig-derived charset metadata is currently extracted during the
+`dump_fonts` stage and preserved in the raw inventory.
+
+Specifically:
+
+- `dump_fonts.py` invokes `fc-query` and extracts a raw FontConfig charset blob
+  (when `--include-fc-charset` is enabled),
+- the charset is serialized into the inventory under:
+
+```text
+  font["coverage"]["charset"]
+```
+
+- the raw inventory schema (`schema_version = 1.0`) explicitly allows the
+  presence of this field.
+
+### Current behavior
+
+At the time of writing:
+
+- `parse_font_inventory.py` **does not consume or interpret charset data**,
+- charset metadata is treated as **informational-only**,
+- no normalization, validation, or policy decision is applied to the charset,
+- charset data does **not influence**:
+  - Unicode block coverage,
+  - script inference,
+  - language inference,
+  - semantic validation.
+
+This behavior is **intentional** and reflects the current scope of the pipeline.
+
+### Rationale
+
+The decision to preserve but not consume charset metadata allows:
+
+- forward compatibility with future enrichment steps,
+- lossless propagation of FontConfig information,
+- deferred design decisions around charset semantics.
+
+Avoiding premature consumption prevents:
+- accidental coupling between FontConfig output and inference logic,
+- silent behavioral changes without explicit design review.
+
+---
+
+### Implications
+
+- The presence of charset metadata in the inventory **does not imply usage**.
+- The `--include-fc-charset` flag guarantees extraction and serialization,
+  not semantic interpretation.
+
+
 ## Decision: Introduce a minimal structured logging infrastructure
 
 ### Status
@@ -175,6 +231,7 @@ enrichment and are therefore not available here.
 | semantic_validation    | per-font         | ERROR   | semantic validation failed                | When semantic validation fails fatally for an entry          | font_id, font_path, constraint_id, error_summary |
 
 ---
+
 ## Coverage Strategy and Rationale
 
 - **Status:** Accepted
