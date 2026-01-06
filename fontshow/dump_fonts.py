@@ -49,6 +49,7 @@ from typing import TYPE_CHECKING, Any
 
 from fontshow import __version__
 from fontshow.cli_utils import add_common_arguments
+from fontshow.logging_utils import log
 
 try:
     # fontTools does not provide type stubs/py.typed; tell mypy to ignore
@@ -1165,6 +1166,15 @@ def main() -> None:
         "fonts": [],
     }
 
+    log.info(
+        "font inventory generation started",
+        extra={
+            "output_path": str(args.output),
+            "include_fc_charset": bool(args.include_fc_charset and IS_LINUX),
+            "cache_dir": str(cache_dir),
+        },
+    )
+
     # -------------------------------
     # Font discovery
     # -------------------------------
@@ -1234,6 +1244,14 @@ def main() -> None:
     args.output.write_text(
         json.dumps(inventory, indent=2, ensure_ascii=False),
         encoding="utf-8",
+    )
+
+    log.info(
+        "font inventory generation completed",
+        extra={
+            "total_fonts": len(inventory.get("fonts", [])),
+            "include_fc_charset": bool(args.include_fc_charset and IS_LINUX),
+        },
     )
 
     if args.verbose:
