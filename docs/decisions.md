@@ -103,16 +103,23 @@ introducing permanent complexity or user-facing behavior changes.
 | dump_fonts  | global           | DEBUG   | font cache enabled                         | When --cache-dir flag is provided                            | cache_dir |
 | dump_fonts  | global           | DEBUG   | font cache disabled                        | When --cache-dir flag is not provided                        | — |
 | dump_fonts  | global           | DEBUG   | font cache applied                         | When cache is effectively used (read/write/hit/miss)        | cache_dir, operation |
-| dump_fonts  | per-font         | DEBUG   | fc-query invocation prepared               | Before invoking fc-query for a font                          | font_id, font_path, query_mode |
-| dump_fonts  | per-font         | TRACE   | fc-query executed                          | After fc-query execution                                     | font_id, font_path, command, exit_code |
-| dump_fonts  | per-font         | TRACE   | fc-query raw output received               | When raw output is captured from fc-query                    | font_id, font_path, stdout, stderr |
-| dump_fonts  | per-font         | DEBUG   | fontconfig output parsed                   | When fc-query output is successfully parsed                  | font_id, font_path, fields_detected |
-| dump_fonts  | per-font         | DEBUG   | fontconfig output could not be parsed      | When fc-query output parsing fails                           | font_id, font_path, error_reason |
-| dump_fonts  | per-font         | DEBUG   | charset field detected in fontconfig output| When charset field is present in fc-query output             | font_id, font_path, raw_charset |
-| dump_fonts  | per-font         | DEBUG   | charset field missing in fontconfig output | When charset field is absent in fc-query output              | font_id, font_path |
-| dump_fonts  | per-font         | WARNING | fc-query execution failed                 | When fc-query exits with error                               | font_id, font_path, exit_code, stderr |
+| dump_fonts  | per-file         | DEBUG   | fc-query invocation prepared               | Before invoking fc-query for a font                          | font_path, include_charset |
+| dump_fonts  | per-file         | TRACE   | fc-query executed                          | After fc-query execution                                     | font_path, exit_code |
+| dump_fonts  | per-file         | TRACE   | fc-query raw output received               | When raw output is captured from fc-query                    | font_path, stdout |
+| dump_fonts  | per-file         | DEBUG   | fontconfig output parsed                   | When fc-query output is successfully parsed                  | font_path, fields_detected |
+| dump_fonts  | per-file         | DEBUG   | fontconfig output could not be parsed      | When fc-query output parsing fails                           | font_path, error_reason |
+| dump_fonts  | per-file         | DEBUG   | charset field detected in fontconfig output| When charset field is present in fc-query output             | font_path, ranges_count |
+| dump_fonts  | per-file         | DEBUG   | charset field missing in fontconfig output | When charset field is absent in fc-query output              | font_path |
+| dump_fonts  | per-file         | WARNING | fc-query execution failed | When fc-query exits with a non-zero status | font_path, exit_code, stderr |
 
 ---
+
+**Note**
+
+The messages above operate at *font file level*, not at individual font
+(face) level. At this stage of the pipeline, only the file path is known.
+Per-font identifiers (font_id) are introduced later during inventory
+enrichment and are therefore not available here.
 
 ### Logging messages — parse_font_inventory
 
