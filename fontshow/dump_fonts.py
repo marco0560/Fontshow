@@ -1174,6 +1174,28 @@ def main() -> None:
             "cache_dir": str(cache_dir),
         },
     )
+    if args.include_fc_charset and IS_LINUX:
+        log.debug(
+            "fontconfig charset extraction enabled",
+            extra={
+                "query_mode": "fontconfig",
+            },
+        )
+    else:
+        log.debug(
+            "fontconfig charset extraction disabled",
+        )
+    if args.cache_dir:
+        log.debug(
+            "font cache enabled",
+            extra={
+                "cache_dir": str(cache_dir),
+            },
+        )
+    else:
+        log.debug(
+            "font cache disabled",
+        )
 
     # -------------------------------
     # Font discovery
