@@ -1,3 +1,9 @@
+## [0.23.0](https://github.com/marco0560/Fontshow/compare/v0.22.0...v0.23.0) (2026-01-06)
+
+### Features
+
+* **dump:** add DEBUG logging for global flags ([1cc782c](https://github.com/marco0560/Fontshow/commit/1cc782c2aae7875229a364b932e4f10bacafb167))
+
 ## [0.22.0](https://github.com/marco0560/Fontshow/compare/v0.21.1...v0.22.0) (2026-01-06)
 
 ### Features
