@@ -1153,6 +1153,10 @@ def main() -> None:
     cache_dir = args.cache_dir
     cache_dir.mkdir(parents=True, exist_ok=True)
 
+    # NOTE:
+    # dump_fonts produces a *raw* inventory.
+    # schema_version = "1.0" denotes a raw (non-enriched) inventory.
+    # Enriched inventories produced by parse_font_inventory use schema_version = "1.1".
     inventory: dict[str, Any] = {
         "metadata": {
             "schema_version": "1.0",
