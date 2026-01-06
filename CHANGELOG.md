@@ -1,3 +1,9 @@
+## [0.24.0](https://github.com/marco0560/Fontshow/compare/v0.23.0...v0.24.0) (2026-01-06)
+
+### Features
+
+* **dump:** add per-file DEBUG/TRACE logging to fc_query_extract ([57bd9d0](https://github.com/marco0560/Fontshow/commit/57bd9d06db26d744587bc6589f100198fd068729))
+
 ## [0.23.0](https://github.com/marco0560/Fontshow/compare/v0.22.0...v0.23.0) (2026-01-06)
 
 ### Features
