@@ -25,6 +25,7 @@ from typing import Any
 from fontshow import __version__
 from fontshow.cli_utils import add_common_arguments
 from fontshow.infer_languages import infer_languages
+from fontshow.logging_utils import log
 from fontshow.schema_validation import validate_inventory_schema
 
 # ============================================================
@@ -583,8 +584,36 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     import os
     import pprint
 
+    log.info(
+        "inventory schema validation requested",
+        extra={
+            "schema_version": data.get("schema_version"),
+        },
+    )
+    log.debug("inventory schema validation started")
     # --- Schema validation (C4.4) -----------------------------------------
     schema_warnings = validate_inventory_schema(data)
+    log.info(
+        "inventory schema validation completed",
+        extra={
+            "schema_version": data.get("schema_version"),
+            "warnings_count": len(schema_warnings),
+        },
+    )
+    if schema_warnings:
+        severity_counts: dict[str, int] = {}
+        for w in schema_warnings:
+            sev = w.get("severity", "unknown")
+            severity_counts[sev] = severity_counts.get(sev, 0) + 1
+
+        log.debug(
+            "inventory schema validation produced warnings",
+            extra={
+                "schema_version": data.get("schema_version"),
+                "severity_counts": severity_counts,
+            },
+        )
+
     for warning in schema_warnings:
         add_structured_warning(
             data,
@@ -594,7 +623,29 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         )
     # ----------------------------------------------------------------------
 
+    log.info(
+        "font inventory parsing started",
+        extra={
+            "schema_version": data.get("schema_version"),
+            "fonts_count": len(data.get("fonts", [])),
+        },
+    )
+
     for font in data.get("fonts", []):
+        identity = font.get("identity", {})
+        font_path = font.get("path")
+        family = identity.get("family")
+        style = identity.get("style")
+
+        log.debug(
+            "font entry parsing started",
+            extra={
+                "font_path": font_path,
+                "family": family,
+                "style": style,
+            },
+        )
+
         # Unicode coverage metadata extracted upstream
         coverage: dict[str, Any] = font.get("coverage", {}) or {}
 
@@ -612,14 +663,42 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
                 ),
                 severity="info",
             )
+        if not declared_languages:
+            log.debug(
+                "declared languages missing",
+                extra={
+                    "font_path": font_path,
+                    "family": family,
+                    "style": style,
+                },
+            )
 
         # C4.2 – Infer Unicode scripts from coverage metadata
         inferred_scripts: list[str] = list(infer_scripts(coverage, level) or [])
+        log.debug(
+            "scripts inferred",
+            extra={
+                "font_path": font_path,
+                "family": family,
+                "style": style,
+                "inferred_scripts": inferred_scripts,
+                "infer_level": level,
+            },
+        )
 
         # Infer candidate languages from Unicode coverage
         inferred_languages_map: dict[str, dict[str, Any]] = infer_languages(
             coverage,
             policy="permissive",
+        )
+        log.debug(
+            "languages inferred",
+            extra={
+                "font_path": font_path,
+                "family": family,
+                "style": style,
+                "language_candidates": list(inferred_languages_map.keys()),
+            },
         )
 
         # Normalize inferred scripts to canonical uppercase form (ISO-15924-like)
@@ -696,6 +775,16 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
             # Raw evidence used for inference
             "unicode_blocks": coverage.get("unicode_blocks", {}),
         }
+        log.debug(
+            "font entry parsing completed",
+            extra={
+                "font_path": font_path,
+                "family": family,
+                "style": style,
+                "scripts_count": len(normalized_scripts),
+                "languages_count": len(inferred_languages),
+            },
+        )
 
     metadata = data.setdefault("metadata", {})
 
@@ -705,6 +794,13 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     metadata["inference_level"] = level
     metadata.setdefault("input_inventory_tool", "parse_font_inventory")
     metadata.setdefault("input_inventory_tool_version", __version__)
+    log.info(
+        "font inventory parsing completed",
+        extra={
+            "fonts_processed": len(data.get("fonts", [])),
+        },
+    )
+
     return data
 
 
@@ -777,6 +873,13 @@ def main() -> None:
             "Hint: run dump_fonts.py first to generate the inventory.", file=sys.stderr
         )
         sys.exit(1)
+
+    log.debug(
+        "inference level enabled",
+        extra={
+            "infer_level": args.infer_level,
+        },
+    )
 
     data: dict[str, Any] = json.loads(args.input.read_text(encoding="utf-8"))
 
