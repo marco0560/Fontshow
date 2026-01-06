@@ -396,8 +396,30 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
     Returns:
         A dictionary with zero or more of the keys described above.
     """
+    log.debug(
+        "fc-query invocation prepared",
+        extra={
+            "font_path": str(path),
+            "include_charset": include_charset,
+        },
+    )
     proc = run_command(["fc-query", str(path)])
+    log.trace(
+        "fc-query executed",
+        extra={
+            "font_path": str(path),
+            "exit_code": proc.returncode,
+        },
+    )
+
     raw = proc.stdout if proc.stdout else ""
+    log.trace(
+        "fc-query raw output received",
+        extra={
+            "font_path": str(path),
+            "stdout": raw,
+        },
+    )
 
     def _find_line(prefix: str) -> str | None:
         """Return the payload of the first line starting with ``prefix``."""
@@ -423,6 +445,23 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
         for token in capability.replace('"', "").split():
             if token.startswith("otlayout:"):
                 scripts.append(token.split(":", 1)[1])
+    log.debug(
+        "fontconfig output parsed",
+        extra={
+            "font_path": str(path),
+            "fields_detected": [
+                k
+                for k, v in {
+                    "languages": languages,
+                    "scripts": scripts,
+                    "decorative": decorative,
+                    "color": color,
+                    "variable": variable,
+                }.items()
+                if v
+            ],
+        },
+    )
 
     if include_charset:
         try:
@@ -432,8 +471,32 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
                     "source": "fontconfig",
                     "ranges": ranges,
                 }
-        except Exception:
+        except Exception as exc:
+            log.debug(
+                "fontconfig output could not be parsed",
+                extra={
+                    "font_path": str(path),
+                    "error_reason": str(exc),
+                },
+            )
             charset = None
+
+    if include_charset:
+        if charset is not None:
+            log.debug(
+                "charset field detected in fontconfig output",
+                extra={
+                    "font_path": str(path),
+                    "ranges_count": len(charset.get("ranges", [])),
+                },
+            )
+        else:
+            log.debug(
+                "charset field missing in fontconfig output",
+                extra={
+                    "font_path": str(path),
+                },
+            )
 
     return {
         "languages": languages,
