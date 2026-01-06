@@ -1,3 +1,9 @@
+## [0.26.0](https://github.com/marco0560/Fontshow/compare/v0.25.0...v0.26.0) (2026-01-06)
+
+### Features
+
+* **parser:** complete structured logging for inventory parsing ([c0318e5](https://github.com/marco0560/Fontshow/commit/c0318e560b4912372024acec6fad55840e59af1f))
+
 ## [0.25.0](https://github.com/marco0560/Fontshow/compare/v0.24.0...v0.25.0) (2026-01-06)
 
 ### Features
