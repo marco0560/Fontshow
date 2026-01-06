@@ -17,11 +17,162 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision: Introduce a minimal structured logging infrastructure
+
+### Status
+
+- **Status:** Accepted
+- **Date:** 2026-01-06
+- **Scope:** Structured logging infrastructure for Fontshow
+
+Implementation planned as a dedicated, incremental step.
+
+### Context
+
+The project currently relies on ad-hoc debugging techniques
+(`print(...)`, temporary variables, local debug code) to inspect internal
+behavior during development and troubleshooting.
+
+This approach has become fragile and inconsistent, especially while
+debugging complex pipelines such as Fontconfig-based metadata extraction
+(e.g. `--include-fc-charset` on Gentoo Linux).
+
+### Decision
+
+We introduce a minimal, disciplined, and opt-in structured logging
+infrastructure to replace ad-hoc debugging across the project.
+
+The logging system is designed as a lightweight wrapper around Python’s
+standard `logging` module and provides a single, coherent mechanism for
+observability.
+
+The logging infrastructure must preserve caller module and function
+information to allow precise attribution of log events without requiring
+explicit identifiers in the payload.
+
+### Design (initial scope)
+
+- New internal logging utility module (e.g. `fontshow/logging_utils.py`)
+- Supported log levels:
+  - ERROR
+  - WARNING
+  - INFO
+  - DEBUG
+  - TRACE (custom, optional)
+- Logging is disabled by default
+- Activation via environment variable:
+
+  `FONTSHOW_LOG_LEVEL=DEBUG`
+
+- No external dependencies
+- Zero functional overhead when disabled
+
+### Usage model
+
+The logging API is intentionally minimal, for example:
+
+- `log.debug("message", extra={...})`
+- or equivalent convenience helpers
+
+The logging system is intended to be used incrementally, starting from
+critical debugging paths.
+
+### Relation to existing debug code
+
+Temporary debug logic currently present in `parse_font_inventory` will be
+used as a reference during the initial adoption of structured logging.
+
+Once equivalent or superior observability is achieved through the logging
+infrastructure, the existing ad-hoc debug code will be removed to avoid
+duplication and maintenance overhead.
+
+### Rationale
+
+This approach enforces discipline, avoids over-design, and provides a
+reusable foundation for future debugging and diagnostics, without
+introducing permanent complexity or user-facing behavior changes.
+
+### Logging messages — dump_fonts
+
+| Module      | Function (scope) | Level   | Message                                   | When                                                         | Extra (keys) |
+|-------------|------------------|---------|-------------------------------------------|--------------------------------------------------------------|--------------|
+| dump_fonts  | global           | INFO    | font inventory generation started          | At the beginning of inventory generation                     | output_path, include_fc_charset, cache_dir |
+| dump_fonts  | global           | INFO    | font inventory generation completed        | At the end of inventory generation                           | total_fonts, include_fc_charset |
+| dump_fonts  | global           | DEBUG   | fontconfig charset extraction enabled      | When --include-fc-charset flag is active                     | query_mode |
+| dump_fonts  | global           | DEBUG   | fontconfig charset extraction disabled     | When --include-fc-charset flag is not active                 | — |
+| dump_fonts  | global           | DEBUG   | font cache enabled                         | When --cache-dir flag is provided                            | cache_dir |
+| dump_fonts  | global           | DEBUG   | font cache disabled                        | When --cache-dir flag is not provided                        | — |
+| dump_fonts  | global           | DEBUG   | font cache applied                         | When cache is effectively used (read/write/hit/miss)        | cache_dir, operation |
+| dump_fonts  | per-font         | DEBUG   | fc-query invocation prepared               | Before invoking fc-query for a font                          | font_id, font_path, query_mode |
+| dump_fonts  | per-font         | TRACE   | fc-query executed                          | After fc-query execution                                     | font_id, font_path, command, exit_code |
+| dump_fonts  | per-font         | TRACE   | fc-query raw output received               | When raw output is captured from fc-query                    | font_id, font_path, stdout, stderr |
+| dump_fonts  | per-font         | DEBUG   | fontconfig output parsed                   | When fc-query output is successfully parsed                  | font_id, font_path, fields_detected |
+| dump_fonts  | per-font         | DEBUG   | fontconfig output could not be parsed      | When fc-query output parsing fails                           | font_id, font_path, error_reason |
+| dump_fonts  | per-font         | DEBUG   | charset field detected in fontconfig output| When charset field is present in fc-query output             | font_id, font_path, raw_charset |
+| dump_fonts  | per-font         | DEBUG   | charset field missing in fontconfig output | When charset field is absent in fc-query output              | font_id, font_path |
+| dump_fonts  | per-font         | WARNING | fc-query execution failed                 | When fc-query exits with error                               | font_id, font_path, exit_code, stderr |
+
+---
+
+### Logging messages — parse_font_inventory
+
+| Module                | Function (scope) | Level   | Message                                   | When                                                         | Extra (keys) |
+|-----------------------|------------------|---------|-------------------------------------------|--------------------------------------------------------------|--------------|
+| parse_font_inventory  | global           | INFO    | font inventory parsing started            | At the beginning of inventory parsing                        | input_path, schema_version |
+| parse_font_inventory  | global           | INFO    | font inventory parsing completed          | At the end of inventory parsing                              | total_entries, accepted_entries, ignored_entries |
+| parse_font_inventory  | global           | DEBUG   | inference level enabled                   | When --infer-level flag is active                            | infer_level |
+| parse_font_inventory  | global           | DEBUG   | inference level applied                   | When inference logic is effectively applied                  | infer_level, affected_features |
+| parse_font_inventory  | global           | DEBUG   | inference disabled                        | When inference is not active                                 | — |
+| parse_font_inventory  | global           | INFO    | inventory validation requested            | When --validate-inventory flag is active                     | schema_version |
+| parse_font_inventory  | global           | DEBUG   | inventory validation started              | When validation phase begins                                 | schema_version |
+| parse_font_inventory  | global           | INFO    | inventory validation passed               | When inventory validation succeeds                           | schema_version, validated_entries |
+| parse_font_inventory  | global           | ERROR   | inventory validation failed               | When inventory validation fails                              | schema_version, error_summary |
+| parse_font_inventory  | per-font         | DEBUG   | font entry parsing started                | At the beginning of parsing a font entry                     | font_id, font_path |
+| parse_font_inventory  | per-font         | DEBUG   | font entry parsing completed              | After parsing a font entry                                   | font_id, font_path, outcome |
+| parse_font_inventory  | per-font         | DEBUG   | charset field missing in inventory entry  | When charset field is absent in inventory entry              | font_id, font_path |
+| parse_font_inventory  | per-font         | DEBUG   | charset field empty in inventory entry    | When charset field is present but empty                      | font_id, font_path, raw_charset |
+| parse_font_inventory  | per-font         | DEBUG   | charset field available for normalization | When charset field is present and non-empty                  | font_id, font_path, raw_charset_summary |
+| parse_font_inventory  | per-font         | DEBUG   | charset normalized                        | When charset normalization succeeds                          | font_id, font_path, normalized_summary |
+| parse_font_inventory  | per-font         | WARNING | charset normalization failed              | When charset normalization fails                             | font_id, font_path, failure_reason |
+| parse_font_inventory  | per-font         | DEBUG   | charset ignored by policy                 | When charset is ignored due to policy or configuration       | font_id, font_path, policy_reason |
+| parse_font_inventory  | per-font         | DEBUG   | charset accepted                          | When charset is accepted and retained                        | font_id, font_path |
+| parse_font_inventory  | per-font         | ERROR   | invalid font inventory entry              | When a font entry is structurally invalid                    | font_id, font_path, validation_error |
+---
+
+### Logging messages — infer_languages
+
+| Module            | Function (scope) | Level   | Message                                   | When                                                         | Extra (keys) |
+|-------------------|------------------|---------|-------------------------------------------|--------------------------------------------------------------|--------------|
+| infer_languages   | per-font         | DEBUG   | language inference started                | When language inference begins for a font entry              | font_id, font_path, infer_level |
+| infer_languages   | per-font         | DEBUG   | language inferred from unicode coverage   | When a language is inferred using unicode coverage           | font_id, font_path, inferred_languages, confidence |
+| infer_languages   | per-font         | DEBUG   | language inference skipped                | When inference is skipped due to insufficient data           | font_id, font_path, skip_reason |
+| infer_languages   | per-font         | WARNING | language inference failed                 | When inference logic fails unexpectedly                      | font_id, font_path, failure_reason |
+---
+
+### Logging messages — schema_validation
+
+| Module              | Function (scope) | Level   | Message                                   | When                                                         | Extra (keys) |
+|---------------------|------------------|---------|-------------------------------------------|--------------------------------------------------------------|--------------|
+| schema_validation   | per-font         | DEBUG   | schema validation rule applied            | When a schema validation rule is evaluated                   | font_id, font_path, rule_id |
+| schema_validation   | per-font         | WARNING | schema validation rule failed             | When a schema rule is violated but processing continues      | font_id, font_path, rule_id, failure_reason |
+| schema_validation   | per-font         | ERROR   | schema validation failed                  | When schema validation fails fatally for an entry            | font_id, font_path, rule_id, error_summary |
+---
+
+### Logging messages — semantic_validation
+
+| Module                 | Function (scope) | Level   | Message                                   | When                                                         | Extra (keys) |
+|------------------------|------------------|---------|-------------------------------------------|--------------------------------------------------------------|--------------|
+| semantic_validation    | per-font         | DEBUG   | semantic validation started               | When semantic validation begins for a font entry             | font_id, font_path |
+| semantic_validation    | per-font         | DEBUG   | semantic constraint satisfied             | When a semantic constraint is satisfied                      | font_id, font_path, constraint_id |
+| semantic_validation    | per-font         | WARNING | semantic constraint violated              | When a semantic constraint is violated but tolerated         | font_id, font_path, constraint_id, violation_reason |
+| semantic_validation    | per-font         | ERROR   | semantic validation failed                | When semantic validation fails fatally for an entry          | font_id, font_path, constraint_id, error_summary |
+
+---
 ## Coverage Strategy and Rationale
 
-**Status:** Accepted
-**Date:** 2026-01-05
-**Scope:** Test coverage policy for Fontshow
+- **Status:** Accepted
+- **Date:** 2026-01-05
+- **Scope:** Test coverage policy for Fontshow
 
 ### Context
 
@@ -108,9 +259,9 @@ Coverage is treated as a qualitative signal, not a numerical target. The current
 
 ## Decision: Script-aware sample text selection
 
-**Status:** Accepted
-**Context:** Font catalog generation (`create_catalog`)
-**Related versions:** v0.20.0+
+- **Status:** Accepted
+- **Context:** Font catalog generation (`create_catalog`)
+- **Related versions:** v0.20.0+
 
 ### Context
 
@@ -175,9 +326,9 @@ consumer of inference results.
 
 ## Decision: Preflight checks refactoring to a class-based, registry-backed model
 
-**Status**: Accepted
-**Date**: 2026-01-04
-**Scope**: `fontshow.preflight`
+- **Status**: Accepted
+- **Date**: 2026-01-04
+- **Scope**: `fontshow.preflight`
 
 ### Context
 
@@ -346,9 +497,9 @@ is now considered **stable** rather than experimental.
 
 ## Decision: Transition to a Class-Based Model for Preflight Checks
 
-**Status:** Accepted
-**Area:** Preflight / Testing / Architecture
-**Date:** 2026-01-03
+- **Status:** Accepted
+- **Area:** Preflight / Testing / Architecture
+- **Date:** 2026-01-03
 
 ### Context
 
@@ -416,9 +567,9 @@ for all preflight checks.
 
 ## Decision: Explicit Exposure of Check Modules in the Runner
 
-**Status:** Accepted
-**Area:** Testing / Public API
-**Date:** 2026-01-xx
+- **Status:** Accepted
+- **Area:** Testing / Public API
+- **Date:** 2026-01-03
 
 ### Context
 
@@ -461,9 +612,9 @@ This is a deliberate design choice and is documented as such.
 
 ## Decision: Font discovery preflight checks rely on fc-list only
 
-**Status**: Accepted
-**Context**: Preflight stage (C5.3)
-**Date**: 2026-01-03
+- **Status**: Accepted
+- **Context**: Preflight stage (C5.3)
+- **Date**: 2026-01-03
 
 ### Decision
 
