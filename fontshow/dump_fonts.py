@@ -411,6 +411,15 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
             "exit_code": proc.returncode,
         },
     )
+    if proc.returncode != 0:
+        log.warning(
+            "fc-query execution failed",
+            extra={
+                "font_path": str(path),
+                "exit_code": proc.returncode,
+                "stderr": proc.stderr,
+            },
+        )
 
     raw = proc.stdout if proc.stdout else ""
     log.trace(
