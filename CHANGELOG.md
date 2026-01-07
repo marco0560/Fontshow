@@ -1,3 +1,9 @@
+## [0.28.1](https://github.com/marco0560/Fontshow/compare/v0.28.0...v0.28.1) (2026-01-07)
+
+### Bug Fixes
+
+* **cli:** align root fontshow version with package version ([c8fc976](https://github.com/marco0560/Fontshow/commit/c8fc976996a8d26797fc258d5adeb5f99e50445b))
+
 ## [0.28.0](https://github.com/marco0560/Fontshow/compare/v0.27.0...v0.28.0) (2026-01-07)
 
 ### Features
