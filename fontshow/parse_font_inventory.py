@@ -149,6 +149,56 @@ LANGUAGE_PRIMARY_SCRIPT: dict[str, str] = {
 # ============================================================
 
 
+def normalize_charset_ranges(ranges: list[list[int]]) -> dict[str, Any]:
+    """
+    Normalize a list of Unicode codepoint ranges.
+
+    The normalization:
+    - sorts ranges by start codepoint,
+    - merges overlapping or adjacent ranges,
+    - computes the total number of covered codepoints (inclusive).
+
+    The function is pure and idempotent.
+
+    Parameters
+    ----------
+    ranges : list[list[int]]
+        A list of [start, end] codepoint ranges (inclusive).
+
+    Returns
+    -------
+    dict[str, Any]
+        {
+            "ranges": list[list[int]],
+            "codepoints_count": int,
+        }
+    """
+    if not ranges:
+        return {"ranges": [], "codepoints_count": 0}
+
+    # Defensive copy + sort
+    ordered = sorted((int(a), int(b)) for a, b in ranges)
+
+    merged: list[list[int]] = []
+    cur_start, cur_end = ordered[0]
+
+    for start, end in ordered[1:]:
+        if start <= cur_end + 1:
+            cur_end = max(cur_end, end)
+        else:
+            merged.append([cur_start, cur_end])
+            cur_start, cur_end = start, end
+
+    merged.append([cur_start, cur_end])
+
+    codepoints_count = sum(end - start + 1 for start, end in merged)
+
+    return {
+        "ranges": merged,
+        "codepoints_count": codepoints_count,
+    }
+
+
 def add_structured_warning(
     target: dict,
     *,
@@ -599,6 +649,20 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
 
         # Unicode coverage metadata extracted upstream
         coverage: dict[str, Any] = font.get("coverage", {}) or {}
+
+        charset = coverage.get("charset")
+        if isinstance(charset, dict) and charset.get("ranges"):
+            normalized = normalize_charset_ranges(charset["ranges"])
+            coverage["normalized_charset"] = normalized
+
+            log.debug(
+                "charset normalized",
+                extra={
+                    "font_path": font_path,
+                    "ranges_count": len(normalized["ranges"]),
+                    "codepoints_count": normalized["codepoints_count"],
+                },
+            )
 
         # Declared metadata provided by FontConfig or inventory tools
         # These values are informational and never overwritten
