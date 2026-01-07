@@ -1153,48 +1153,14 @@ def build_font_descriptor(
 # -----------------------
 
 
-def register_cli(parser) -> None:
+def build_parser(parser: argparse.ArgumentParser) -> None:
     """
-    Register dump-fonts CLI arguments.
-
-    This function is used by the top-level fontshow dispatcher.
+    Register dump-fonts CLI arguments on an existing parser.
     """
-    add_common_arguments(parser)
-
-    parser.add_argument(
-        "-o",
-        "--output",
-        required=True,
-        help="Output inventory JSON file",
+    parser.description = (
+        "Dump installed fonts into a canonical Fontshow JSON inventory."
     )
-
-    parser.add_argument(
-        "--include-fc-charset",
-        action="store_true",
-        help="Include raw FontConfig charset data (Linux only)",
-    )
-
-    parser.set_defaults(func=main)
-
-
-def main() -> None:
-    """CLI entry point for font inventory generation.
-
-    This function orchestrates the full dump pipeline:
-
-    1. Discover installed font files for the current platform.
-    2. Extract per-face metadata using ``fontTools``.
-    3. Optionally enrich metadata using FontConfig (Linux only).
-    4. Build canonical font descriptors.
-    5. Write the resulting JSON inventory to disk.
-
-    All heavy lifting is delegated to dedicated helpers; this function is
-    intentionally linear and side-effect driven (filesystem I/O).
-    """
-    parser = argparse.ArgumentParser(
-        description="Dump installed fonts into a canonical Fontshow JSON inventory.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser.add_argument(
         "-o",
         "--output",
@@ -1223,6 +1189,33 @@ def main() -> None:
     )
     add_common_arguments(parser)
 
+
+def register_cli(parser) -> None:
+    """
+    Register dump-fonts CLI arguments.
+
+    This function is used by the top-level fontshow dispatcher.
+    """
+    build_parser(parser)
+    parser.set_defaults(func=main)
+
+
+def main() -> None:
+    """CLI entry point for font inventory generation.
+
+    This function orchestrates the full dump pipeline:
+
+    1. Discover installed font files for the current platform.
+    2. Extract per-face metadata using ``fontTools``.
+    3. Optionally enrich metadata using FontConfig (Linux only).
+    4. Build canonical font descriptors.
+    5. Write the resulting JSON inventory to disk.
+
+    All heavy lifting is delegated to dedicated helpers; this function is
+    intentionally linear and side-effect driven (filesystem I/O).
+    """
+    parser = argparse.ArgumentParser(prog="dump-fonts")
+    build_parser(parser)
     args = parser.parse_args()
 
     platform_name = platform.system().lower()

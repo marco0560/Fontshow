@@ -1020,44 +1020,12 @@ def font_matches_test_set(font_name: str, test_fonts: set[str]) -> bool:
 #   producing partial output rather than aborting the whole run.
 # - The CLI is intentionally thin: orchestration only, no business logic.
 #
-
-
-def register_cli(parser) -> None:
+def build_parser(parser: argparse.ArgumentParser) -> None:
     """
-    Register create-catalog CLI arguments.
-
-    This function is used by the top-level fontshow dispatcher.
+    Register dump-fonts CLI arguments on an existing parser.
     """
-    add_common_arguments(parser)
-
-    parser.add_argument(
-        "inventory",
-        help="Input enriched inventory JSON file",
-    )
-
-    parser.add_argument(
-        "-o",
-        "--output",
-        required=True,
-        help="Output catalog file (e.g. PDF)",
-    )
-
-    parser.add_argument(
-        "--format",
-        choices=["pdf"],
-        default="pdf",
-        help="Output catalog format",
-    )
-
-    parser.set_defaults(func=main)
-
-
-def main() -> None:
-    global TEST_FONTS
-
-    parser = argparse.ArgumentParser(
-        description="Generate system font catalog in LaTeX"
-    )
+    parser.description = "Generate system font catalog in LaTeX"
+    parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser.add_argument(
         "-t",
         "--test",
@@ -1102,6 +1070,22 @@ def main() -> None:
     )
     add_common_arguments(parser)
 
+
+def register_cli(parser) -> None:
+    """
+    Register create-catalog CLI arguments.
+
+    This function is used by the top-level fontshow dispatcher.
+    """
+    build_parser(parser)
+    parser.set_defaults(func=main)
+
+
+def main() -> None:
+    global TEST_FONTS
+
+    parser = argparse.ArgumentParser(prog="create-catalog")
+    build_parser(parser)
     args = parser.parse_args()
 
     TEST_FONTS = set()

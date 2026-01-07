@@ -940,67 +940,16 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
 # ============================================================
 # CLI
 # ============================================================
-def register_cli(parser) -> None:
+
+
+def build_parser(parser: argparse.ArgumentParser) -> None:
     """
-    Register parse-inventory CLI arguments.
-
-    This function is used by the top-level fontshow dispatcher.
+    Register parse-inventory CLI arguments on an existing parser.
     """
-    add_common_arguments(parser)
-
-    parser.add_argument(
-        "inventory",
-        help="Input inventory JSON file (raw inventory)",
+    parser.description = (
+        "Parse and enrich a Fontshow font_inventory.json with deterministic inference."
     )
-
-    parser.add_argument(
-        "-o",
-        "--output",
-        required=True,
-        help="Output enriched inventory JSON file",
-    )
-
-    parser.add_argument(
-        "-i",
-        "--infer-level",
-        choices=["conservative", "medium", "aggressive"],
-        default="medium",
-        help="Inference aggressiveness level",
-    )
-
-    parser.add_argument(
-        "--validate-inventory",
-        action="store_true",
-        help="Validate inventory schema after enrichment",
-    )
-
-    parser.set_defaults(func=main)
-
-
-def main() -> None:
-    """
-    Command-line interface entry point for inventory parsing and inference.
-
-    This function:
-    - parses CLI arguments
-    - loads a Fontshow font inventory from JSON
-    - optionally validates the inventory structure
-    - enriches the inventory with deterministic inference results
-    - writes the enriched inventory back to disk
-
-    The function handles all user-facing error reporting and exit codes,
-    while delegating validation and inference logic to dedicated helpers.
-
-    Notes
-    -----
-    - This function performs file I/O.
-    - Core inference logic is implemented in :func:`parse_inventory`.
-    - Validation logic is implemented in :func:`validate_inventory`.
-    """
-    parser = argparse.ArgumentParser(
-        description="Parse and enrich a Fontshow font_inventory.json with deterministic inference.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser.add_argument(
         "input",
         type=Path,
@@ -1030,6 +979,39 @@ def main() -> None:
     )
     add_common_arguments(parser)
 
+
+def register_cli(parser) -> None:
+    """
+    Register parse-inventory CLI arguments.
+
+    This function is used by the top-level fontshow dispatcher.
+    """
+    build_parser(parser)
+    parser.set_defaults(func=main)
+
+
+def main() -> None:
+    """
+    Command-line interface entry point for inventory parsing and inference.
+
+    This function:
+    - parses CLI arguments
+    - loads a Fontshow font inventory from JSON
+    - optionally validates the inventory structure
+    - enriches the inventory with deterministic inference results
+    - writes the enriched inventory back to disk
+
+    The function handles all user-facing error reporting and exit codes,
+    while delegating validation and inference logic to dedicated helpers.
+
+    Notes
+    -----
+    - This function performs file I/O.
+    - Core inference logic is implemented in :func:`parse_inventory`.
+    - Validation logic is implemented in :func:`validate_inventory`.
+    """
+    parser = argparse.ArgumentParser(prog="parse-inventory")
+    build_parser(parser)
     args = parser.parse_args()
 
     if args.verbose and args.quiet:
