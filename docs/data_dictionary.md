@@ -115,8 +115,9 @@ Font container and format classification.
 
 ### coverage
 
-Raw, declarative coverage metadata.
-No inference or normalization is performed here.
+Raw and derived coverage metadata.
+Coverage fields are descriptive and diagnostic; no inference or semantic
+decisions are performed at this level.
 
 - `unicode`
   - `count` (integer)
@@ -125,6 +126,7 @@ No inference or normalization is performed here.
 
 - `unicode_blocks` (object)
   Mapping of Unicode block names to approximate coverage metrics.
+  This data is typically extracted from external tools or inventory sources.
 
 - `scripts` (list of strings)
   Script tags declared by FontConfig (ISO 15924 / OpenType).
@@ -133,7 +135,32 @@ No inference or normalization is performed here.
   Language tags declared by FontConfig (`lang:`), BCP-47 style.
 
 - `charset` (object or null)
-  Raw FontConfig charset ranges.
+  Raw FontConfig charset ranges, when enabled at extraction time.
+  This data is file-level, best-effort, and not normalized.
+
+---
+
+#### Charset-derived coverage (diagnostic)
+
+The following fields are derived from FontConfig charset data when available.
+They are **diagnostic only** and do not affect inference logic.
+
+- `normalized_charset` (object)
+  Deterministic normalization of raw charset ranges.
+  Ranges are sorted and merged, and a total codepoint count is computed.
+
+  - `ranges` (list of `[start, end]` integer pairs)
+  - `codepoints_count` (integer)
+
+- `unicode_blocks_from_charset` (object)
+  Mapping of Unicode block names to the number of codepoints covered by the
+  normalized charset.
+  This field does not replace `coverage.unicode_blocks`.
+
+- `script_coverage_from_charset` (object)
+  Mapping of script tags (ISO 15924) to estimated coverage ratios
+  (floating-point values between 0.0 and 1.0).
+  This data is informational and non-authoritative.
 
 ---
 

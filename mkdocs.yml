@@ -55,6 +55,7 @@ nav:
       - Data Dictionary: data_dictionary.md
       - Schema:
           - Overview: schema/index.md
+          - Schema rationale: schema/font-inventory-schema.md
           - Inventory v1.1: schema/inventory-1.1.schema.json
 
   - Validation & Testing:

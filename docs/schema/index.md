@@ -10,6 +10,7 @@ font inventory files.
 
 ## Files
 
+- [`font-inventory-schema.md`](font-inventory-schema.md)
 - [`inventory-1.1.schema.json`](inventory-1.1.schema.json)
 
 The schema supports both raw and enriched inventories.
