@@ -1,3 +1,10 @@
+## [0.27.0](https://github.com/marco0560/Fontshow/compare/v0.26.0...v0.27.0) (2026-01-07)
+
+### Features
+
+* **parser:** add deterministic normalization of FontConfig charset ranges ([643a00e](https://github.com/marco0560/Fontshow/commit/643a00eb0ce8ea127d262c2c03ce144efe6bd5ef))
+* **parser:** derive script coverage from charset-derived unicode blocks ([adc6347](https://github.com/marco0560/Fontshow/commit/adc6347a227416b2f9e6cb834811a8afbb5d0231))
+
 ## [0.26.0](https://github.com/marco0560/Fontshow/compare/v0.25.0...v0.26.0) (2026-01-06)
 
 ### Features
