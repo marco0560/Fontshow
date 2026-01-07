@@ -1151,6 +1151,32 @@ def build_font_descriptor(
 # -----------------------
 # Main
 # -----------------------
+
+
+def register_cli(parser) -> None:
+    """
+    Register dump-fonts CLI arguments.
+
+    This function is used by the top-level fontshow dispatcher.
+    """
+    add_common_arguments(parser)
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        required=True,
+        help="Output inventory JSON file",
+    )
+
+    parser.add_argument(
+        "--include-fc-charset",
+        action="store_true",
+        help="Include raw FontConfig charset data (Linux only)",
+    )
+
+    parser.set_defaults(func=main)
+
+
 def main() -> None:
     """CLI entry point for font inventory generation.
 

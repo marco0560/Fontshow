@@ -940,6 +940,41 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
 # ============================================================
 # CLI
 # ============================================================
+def register_cli(parser) -> None:
+    """
+    Register parse-inventory CLI arguments.
+
+    This function is used by the top-level fontshow dispatcher.
+    """
+    add_common_arguments(parser)
+
+    parser.add_argument(
+        "inventory",
+        help="Input inventory JSON file (raw inventory)",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        required=True,
+        help="Output enriched inventory JSON file",
+    )
+
+    parser.add_argument(
+        "-i",
+        "--infer-level",
+        choices=["conservative", "medium", "aggressive"],
+        default="medium",
+        help="Inference aggressiveness level",
+    )
+
+    parser.add_argument(
+        "--validate-inventory",
+        action="store_true",
+        help="Validate inventory schema after enrichment",
+    )
+
+    parser.set_defaults(func=main)
 
 
 def main() -> None:

@@ -37,6 +37,7 @@ docs = [
 ]
 
 [project.scripts]
+fontshow = "fontshow.__main__:main"
 fontshow-validate = "fontshow.cli_utils:cli_validate_inventory"
 
 [tool.black]

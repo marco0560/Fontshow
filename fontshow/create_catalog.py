@@ -1022,6 +1022,36 @@ def font_matches_test_set(font_name: str, test_fonts: set[str]) -> bool:
 #
 
 
+def register_cli(parser) -> None:
+    """
+    Register create-catalog CLI arguments.
+
+    This function is used by the top-level fontshow dispatcher.
+    """
+    add_common_arguments(parser)
+
+    parser.add_argument(
+        "inventory",
+        help="Input enriched inventory JSON file",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        required=True,
+        help="Output catalog file (e.g. PDF)",
+    )
+
+    parser.add_argument(
+        "--format",
+        choices=["pdf"],
+        default="pdf",
+        help="Output catalog format",
+    )
+
+    parser.set_defaults(func=main)
+
+
 def main() -> None:
     global TEST_FONTS
 

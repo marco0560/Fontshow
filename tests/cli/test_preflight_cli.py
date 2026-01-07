@@ -27,7 +27,7 @@ def test_quiet_produces_no_output(monkeypatch):
         )(),
     )
 
-    code, out = run_cli(main, ["fontshow", "--quiet"])
+    code, out = run_cli(main, ["fontshow", "preflight", "--quiet"])
     assert out == ""
     assert code == 0
 
@@ -42,6 +42,6 @@ def test_default_prints_summary(monkeypatch):
         )(),
     )
 
-    code, out = run_cli(main, ["fontshow"])
+    code, out = run_cli(main, ["fontshow", "preflight"])
     assert "Preflight passed." in out
     assert code == 0
