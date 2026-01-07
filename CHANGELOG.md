@@ -1,3 +1,9 @@
+## [0.28.0](https://github.com/marco0560/Fontshow/compare/v0.27.0...v0.28.0) (2026-01-07)
+
+### Features
+
+* **cli:** introduce unified fontshow dispatcher and subcommands ([ba3d522](https://github.com/marco0560/Fontshow/commit/ba3d522d797c2b6aac2c46c3571d00c156cecc64))
+
 ## [0.27.0](https://github.com/marco0560/Fontshow/compare/v0.26.0...v0.27.0) (2026-01-07)
 
 ### Features
