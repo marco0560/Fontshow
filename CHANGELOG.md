@@ -1,3 +1,9 @@
+## [0.28.2](https://github.com/marco0560/Fontshow/compare/v0.28.1...v0.28.2) (2026-01-07)
+
+### Bug Fixes
+
+* **cli:** unify CLI syntax across dispatcher and module entrypoint ([b970dd9](https://github.com/marco0560/Fontshow/commit/b970dd95933c9f6ad187481e1aeaec65aa570e2d))
+
 ## [0.28.1](https://github.com/marco0560/Fontshow/compare/v0.28.0...v0.28.1) (2026-01-07)
 
 ### Bug Fixes
