@@ -1,5 +1,6 @@
 import argparse
 import sys
+from importlib.metadata import PackageNotFoundError, version
 
 import fontshow.create_catalog
 import fontshow.dump_fonts
@@ -31,6 +32,11 @@ def _run_preflight(args) -> int:
 
 
 def main() -> int:
+    try:
+        FONTSHOW_VERSION = version("fontshow")
+    except PackageNotFoundError:
+        FONTSHOW_VERSION = "development"
+
     parser = argparse.ArgumentParser(
         prog="fontshow",
         description=(
@@ -48,7 +54,7 @@ def main() -> int:
         "-V",
         "--version",
         action="version",
-        version="fontshow (development)",
+        version=f"fontshow {FONTSHOW_VERSION}",
     )
 
     subparsers = parser.add_subparsers(
