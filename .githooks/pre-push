@@ -1,8 +1,13 @@
 #!/bin/sh
+set -e
 
 echo "🔍 Running pre-commit checks before push..."
 pre-commit run --all-files
-echo "✅ pre-push checks passed"
+echo "✅ pre-commit checks passed"
+
+echo "🧪 Running test suite..."
+pytest -q
+echo "✅ Tests passed"
 
 echo "📦 Preview changelog (semantic-release dry-run)..."
 
@@ -18,3 +23,5 @@ if command -v npx >/dev/null 2>&1; then
 else
   echo "⚠️  npx not found, skipping semantic-release preview (CI will enforce)"
 fi
+
+echo "🚀 Pre-push checks completed successfully"

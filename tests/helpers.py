@@ -28,6 +28,7 @@ def make_fc_query_output(
     decorative: bool | None = None,
     color: bool | None = None,
     variable: bool | None = None,
+    returncode: int = 0,
 ):
     """
     Factory helper for mocking fc-query output.
@@ -53,7 +54,7 @@ def make_fc_query_output(
     if variable is not None:
         lines.append(f"variable: {'true' if variable else 'false'}")
 
-    return SimpleNamespace(stdout="\n".join(lines))
+    return SimpleNamespace(stdout="\n".join(lines), stderr="", returncode=returncode)
 
 
 def _ok_result(check_id: str):
