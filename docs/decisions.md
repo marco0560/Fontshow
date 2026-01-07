@@ -17,6 +17,92 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## C-Step: Charset-driven enrichment (5.1–5.3)
+
+**Status**: Completed
+**Date**: 2026-01-07
+**Scope**: `parse_font_inventory.py`
+**Related components**: `dump_fonts.py`, `infer_languages.py`
+
+---
+
+### Context
+
+Fontshow inventories may optionally include raw FontConfig charset data
+at file level (produced by `dump_fonts.py` when enabled).
+Prior to this step, charset data was collected but not consumed by the
+parsing or inference pipeline.
+
+At the same time, language and script inference relied exclusively on
+Unicode block coverage derived from other sources, without leveraging
+the potentially richer information provided by the charset.
+
+---
+
+#### Decision
+
+We introduced a **three-phase, non-invasive enrichment pipeline**
+based on FontConfig charset data:
+
+**5.1 — Charset normalization**
+- Raw charset ranges are normalized into a deterministic, merged form.
+- The result is attached as `coverage.normalized_charset`.
+- No semantic interpretation is performed at this stage.
+
+**5.2 — Unicode blocks derived from charset**
+- Normalized charset ranges are mapped to Unicode blocks using the
+  existing `UNICODE_BLOCKS` table.
+- The result is attached as `coverage.unicode_blocks_from_charset`.
+- Existing `coverage.unicode_blocks` data is left untouched.
+
+**5.3 — Script coverage derived from charset**
+- Charset-derived Unicode blocks are mapped to script coverage ratios
+  using the existing `UNICODE_SCRIPT_RANGES` table.
+- The result is attached as `coverage.script_coverage_from_charset`.
+- This data is purely diagnostic and does not affect script inference.
+
+Each phase:
+- Is deterministic and idempotent
+- Produces explicit, separate metadata
+- Emits per-font DEBUG logs for observability
+- Is covered by unit and integration tests
+
+---
+
+### Rationale
+
+This approach deliberately avoids premature semantic decisions:
+
+- Charset-derived data is **added**, never merged or substituted.
+- No automatic fallback or precedence rules are introduced.
+- Inference logic remains unchanged.
+
+By keeping raw, normalized, and derived representations separate,
+we preserve auditability and allow future policy decisions to be
+made explicitly and incrementally.
+
+---
+
+### Consequences
+
+- Inventories may now contain additional optional coverage fields:
+  - `normalized_charset`
+  - `unicode_blocks_from_charset`
+  - `script_coverage_from_charset`
+- These fields are not yet reflected in the JSON schema.
+- Consumers must treat them as optional and informational.
+
+A follow-up decision is required to determine whether:
+- the existing schema version (1.1) should be extended, or
+- a new schema version should be introduced to formalize these fields.
+
+### Follow-ups
+
+- Evaluate schema evolution strategy for charset-derived metadata.
+- Decide if and how charset-driven signals should influence inference
+  in future C-steps.
+
+
 ## Decision — Charset lifecycle and current non-consumption
 
 ### Context

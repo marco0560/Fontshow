@@ -64,30 +64,76 @@
         },
 
         "coverage": {
-          "type": "object",
-          "description": "Raw coverage information extracted from font analysis tools.",
-          "properties": {
+        "type": "object",
+        "description": "Raw and derived coverage information extracted from font analysis tools.",
+        "properties": {
             "unicode_blocks": {
-              "type": "object",
-              "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
                 "type": "integer",
                 "minimum": 0
-              }
+            }
             },
             "scripts": {
-              "type": "array",
-              "items": {
+            "type": "array",
+            "items": {
                 "type": "string"
-              }
+            }
             },
             "languages": {
-              "type": "array",
-              "items": {
+            "type": "array",
+            "items": {
                 "type": "string"
-              }
             }
-          },
-          "additionalProperties": true
+            },
+
+            "normalized_charset": {
+            "type": "object",
+            "description": "Deterministic normalization of raw FontConfig charset data (diagnostic only).",
+            "properties": {
+                "ranges": {
+                "type": "array",
+                "description": "Merged and sorted Unicode codepoint ranges (inclusive).",
+                "items": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": {
+                    "type": "integer",
+                    "minimum": 0
+                    }
+                }
+                },
+                "codepoints_count": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Total number of Unicode codepoints covered by the charset."
+                }
+            },
+            "required": ["ranges", "codepoints_count"],
+            "additionalProperties": false
+            },
+
+            "unicode_blocks_from_charset": {
+            "type": "object",
+            "description": "Unicode block coverage derived from normalized charset data (diagnostic only).",
+            "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+            }
+            },
+
+            "script_coverage_from_charset": {
+            "type": "object",
+            "description": "Estimated script coverage ratios derived from charset-based Unicode blocks (diagnostic only).",
+            "additionalProperties": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+            }
+            }
+        },
+        "additionalProperties": true
         },
 
         "inference": {
