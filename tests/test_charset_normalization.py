@@ -1,4 +1,7 @@
-from fontshow.parse_font_inventory import normalize_charset_ranges
+from fontshow.parse_font_inventory import (
+    normalize_charset_ranges,
+    unicode_blocks_from_charset_ranges,
+)
 
 
 def test_normalize_charset_merges_and_sorts():
@@ -62,3 +65,40 @@ def test_parse_inventory_adds_normalized_charset(enable_fontshow_logging):
     cov = inventory["fonts"][0]["coverage"]
     assert "normalized_charset" in cov
     assert cov["normalized_charset"]["ranges"] == [[1, 5]]
+
+
+def test_unicode_blocks_from_charset_basic_latin():
+    ranges = [[0x0020, 0x007E]]
+    blocks = unicode_blocks_from_charset_ranges(ranges)
+
+    assert blocks["Basic Latin"] == 0x007E - 0x0020 + 1
+
+
+def test_parse_inventory_adds_unicode_blocks_from_charset(enable_fontshow_logging):
+    import importlib
+
+    import fontshow.parse_font_inventory
+
+    importlib.reload(fontshow.parse_font_inventory)
+
+    inventory = {
+        "schema_version": "1.0",
+        "fonts": [
+            {
+                "path": "/fake/font.ttf",
+                "identity": {"family": "Fake", "style": "Regular"},
+                "coverage": {
+                    "charset": {
+                        "source": "fontconfig",
+                        "ranges": [[0x0020, 0x007E]],
+                    }
+                },
+            }
+        ],
+    }
+
+    fontshow.parse_font_inventory.parse_inventory(inventory, level="medium")
+
+    cov = inventory["fonts"][0]["coverage"]
+    assert "unicode_blocks_from_charset" in cov
+    assert "Basic Latin" in cov["unicode_blocks_from_charset"]

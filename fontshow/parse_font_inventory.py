@@ -24,6 +24,7 @@ from typing import Any
 
 from fontshow import __version__
 from fontshow.cli_utils import add_common_arguments
+from fontshow.dump_fonts import UNICODE_BLOCKS
 from fontshow.infer_languages import infer_languages
 from fontshow.logging_utils import log
 from fontshow.schema_validation import validate_inventory_schema
@@ -147,6 +148,88 @@ LANGUAGE_PRIMARY_SCRIPT: dict[str, str] = {
 # ============================================================
 # Helper functions
 # ============================================================
+
+
+def unicode_blocks_from_charset_ranges(
+    ranges: list[list[int]],
+) -> dict[str, int]:
+    """
+    Derive Unicode block coverage counts from normalized charset ranges.
+
+    Parameters
+    ----------
+    ranges : list[list[int]]
+        Normalized [start, end] codepoint ranges (inclusive).
+
+    Returns
+    -------
+    dict[str, int]
+        Mapping of Unicode block name to covered codepoint count.
+    """
+    blocks: dict[str, int] = {}
+
+    for r_start, r_end in ranges:
+        for block_name, b_start, b_end in UNICODE_BLOCKS:
+            start = max(r_start, b_start)
+            end = min(r_end, b_end)
+            if start <= end:
+                blocks[block_name] = blocks.get(block_name, 0) + (end - start + 1)
+
+    return blocks
+
+
+def script_coverage_from_unicode_blocks(
+    unicode_blocks: dict[str, int],
+    script_ranges: dict[str, list[tuple[int, int]]],
+    total_codepoints: int,
+) -> dict[str, float]:
+    """
+    Derive script coverage ratios from Unicode block coverage.
+
+    Parameters
+    ----------
+    unicode_blocks : dict[str, int]
+        Mapping of Unicode block name to covered codepoint count.
+    script_ranges : dict[str, list[tuple[int, int]]]
+        Mapping of script tag to list of Unicode codepoint ranges.
+    total_codepoints : int
+        Total number of codepoints covered by the charset.
+
+    Returns
+    -------
+    dict[str, float]
+        Mapping of script tag to coverage ratio (0.0–1.0).
+    """
+    if not unicode_blocks or total_codepoints <= 0:
+        return {}
+
+    # Map block name -> (start, end)
+    block_ranges = {name: (start, end) for name, start, end in UNICODE_BLOCKS}
+
+    script_counts: dict[str, int] = {}
+
+    for block_name, count in unicode_blocks.items():
+        block_range = block_ranges.get(block_name)
+        if not block_range:
+            continue
+
+        b_start, b_end = block_range
+
+        for script, ranges in script_ranges.items():
+            for r_start, r_end in ranges:
+                # Check intersection between block and script range
+                if b_start <= r_end and b_end >= r_start:
+                    script_counts[script] = script_counts.get(script, 0) + count
+                    break
+            else:
+                continue
+            break
+
+    return {
+        script: cnt / total_codepoints
+        for script, cnt in script_counts.items()
+        if cnt > 0
+    }
 
 
 def normalize_charset_ranges(ranges: list[list[int]]) -> dict[str, Any]:
@@ -663,6 +746,41 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
                     "codepoints_count": normalized["codepoints_count"],
                 },
             )
+
+            normalized = coverage.get("normalized_charset")
+            if normalized:
+                blocks = unicode_blocks_from_charset_ranges(normalized["ranges"])
+                if blocks:
+                    coverage["unicode_blocks_from_charset"] = blocks
+
+                    log.debug(
+                        "unicode blocks derived from charset",
+                        extra={
+                            "font_path": font_path,
+                            "blocks_count": len(blocks),
+                        },
+                    )
+
+        blocks = coverage.get("unicode_blocks_from_charset")
+        normalized = coverage.get("normalized_charset")
+
+        if blocks and normalized:
+            script_cov = script_coverage_from_unicode_blocks(
+                blocks,
+                UNICODE_SCRIPT_RANGES,
+                normalized["codepoints_count"],
+            )
+
+            if script_cov:
+                coverage["script_coverage_from_charset"] = script_cov
+
+                log.debug(
+                    "script coverage derived from charset",
+                    extra={
+                        "font_path": font_path,
+                        "scripts_count": len(script_cov),
+                    },
+                )
 
         # Declared metadata provided by FontConfig or inventory tools
         # These values are informational and never overwritten
