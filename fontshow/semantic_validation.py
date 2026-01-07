@@ -1,3 +1,15 @@
+"""
+Semantic validation for enriched Fontshow inventories.
+
+This module performs semantic consistency checks on enriched inventory data.
+Semantic validation:
+- does not perform inference,
+- does not normalize or modify data,
+- reports issues exclusively via structured warnings.
+
+Semantic validation is distinct from both schema validation and inference logic.
+"""
+
 from typing import Any
 
 import pycountry
@@ -5,13 +17,12 @@ import pycountry
 
 def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
     """
-    Validate ISO language codes found in a Fontshow inventory.
+    Check semantic consistency of an enriched Fontshow inventory.
 
-    This function performs semantic validation beyond JSON Schema,
-    checking that all inferred and declared language codes correspond
-    to valid ISO 639 identifiers.
+    This function performs semantic checks without modifying data.
+    All detected issues are reported as structured warnings.
 
-    Returns structured warnings; never raises.
+    No inference, normalization, or enrichment is performed here.
     """
     warnings: list[dict[str, Any]] = []
 

@@ -511,74 +511,25 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
 
 def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     """
-    Enrich a font inventory with deterministic inference results.
+    Enrich a raw Fontshow inventory with inferred scripts and languages.
 
-    This function iterates over the ``fonts`` entries of an inventory and
-    augments each font with an ``inference`` block. The original inventory
-    data is preserved and never overwritten.
+    This function transforms a *raw* inventory (schema_version = 1.0)
+    into an *enriched* inventory (schema_version = 1.1).
 
-    Inference is entirely deterministic and based on Unicode metadata
-    already present in the inventory (e.g. Unicode blocks, declared scripts).
+    Characteristics:
+    - enrichment is best-effort and non-destructive,
+    - original raw metadata is preserved,
+    - inference results are additive and audit-friendly,
+    - recoverable issues are reported via structured warnings.
 
-    The enrichment is performed *in place*.
+    Limitations:
+    - FontConfig-derived charset metadata is preserved but NOT consumed,
+      normalized, or interpreted at this stage.
+    - Script and language inference relies exclusively on Unicode
+      coverage metadata.
 
-    Added structure
-    ---------------
-    Each font entry gains an ``inference`` dictionary with the following
-    structure::
-
-        font["inference"] = {
-            "level": str,
-            "scripts": list[str],
-            "languages": list[str],
-            "declared_scripts": list[str],
-            "declared_languages": list[str],
-            "unicode_blocks": dict[str, int],
-        }
-
-    Semantic meaning of fields
-    --------------------------
-    - ``scripts``:
-        Scripts inferred from Unicode coverage (C4.2).
-    - ``languages``:
-        Languages inferred deterministically from Unicode *block coverage*
-        (C4.3, authoritative inference).
-    - ``declared_scripts`` / ``declared_languages``:
-        Metadata declared by FontConfig or upstream tools.
-        These fields are informational only and are never modified.
-    - ``unicode_blocks``:
-        Raw Unicode block coverage used as inference evidence.
-
-    Parameters
-    ----------
-    data : dict[str, Any]
-        Parsed JSON font inventory as a Python dictionary.
-        The dictionary is modified in place.
-
-    level : str
-        Inference aggressiveness level. This parameter controls how
-        conservative or permissive the inference logic should be.
-        It is propagated to all inference steps.
-
-    Returns
-    -------
-    dict[str, Any]
-        The same inventory dictionary, enriched with inference results.
-
-    Notes
-    -----
-    - This function does not perform any I/O.
-    - No declared metadata is ever overwritten.
-    - Inference results are reproducible for the same input inventory.
-    - This function represents the main inference orchestration layer
-      of Fontshow.
-    - Legacy script-only language inference is intentionally not used.
-
-    Introduced in
-    -------------
-    C4.1 (initial version)
-    Extended in C4.2 (script inference)
-    Extended in C4.3 (language inference)
+    Returns:
+        The enriched inventory dictionary.
     """
     # Standard library imports for debug purposes
     import os

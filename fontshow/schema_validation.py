@@ -1,3 +1,17 @@
+"""
+Schema validation for Fontshow inventories.
+
+This module performs best-effort validation of Fontshow inventories against the
+declared JSON Schema versions.
+
+Validation is warning-based:
+- recoverable issues generate structured warnings,
+- unrecoverable schema violations may raise exceptions,
+- validation does not modify inventory data.
+
+This module is not a pipeline gate and does not abort normal processing.
+"""
+
 from __future__ import annotations
 
 import json

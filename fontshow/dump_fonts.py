@@ -1,34 +1,17 @@
 #!/usr/bin/env python3
 """
-Fontshow - cross-platform font inventory dumper (Linux + Windows)
+Fontshow raw inventory generation.
 
-This script discovers installed font files and writes a canonical JSON inventory
-used by the rest of Fontshow (parsing + LaTeX rendering).
+This module produces a *raw* Fontshow inventory (schema_version = 1.0) by
+collecting font metadata from system sources such as FontConfig.
 
-Key features
-------------
-- Cross-platform discovery:
-  - Linux: FontConfig (fc-list)
-  - Windows: common font directories (Windows Fonts + user fonts)
-- Deep metadata extraction via fontTools
-- TrueType Collections (.ttc) are fully supported:
-  - each face inside a TTC becomes a separate "font" entry
-  - identity carries (file + ttc_index)
-- Optional Linux-only enrichment via FontConfig (fc-query):
-  - scripts / languages / charset
-- Persistent caching to avoid repeated decompression/decompilation
+The output of this stage is intentionally best-effort and informational:
+- metadata may be incomplete or partially missing,
+- no semantic interpretation or inference is performed here,
+- extracted data is preserved verbatim for downstream enrichment.
 
-Output
-------
-A single JSON file:
-  {
-    "metadata": {...},
-    "fonts": [ {font descriptor}, ... ]
-  }
-
-The JSON schema is documented in:
-- docs/font-inventory-schema.md
-- docs/dump-fonts.md
+In particular, FontConfig-derived charset metadata (when enabled) is extracted
+and serialized but not interpreted at this stage.
 """
 
 from __future__ import annotations
@@ -367,34 +350,29 @@ def _parse_fc_charset_ranges(raw: str) -> list[str]:
 
 
 def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any]:
-    """Extract a limited set of FontConfig-derived metadata (Linux only).
+    """
+    Extract a limited set of FontConfig-derived metadata (Linux only).
 
     This function invokes ``fc-query`` and parses a *small, stable subset*
-    of its output, suitable for inclusion in the Fontshow inventory.
+    of its output, suitable for inclusion in the Fontshow *raw* inventory.
 
     Important notes:
-    - The extraction is **file-level**, not face-level.
-    - For TTC files, FontConfig may describe multiple faces together;
-      per-face script/language inference is intentionally deferred to
-      ``parse_font_inventory.py``.
-    - All fields are optional and best-effort.
+    - Extraction is **file-level**, not face-level.
+    - For TTC files, FontConfig may describe multiple faces together.
+    - All extracted fields are best-effort and may be incomplete.
+    - FontConfig charset data, when included, is preserved verbatim and
+      NOT normalized or interpreted at this stage.
 
-    Extracted fields:
-    - ``languages``: list of BCP-47-like language tags.
-    - ``scripts``: OpenType script tags derived from ``otlayout`` capability.
-    - ``charset``: raw FontConfig charset blob (optional, Linux only).
-    - ``sample_text``: sample text string (if available).
-    - ``decorative``: whether the font is marked decorative.
-    - ``color``: whether the font is marked as color.
-    - ``variable``: whether the font is marked variable.
+    The returned metadata is intended for downstream enrichment and
+    MUST NOT be treated as semantically authoritative.
 
     Args:
         path: Path to the font file.
         include_charset: If ``True``, include the raw FontConfig charset blob.
-            This can be large and is disabled by default.
+            This data can be large and is disabled by default.
 
     Returns:
-        A dictionary with zero or more of the keys described above.
+        A dictionary containing zero or more FontConfig-derived fields.
     """
     log.debug(
         "fc-query invocation prepared",

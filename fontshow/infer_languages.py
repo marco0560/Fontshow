@@ -1,21 +1,12 @@
 # fontshow/infer_languages.py
 """
-fontshow.infer_languages
-=======================
+Language inference based on Unicode coverage metadata.
 
-Language inference module for Fontshow.
+This module infers candidate languages exclusively from Unicode block coverage
+data produced during the raw inventory stage.
 
-This module provides deterministic and explainable inference of
-human languages supported by a font, based solely on Unicode
-coverage metadata.
-
-Design goals:
-- No heuristics based on font names
-- No NLP or statistical models
-- Fully explainable results (confidence + evidence)
-- Reusable across inventory parsing, catalog generation and future APIs
-
-Introduced in: C4.3
+FontConfig-derived charset metadata is NOT consumed by this module and does not
+influence language inference.
 """
 
 from __future__ import annotations
@@ -78,55 +69,21 @@ def infer_languages(
     policy: str = "permissive",
 ) -> dict[str, dict[str, Any]]:
     """
-    Infer supported human languages from Unicode coverage metadata.
+    Infer candidate languages from Unicode coverage metadata.
 
-    This function analyzes the Unicode blocks covered by a font and
-    matches them against predefined language profiles.
+    This function operates exclusively on Unicode-derived coverage data
+    (e.g. unicode_blocks) and does NOT consume FontConfig charset metadata
+    or any external language declarations.
 
-    The inference is deterministic and explainable:
-    each inferred language is returned together with a confidence level
-    and the Unicode blocks that justified the inference.
+    The returned mapping represents candidate languages along with
+    supporting evidence, not definitive classification.
 
-    Parameters
-    ----------
-    coverage : dict[str, Any]
-        Unicode coverage metadata for a font.
-        Expected to contain a ``unicode_blocks`` key with a list of
-        Unicode block names.
+    Args:
+        coverage: Unicode coverage metadata extracted from the raw inventory.
+        policy: Language inference policy selector.
 
-    policy : str, optional
-        Inference policy.
-        Currently supported:
-        - ``"permissive"``: infer a language as soon as all required
-          blocks are present (default).
-
-    Returns
-    -------
-    dict[str, dict[str, Any]]
-        Mapping from ISO language code to inference metadata.
-
-        Example::
-
-            {
-                "fr": {
-                    "confidence": "high",
-                    "evidence": [
-                        "Basic Latin",
-                        "Latin-1 Supplement",
-                        "Latin Extended-A"
-                    ]
-                }
-            }
-
-    Notes
-    -----
-    - No language is inferred if required Unicode blocks are missing.
-    - Confidence levels are qualitative and not probabilistic.
-    - This function does not modify its input.
-
-    Introduced in
-    -------------
-    C4.3
+    Returns:
+        A mapping of language tags to inference evidence.
     """
 
     unicode_blocks: set[str] = set(coverage.get("unicode_blocks", []))
