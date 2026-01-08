@@ -152,7 +152,7 @@ the local virtual environment.
 The preflight check was invoked using:
 
 ```bash
-python -m fontshow.preflight
+fontshow preflight
 ```
 
 ### Observed behavior
@@ -184,7 +184,7 @@ python -m fontshow.preflight
 The font discovery phase was executed using:
 
 ```bash
-python -m fontshow.dump_fonts
+fontshow dump-fonts
 ```
 
 #### Observed behavior
@@ -205,7 +205,7 @@ python -m fontshow.dump_fonts
 The command was executed again, explicitly specifying the output file:
 
 ```bash
-python -m fontshow.dump_fonts -o font_inventory_with_charset.json
+fontshow dump-fonts -o font_inventory_with_charset.json
 ```
 
 Resulting files:
@@ -237,7 +237,7 @@ diff font_inventory.json font_inventory_with_charset.json
 The inventory was parsed using:
 
 ```bash
-python -m fontshow.parse_font_inventory font_inventory.json
+fontshow parse-inventory font_inventory.json
 ```
 
 #### Observed behavior
@@ -251,7 +251,7 @@ python -m fontshow.parse_font_inventory font_inventory.json
 Explicit validation was executed using:
 
 ```bash
-python -m fontshow.parse_font_inventory --validate-inventory font_inventory.json
+fontshow parse-inventory --validate-inventory font_inventory.json
 ```
 
 #### Observed behavior
@@ -279,7 +279,7 @@ python -m fontshow.parse_font_inventory --validate-inventory font_inventory.json
 The catalog generation was executed using the unified module:
 
 ```bash
-python -m fontshow.create_catalog
+fontshow create-catalog
 ```
 
 > Note: the previous script `crea_catalogo_pipeline_v2.py` has been replaced
@@ -336,7 +336,7 @@ generated using the `-T` option.
 The catalog was generated using:
 
 ```bash
-python -m fontshow.create_catalog -T
+fontshow create-catalog -T
 ```
 
 #### Observed behavior
@@ -556,7 +556,7 @@ The catalog was generated using the reduced inventory:
 
 ```bash
 FONT_INVENTORY=font_inventory_single_kaitim.json \
-python -m fontshow.create_catalog
+fontshow create-catalog
 ```
 
 #### Observed behavior
@@ -584,7 +584,7 @@ lualatex -interaction=nonstopmode fontshow_Linux_*.tex > fontshow_single_kaitim.
 A reduced catalog was generated using the built-in name filter:
 
 ```bash
-python -m fontshow.create_catalog -T "AR PL KaitiM"
+fontshow create-catalog -T "AR PL KaitiM"
 ```
 
 #### Observed behavior
@@ -646,7 +646,7 @@ The sample text rendered for both fonts is a German pangram (e.g. "Victor jagt z
 ### Reproduction
 
 ```bash
-python -m fontshow.create_catalog -T "AR PL KaitiM"
+fontshow create-catalog -T "AR PL KaitiM"
 lualatex -interaction=nonstopmode fontshow_Linux_20260105_000.tex > fontshow_Linux_20260105_000.log
 ```
 
@@ -687,7 +687,7 @@ This option is intended as a **debug and inspection tool**.
 Preliminary check:
 
 ```bash
-python -m fontshow.create_catalog --help
+fontshow create-catalog --help
 ```
 
 The command must terminate without errors.
@@ -697,7 +697,7 @@ The command must terminate without errors.
 ### Command
 
 ```bash
-python -m fontshow.create_catalog --list-test-fonts
+fontshow create-catalog --list-test-fonts
 ```
 
 ### Expected behavior
@@ -727,7 +727,7 @@ This test verifies that:
 ### Command
 
 ```bash
-python -m fontshow.create_catalog -T --list-test-fonts
+fontshow create-catalog -T --list-test-fonts
 ```
 
 ### Expected behavior
@@ -753,7 +753,7 @@ Installed fonts matching TEST_FONTS:
 ### Command
 
 ```bash
-python -m fontshow.create_catalog -T "DejaVu Sans" --list-test-fonts
+fontshow create-catalog -T "DejaVu Sans" --list-test-fonts
 ```
 
 ### Expected behavior
@@ -779,7 +779,7 @@ Installed fonts matching TEST_FONTS:
 ### Command
 
 ```bash
-python -m fontshow.create_catalog \
+fontshow create-catalog \
   -T "DejaVu" \
   -T "Liberation" \
   --list-test-fonts
@@ -811,7 +811,7 @@ Installed fonts matching TEST_FONTS:
 ### Command
 
 ```bash
-python -m fontshow.create_catalog \
+fontshow create-catalog \
   -T \
   -T "Liberation Mono" \
   --list-test-fonts
@@ -847,7 +847,7 @@ It is intended for:
 ### Command
 
 ```bash
-python -m fontshow.parse_font_inventory \
+fontshow parse-inventory \
   font_inventory.json \
   --validate-inventory
 ```

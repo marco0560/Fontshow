@@ -38,36 +38,35 @@ plugins:
 nav:
   - Home: index.md
 
-  - Overview:
-      - Architecture: architecture.md
-      - Pipeline: pipeline.md
-      - Roadmap: roadmap.md
+  - Getting started:
+    - Getting started: getting_started.md
+    - Changelog summary: changelog-summary.md
+    - Overview: pipeline.md
+    - CLI: cli.md
+    - Cheatsheet: cheatsheet.md
+    - Testing strategy: testing.md
 
-  - Usage:
-      - CLI Overview: cli.md
-      - Cheatsheet: cheatsheet.md
-      - Tools:
-          - dump_fonts: tools/dump_fonts.md
-          - parse_font_inventory: tools/parse_font_inventory.md
-          - create_catalog: tools/create_catalog.md
+  - Commands:
+    - Preflight: tools/preflight.md
+    - Dump fonts: tools/dump_fonts.md
+    - Parse inventory: tools/parse_font_inventory.md
+    - Create catalog: tools/create_catalog.md
 
-  - Data Model:
-      - Data Dictionary: data_dictionary.md
-      - Schema:
-          - Overview: schema/index.md
-          - Schema rationale: schema/font-inventory-schema.md
-          - Inventory v1.1: schema/inventory-1.1.schema.json
-
-  - Validation & Testing:
-      - Testing Strategy: testing.md
-      - Environment Matrix: environment-matrix.md
+  - Data model:
+    - Data dictionary: data_dictionary.md
+    - Schema overview: schema/index.md
+    - Schema rationale: schema/font-inventory-schema.md
+    - Inventory schema v1.1 (JSON): schema/inventory-1.1.schema.json
 
   - Development:
-      - Dev Environment: dev-environment.md
-      - Scripts: scripts.md
-      - Contributing: CONTRIBUTING.md
+    - Architecture: architecture.md
+    - Dev environment: dev-environment.md
+    - Environment matrix: environment-matrix.md
+    - Scripts: scripts.md
+    - Contributing: CONTRIBUTING.md
 
-  - Decisions:
-      - Design Decisions: decisions.md
-      - Security & Release Policy: security-and-release-policy.md
-      - Key Rotation: key-rotation.md
+  - Project:
+    - Roadmap: roadmap.md
+    - Decisions: decisions.md
+    - Security & release policy: security-and-release-policy.md
+    - Key rotation: key-rotation.md

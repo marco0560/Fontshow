@@ -17,6 +17,203 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision: Changelog as a derived summary, not a source of truth
+
+### Decision
+
+`CHANGELOG.md` is treated as a **derived, human-readable summary**.
+
+It is **not** the authoritative record of changes.
+
+Authoritative sources are:
+
+- Git history and tags
+- GitHub Releases (semantic-release)
+- `decisions.md`
+
+### Rationale
+
+- Avoid duplication between automated and manual documentation
+- Keep design intent and rationale in one place
+- Allow the changelog to remain concise and readable
+
+### Consequences
+
+- The changelog summarizes *what* changed, not *why*
+- Design rationale must always be captured in `decisions.md`
+
+## CLI return code contract
+
+All Fontshow CLI commands adhere to the following return code contract:
+
+- `0` — successful execution
+- `1` — unrecoverable execution failure
+- `2` — command-line usage error (handled by argparse)
+
+Warnings do not affect the return code unless explicitly promoted
+by the command logic.
+
+This contract applies uniformly to all subcommands and entrypoints.
+
+### Status
+
+Documented and enforced through CLI tests.
+
+## RuntimeWarning when executing `fontshow preflight`
+
+### Context
+
+When executing:
+
+```
+fontshow preflight
+```
+
+Python may emit a RuntimeWarning indicating that
+`fontshow.preflight.__main__` was already present in `sys.modules`
+before execution.
+
+This is caused by importing the preflight CLI entrypoint as part of the
+dispatcher initialization, and then re-executing it via `-m`.
+
+### Decision
+
+The warning is acknowledged and accepted.
+
+- Functional behavior is correct
+- Output and exit codes are unaffected
+- The supported and documented entrypoint is:
+  `fontshow preflight`
+
+Direct `python -m` execution remains best-effort and supported,
+but is not the primary CLI path.
+
+### Rationale
+
+Eliminating the warning would require restructuring the preflight package
+(e.g. separating CLI logic into a dedicated module), which is not justified
+at this stage.
+
+### Status
+
+Known and accepted.
+
+## Preflight command output and rendering responsibility
+
+**Status**: Completed
+**Date**: 2026-01-08
+**Scope**: `preflight`
+
+### Context
+
+The preflight subsystem already provided a structured rendering layer
+(`render_preflight_results`) producing formatted output lines.
+After CLI refactoring, the rendered output was no longer emitted,
+causing silent execution despite successful checks.
+
+### Decision
+
+The responsibility for emitting preflight output belongs to the
+preflight CLI boundary, not to the core execution logic.
+
+Specifically:
+
+- `run_preflight()`:
+  - performs checks
+  - returns structured results
+  - produces no CLI output
+
+- `render_preflight_results()`:
+  - formats results into human-readable lines
+  - does not print
+
+- `preflight.main(args)`:
+  - invokes rendering
+  - prints rendered lines
+  - prints a final summary line:
+    - "Preflight passed."
+    - "Preflight failed."
+  - honors `--quiet` and `--verbose` flags
+  - returns an exit code
+
+The dispatcher invokes the preflight command through a local wrapper,
+ensuring compatibility with existing CLI tests and monkeypatching.
+
+### Rationale
+
+This preserves:
+- separation between logic and presentation
+- backward-compatible CLI behavior
+- existing test expectations
+
+while keeping preflight consistent with the unified CLI contract.
+
+### Status
+
+Implemented and validated via CLI tests and manual execution.
+
+## CLI execution model unification (dispatcher vs module entrypoints)
+
+**Status**: Completed
+**Date**: 2026-01-08
+**Scope**: `preflight` `dump_fonts.py` `parse_font_inventory.py` `create_catalog.py`
+
+### Context
+
+Fontshow commands can be executed through two different entrypoints:
+
+- the unified dispatcher:
+  `fontshow <command> [options]`
+- direct module execution:
+  `python -m fontshow.<module> [options]`
+
+Historically, these entrypoints evolved independently, leading to:
+- duplicated argument parsing
+- inconsistent CLI options
+- incompatible `main()` function signatures
+- improper use of `sys.exit()` inside command logic
+
+### Decision
+
+All Fontshow CLI commands must follow a single, uniform execution contract:
+
+- Each command exposes a callable:
+
+  ```
+  def main(args) -> int
+  ```
+
+- `main(args)`:
+  - contains *only* command logic
+  - returns an integer exit code
+  - MUST NOT call `sys.exit()`
+  - MUST NOT perform argument parsing
+
+- Argument parsing is performed exclusively:
+  - in the dispatcher (`fontshow/__main__.py`)
+  - or in the module `if __name__ == "__main__"` block for `python -m` usage
+
+- `sys.exit()` is allowed **only** in:
+  - the dispatcher entrypoint
+  - module-level `__main__` blocks
+
+### Rationale
+
+This model:
+- guarantees identical behavior across all entrypoints
+- simplifies testing (no hidden exits)
+- makes return codes explicit and testable
+- prevents future CLI divergence
+
+### Status
+
+Applied to:
+- `dump_fonts`
+- `parse_font_inventory`
+- `create_catalog`
+- `preflight`
+
+
 ## C-Step: Charset-driven enrichment (5.1–5.3)
 
 **Status**: Completed

@@ -5,19 +5,47 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![CI](https://github.com/marco0560/fontshow/actions/workflows/ci.yml/badge.svg)](https://github.com/marco0560/fontshow/actions/workflows/ci.yml)
 
-Fontshow is a Python-based toolchain for inspecting system fonts and generating
-LaTeX font catalogs in a reproducible and debuggable way.
+## What is Fontshow
 
-The project is structured as a **proper Python package** and is intended to be
-executed using Python’s module execution mechanism.
+Fontshow is a command-line toolkit for **font discovery, analysis, validation,
+and catalog generation**.
 
-It discovers installed fonts, extracts low-level metadata, performs
-script and language inference, and generates printable LaTeX catalogs.
+It provides a structured pipeline to:
 
-The project is designed as a linear, data-driven pipeline with explicit
-data contracts between stages.
+- inspect the local font environment
+- extract a raw inventory of installed fonts
+- enrich the inventory with Unicode, script, and language metadata
+- validate the resulting data against a formal schema
+- generate human-readable artifacts (e.g. PDF catalogs)
 
----
+Fontshow is designed to be:
+
+- reproducible
+- testable
+- schema-driven
+- explicit about its execution model and return codes
+
+## Quick start
+
+Fontshow exposes a unified command-line interface through a dispatcher.
+
+The recommended entrypoint is:
+
+```bash
+fontshow <command> [options]
+```
+
+A typical end-to-end workflow is:
+
+```bash
+fontshow preflight
+fontshow dump-fonts
+fontshow parse-inventory
+fontshow create-catalog
+```
+
+Each step consumes the output of the previous one and produces a well-defined
+artifact for the next stage.
 
 ## Features
 
@@ -28,7 +56,36 @@ data contracts between stages.
 - LaTeX catalog generation (XeLaTeX / LuaLaTeX)
 - Reproducible, inventory-driven workflow
 
----
+## CLI design notes
+
+Fontshow commands follow a strict execution contract:
+
+```python
+def main(args) -> int
+```
+
+- Argument parsing is handled by the dispatcher
+- Command logic never calls `sys.exit()`
+- Each command returns an explicit exit code
+- The dispatcher is responsible for process termination
+
+This guarantees consistent behavior across all commands and simplifies
+testing and automation.
+
+For a detailed rationale, see `decisions.md`.
+
+## Notes on direct module execution
+
+Commands can also be executed directly via Python, for example:
+
+```bash
+python -m fontshow.dump_fonts --help
+```
+
+This mode is supported primarily for development and debugging.
+
+The unified dispatcher (`fontshow <command>`) is the authoritative and
+documented user interface.
 
 ## Pipeline overview
 
@@ -41,6 +98,7 @@ does not re-inspect font binaries unnecessarily.
 
 ---
 <!-- cheatsheet:start -->
+
 ## Installation
 
 Clone the repository and create a virtual environment:
@@ -55,6 +113,7 @@ pip install -r requirements.txt
 <!-- cheatsheet:end -->
 
 <!-- cheatsheet:start -->
+
 ## Repository cleanup utility
 
 The repository includes a helper script to remove generated artifacts and
@@ -75,6 +134,7 @@ A dry-run mode is available to safely preview the cleanup:
 python scripts/clean_repo.py --dry-run
 ```
 <!-- cheatsheet:end -->
+
 ### Safety guarantees
 
 Some paths are explicitly protected and will **never be removed**, even if
@@ -87,14 +147,20 @@ without risking the local working environment.
 
 ---
 <!-- cheatsheet:start -->
-## Execution model (important)
 
-Fontshow is a Python package named `fontshow`.
+## Available commands
 
-All tools **must be executed as modules**, using the `-m` flag:
+| Command | Description |
+|--------|-------------|
+| `fontshow preflight` | Run environment and dependency checks |
+| `fontshow dump-fonts` | Extract a raw font inventory |
+| `fontshow parse-inventory` | Enrich and validate a font inventory |
+| `fontshow create-catalog` | Generate output artifacts from an inventory |
+
+Use `--help` on any command to see available options:
 
 ```bash
-python -m fontshow.<tool>
+fontshow dump-fonts --help
 ```
 <!-- cheatsheet:end -->
 
@@ -104,11 +170,31 @@ Direct execution of files such as:
 python fontshow/dump_fonts.py
 ```
 
-is **not supported** and will result in import errors.
+is not supported and may produce inconsistent behavior.
+
+Use the unified dispatcher instead:
+
+```bash
+fontshow dump-fonts --help
+fontshow parse-inventory --help
+fontshow create-catalog --help
+```
+
+Direct module execution via `python -m` is supported primarily for development
+and debugging:
+
+```bash
+python -m fontshow.dump_fonts --help
+python -m fontshow.parse_font_inventory --help
+python -m fontshow.create_catalog --help
+```
+
+The authoritative, user-facing interface is always `fontshow <command>`.
 
 ---
 
 <!-- cheatsheet:start -->
+
 ## Available tools
 
 ### Dump system fonts
@@ -170,7 +256,7 @@ Additional options are available for:
 See:
 
 ```bash
-python -m fontshow.create_catalog --help
+fontshow create-catalog --help
 ```
 
 ---
@@ -199,18 +285,13 @@ Each generated inventory records:
 
 ## Documentation
 
-Project documentation is available at:
+- `cli.md` — command-line interface reference
+- `decisions.md` — architectural and design decisions
+- `font-inventory-schema.md` — JSON Schema for inventories
+- `data_dictionary.md` — meaning of inventory fields
 
-👉 https://marco0560.github.io/Fontshow/
-
-It includes:
-
-- architecture overview
-- data dictionary
-- testing procedures
-- example inventories
-
----
+The documentation is intentionally split between **what the tool does**
+and **why it is designed this way**.
 
 ## License
 

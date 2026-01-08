@@ -167,7 +167,7 @@ The inventory may contain:
 This is intentional: the inventory describes reality, not an idealized version of it.
 
 👉 For implementation details, see:
-- [`dump_fonts.md`](tools/dump_fonts.md)
+- [`dump-fonts`](tools/dump_fonts.md)
 
 ## Stage 2 — Inventory parsing, validation and enrichment
 
@@ -213,7 +213,7 @@ This preserves traceability and facilitates debugging.
 ---
 
 👉 Details in:
-- [`parse_font_inventory.md`](tools/parse_font_inventory.md)
+- [`parse-inventory`](tools/parse_font_inventory.md)
 
 ## Stage 3 — Catalog creation
 
@@ -229,7 +229,7 @@ It is normal that:
 - some fonts cause issues during LaTeX compilation.
 
 👉 Details in:
-- [`create_catalog.md`](tools/create_catalog.md)
+- [`create-catalog`](tools/create_catalog.md)
 
 ## Stage 4 — LaTeX compilation
 
@@ -279,13 +279,13 @@ For further details on individual components:
   [`data_dictionary.md`](data_dictionary.md)
 
 - Font dump:
-  [`dump_fonts.md`](tools/dump_fonts.md)
+  [`dump-fonts`](tools/dump_fonts.md)
 
 - Inventory parsing:
-  [`parse_font_inventory.md`](tools/parse_font_inventory.md)
+  [`parse-inventory`](tools/parse_font_inventory.md)
 
 - Catalog creation:
-  [`create_catalog.md`](tools/create_catalog.md)
+  [`create-catalog`](tools/create_catalog.md)
 
 ## Pipeline status
 
