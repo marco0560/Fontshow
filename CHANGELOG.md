@@ -1,3 +1,10 @@
+## [0.28.4](https://github.com/marco0560/Fontshow/compare/v0.28.3...v0.28.4) (2026-01-08)
+
+### Bug Fixes
+
+* **core:** make TRACE level deterministic and preserve caller context ([ea91129](https://github.com/marco0560/Fontshow/commit/ea9112981583f2bb124d6741475ea846641798e7))
+* **core:** stabilize TRACE semantics and logging tests ([3531dbc](https://github.com/marco0560/Fontshow/commit/3531dbcee5dc0cb569a9a7ca1b5b7049dbedfacf))
+
 ## [0.28.3](https://github.com/marco0560/Fontshow/compare/v0.28.2...v0.28.3) (2026-01-08)
 
 ### Bug Fixes
