@@ -67,7 +67,10 @@ def _configure_root_logger() -> logging.Logger | None:
     # Handler must NOT filter by level (or TRACE will be dropped)
     handler.setLevel(logging.NOTSET)
 
-    formatter = logging.Formatter("%(levelname)s %(module)s.%(funcName)s: %(message)s")
+    formatter = logging.Formatter(
+        #        "%(levelname)s %(module)s.%(funcName)s: %(message)s"
+        "%(levelname)s %(module)s.%(funcName)s: %(message)s | %(extra)s"
+    )
     handler.setFormatter(formatter)
 
     return logger
@@ -79,6 +82,12 @@ _ROOT_LOGGER = _configure_root_logger()
 # -----------------------------
 # Public logging facade
 # -----------------------------
+def _prepare_extra(extra: Mapping[str, Any] | None) -> dict[str, Any]:
+    """
+    Normalize user-provided structured data so it is always available
+    as `record.extra` for formatters.
+    """
+    return {"extra": dict(extra) if extra else {}}
 
 
 class _LogFacade:
@@ -98,7 +107,7 @@ class _LogFacade:
         if logger:
             logger.error(
                 message,
-                extra={"extra": extra} if extra else None,
+                extra=_prepare_extra(extra),
                 stacklevel=2,
             )
 
@@ -107,7 +116,7 @@ class _LogFacade:
         if logger:
             logger.warning(
                 message,
-                extra={"extra": extra} if extra else None,
+                extra=_prepare_extra(extra),
                 stacklevel=2,
             )
 
@@ -116,7 +125,7 @@ class _LogFacade:
         if logger:
             logger.info(
                 message,
-                extra={"extra": extra} if extra else None,
+                extra=_prepare_extra(extra),
                 stacklevel=2,
             )
 
@@ -125,17 +134,19 @@ class _LogFacade:
         if logger:
             logger.debug(
                 message,
-                extra={"extra": extra} if extra else None,
+                extra=_prepare_extra(extra),
                 stacklevel=2,
             )
 
     def trace(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:
         logger = self._logger()
-        if logger:
-            logger.trace(
+        if logger and logger.isEnabledFor(TRACE_LEVEL_NUM):
+            logger._log(
+                TRACE_LEVEL_NUM,
                 message,
-                extra={"extra": extra} if extra else None,
-                stacklevel=3,
+                (),
+                extra=_prepare_extra(extra),
+                stacklevel=2,
             )
 
 
