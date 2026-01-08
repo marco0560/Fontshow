@@ -3,11 +3,16 @@ import logging
 from pathlib import Path
 from types import SimpleNamespace
 
+from pytest import MonkeyPatch
+
 import fontshow.dump_fonts
 
 
-def test_fc_query_extract_emits_basic_logs(enable_fontshow_logging, caplog):
-    # reload del consumer dopo aver abilitato il logging
+def test_fc_query_extract_emits_basic_logs(
+    enable_fontshow_logging,
+    capture_fontshow_logs,
+):
+    # reload consumer after logging is enabled
     importlib.reload(fontshow.dump_fonts)
 
     def fake_run_command(cmd):
@@ -17,25 +22,25 @@ def test_fc_query_extract_emits_basic_logs(enable_fontshow_logging, caplog):
             returncode=0,
         )
 
-    from pytest import MonkeyPatch
-
     mp = MonkeyPatch()
     mp.setattr(
         "fontshow.dump_fonts.run_command",
         fake_run_command,
     )
 
-    with caplog.at_level(logging.DEBUG):
+    with capture_fontshow_logs.at_level(logging.DEBUG, logger="fontshow"):
         fontshow.dump_fonts.fc_query_extract(Path("/fake/font.ttf"))
 
-    messages = [rec.message for rec in caplog.records]
+    messages = [rec.message for rec in capture_fontshow_logs.records]
+
     assert "fc-query invocation prepared" in messages
+    assert "fontconfig output parsed" in messages
 
 
 def test_fc_query_extract_logs_warning_on_failure(
-    enable_fontshow_logging, monkeypatch, caplog
+    enable_fontshow_logging,
+    capture_fontshow_logs,
 ):
-    # Reload del modulo consumer dopo aver abilitato il logging
     importlib.reload(fontshow.dump_fonts)
 
     def fake_run_command(cmd):
@@ -45,15 +50,16 @@ def test_fc_query_extract_logs_warning_on_failure(
             returncode=1,
         )
 
-    monkeypatch.setattr(
+    mp = MonkeyPatch()
+    mp.setattr(
         "fontshow.dump_fonts.run_command",
         fake_run_command,
     )
 
-    with caplog.at_level(logging.WARNING):
+    with capture_fontshow_logs.at_level(logging.WARNING, logger="fontshow"):
         fontshow.dump_fonts.fc_query_extract(Path("/fake/font.ttf"))
 
     assert any(
         rec.levelname == "WARNING" and "fc-query execution failed" in rec.message
-        for rec in caplog.records
+        for rec in capture_fontshow_logs.records
     )

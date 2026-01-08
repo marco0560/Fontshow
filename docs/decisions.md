@@ -17,6 +17,51 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision: TRACE logging semantics and testing strategy
+
+### Context
+
+Fontshow introduces a custom `TRACE` logging level to support deep, high-volume introspection
+(e.g. per-font execution paths during large inventory dumps).
+Given the potentially massive number of emitted events, it is essential to clearly separate
+`DEBUG` and `TRACE` semantics.
+
+### Decision
+
+- `TRACE` is defined as a *strictly opt-in* verbosity level.
+- When `FONTSHOW_LOG_LEVEL=DEBUG`, `TRACE` messages **must not** be emitted.
+- When `FONTSHOW_LOG_LEVEL=TRACE`, both `DEBUG` and `TRACE` messages are emitted.
+- The implementation relies on standard `logging.Logger.isEnabledFor()` semantics.
+- No custom filtering logic is added beyond correct logger/handler level configuration.
+
+### Caller attribution
+
+- All `TRACE` records must report the *real caller* (module and function),
+  not internal logging helpers.
+- This is enforced by using an appropriate `stacklevel` in the `log.trace()` wrapper.
+
+### Testing strategy
+
+- Logging tests must not override logger levels with `NOTSET` when asserting semantic behavior.
+- Tests attach `caplog.handler` explicitly to the non-propagating `fontshow` logger.
+- A single parametrized test verifies:
+  - `DEBUG` level → DEBUG only
+  - `TRACE` level → DEBUG + TRACE
+- Tests import the canonical `TRACE_LEVEL_NUM` from `fontshow.logging_utils`
+  to avoid duplication and ensure consistency.
+
+### Rationale
+
+This approach:
+- Preserves standard Python logging behavior
+- Keeps TRACE noise fully opt-in
+- Allows reliable debugging on systems with thousands of fonts
+- Produces stable, future-proof logging tests
+
+### Status
+
+Accepted and implemented.
+
 ## Logging: reliable TRACE level and caller attribution
 
 ### Context

@@ -1,4 +1,5 @@
 import importlib
+import logging
 import sys
 from pathlib import Path
 
@@ -36,3 +37,24 @@ def enable_fontshow_logging(monkeypatch):
     import fontshow.logging_utils
 
     importlib.reload(fontshow.logging_utils)
+
+
+@pytest.fixture
+def capture_fontshow_logs(caplog):
+    """
+    Attach pytest caplog handler to the 'fontshow' logger.
+
+    This is required because fontshow uses:
+      - a dedicated logger ('fontshow')
+      - propagate = False
+      - its own StreamHandler
+
+    The fixture ensures log records are visible to caplog.
+    """
+    logger = logging.getLogger("fontshow")
+    logger.addHandler(caplog.handler)
+
+    try:
+        yield caplog
+    finally:
+        logger.removeHandler(caplog.handler)

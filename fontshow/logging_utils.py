@@ -51,8 +51,11 @@ def _configure_root_logger() -> logging.Logger | None:
         return None
 
     logger = logging.getLogger("fontshow")
+
+    # Prevent propagation to root logger
     logger.propagate = False
-    # ALWAYS realign logger level to requested level
+
+    # Logger decides WHAT levels are enabled
     logger.setLevel(level)
 
     if not logger.handlers:
@@ -61,8 +64,8 @@ def _configure_root_logger() -> logging.Logger | None:
     else:
         handler = logger.handlers[0]
 
-    # ALWAYS realign handler level as well
-    handler.setLevel(level)
+    # Handler must NOT filter by level (or TRACE will be dropped)
+    handler.setLevel(logging.NOTSET)
 
     formatter = logging.Formatter("%(levelname)s %(module)s.%(funcName)s: %(message)s")
     handler.setFormatter(formatter)
@@ -132,7 +135,7 @@ class _LogFacade:
             logger.trace(
                 message,
                 extra={"extra": extra} if extra else None,
-                stacklevel=2,
+                stacklevel=3,
             )
 
 
