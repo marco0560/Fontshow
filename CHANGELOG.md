@@ -1,3 +1,9 @@
+## [0.28.3](https://github.com/marco0560/Fontshow/compare/v0.28.2...v0.28.3) (2026-01-08)
+
+### Bug Fixes
+
+* **cli:** normalize main() contract and remove sys.exit from command logic ([9edeceb](https://github.com/marco0560/Fontshow/commit/9edecebcf25dc2d7ce8c4e4fdb2987d970d9e695))
+
 ## [0.28.2](https://github.com/marco0560/Fontshow/compare/v0.28.1...v0.28.2) (2026-01-07)
 
 ### Bug Fixes
