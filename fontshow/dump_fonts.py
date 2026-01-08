@@ -1200,7 +1200,7 @@ def register_cli(parser) -> None:
     parser.set_defaults(func=main)
 
 
-def main() -> None:
+def main(args) -> int:
     """CLI entry point for font inventory generation.
 
     This function orchestrates the full dump pipeline:
@@ -1214,9 +1214,6 @@ def main() -> None:
     All heavy lifting is delegated to dedicated helpers; this function is
     intentionally linear and side-effect driven (filesystem I/O).
     """
-    parser = argparse.ArgumentParser(prog="dump-fonts")
-    build_parser(parser)
-    args = parser.parse_args()
 
     platform_name = platform.system().lower()
     cache_dir = args.cache_dir
@@ -1351,7 +1348,11 @@ def main() -> None:
 
     if args.verbose:
         print(f"OK: wrote inventory to {args.output}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(prog="dump-fonts")
+    build_parser(parser)
+    args = parser.parse_args()
+    sys.exit(main(args))

@@ -68,7 +68,7 @@ def main() -> int:
         help="Run environment and dependency checks",
     )
     add_common_arguments(preflight_parser)
-    preflight_parser.set_defaults(func=_run_preflight)
+    preflight_parser.set_defaults(func=fontshow.preflight.main)
 
     # ------------------------------------------------------------------
     # dump-fonts

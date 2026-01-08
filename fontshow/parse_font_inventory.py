@@ -990,7 +990,7 @@ def register_cli(parser) -> None:
     parser.set_defaults(func=main)
 
 
-def main() -> None:
+def main(args) -> int:
     """
     Command-line interface entry point for inventory parsing and inference.
 
@@ -1010,9 +1010,6 @@ def main() -> None:
     - Core inference logic is implemented in :func:`parse_inventory`.
     - Validation logic is implemented in :func:`validate_inventory`.
     """
-    parser = argparse.ArgumentParser(prog="parse-inventory")
-    build_parser(parser)
-    args = parser.parse_args()
 
     if args.verbose and args.quiet:
         parser.error("--verbose and --quiet are mutually exclusive")
@@ -1022,7 +1019,7 @@ def main() -> None:
         print(
             "Hint: run dump_fonts.py first to generate the inventory.", file=sys.stderr
         )
-        sys.exit(1)
+        return 1
 
     log.debug(
         "inference level enabled",
@@ -1064,7 +1061,7 @@ def main() -> None:
             verbose=args.verbose,
             quiet=args.quiet,
         )
-        sys.exit(exit_code)
+        return exit_code
 
     enriched = parse_inventory(data, args.infer_level)
 
@@ -1074,7 +1071,11 @@ def main() -> None:
     )
 
     print(f"OK: wrote enriched inventory to {args.output}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(prog="parse-inventory")
+    build_parser(parser)
+    args = parser.parse_args()
+    sys.exit(main(args))

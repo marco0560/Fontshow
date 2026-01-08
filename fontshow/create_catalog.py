@@ -1081,12 +1081,33 @@ def register_cli(parser) -> None:
     parser.set_defaults(func=main)
 
 
-def main() -> None:
-    global TEST_FONTS
+def main(args) -> int:
+    """
+    Generate output artifacts from an enriched Fontshow inventory.
 
-    parser = argparse.ArgumentParser(prog="create-catalog")
-    build_parser(parser)
-    args = parser.parse_args()
+    This command consumes a validated and enriched inventory (schema v1.1)
+    and produces one or more output artifacts, such as PDF font catalogs
+    or auxiliary files, depending on the selected options.
+
+    The function assumes that all command-line arguments have already been
+    parsed by the caller (either the Fontshow dispatcher or the module
+    entrypoint) and performs no argument parsing itself.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments, including input inventory path,
+        output options, and rendering configuration.
+
+    Returns
+    -------
+    int
+        Exit code:
+        - 0 on successful catalog generation
+        - 1 on unrecoverable errors during processing or rendering
+    """
+
+    global TEST_FONTS
 
     TEST_FONTS = set()
 
@@ -1128,7 +1149,7 @@ def main() -> None:
             for name in sorted(matched):
                 print(f"  - {name}")
 
-        sys.exit(0)
+        return 0
 
     # Generate unique filename for the LaTeX catalog
     base_name = f"fontshow_{platform.system()}_{DATE_STR}"
@@ -1136,7 +1157,7 @@ def main() -> None:
         OUTPUT_FILENAME = get_unique_filename(base_name, "tex")
     except ValueError as e:
         print(f"Error: {e}")
-        sys.exit(1)
+        return 1
 
     if args.test:
         generate_test_output(args.number, bool(TEST_FONTS))
@@ -1158,7 +1179,7 @@ def main() -> None:
         fonts = get_installed_fonts()
         if not fonts:
             print("✗ No fonts to catalog or system error.")
-            sys.exit(1)
+            return 1
     if TEST_FONTS:
         fonts = [
             f
@@ -1187,8 +1208,12 @@ def main() -> None:
         print(f"  Execute: lualatex {OUTPUT_FILENAME} (twice)")
     except Exception as e:
         print(f"✗ Error writing file: {e}")
-        sys.exit(1)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(prog="create-catalog")
+    build_parser(parser)
+    args = parser.parse_args()
+    sys.exit(main(args))

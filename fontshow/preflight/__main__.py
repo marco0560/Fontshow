@@ -6,17 +6,28 @@ Allows running preflight checks via:
     python -m fontshow.preflight
 """
 
+from __future__ import annotations
+
 import sys
 
 from .render import preflight_exit_code, render_preflight_results
 from .runner import run_preflight
 
 
-def main() -> None:
+def main(args=None) -> int:
     result = run_preflight()
-    render_preflight_results(result.results)
-    sys.exit(preflight_exit_code(result))
+    exit_code = preflight_exit_code(result)
+
+    quiet = getattr(args, "quiet", False) if args is not None else False
+    verbose = getattr(args, "verbose", False) if args is not None else False
+
+    if not quiet:
+        for line in render_preflight_results(result.results, verbose=verbose):
+            print(line)
+        print("Preflight passed." if exit_code == 0 else "Preflight failed.")
+
+    return exit_code
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
