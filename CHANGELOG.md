@@ -1,3 +1,9 @@
+## [0.28.5](https://github.com/marco0560/Fontshow/compare/v0.28.4...v0.28.5) (2026-01-08)
+
+### Bug Fixes
+
+* **core:** enhance logging format with extra context ([4baf75b](https://github.com/marco0560/Fontshow/commit/4baf75bf19f01fbc24e0e6ce3aeee0cbdf7d229f))
+
 ## [0.28.4](https://github.com/marco0560/Fontshow/compare/v0.28.3...v0.28.4) (2026-01-08)
 
 ### Bug Fixes
