@@ -1,5 +1,3 @@
-# fontshow/logging_utils.py
-
 from __future__ import annotations
 
 import logging
@@ -17,7 +15,12 @@ logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
 
 def _trace(self: logging.Logger, message: str, *args: Any, **kwargs: Any) -> None:
     if self.isEnabledFor(TRACE_LEVEL_NUM):
-        self._log(TRACE_LEVEL_NUM, message, args, **kwargs)
+        self._log(
+            TRACE_LEVEL_NUM,
+            message,
+            args,
+            **kwargs,
+        )
 
 
 logging.Logger.trace = _trace  # type: ignore[attr-defined]
@@ -48,15 +51,21 @@ def _configure_root_logger() -> logging.Logger | None:
         return None
 
     logger = logging.getLogger("fontshow")
+    logger.propagate = False
+    # ALWAYS realign logger level to requested level
     logger.setLevel(level)
 
     if not logger.handlers:
         handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            "%(levelname)s %(module)s.%(funcName)s: %(message)s"
-        )
-        handler.setFormatter(formatter)
         logger.addHandler(handler)
+    else:
+        handler = logger.handlers[0]
+
+    # ALWAYS realign handler level as well
+    handler.setLevel(level)
+
+    formatter = logging.Formatter("%(levelname)s %(module)s.%(funcName)s: %(message)s")
+    handler.setFormatter(formatter)
 
     return logger
 
@@ -74,7 +83,7 @@ class _LogFacade:
     Minimal logging facade.
 
     - Disabled by default
-    - Preserves caller module and function
+    - Preserves caller module and function (via stacklevel)
     - Structured payload via 'extra'
     """
 
@@ -84,27 +93,47 @@ class _LogFacade:
     def error(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:
         logger = self._logger()
         if logger:
-            logger.error(message, extra={"extra": extra} if extra else None)
+            logger.error(
+                message,
+                extra={"extra": extra} if extra else None,
+                stacklevel=2,
+            )
 
     def warning(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:
         logger = self._logger()
         if logger:
-            logger.warning(message, extra={"extra": extra} if extra else None)
+            logger.warning(
+                message,
+                extra={"extra": extra} if extra else None,
+                stacklevel=2,
+            )
 
     def info(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:
         logger = self._logger()
         if logger:
-            logger.info(message, extra={"extra": extra} if extra else None)
+            logger.info(
+                message,
+                extra={"extra": extra} if extra else None,
+                stacklevel=2,
+            )
 
     def debug(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:
         logger = self._logger()
         if logger:
-            logger.debug(message, extra={"extra": extra} if extra else None)
+            logger.debug(
+                message,
+                extra={"extra": extra} if extra else None,
+                stacklevel=2,
+            )
 
     def trace(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:
         logger = self._logger()
         if logger:
-            logger.trace(message, extra={"extra": extra} if extra else None)
+            logger.trace(
+                message,
+                extra={"extra": extra} if extra else None,
+                stacklevel=2,
+            )
 
 
 log = _LogFacade()

@@ -17,6 +17,51 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Logging: reliable TRACE level and caller attribution
+
+### Context
+
+Fontshow relies on a custom logging facade to provide optional, zero-overhead
+diagnostics controlled via the `FONTSHOW_LOG_LEVEL` environment variable.
+During Gentoo testing, TRACE logs were intermittently missing or reported
+incorrect caller information.
+
+### Problem
+
+Two distinct issues were identified:
+
+1. Logging wrappers (`log.trace`, `log.debug`, etc.) masked the real caller,
+   causing all records to appear as originating from `logging_utils`.
+2. TRACE records were silently filtered due to:
+   - handler and logger level misalignment
+   - propagation to the root logger
+   - multiple imports and CLI entrypoint reconfiguration
+
+Additionally, incorrect use of `stacklevel` caused runtime errors when applied
+both in the facade and in the logger monkey-patch.
+
+### Decision
+
+The logging system is structured as follows:
+
+- Caller attribution (`module` / `funcName`) is handled **exclusively** by the
+  logging facade using `stacklevel`.
+- The custom `Logger.trace` monkey-patch must **not** inject `stacklevel`.
+- The `fontshow` logger explicitly disables propagation
+  (`logger.propagate = False`) to prevent external logging configuration
+  (e.g. pytest, `basicConfig`) from altering effective log levels.
+- When `FONTSHOW_LOG_LEVEL` is set, both logger and handler levels are
+  force-aligned to the requested level on every configuration pass.
+
+### Consequences
+
+- TRACE logging is deterministic across CLI entrypoints, pytest, and `python -m`
+  execution.
+- Caller context is preserved without performance-heavy stack inspection.
+- Fontshow logging is isolated from the root logger and external frameworks.
+
+This behavior is considered part of the public debugging contract of Fontshow.
+
 ## Decision: Changelog as a derived summary, not a source of truth
 
 ### Decision
