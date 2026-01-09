@@ -17,6 +17,49 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision: Language inference operates strictly on coverage-level data
+
+### Context
+
+During the refinement of language inference thresholds, it was clarified that
+`infer_languages()` is a *coverage-level* function and must not depend on:
+
+- font discovery,
+- filesystem paths,
+- FontConfig,
+- or other pipeline-stage heuristics.
+
+The function operates exclusively on Unicode coverage metadata as produced by
+the inventory pipeline (i.e. `font_entry["coverage"]`).
+
+### Decision
+
+- `infer_languages()` SHALL accept and evaluate only coverage-level data.
+- Tests for language inference SHALL pass a `coverage` dictionary directly.
+- Tests SHALL NOT rely on real fonts, system-installed fonts, or filesystem
+  paths.
+- Threshold-based inference SHALL remain conservative by default to avoid
+  false positives on pan-Unicode or utility fonts.
+
+### Rationale
+
+This separation ensures that:
+
+- language inference logic remains deterministic and testable in isolation,
+- tests are environment-independent and reproducible,
+- pipeline stages retain clear and stable responsibilities.
+
+Any future refinement (e.g. per-block thresholds or charset-derived evidence)
+must preserve this separation of concerns.
+
+### Consequences
+
+- Language inference tests were rewritten to operate exclusively on coverage
+  dictionaries.
+- No changes to the production logic of `infer_languages()` were required.
+- Pipeline-level heuristics (font eligibility, discovery, diagnostics) remain
+  out of scope for language inference unit tests.
+
 ## Decision: Refine language inference using a global Unicode block coverage threshold
 
 ### Context
