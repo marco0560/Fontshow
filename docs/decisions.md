@@ -17,6 +17,83 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision: Refine language inference using a global Unicode block coverage threshold
+
+### Context
+
+Fontshow infers supported languages based on Unicode coverage information
+derived from fontTools analysis and (optionally) Fontconfig charset data.
+
+The previous inference model was presence-based: the mere presence of
+codepoints belonging to a Unicode block associated with a language could
+trigger language inference.
+
+This approach led to false positives, where a language was inferred based
+on a very small number of incidental or symbolic glyphs.
+
+### Decision
+
+Language inference is refined by introducing a **global coverage threshold**
+applied at the Unicode block level.
+
+A language is inferred only if the font covers a **significant percentage**
+of at least one Unicode block associated with that language.
+
+The threshold is global and uniform across all blocks and languages.
+
+### Formal rule
+
+Let:
+
+- `B` be a Unicode block associated with language `L`
+- `covered(B)` be the number of codepoints from `B` present in the font
+- `size(B)` be the total number of codepoints in `B`
+- `THRESHOLD` be a global constant
+
+Then:
+
+```text
+L is inferred ⇔ ∃ B such that covered(B) / size(B) ≥ THRESHOLD
+```
+
+### Initial threshold
+
+```text
+LANGUAGE_BLOCK_COVERAGE_THRESHOLD = 0.40
+```
+
+This value is intentionally conservative and may be adjusted based on
+real-world font analysis.
+
+### Rationale
+
+- Prevents language inference based on symbolic or accidental glyphs
+- Aligns `languages` with functional, text-level usability
+- Preserves all coverage facts while refining semantic claims
+- Keeps inference deterministic, explainable, and testable
+
+### Consequences
+
+- Language lists become shorter but more meaningful
+- Languages such as Greek (`el`) are no longer inferred from a handful of
+  isolated codepoints
+- Coverage data remains fully available for advanced analysis and diagnostics
+
+### Future evolution
+
+If systematic false negatives are observed, this global threshold may be
+replaced or refined by:
+
+- per-script thresholds
+- per-block thresholds
+- hybrid script + block strategies
+
+Such changes will be introduced only as explicit, documented decisions.
+
+### Status
+
+Accepted.
+
 ## Decision: Decode Fontconfig charset bitmap into Unicode ranges (C-Step 5.1)
 
 ### Context

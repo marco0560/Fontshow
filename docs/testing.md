@@ -11,6 +11,63 @@ cover:
 - non-regression tests
 - CI-based validation on commits or releases
 
+## Language Inference Threshold Tests
+
+### Scope and intent
+
+The tests in `test_infer_languages_threshold.py` are designed to validate the
+*language inference logic in isolation*, without involving font discovery,
+FontConfig, or filesystem access.
+
+In particular, these tests exercise:
+
+- Unicode block coverage thresholds
+- Language profile requirements (`required_blocks`)
+- Regression safety for core Latin languages
+
+### Important design constraint
+
+The function `infer_languages()` operates **only on coverage-level data**.
+It expects a `coverage` dictionary (as produced by the inventory pipeline),
+*not* a full font entry and *not* a filesystem path.
+
+As a consequence:
+
+- Tests MUST pass only the `coverage` mapping
+- Tests MUST NOT rely on real fonts or system-installed files
+- Tests MUST NOT invoke FontConfig or font discovery logic
+
+This keeps the tests deterministic, fast, and independent from the execution
+environment.
+
+### Threshold-based inference
+
+Language inference is intentionally conservative.
+
+A language is inferred only if:
+
+1. All `required_blocks` are present in the coverage
+2. Each required block exceeds a global coverage threshold
+3. Symbolic or incidental block presence (e.g. a few codepoints) is ignored
+
+For example:
+
+- A small number of Greek codepoints does **not** imply Greek language support
+- Substantial coverage of the *Greek and Coptic* block **does** imply Greek
+
+### Rationale
+
+This approach avoids false positives on:
+
+- Pan-Unicode fonts
+- Symbol fonts
+- Utility or fallback fonts
+
+and reflects real-world expectations for language support.
+
+Any future refinement (e.g. per-block thresholds) must preserve this
+conservative default behavior.
+
 ## Gentoo Linux — Fontconfig charset extraction
 
 On native Gentoo Linux systems, Fontconfig-based charset extraction via
