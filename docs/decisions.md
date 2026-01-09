@@ -17,6 +17,71 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Decision: Decode Fontconfig charset bitmap into Unicode ranges (C-Step 5.1)
+
+### Context
+
+Fontshow preserves raw Fontconfig charset data as a multiline bitmap
+(`coverage.charset.raw`) when available.
+
+This bitmap encodes glyph coverage information but cannot be directly
+consumed by downstream enrichment steps without decoding.
+
+### Decision
+
+A dedicated C-Step (C-Step 5.1) is introduced to decode the Fontconfig
+charset bitmap into explicit Unicode ranges.
+
+Whenever `coverage.charset.raw` is present in the inventory, the bitmap
+is automatically decoded and the resulting ranges are stored in
+`coverage.charset.ranges`.
+
+Decoding is implicit and unconditional; no opt-in flags or CLI switches
+are introduced.
+
+### Rationale
+
+- Charset bitmap decoding is a pure normalization step.
+- Automatic decoding avoids divergent inventory states.
+- Downstream enrichment requires explicit Unicode ranges.
+
+### Constraints
+
+- Decoding is best-effort and must not abort the pipeline.
+- Malformed bitmap lines must be skipped with structured warnings.
+- No semantic precedence between charset-derived and fontTools-derived
+  coverage is defined at this stage.
+
+### Consequences
+
+- Charset-derived enrichment becomes technically possible.
+- Additional C-Steps are required to define how charset-derived coverage
+  interacts with other coverage sources.
+
+### Example
+
+Before decoding:
+
+```json
+"charset": {
+  "raw": "<bitmap>",
+  "ranges": []
+}
+```
+
+After decoding:
+
+```json
+"charset": {
+  "raw": "<bitmap>",
+  "ranges": [[start, end], ...]
+}
+```
+
+### Status
+
+Accepted — implementation scheduled as C-Step 5.1.
+
 ## Decision: TRACE logging semantics and testing strategy
 
 ### Context

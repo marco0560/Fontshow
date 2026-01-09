@@ -11,6 +11,31 @@ cover:
 - non-regression tests
 - CI-based validation on commits or releases
 
+## Gentoo Linux — Fontconfig charset extraction
+
+On native Gentoo Linux systems, Fontconfig-based charset extraction via
+`fc-query` has been manually verified.
+
+Observed behavior:
+
+- `fc-query` is correctly invoked for each font file.
+- The multiline `charset:` bitmap block is reliably detected and extracted.
+- The raw Fontconfig charset bitmap is preserved verbatim in
+  `coverage.charset.raw` when `--include-fc-charset` is enabled.
+- When `--include-fc-charset` is disabled, no charset data is included.
+
+Current limitations (by design):
+
+- The Fontconfig charset bitmap is **not decoded** into Unicode ranges.
+- As a consequence, `coverage.charset.ranges` is currently empty.
+- Downstream enrichment steps depending on charset ranges
+  (`normalized_charset`, `unicode_blocks_from_charset`,
+  `script_coverage_from_charset`) are intentionally left unset.
+
+This behavior is expected and reflects the current project design.
+Decoding and semantic consumption of Fontconfig charset data is deferred
+to a future C-step.
+
 ## Automated Tests (pytest)
 
 Fontshow includes an automated test suite based on **pytest**.
