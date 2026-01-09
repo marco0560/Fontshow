@@ -1,3 +1,9 @@
+## [0.28.6](https://github.com/marco0560/Fontshow/compare/v0.28.5...v0.28.6) (2026-01-09)
+
+### Bug Fixes
+
+* **dump:** correctly extract Fontconfig charset block ([e052f00](https://github.com/marco0560/Fontshow/commit/e052f003aa0e58f3954970951ca47611154027c1))
+
 ## [0.28.5](https://github.com/marco0560/Fontshow/compare/v0.28.4...v0.28.5) (2026-01-08)
 
 ### Bug Fixes
