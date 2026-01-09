@@ -150,6 +150,73 @@ LANGUAGE_PRIMARY_SCRIPT: dict[str, str] = {
 # ============================================================
 
 
+def decode_fc_charset_bitmap(raw: str) -> list[list[int]]:
+    """
+    Decode a FontConfig charset bitmap into Unicode codepoint ranges.
+
+    The input is the raw multiline bitmap produced by fc-query, e.g.:
+
+        0000: 00000000 ffffffff ffffffff 7fffffff ...
+        0001: ffffffff ...
+
+    Each line encodes 256 codepoints:
+    - block index * 256
+    - 8 words of 32 bits
+    - bits are interpreted MSB → LSB
+
+    Returns
+    -------
+    list[list[int]]
+        Sorted, merged [start, end] Unicode ranges (inclusive).
+    """
+    codepoints: list[int] = []
+
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line or ":" not in line:
+            continue
+
+        block_hex, rest = line.split(":", 1)
+        try:
+            block_index = int(block_hex.strip(), 16)
+        except ValueError:
+            continue
+
+        words = rest.strip().split()
+        if len(words) != 8:
+            continue
+
+        base = block_index * 256
+
+        for word_index, word_hex in enumerate(words):
+            try:
+                word = int(word_hex, 16)
+            except ValueError:
+                continue
+
+            for bit in range(32):
+                if word & (1 << (31 - bit)):
+                    codepoints.append(base + word_index * 32 + bit)
+
+    if not codepoints:
+        return []
+
+    codepoints = sorted(set(codepoints))
+
+    ranges: list[list[int]] = []
+    start = prev = codepoints[0]
+
+    for cp in codepoints[1:]:
+        if cp == prev + 1:
+            prev = cp
+        else:
+            ranges.append([start, prev])
+            start = prev = cp
+
+    ranges.append([start, prev])
+    return ranges
+
+
 def unicode_blocks_from_charset_ranges(
     ranges: list[list[int]],
 ) -> dict[str, int]:
@@ -732,6 +799,36 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
 
         # Unicode coverage metadata extracted upstream
         coverage: dict[str, Any] = font.get("coverage", {}) or {}
+
+        # ------------------------------------------------------------
+        # FontConfig charset decoding (C5.1)
+        # ------------------------------------------------------------
+        charset = coverage.get("charset")
+        if isinstance(charset, dict):
+            raw = charset.get("raw")
+            if isinstance(raw, str) and raw.strip():
+                try:
+                    ranges = decode_fc_charset_bitmap(raw)
+                    charset["ranges"] = ranges
+
+                    log.debug(
+                        "fontconfig charset bitmap decoded",
+                        extra={
+                            "font_path": font_path,
+                            "ranges_count": len(ranges),
+                        },
+                    )
+                except Exception as exc:
+                    charset["ranges"] = []
+                    log.warning(
+                        "fontconfig charset bitmap decoding failed",
+                        extra={
+                            "font_path": font_path,
+                            "error_type": type(exc).__name__,
+                            "error_reason": str(exc),
+                        },
+                    )
+        # ------------------------------------------------------------
 
         charset = coverage.get("charset")
         if isinstance(charset, dict) and charset.get("ranges"):
