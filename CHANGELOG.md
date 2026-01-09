@@ -1,3 +1,9 @@
+## [0.28.7](https://github.com/marco0560/Fontshow/compare/v0.28.6...v0.28.7) (2026-01-09)
+
+### Bug Fixes
+
+* **parser:** preserve and decode Fontconfig charset raw data ([eac73c0](https://github.com/marco0560/Fontshow/commit/eac73c0d6464706bb170f712102391590722b5da))
+
 ## [0.28.6](https://github.com/marco0560/Fontshow/compare/v0.28.5...v0.28.6) (2026-01-09)
 
 ### Bug Fixes
