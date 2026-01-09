@@ -408,16 +408,40 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
         },
     )
 
+    # Normalize fc-query output:
+    # FontConfig prefixes fields with tabs; strip leading whitespace
+    lines = [line.lstrip() for line in raw.splitlines()]
+
     def _find_line(prefix: str) -> str | None:
         """Return the payload of the first line starting with ``prefix``."""
-        for line in raw.splitlines():
+        for line in lines:
             if line.startswith(prefix):
                 return line[len(prefix) :].strip()
         return None
 
+    def _extract_charset_block() -> str | None:
+        collecting = False
+        buf: list[str] = []
+
+        for line in lines:
+            if line.startswith("charset:"):
+                collecting = True
+                continue
+
+            if collecting:
+                # Charset bitmap lines start with hex offsets (e.g. "0000:")
+                # A new FontConfig field starts with an alphabetic key.
+                if line and line[0].isalpha() and ":" in line:
+                    break
+                if line != "(s)":
+                    buf.append(line)
+
+        return "\n".join(buf) if buf else None
+
     lang = _find_line("lang:")
     languages: list[str] = []
     charset: dict[str, Any] | None = None
+    raw_charset = _extract_charset_block()
 
     if lang:
         languages = [x.strip() for x in lang.split("|") if x.strip()]
@@ -450,40 +474,22 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
         },
     )
 
-    if include_charset:
-        try:
-            ranges = _parse_fc_charset_ranges(raw)
-            if ranges:
-                charset = {
-                    "source": "fontconfig",
-                    "ranges": ranges,
-                }
-        except Exception as exc:
-            log.debug(
-                "fontconfig output could not be parsed",
-                extra={
-                    "font_path": str(path),
-                    "error_reason": str(exc),
-                },
-            )
-            charset = None
+    if include_charset and raw_charset:
+        ranges = _parse_fc_charset_ranges(raw_charset)
+        charset = {
+            "raw": raw_charset,
+            "ranges": ranges,
+        }
 
     if include_charset:
-        if charset is not None:
-            log.debug(
-                "charset field detected in fontconfig output",
-                extra={
-                    "font_path": str(path),
-                    "ranges_count": len(charset.get("ranges", [])),
-                },
-            )
-        else:
-            log.debug(
-                "charset field missing in fontconfig output",
-                extra={
-                    "font_path": str(path),
-                },
-            )
+        log.debug(
+            "fontconfig charset extraction result",
+            extra={
+                "font_path": str(path),
+                "charset_present": raw_charset is not None,
+                "ranges_count": len(charset["ranges"]) if charset else 0,
+            },
+        )
 
     return {
         "languages": languages,
@@ -1287,9 +1293,21 @@ def main(args) -> int:
         if IS_LINUX:
             try:
                 fontconfig = fc_query_extract(
-                    font_path, include_charset=args.include_fc_charset
+                    font_path,
+                    include_charset=args.include_fc_charset,
                 )
-            except Exception:
+            except Exception as exc:
+                # Best-effort FontConfig enrichment:
+                # keep the pipeline running, but make failures observable.
+                log.warning(
+                    "fontconfig enrichment failed",
+                    extra={
+                        "font_path": str(font_path),
+                        "include_fc_charset": bool(args.include_fc_charset),
+                        "error_type": type(exc).__name__,
+                        "error_reason": str(exc),
+                    },
+                )
                 fontconfig = None
 
         # fontTools extraction (per face)
