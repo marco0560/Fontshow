@@ -16,32 +16,42 @@ def run_cli(main_func, argv):
         sys.argv, sys.stdout = old_argv, old_stdout
 
 
+def _fake_preflight_ok():
+    return type(
+        "PreflightResult",
+        (),
+        {
+            "results": [],
+            "overall_severity": type(
+                "Severity",
+                (),
+                {"name": "OK"},
+            )(),
+        },
+    )()
+
+
 def test_quiet_produces_no_output(monkeypatch):
-    # forza preflight "OK" senza ERROR
+    # Force preflight to succeed regardless of environment (CI-safe)
     monkeypatch.setattr(
         "fontshow.__main__.run_preflight",
-        lambda: type(
-            "R",
-            (),
-            {"results": [], "overall_severity": type("S", (), {"name": "OK"})()},
-        )(),
+        lambda *args, **kwargs: _fake_preflight_ok(),
     )
 
     code, out = run_cli(main, ["fontshow", "preflight", "--quiet"])
+
     assert out == ""
     assert code == 0
 
 
 def test_default_prints_summary(monkeypatch):
+    # Force preflight to succeed regardless of environment (CI-safe)
     monkeypatch.setattr(
         "fontshow.__main__.run_preflight",
-        lambda: type(
-            "R",
-            (),
-            {"results": [], "overall_severity": type("S", (), {"name": "OK"})()},
-        )(),
+        lambda *args, **kwargs: _fake_preflight_ok(),
     )
 
     code, out = run_cli(main, ["fontshow", "preflight"])
+
     assert "Preflight passed." in out
     assert code == 0
