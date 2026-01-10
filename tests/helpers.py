@@ -1,3 +1,6 @@
+import sys
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
 from types import SimpleNamespace
 
 from fontshow.preflight.model import CheckResult, Severity
@@ -106,3 +109,31 @@ def run_preflight_with_environment(
     from fontshow.preflight.runner import run_preflight
 
     return run_preflight(checks=[EnvironmentSupportCheck])
+
+
+def run_cli(main_func, argv):
+    """
+    Invoke a CLI entrypoint capturing exit code and stdout.
+
+    Args:
+        main_func: CLI main function (e.g. fontshow.__main__.main)
+        argv: argument vector, including program name
+
+    Returns:
+        (exit_code, stdout)
+    """
+    old_argv = sys.argv
+    sys.argv = argv
+
+    stdout = StringIO()
+    try:
+        with redirect_stdout(stdout), redirect_stderr(stdout):
+            try:
+                main_func()
+                code = 0
+            except SystemExit as exc:
+                code = exc.code if isinstance(exc.code, int) else 1
+    finally:
+        sys.argv = old_argv
+
+    return code, stdout.getvalue()
