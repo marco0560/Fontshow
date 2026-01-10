@@ -11,6 +11,45 @@ cover:
 - non-regression tests
 - CI-based validation on commits or releases
 
+## Gentoo validation: Fontconfig language codes vs ISO 639
+
+During full pipeline testing on Gentoo Linux, the `fontshow-validate` step
+may emit a large number of `invalid_language_code` warnings.
+
+This behavior is **expected** and **does not indicate a pipeline failure**.
+
+### Root cause
+
+Fontconfig exposes language tags that:
+- are not guaranteed to be ISO 639 compliant
+- may include:
+  - region qualifiers (e.g. `ku-tr`, `zh-cn`)
+  - legacy or deprecated codes (e.g. `mo`, `wen`)
+  - script or source annotations (e.g. `bem(s)`, `lzh(s)`)
+
+Fontshow currently preserves these tags verbatim in
+`coverage.languages`, which is semantically correct but conflicts with
+strict ISO 639 validation.
+
+### Interpretation of warnings
+
+- Warnings are **informational**
+- Exit code remains `0`
+- Inventory enrichment and downstream stages are unaffected
+
+### Design note
+
+A dual-field strategy has been approved:
+
+- `coverage.languages_raw`: original Fontconfig language tags
+- `coverage.languages`: normalized ISO 639 codes (lossy, validated)
+
+This separation preserves raw data while allowing strict validation
+and clean downstream processing.
+
+See corresponding design decision in `decisions.md`.
+
+
 ## Language Inference Threshold Tests
 
 ### Scope and intent

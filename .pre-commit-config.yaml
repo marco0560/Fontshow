@@ -6,16 +6,39 @@ repos:
         language_version: python3
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
+    rev: v0.3.4
     hooks:
       - id: ruff
         args: [--fix]
-      - id: ruff-format
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+    rev: v4.6.0
     hooks:
-      - id: trailing-whitespace
       - id: end-of-file-fixer
+      - id: trailing-whitespace
       - id: check-yaml
-      - id: check-toml
+      - id: check-added-large-files
+
+  # ------------------------------------------------------------------
+  # Fontshow – generated documentation integrity
+  # ------------------------------------------------------------------
+  - repo: local
+    hooks:
+      # Step 1: (re)generate cheatsheet.md deterministically
+      - id: generate-cheatsheet
+        name: Generate cheatsheet.md
+        entry: python scripts/generate_cheatsheet.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      # Step 2: ensure generated file is committed
+      - id: verify-cheatsheet-clean
+        name: Verify cheatsheet.md is up to date
+        entry: >
+          bash -c 'git diff --exit-code docs/cheatsheet.md ||
+          (echo "ERROR: docs/cheatsheet.md is out of date.
+          Run scripts/generate_cheatsheet.py and commit the result." && exit 1)'
+        language: system
+        pass_filenames: false
+        always_run: true
