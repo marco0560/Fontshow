@@ -16,8 +16,18 @@ from .render import preflight_exit_code, render_preflight_results
 from .runner import run_preflight
 
 
-def main(args=None) -> int:
-    result = run_preflight()
+def _run_preflight_cli(
+    *,
+    args=None,
+    run_preflight_fn=run_preflight,
+) -> int:
+    """
+    Core preflight CLI logic.
+
+    This function is intentionally side-effect free (no sys.exit)
+    so it can be tested easily and supports dependency injection.
+    """
+    result = run_preflight_fn()
     exit_code = preflight_exit_code(result)
 
     quiet = getattr(args, "quiet", False) if args is not None else False
@@ -29,8 +39,12 @@ def main(args=None) -> int:
             print(line)
         print("Preflight passed." if exit_code == 0 else "Preflight failed.")
 
-    sys.exit(exit_code)
+    return exit_code
+
+
+def main(args=None) -> int:
+    return _run_preflight_cli(args=args)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

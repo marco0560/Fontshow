@@ -1051,7 +1051,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         "--list-test-fonts",
         action="store_true",
         help=(
-            "List the effective test font set and the installed fonts matching it, then exit"
+            "List the effective test font set and the installed fonts matching it, then exit "
             "without generating the LaTeX catalog."
         ),
     )
@@ -1081,30 +1081,35 @@ def register_cli(parser) -> None:
     parser.set_defaults(func=main)
 
 
-def main(args) -> int:
+def run_create_catalog(args) -> int:
     """
-    Generate output artifacts from an enriched Fontshow inventory.
+    Core implementation for create-catalog.
 
-    This command consumes a validated and enriched inventory (schema v1.1)
-    and produces one or more output artifacts, such as PDF font catalogs
-    or auxiliary files, depending on the selected options.
+    This function contains the full business logic and is intentionally
+    injectable for CLI testing.
 
-    The function assumes that all command-line arguments have already been
-    parsed by the caller (either the Fontshow dispatcher or the module
-    entrypoint) and performs no argument parsing itself.
+        Generate output artifacts from an enriched Fontshow inventory.
 
-    Parameters
-    ----------
-    args : argparse.Namespace
-        Parsed command-line arguments, including input inventory path,
-        output options, and rendering configuration.
+        This command consumes a validated and enriched inventory (schema v1.1)
+        and produces one or more output artifacts, such as PDF font catalogs
+        or auxiliary files, depending on the selected options.
 
-    Returns
-    -------
-    int
-        Exit code:
-        - 0 on successful catalog generation
-        - 1 on unrecoverable errors during processing or rendering
+        The function assumes that all command-line arguments have already been
+        parsed by the caller (either the Fontshow dispatcher or the module
+        entrypoint) and performs no argument parsing itself.
+
+        Parameters
+        ----------
+        args : argparse.Namespace
+            Parsed command-line arguments, including input inventory path,
+            output options, and rendering configuration.
+
+        Returns
+        -------
+        int
+            Exit code:
+            - 0 on successful catalog generation
+            - 1 on unrecoverable errors during processing or rendering
     """
 
     global TEST_FONTS
@@ -1151,10 +1156,9 @@ def main(args) -> int:
 
         return 0
 
-    # Generate unique filename for the LaTeX catalog
     base_name = f"fontshow_{platform.system()}_{DATE_STR}"
     try:
-        OUTPUT_FILENAME = get_unique_filename(base_name, "tex")
+        output_filename = get_unique_filename(base_name, "tex")
     except ValueError as e:
         print(f"Error: {e}")
         return 1
@@ -1163,6 +1167,7 @@ def main(args) -> int:
         generate_test_output(args.number, bool(TEST_FONTS))
 
     print("[1/3] Loading font inventory (pipeline)...")
+
     inv_path = None
     if args.inventory:
         inv_path = Path(args.inventory)
@@ -1180,6 +1185,7 @@ def main(args) -> int:
         if not fonts:
             print("✗ No fonts to catalog or system error.")
             return 1
+
     if TEST_FONTS:
         fonts = [
             f
@@ -1193,23 +1199,47 @@ def main(args) -> int:
         else:
             fonts = fonts[args.number :]
 
-    # Sort alphabetically the list of fonts
     fonts = sorted(as_font_desc_list(fonts), key=font_family)
     fonts = group_fonts_by_family(fonts)
 
     latex_content = generate_latex(fonts)
 
-    print(f"[2/3] Writing file {OUTPUT_FILENAME}...")
+    print(f"[2/3] Writing file {output_filename}...")
     try:
-        with open(OUTPUT_FILENAME, "w", encoding="utf-8") as f:
+        with open(output_filename, "w", encoding="utf-8") as f:
             f.write(latex_content)
         print("✓ Done! LaTeX file generated successfully.")
         print("[3/3] Ready for compilation.")
-        print(f"  Execute: lualatex {OUTPUT_FILENAME} (twice)")
+        print(f"  Execute: lualatex {output_filename} (twice)")
     except Exception as e:
         print(f"✗ Error writing file: {e}")
         return 1
+
     return 0
+
+
+def _run_create_catalog(args) -> int:
+    """
+    Indirection layer for CLI testing.
+
+    This function exists so CLI tests can monkeypatch it
+    without touching the core implementation.
+    """
+    return run_create_catalog(args)
+
+
+def main(args) -> int:
+    """
+    CLI entrypoint for create-catalog.
+
+    Handles user-facing output and delegates execution to the core.
+    """
+    try:
+        return _run_create_catalog(args)
+    except Exception as exc:
+        if not getattr(args, "quiet", False):
+            print(f"ERROR: create-catalog failed: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

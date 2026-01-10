@@ -129,8 +129,8 @@ def run_cli(main_func, argv):
     try:
         with redirect_stdout(stdout), redirect_stderr(stdout):
             try:
-                main_func()
-                code = 0
+                result = main_func()
+                code = result if isinstance(result, int) else 0
             except SystemExit as exc:
                 code = exc.code if isinstance(exc.code, int) else 1
     finally:

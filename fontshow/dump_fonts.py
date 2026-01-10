@@ -1206,10 +1206,14 @@ def register_cli(parser) -> None:
     parser.set_defaults(func=main)
 
 
-def main(args) -> int:
-    """CLI entry point for font inventory generation.
+def run_dump_fonts(args) -> int:
+    """
+    Core implementation for dump-fonts.
 
-    This function orchestrates the full dump pipeline:
+    This function performs the full dump pipeline and returns an exit code.
+    It MUST NOT call sys.exit() and SHOULD NOT print directly.
+
+        It orchestrates the full dump pipeline:
 
     1. Discover installed font files for the current platform.
     2. Extract per-face metadata using ``fontTools``.
@@ -1250,45 +1254,10 @@ def main(args) -> int:
             "cache_dir": str(cache_dir),
         },
     )
-    if args.include_fc_charset and IS_LINUX:
-        log.debug(
-            "fontconfig charset extraction enabled",
-            extra={
-                "query_mode": "fontconfig",
-            },
-        )
-    else:
-        log.debug(
-            "fontconfig charset extraction disabled",
-        )
-    if args.cache_dir:
-        log.debug(
-            "font cache enabled",
-            extra={
-                "cache_dir": str(cache_dir),
-            },
-        )
-    else:
-        log.debug(
-            "font cache disabled",
-        )
 
-    # -------------------------------
-    # Font discovery
-    # -------------------------------
     font_files = get_installed_font_files()
 
-    if args.verbose:
-        print(f"Discovered {len(font_files)} font files")
-
-    # -------------------------------
-    # Extraction pipeline
-    # -------------------------------
     for font_path in font_files:
-        if args.verbose:
-            print(f"Processing: {font_path}")
-
-        # Linux-only FontConfig enrichment (file-level)
         fontconfig: dict[str, Any] | None = None
         if IS_LINUX:
             try:
@@ -1297,20 +1266,16 @@ def main(args) -> int:
                     include_charset=args.include_fc_charset,
                 )
             except Exception as exc:
-                # Best-effort FontConfig enrichment:
-                # keep the pipeline running, but make failures observable.
                 log.warning(
                     "fontconfig enrichment failed",
                     extra={
                         "font_path": str(font_path),
-                        "include_fc_charset": bool(args.include_fc_charset),
                         "error_type": type(exc).__name__,
                         "error_reason": str(exc),
                     },
                 )
                 fontconfig = None
 
-        # fontTools extraction (per face)
         try:
             faces = fonttools_extract_all(
                 font_path,
@@ -1327,7 +1292,6 @@ def main(args) -> int:
                 }
             ]
 
-        # Build descriptors
         for face in faces:
             try:
                 desc = build_font_descriptor(
@@ -1348,9 +1312,6 @@ def main(args) -> int:
                     }
                 )
 
-    # -------------------------------
-    # Write output
-    # -------------------------------
     args.output.write_text(
         json.dumps(inventory, indent=2, ensure_ascii=False),
         encoding="utf-8",
@@ -1364,9 +1325,36 @@ def main(args) -> int:
         },
     )
 
-    if args.verbose:
-        print(f"OK: wrote inventory to {args.output}")
     return 0
+
+
+def _run_dump_fonts(args) -> int:
+    """
+    Indirection layer for CLI testing.
+
+    This function exists so CLI tests can monkeypatch it
+    without touching the core implementation.
+    """
+    return run_dump_fonts(args)
+
+
+def main(args) -> int:
+    """
+    CLI wrapper for dump-fonts.
+
+    Handles user-facing output and delegates execution to the core.
+    """
+    try:
+        exit_code = _run_dump_fonts(args)
+    except Exception as exc:
+        if not getattr(args, "quiet", False):
+            print(f"ERROR: dump-fonts failed: {exc}", file=sys.stderr)
+        return 1
+
+    if args.verbose and exit_code == 0:
+        print(f"OK: wrote inventory to {args.output}")
+
+    return exit_code
 
 
 if __name__ == "__main__":

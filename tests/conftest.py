@@ -169,3 +169,59 @@ def stub_preflight(monkeypatch, request):
         "fontshow.preflight.__main__.preflight_exit_code",
         lambda result: 0 if ok else 1,
     )
+
+
+class _FakeDumpFontsResult:
+    def __init__(self, ok: bool):
+        self.ok = ok
+
+
+@pytest.fixture
+def stub_dump_fonts(monkeypatch, request):
+    mode = request.param
+    ok = mode == "ok"
+
+    def fake_run_dump_fonts(*args, **kwargs):
+        if not ok:
+            raise RuntimeError("dump failed")
+        return 0
+
+    monkeypatch.setattr(
+        "fontshow.dump_fonts._run_dump_fonts",
+        fake_run_dump_fonts,
+    )
+
+
+class _FakeParseInventoryResult(dict):
+    pass
+
+
+@pytest.fixture
+def stub_parse_inventory(monkeypatch, request):
+    mode = request.param
+    ok = mode == "ok"
+
+    def fake_parse_inventory(inv, *args, **kwargs):
+        if not ok:
+            raise ValueError("parse failed")
+        return {"schema_version": "1.1", "fonts": []}
+
+    monkeypatch.setattr(
+        "fontshow.parse_font_inventory._run_parse_inventory",
+        fake_parse_inventory,
+    )
+
+
+@pytest.fixture
+def stub_create_catalog(monkeypatch, request):
+    mode = request.param
+    ok = mode == "ok"
+
+    def fake_create_catalog(*args, **kwargs):
+        if not ok:
+            raise RuntimeError("catalog failed")
+
+    monkeypatch.setattr(
+        "fontshow.create_catalog.run_create_catalog",
+        fake_create_catalog,
+    )

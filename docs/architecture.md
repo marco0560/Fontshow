@@ -51,7 +51,6 @@ The Fontshow repository is organized as follows:
 For details about development-only tooling, see
 [Development scripts](scripts.md).
 
-
 ## Design principles
 
 Fontshow follows a small set of explicit design principles:
@@ -112,7 +111,6 @@ Metadata fields may include environment and tool information intended for
 debugging and reproducibility purposes. Downstream stages must treat metadata
 as informative and non-authoritative.
 
-
 Each stage respects the following contract:
 
 - **dump_fonts**
@@ -135,7 +133,8 @@ The `dump_fonts` stage produces *raw font descriptors* that follow a strict
 contract. This contract defines what information must be present, what may be
 missing, and how incomplete data is handled.
 
-**Identity**
+#### Identity
+
 - `identity.file` (**required**)
   Absolute or canonical path of the font file. Its absence is considered a
   fatal error.
@@ -143,17 +142,20 @@ missing, and how incomplete data is handled.
   The typographic family name. Fonts lacking a family name are accepted but
   generate a warning.
 
-**Coverage**
+#### Scripts Coverage
+
 - `coverage.scripts` (**optional, warned**)
   Script information as reported by FontConfig. The field may be empty when
   FontConfig is unavailable or the font does not expose script metadata.
 
-**Sample Text**
+#### Sample Text
+
 - `sample_text` (**optional**)
   Treated as *content*, not metadata. Intended for downstream consumers such
   as `create_catalog`, and not used for font identification or inference.
 
-**Error vs Warning Policy**
+#### Error vs Warning Policy
+
 - Missing mandatory identity fields (e.g. `identity.file`) are fatal.
 - Missing semantic fields (e.g. family name, scripts) generate warnings but do
   not prevent inventory generation.
@@ -165,8 +167,11 @@ This contract intentionally separates *observation* (dump phase) from
 
 Fontshow distinguishes strictly between *coverage* and *inference* data.
 
-**Coverage** represents raw observations gathered from font files or external
+#### Coverage
+
+ represents raw observations gathered from font files or external
 tools (e.g. FontConfig). Coverage data is:
+
 - incomplete and tool-dependent,
 - never corrected or normalized,
 - allowed to be missing or empty.
@@ -176,6 +181,7 @@ information reported by FontConfig, and sample text extracted from the font.
 
 **Inference** represents Fontshow’s interpretation of coverage and metadata.
 Inference data is:
+
 - normalized and consistent,
 - independent from the original tool,
 - guaranteed to be present in a usable form.
@@ -255,66 +261,143 @@ This approach ensures that:
 - malformed fonts do not abort the entire run,
 - diagnostic information remains available for inspection.
 
+## CLI architecture and testability
+
+Fontshow CLI commands are designed to be **fully testable, deterministic, and
+independent from the host environment**.
+To achieve this, all CLI commands follow a **strict layered architecture**
+that clearly separates:
+
+- user-facing CLI behavior
+- test seams
+- core business logic
+
+This design guarantees correct exit codes, stable CLI tests, and preservation
+of all official entrypoints (including `python -m fontshow.<command>`).
+
+---
+
+### Layered CLI structure
+
+Each CLI command follows the same three-layer pattern:
+
+1. **Core function (`run_<command>`)**
+   - Contains all business logic
+   - Performs filesystem I/O and processing
+   - Returns an integer exit code
+   - MUST NOT call `sys.exit()`
+   - SHOULD NOT print user-facing messages
+
+2. **Indirection layer (`_run_<command>`)**
+   - Thin wrapper around the core function
+   - Exists exclusively for CLI testing
+   - Is the only function monkeypatched in CLI tests
+   - Provides a stable test seam without touching business logic
+
+3. **CLI entrypoint (`main(args)`)**
+   - Receives parsed arguments from the dispatcher
+   - Calls the indirection layer
+   - Handles exceptions and maps them to exit codes
+   - Produces user-facing output
+   - Returns an integer exit code
+
+This structure is applied uniformly to all commands:
+
+- `preflight`
+- `dump-fonts`
+- `parse-inventory`
+- `create-catalog`
+
+---
+
+### Rationale
+
+This design deliberately avoids:
+
+- monkeypatching internal business logic
+- reliance on default arguments bound at function definition time
+- accidental coupling between tests and implementation details
+
+It guarantees:
+
+- stable and predictable exit codes
+- fully isolated and deterministic CLI tests
+- preservation of all CLI entrypoints
+- consistent behavior across all commands
+
+---
+
 ### CLI testing isolation principle
 
 All CLI-level tests **must be environment-independent**.
 
-In particular:
-- CLI tests MUST NOT depend on:
-  - LaTeX availability
-  - system fonts
-  - CI vs local environment differences
-- CLI tests MUST stub:
-  - `run_preflight`
-  - `render_preflight_results`
+In particular, CLI tests MUST NOT depend on:
 
-The purpose of CLI tests is to validate:
+- LaTeX availability
+- installed system fonts
+- Fontconfig presence
+- OS-specific behavior
+- CI vs local environment differences
+
+Instead, CLI tests MUST stub command execution by monkeypatching the
+appropriate indirection layer (e.g. `_run_<command>`).
+
+The purpose of CLI tests is strictly to validate:
+
 - argument parsing
 - exit codes
 - user-visible output
-- option behavior (`--quiet`, `-V`, defaults)
+- option behavior (`--quiet`, `--verbose`, `--version`, defaults)
 
 Environment capability checks (LaTeX, fonts, OS support) are validated
 exclusively by:
-- preflight unit tests
-- preflight integration tests
+
+- unit tests of the corresponding modules
+- preflight unit and integration tests
 
 This separation ensures:
+
 - deterministic CLI tests
 - stable CI execution
 - clear responsibility boundaries between layers
 
+---
+
 ### CLI testing architecture
 
-Fontshow CLI commands are tested through the real CLI entrypoint
+Fontshow CLI commands are tested through the **real CLI entrypoint**
 (`fontshow.__main__.main`) using a shared `cli_runner` fixture.
 
 Key design principles:
 
 1. **Real entrypoint execution**
-   CLI tests execute the real `main()` function instead of calling
-   implementation helpers directly.
+   CLI tests execute the real `main()` function instead of calling helpers
+   directly, ensuring realistic coverage of argument parsing and dispatch.
 
 2. **Deterministic stubbing**
-   External dependencies (e.g. preflight execution) are stubbed via pytest
-   fixtures by monkeypatching the symbols *as imported by the CLI module*.
+   External dependencies are stubbed via pytest fixtures by monkeypatching
+   symbols **as imported by the CLI module**, not by patching deep internals.
 
 3. **Result-driven exit codes**
-   CLI exit codes are derived exclusively from explicit result objects
-   (e.g. `PreflightResult`) rather than implicit side effects.
+   CLI exit codes are derived exclusively from explicit return values or
+   controlled exceptions, never from implicit side effects.
 
-4. **CI-safe behaviour**
-   Tests never depend on the actual runtime environment (LaTeX availability,
-   fontconfig, system fonts). All environment-dependent logic is stubbed.
+4. **CI-safe behavior**
+   Tests never depend on the actual runtime environment. All environment-
+   dependent logic is stubbed.
 
 5. **Minimal result contracts**
-   Stubbed result objects implement only the minimal interface required by the
-   CLI, ensuring stability and long-term maintainability of tests.
+   Stubbed objects implement only the minimal interface required by the CLI,
+   ensuring long-term test stability and maintainability.
+
+---
 
 This architecture guarantees:
+
 - reproducible CLI tests
 - isolation from host environment
-- clear separation between command orchestration and domain logic
+- clean separation between command orchestration and domain logic
+- a scalable pattern for future CLI commands
 
 ## Why a procedural architecture
 

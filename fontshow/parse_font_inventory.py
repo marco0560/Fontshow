@@ -1087,49 +1087,86 @@ def register_cli(parser) -> None:
     parser.set_defaults(func=main)
 
 
-def main(args) -> int:
+def run_parse_font_inventory(
+    args,
+    *,
+    # injectable core functions
+    parse_inventory_fn=parse_inventory,
+    validate_inventory_fn=validate_inventory,
+    # injectable I/O helpers (test-friendly)
+    read_text_fn=None,
+    write_text_fn=None,
+    print_fn=print,
+    eprint_fn=None,
+) -> int:
     """
-    Command-line interface entry point for inventory parsing and inference.
+    Internal runner for the parse-font-inventory CLI.
 
-    This function:
-    - parses CLI arguments
-    - loads a Fontshow font inventory from JSON
-    - optionally validates the inventory structure
-    - enriches the inventory with deterministic inference results
-    - writes the enriched inventory back to disk
+        Command-line interface entry point for inventory parsing and inference.
 
-    The function handles all user-facing error reporting and exit codes,
-    while delegating validation and inference logic to dedicated helpers.
+        This function:
+        - parses CLI arguments
+        - loads a Fontshow font inventory from JSON
+        - optionally validates the inventory structure
+        - enriches the inventory with deterministic inference results
+        - writes the enriched inventory back to disk
 
-    Notes
-    -----
-    - This function performs file I/O.
-    - Core inference logic is implemented in :func:`parse_inventory`.
-    - Validation logic is implemented in :func:`validate_inventory`.
+        The function handles all user-facing error reporting and exit codes,
+        while delegating validation and inference logic to dedicated helpers.
+
+        Notes
+        -----
+        - This function performs file I/O.
+        - Core inference logic is implemented in :func:`parse_inventory`.
+        - Validation logic is implemented in :func:`validate_inventory`.
+
+    Why it exists:
+    - Makes CLI tests deterministic by allowing injection/stubbing of:
+      - core functions (parse_inventory / validate_inventory)
+      - I/O (read/write/print)
+    - Keeps the public entrypoint stable:
+        - top-level dispatcher (fontshow __main__)
+        - `python -m fontshow.parse_font_inventory`
+
+    Contract:
+    - returns an int exit code
+    - performs user-facing output via print_fn/eprint_fn
     """
+    if read_text_fn is None:
 
-    if args.verbose and args.quiet:
-        parser.error("--verbose and --quiet are mutually exclusive")
+        def read_text_fn(p: Path) -> str:
+            return p.read_text(encoding="utf-8")
 
-    if not args.input.exists():
-        print(f"❌ Error: input file not found: {args.input}", file=sys.stderr)
-        print(
-            "Hint: run dump_fonts.py first to generate the inventory.", file=sys.stderr
-        )
+    if write_text_fn is None:
+
+        def write_text_fn(p: Path, s: str) -> None:
+            return p.write_text(s, encoding="utf-8")
+
+    if eprint_fn is None:
+
+        def eprint_fn(msg: str) -> None:
+            print_fn(msg, file=sys.stderr)
+
+    # NOTE: don't call parser.error here: args may come from dispatcher tests.
+    if getattr(args, "verbose", False) and getattr(args, "quiet", False):
+        eprint_fn("❌ Error: --verbose and --quiet are mutually exclusive")
+        return 2
+
+    input_path = args.input
+    if not input_path.exists():
+        eprint_fn(f"❌ Error: input file not found: {input_path}")
+        eprint_fn("Hint: run dump_fonts.py first to generate the inventory.")
         return 1
 
     log.debug(
         "inference level enabled",
-        extra={
-            "infer_level": args.infer_level,
-        },
+        extra={"infer_level": args.infer_level},
     )
 
-    data: dict[str, Any] = json.loads(args.input.read_text(encoding="utf-8"))
+    data: dict[str, Any] = json.loads(read_text_fn(input_path))
 
-    # --- Soft schema validation ---
+    # --- Soft schema validation (keep behavior, but never crash tests) ---
     metadata = data.setdefault("metadata", {})
-
     schema_version = metadata.get("schema_version")
     if schema_version is None:
         add_structured_warning(
@@ -1149,26 +1186,49 @@ def main(args) -> int:
 
     fonts = data.get("fonts")
     if not isinstance(fonts, list):
-        raise TypeError("Invalid inventory JSON: 'fonts' must be a list")
+        eprint_fn("❌ Error: Invalid inventory JSON: 'fonts' must be a list")
+        return 1
 
-    # ------------------------------
     if args.validate_inventory:
-        exit_code = validate_inventory(
-            data,
-            verbose=args.verbose,
-            quiet=args.quiet,
+        return int(
+            validate_inventory_fn(
+                data,
+                verbose=args.verbose,
+                quiet=args.quiet,
+            )
         )
-        return exit_code
 
-    enriched = parse_inventory(data, args.infer_level)
+    enriched = parse_inventory_fn(data, args.infer_level)
 
-    args.output.write_text(
+    write_text_fn(
+        args.output,
         json.dumps(enriched, indent=2, ensure_ascii=False),
-        encoding="utf-8",
     )
-
-    print(f"OK: wrote enriched inventory to {args.output}")
+    print_fn(f"OK: wrote enriched inventory to {args.output}")
     return 0
+
+
+def _run_parse_inventory(args) -> int:
+    """
+    Indirection layer for CLI testing.
+
+    This function exists so CLI tests can monkeypatch it
+    without touching the core implementation.
+    """
+    return run_parse_font_inventory(args)
+
+
+def main(args) -> int:
+    """
+    Public CLI entrypoint (kept stable).
+    Thin wrapper around the injectable runner.
+    """
+    try:
+        return _run_parse_inventory(args)
+    except Exception as exc:
+        if not getattr(args, "quiet", False):
+            print(f"ERROR: parse-inventory failed: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
