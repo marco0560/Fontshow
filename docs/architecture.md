@@ -73,8 +73,6 @@ Fontshow follows a small set of explicit design principles:
   Given the same inventory input, downstream stages produce identical
   results.
 
----
-
 ## Pipeline overview
 
 The Fontshow pipeline is strictly linear:
@@ -100,8 +98,6 @@ Each stage produces a JSON-compatible structure that can be:
 - inspected manually,
 - cached,
 - reused independently of the other stages.
-
----
 
 ## Data flow and contracts
 
@@ -133,9 +129,7 @@ Each stage respects the following contract:
 Downstream stages must never assume the presence of optional fields unless
 explicitly documented.
 
----
-
-#### Font Descriptor Contract (Dump Phase)
+### Font Descriptor Contract (Dump Phase)
 
 The `dump_fonts` stage produces *raw font descriptors* that follow a strict
 contract. This contract defines what information must be present, what may be
@@ -167,9 +161,7 @@ missing, and how incomplete data is handled.
 This contract intentionally separates *observation* (dump phase) from
 *interpretation* (parse/inference phase).
 
----
-
-#### Coverage vs Inference Semantics
+### Coverage vs Inference Semantics
 
 Fontshow distinguishes strictly between *coverage* and *inference* data.
 
@@ -194,8 +186,6 @@ When no script can be inferred, the special value `"unknown"` is used.
 The value `"unknown"` is never emitted in coverage data and only appears as the
 result of inference.
 
----
-
 ### FontConfig charset integration
 
 Fontshow can optionally enrich the font inventory with Unicode charset
@@ -214,8 +204,6 @@ The primary source of Unicode coverage in Fontshow remains the
 The integration is optional, non-breaking, and designed for future
 extensions of the inventory schema.
 
----
-
 ## Module responsibilities
 
 ### dump_fonts
@@ -233,8 +221,6 @@ It does **not**:
 - group fonts,
 - make rendering decisions.
 
----
-
 ### parse_font_inventory
 
 Responsible for:
@@ -245,8 +231,6 @@ Responsible for:
 
 It operates purely on structured data and never accesses font binaries.
 
----
-
 ### create_catalog
 
 Responsible for:
@@ -256,8 +240,6 @@ Responsible for:
 - rendering LaTeX source code.
 
 It does not perform inference and does not alter the inventory semantics.
-
----
 
 ## Error handling and robustness
 
@@ -273,7 +255,34 @@ This approach ensures that:
 - malformed fonts do not abort the entire run,
 - diagnostic information remains available for inspection.
 
----
+### CLI testing isolation principle
+
+All CLI-level tests **must be environment-independent**.
+
+In particular:
+- CLI tests MUST NOT depend on:
+  - LaTeX availability
+  - system fonts
+  - CI vs local environment differences
+- CLI tests MUST stub:
+  - `run_preflight`
+  - `render_preflight_results`
+
+The purpose of CLI tests is to validate:
+- argument parsing
+- exit codes
+- user-visible output
+- option behavior (`--quiet`, `-V`, defaults)
+
+Environment capability checks (LaTeX, fonts, OS support) are validated
+exclusively by:
+- preflight unit tests
+- preflight integration tests
+
+This separation ensures:
+- deterministic CLI tests
+- stable CI execution
+- clear responsibility boundaries between layers
 
 ## Why a procedural architecture
 
@@ -288,8 +297,6 @@ Reasons include:
 
 This choice prioritizes clarity and debuggability over extensibility through
 inheritance.
-
----
 
 ### Inventory schema evolution
 

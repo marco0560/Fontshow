@@ -11,6 +11,35 @@ cover:
 - non-regression tests
 - CI-based validation on commits or releases
 
+## CLI tests and environment isolation
+
+CLI-level tests under ``tests/cli/`` are designed to be **environment-independent**.
+
+In particular, the ``preflight`` command performs checks that depend on the
+runtime environment (e.g. LaTeX availability, CI constraints, system tools).
+Executing the real preflight logic inside CLI tests would therefore make
+those tests non-deterministic and environment-sensitive.
+
+To avoid this, CLI tests **stub or monkeypatch the preflight execution path**
+so that:
+
+- no real environment checks are executed;
+- the CLI output and exit code can be tested deterministically;
+- behavior is identical across local development, WSL, CI, and native Linux.
+
+This separation ensures that:
+- environment-dependent behavior is tested in ``tests/preflight/``;
+- CLI behavior (output, quiet mode, exit codes) is tested in isolation;
+- end-to-end validation of the real pipeline is delegated to platform-specific
+  integration scripts (e.g. ``scripts/test_fontshow_gentoo.sh``).
+
+In short:
+
+```text
+CLI tests do not test the environment.
+CLI tests test the CLI.
+```
+
 ## Gentoo validation: Fontconfig language codes vs ISO 639
 
 During full pipeline testing on Gentoo Linux, the `fontshow-validate` step

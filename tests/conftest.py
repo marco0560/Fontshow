@@ -58,3 +58,65 @@ def capture_fontshow_logs(caplog):
         yield caplog
     finally:
         logger.removeHandler(caplog.handler)
+
+
+@pytest.fixture
+def stub_preflight_ok(monkeypatch):
+    """
+    Stub preflight execution so CLI tests are environment-independent.
+    """
+
+    # Fake preflight result object
+    class _Result:
+        results = []
+        overall_severity = type("S", (), {"name": "OK"})()
+
+    # Stub run_preflight
+    monkeypatch.setattr(
+        "fontshow.__main__.run_preflight",
+        lambda *args, **kwargs: _Result(),
+    )
+
+    # Stub rendering
+    monkeypatch.setattr(
+        "fontshow.__main__.render_preflight_results",
+        lambda *args, **kwargs: (0, "Preflight passed.\n"),
+    )
+
+
+@pytest.fixture
+def stub_preflight_fail(monkeypatch):
+    """
+    Stub preflight execution to simulate a FAILED preflight.
+    """
+
+    class _Result:
+        results = []
+        overall_severity = type("S", (), {"name": "ERROR"})()
+
+    monkeypatch.setattr(
+        "fontshow.__main__.run_preflight",
+        lambda *args, **kwargs: _Result(),
+    )
+
+    monkeypatch.setattr(
+        "fontshow.__main__.render_preflight_results",
+        lambda *args, **kwargs: (1, "Preflight failed.\n"),
+    )
+
+
+@pytest.fixture
+def cli_runner():
+    """
+    Standard CLI runner for Fontshow commands.
+
+    Returns a callable:
+        run(args: list[str]) -> (exit_code: int, output: str)
+    """
+    from fontshow.__main__ import main
+    from tests.helpers import run_cli
+
+    def _run(args):
+        return run_cli(main, args)
+
+    return _run
