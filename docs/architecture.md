@@ -284,6 +284,38 @@ This separation ensures:
 - stable CI execution
 - clear responsibility boundaries between layers
 
+### CLI testing architecture
+
+Fontshow CLI commands are tested through the real CLI entrypoint
+(`fontshow.__main__.main`) using a shared `cli_runner` fixture.
+
+Key design principles:
+
+1. **Real entrypoint execution**
+   CLI tests execute the real `main()` function instead of calling
+   implementation helpers directly.
+
+2. **Deterministic stubbing**
+   External dependencies (e.g. preflight execution) are stubbed via pytest
+   fixtures by monkeypatching the symbols *as imported by the CLI module*.
+
+3. **Result-driven exit codes**
+   CLI exit codes are derived exclusively from explicit result objects
+   (e.g. `PreflightResult`) rather than implicit side effects.
+
+4. **CI-safe behaviour**
+   Tests never depend on the actual runtime environment (LaTeX availability,
+   fontconfig, system fonts). All environment-dependent logic is stubbed.
+
+5. **Minimal result contracts**
+   Stubbed result objects implement only the minimal interface required by the
+   CLI, ensuring stability and long-term maintainability of tests.
+
+This architecture guarantees:
+- reproducible CLI tests
+- isolation from host environment
+- clear separation between command orchestration and domain logic
+
 ## Why a procedural architecture
 
 Fontshow intentionally avoids a class-based or object-oriented architecture.

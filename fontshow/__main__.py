@@ -1,3 +1,5 @@
+# fontshow/__main__.py
+
 import argparse
 import sys
 from importlib.metadata import PackageNotFoundError, version

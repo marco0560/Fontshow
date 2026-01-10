@@ -1,3 +1,5 @@
+# fontshow/preflight/__main__.py
+
 """
 Fontshow preflight entry point.
 
@@ -22,12 +24,13 @@ def main(args=None) -> int:
     verbose = getattr(args, "verbose", False) if args is not None else False
 
     if not quiet:
-        for line in render_preflight_results(result.results, verbose=verbose):
+        lines = render_preflight_results(result.results, verbose=verbose)
+        for line in lines:
             print(line)
         print("Preflight passed." if exit_code == 0 else "Preflight failed.")
 
-    return exit_code
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
