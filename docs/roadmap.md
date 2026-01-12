@@ -1,14 +1,58 @@
 # Roadmap – Fontshow
 
-This document describes the **actual state of the Fontshow project** as of version **v0.20.0**,
+This document describes the **actual state of the Fontshow project** as of version **v0.28.7**,
 aligning milestones, GitHub issues, and the intended evolution path.
 It is a **living document**, manually updated whenever a milestone is closed or redefined.
 
 ---
 
+## Development Workflow Overview
+
+```txt
+Design
+  |
+  v
+Issue
+  |
+  v
+Session
+  |
+  v
+Commit
+  |
+  v
+Release
+```
+
+<details>
+<summary>Mermaid diagram (visual aid)</summary>
+
+```mermaid
+flowchart TD
+    D["Design"]
+    I["Issue"]
+    S["Session"]
+    C["Commit"]
+    R["Release"]
+
+    D --> I --> S --> C --> R
+```
+
+</details>
+
+### Rules
+
+- No code during Design
+- No design during Issue
+- No scope changes during Session
+- No planning during Commit
+- No refactoring during Release
+
+---
+
 ## 📍 Current status
 
-- **Version**: v0.20.0
+- **Version**: v0.28.7.post9
 - **Milestone**: **C5 – COMPLETED**
 - **Current focus**: consolidation, manual testing, robustness
 
@@ -83,4 +127,4 @@ and documentation quality:
 
 ---
 
-*Last updated: post-C5, v0.20.0*
+### Last updated: 12/01/2026, v0.28.7.post9
