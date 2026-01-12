@@ -37,14 +37,16 @@ coverage.xml
 *:com.dropbox.attrs:*
 
 # --------------------------------------------------
-# Font inventory artifacts (generated)
+# Font inventory and workflow artifacts (generated)
 # --------------------------------------------------
 .fontshow_cache/
 font_inventory.json
 font_inventory.txt
 font_inventory_enriched.json
 font_inventory_sample.txt
-
+fontshow_snapshot.zip
+issues.json
+milestones_plan.json
 # --------------------------------------------------
 # Generated LaTeX / output
 # --------------------------------------------------
