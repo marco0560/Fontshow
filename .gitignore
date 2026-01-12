@@ -48,6 +48,12 @@ fontshow_snapshot.zip
 issues.json
 milestones_plan.json
 # --------------------------------------------------
+# Node / tooling
+# --------------------------------------------------
+node_modules/
+package-lock.json
+.releaserc.local.json
+# --------------------------------------------------
 # Generated LaTeX / output
 # --------------------------------------------------
 #catalogo_font_*.tex

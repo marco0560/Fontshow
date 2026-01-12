@@ -21,6 +21,9 @@ Before submitting a contribution, you must:
 Fontshow uses a **pre-commit–driven workflow** to keep generated artifacts
 and documentation consistent and to avoid noisy or accidental changes.
 
+Local semantic-release dry-runs require a temporary GitHub token
+(GH_TOKEN) due to mandatory GitHub plugin verification, even in dry-run mode.
+
 ### Pre-commit hooks
 
 Before each commit, the following checks and generators may run automatically:
@@ -97,7 +100,7 @@ Key rotation procedures are documented in:
 
 Commits must be signed using SSH:
 
-```
+```bash
 git config --global gpg.format ssh
 git config --global commit.gpgsign true
 git config --global user.signingkey ~/.ssh/<SIGNING_KEY>.pub
@@ -109,13 +112,13 @@ Commits that are not signed will be rejected.
 
 This project follows a conventional commit format:
 
-```
+```txt
 <type>(<scope>): <summary>
 ```
 
 Examples:
 
-```
+```txt
 feat(core): add inventory validation
 fix(catalog): escape LaTeX special characters
 docs(docs): update security policy
