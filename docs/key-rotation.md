@@ -25,6 +25,7 @@ This project distinguishes between **human-authored commits** and **CI-generated
 Automated processes (e.g. GitHub Actions) do not use cryptographic commit signing.
 
 CI-generated commits are trusted based on:
+
 - Restricted write access to protected branches
 - Mandatory CI checks
 - Auditable workflows
@@ -32,6 +33,7 @@ CI-generated commits are trusted based on:
 This separation is intentional and documented.
 
 See also:
+
 - [Development environment and commit policy](dev-environment.md#commit-signing-and-release-model)
 
 ---

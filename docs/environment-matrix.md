@@ -6,13 +6,13 @@ This document defines the execution environments in which Fontshow is known
 to work reliably, partially, or experimentally.
 
 Its purpose is **not** to guarantee universal compatibility, but to:
+
 - make environmental assumptions explicit,
 - support systematic debugging,
 - clearly communicate support boundaries.
 
 This document is especially relevant when diagnosing failures across
 different operating systems, runtimes, or toolchains.
-
 
 ## Reference Environment (Baseline)
 
@@ -32,35 +32,32 @@ All pipeline stages are expected to run **within the same environment**.
 
 Any deviation from this baseline may result in partial or unexpected behavior.
 
-
 ## Supported Environments
 
-| Environment | Status | Notes |
-|------------|--------|-------|
-| Linux (native, bare metal) | Supported | Baseline reference environment |
+| Environment                | Status                 | Notes                                                        |
+|----------------------------|------------------------|--------------------------------------------------------------|
+| Linux (native, bare metal) | Supported              | Baseline reference environment                               |
 | Linux (container / chroot) | Supported with caveats | Font availability and fontconfig visibility must be verified |
-
 
 ## Partially Supported / Fragile Environments
 
-| Environment | Status | Known Issues |
-|------------|--------|-------------|
+| Environment                       | Status  | Known Issues                                                         |
+|-----------------------------------|---------|----------------------------------------------------------------------|
 | WSL (Windows Subsystem for Linux) | Fragile | Font discovery and LaTeX compilation may observe different font sets |
-| Minimal TeX Live installations | Fragile | Missing packages may prevent LuaLaTeX compilation |
-
+| Minimal TeX Live installations    | Fragile | Missing packages may prevent LuaLaTeX compilation                    |
 
 ## Experimental / Observed Environments
 
-| Environment | Status | Notes |
-|------------|--------|-------|
+| Environment      | Status       | Notes                                                         |
+|------------------|--------------|---------------------------------------------------------------|
 | Windows (native) | Experimental | Different font discovery model; LaTeX toolchain not validated |
-
 
 ## CI Environment (GitHub Actions)
 
 GitHub CI is **not** considered a full execution environment.
 
 In CI, Fontshow is expected to support:
+
 - linting
 - validation
 - packaging
@@ -68,7 +65,6 @@ In CI, Fontshow is expected to support:
 
 CI workflows do **not** execute LuaLaTeX and do not validate
 end-to-end document generation.
-
 
 ## Common Failure Classes
 
@@ -79,7 +75,6 @@ Observed or anticipated failure classes include:
 - Missing system-level dependencies (fontconfig, TeX packages)
 - Different font visibility between host OS and execution runtime
 - Path or encoding issues across operating systems
-
 
 ## Debugging Guidance
 

@@ -33,7 +33,7 @@ fontshow preflight
 The preflight command supports the standard global flags:
 
 | Flag | Description |
-|------|-------------|
+| ------ | ------------- |
 | `-v`, `--verbose` | Show detailed check results |
 | `-q`, `--quiet` | Suppress all output |
 | `-V`, `--version` | Show Fontshow version |
@@ -65,7 +65,7 @@ When `--quiet` is specified, no output is produced.
 ## Exit codes
 
 | Code | Meaning |
-|------|--------|
+| ------ | -------- |
 | `0` | All required checks passed |
 | `1` | One or more blocking checks failed |
 

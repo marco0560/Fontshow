@@ -24,6 +24,43 @@ and documentation consistent and to avoid noisy or accidental changes.
 Local semantic-release dry-runs require a temporary GitHub token
 (GH_TOKEN) due to mandatory GitHub plugin verification, even in dry-run mode.
 
+### Semantic-release and git hooks
+
+Fontshow uses `semantic-release` to automate versioning and changelog
+generation. However, its usage differs between local development and CI.
+
+#### Local development
+
+- `semantic-release` is **not a mandatory check** during `git push`
+- The pre-push hook may optionally run a `semantic-release --dry-run`
+  **only if** a `GH_TOKEN` environment variable is present
+- If `GH_TOKEN` is not set, the semantic-release preview is skipped
+  without blocking the push
+
+This design ensures that:
+
+- `git push` works in all environments (Linux, WSL, Windows)
+- no local credentials are required by default
+- release planning remains an explicit, opt-in action
+
+For local release previews, contributors can run:
+
+```bash
+scripts/release-preview.sh
+```
+
+or use a convenience alias that injects a temporary `GH_TOKEN`.
+
+#### Continuous Integration (CI)
+
+In CI environments:
+
+- `semantic-release` runs with full credentials
+- authentication is mandatory
+- failures are blocking
+
+CI remains the single authoritative gate for releases.
+
 ### Pre-commit hooks
 
 Before each commit, the following checks and generators may run automatically:

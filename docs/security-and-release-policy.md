@@ -39,6 +39,7 @@ As a consequence:
 - The rationale and failed alternatives are documented in `decisions.md`
 
 See:
+
 - `decisions.md` — for historical context and rejected alternatives
 - `CONTRIBUTING.md` — for contributor-facing rules
 
@@ -58,6 +59,7 @@ Local hooks and CI checks are supportive but not authoritative.
 GitHub Actions currently cannot produce cryptographically signed commits that satisfy repository rulesets.
 
 This policy represents the best balance between:
+
 - Security
 - Automation
 - Developer experience

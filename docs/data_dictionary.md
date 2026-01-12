@@ -5,6 +5,7 @@ All inventories generated or processed by Fontshow tools MUST conform
 to the structures described here.
 
 The dictionary describes:
+
 - extracted metadata
 - pass-through metadata
 - inferred / derived metadata
@@ -291,7 +292,8 @@ based on Unicode coverage metadata:
 
 4. **Unknown**
    If no reliable inference is possible, the value defaults to:
-   ```
+
+   ```json
    ["unknown"]
    ```
 
@@ -304,7 +306,7 @@ based on Unicode coverage metadata:
 
 ---
 
-## Notes
+## Overall Notes
 
 - `coverage.*` fields are never modified by inference.
 - `inference.*` fields may evolve as inference logic improves.

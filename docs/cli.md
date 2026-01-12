@@ -35,7 +35,7 @@ fontshow create-catalog
 The following flags are available on **all commands** via the dispatcher:
 
 | Flag | Description |
-|------|-------------|
+| ------ | ------------- |
 | `--help` | Show usage information |
 | `--version`, `-V` | Show Fontshow version |
 | `--verbose`, `-v` | Enable verbose output |
@@ -66,7 +66,7 @@ This guarantees identical behavior across all supported entrypoints.
 Fontshow uses a consistent exit code contract across all commands:
 
 | Code | Meaning |
-|------|--------|
+| ------ | -------- |
 | `0` | Successful execution |
 | `1` | Unrecoverable execution failure |
 | `2` | CLI usage error (argument parsing) |
@@ -95,7 +95,7 @@ Example output:
 Preflight failed.
 ```
 
-### Exit codes
+### Exit codes for preflight
 
 The exit code of `fontshow preflight` follows these rules:
 

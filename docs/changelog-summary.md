@@ -3,6 +3,7 @@
 This page provides a **decision-oriented** summary of recent changes.
 
 For the authoritative, commit-level history, refer to:
+
 - GitHub Releases
 - `CHANGELOG.md` (semantic-release output)
 - Git tags

@@ -15,7 +15,7 @@ This project uses SSH for Git operations.
 
 Public repository URL:
 
-```
+```txt
 git@github.com:<GITHUB_USERNAME>/<REPOSITORY_NAME>.git
 ```
 
@@ -57,7 +57,7 @@ ssh -T git@github.com
 
 Expected output:
 
-```
+```txt
 Hi <GITHUB_USERNAME>! You've successfully authenticated...
 ```
 
@@ -84,19 +84,20 @@ Git requires an explicit list of allowed signing keys.
 Create the file:
 
 - **Linux / WSL**
-```
+
+```bash
 ~/.config/git/allowed_signers
 ```
 
 - **Windows**
 
-```
+```bash
 C:/Users/<USERNAME>/.config/git/allowed_signers
 ```
 
 File format (single line per identity):
 
-```
+```txt
 <EMAIL_OR_IDENTITY> ssh-ed25519 AAAA...
 ```
 
@@ -112,13 +113,13 @@ Notes:
 
 Verify commit signatures with:
 
-```
+```bash
 git log --show-signature -1
 ```
 
 Expected result:
 
-```
+```bash
 Good "git" signature for <IDENTITY>
 ```
 
@@ -150,6 +151,7 @@ Due to current GitHub platform limitations, commit signature verification is enf
 This ensures a secure workflow while preserving full automation.
 
 See also:
+
 - [Key rotation policy](key-rotation.md#key-rotation-and-trust-model)
 
 ---

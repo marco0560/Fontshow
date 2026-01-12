@@ -22,6 +22,7 @@ Fontshow uses **structured warnings** to report non-fatal issues detected
 during inventory parsing, validation, and inference.
 
 Warnings are designed to be:
+
 - deterministic
 - machine-readable
 - attached directly to the relevant inventory node
@@ -139,7 +140,6 @@ emits structured warnings without failing the validation process.
 - The warning system is intentionally minimal and extensible.
 - Wrapper functions for warning emission were removed in C4.3 to avoid
   ambiguity and duplicated semantics.
-
 
 ---
 

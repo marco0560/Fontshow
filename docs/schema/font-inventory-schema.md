@@ -21,7 +21,6 @@ Two conceptual levels exist:
 The enrichment pipeline is incremental and non-destructive: new metadata
 is added without removing or overriding existing information.
 
-
 ## Schema versions
 
 ### Schema 1.0 — Raw inventory

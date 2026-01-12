@@ -13,16 +13,17 @@ They may change or be removed without notice.
 
 ## clean_repo.py
 
-**Purpose**
+### Purpose
 
 Utility script used during development to clean the repository workspace.
 
 Typical use cases include:
+
 - removing temporary or generated files,
 - resetting local artifacts created during development or testing,
 - preparing the repository for a clean run or release check.
 
-**Status**
+### Status
 
 Development-only utility.
 Not used by the core pipeline or CLI.
@@ -31,16 +32,17 @@ Not used by the core pipeline or CLI.
 
 ## generate_cheatsheet.py
 
-**Purpose**
+### Generation Purpose
 
 Generates developer-facing cheat sheets from documentation sources.
 
 This script is typically used to:
+
 - consolidate reference information,
 - produce printable or distributable cheat sheets,
 - assist maintainers during documentation updates.
 
-**Status**
+### Generation Status
 
 Documentation tooling.
 Not required for normal Fontshow operation.
@@ -49,15 +51,16 @@ Not required for normal Fontshow operation.
 
 ## set_version.py (removed)
 
-**Purpose (historical)**
+### Purpose (historical)
 
 Previously used to manually update version information during development.
 
-**Current status**
+### Current status
 
 This script has been removed.
 
 Fontshow versioning is now fully managed via:
+
 - semantic-release,
 - Git tags,
 - automated CI workflows.
