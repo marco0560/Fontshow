@@ -1,0 +1,68 @@
+# Archived after base-zero planning (v0.28.7.post14)
+
+ISSUE: Finalize dual-field language strategy
+Scope:
+- Complete separation between raw Fontconfig language tags and normalized ISO 639 languages
+- Update schema and documentation
+Acceptance:
+- No validation noise on Gentoo
+- Raw data preserved verbatim
+
+ISSUE: Charset vs fontTools consistency diagnostics
+Scope:
+- Logging-only diagnostics comparing coverage sources
+- No mutation of inventory
+Acceptance:
+- Structured warnings emitted only when both sources are present
+
+ISSUE: Formalize warning contracts
+Scope:
+- Warning catalog
+- Severity semantics
+- Centralized rendering
+Acceptance:
+- All warnings use documented codes and severities
+
+ISSUE: Document and enforce CLI exit code policy
+Scope:
+- Exit code table
+- CLI alignment
+- Regression tests
+Acceptance:
+- All CLI tools return documented exit codes
+
+ISSUE: Improve preflight CLI UX
+Scope:
+- --format=json
+- --explain
+- --only-errors
+Acceptance:
+- Machine-readable output usable in CI
+
+ISSUE: Close logging specification gaps
+Scope:
+- Track unimplemented log messages
+- Align code with decisions.md incrementally
+Acceptance:
+- No undocumented discrepancy remains
+
+ISSUE: Introduce .coveragerc aligned with coverage strategy
+Scope:
+- Exclude thin CLI layers
+- Document rationale
+Acceptance:
+- Local and CI coverage aligned
+
+ISSUE: Improve LaTeX robustness and diagnostics
+Scope:
+- Per-font debug options
+- Crash isolation
+Acceptance:
+- Single-font failures do not abort full catalog generation
+
+ISSUE: Review decisions.md as external contributor
+Scope:
+- Clarity
+- Active vs historical decisions
+Acceptance:
+- Improved navigability and contributor comprehension

@@ -1,0 +1,146 @@
+# TESTING_STRATEGY.md
+
+## Fontshow — Testing Strategy and Coverage Policy
+
+**Current version:** v0.28.7.post14
+**Applies to:** All tests and CI executions after base-zero planning
+
+---
+
+## Purpose
+
+This document defines the **testing philosophy**, **test categorization**,
+and **coverage expectations** for the Fontshow project.
+
+Its goals are:
+- deterministic test behavior across environments,
+- clear separation of responsibilities between test types,
+- meaningful coverage metrics,
+- predictable CI execution.
+
+This document is **normative**.
+
+---
+
+## Guiding Principles
+
+- **Determinism first**
+  Tests must produce the same result regardless of environment,
+  unless explicitly marked otherwise.
+
+- **Explicit environment dependence**
+  Any test relying on external tools, fonts, or system configuration
+  must be clearly identified and isolated.
+
+- **Coverage as a contract**
+  Coverage metrics exist to enforce guarantees, not to chase percentages.
+
+---
+
+## Test Categories
+
+### Unit Tests
+
+**Definition**
+- Test pure logic and data transformations.
+- Must not depend on filesystem layout, FontConfig, LaTeX, or OS-specific tools.
+
+**Characteristics**
+- Fast
+- Deterministic
+- Runnable on any platform
+
+**Examples**
+- Language inference logic
+- Data normalization functions
+- Schema validation helpers
+
+---
+
+### Integration Tests
+
+**Definition**
+- Test interaction with external systems or tools.
+- May depend on:
+  - filesystem,
+  - FontConfig,
+  - LaTeX,
+  - OS-level capabilities.
+
+**Characteristics**
+- Potentially slower
+- Explicitly environment-dependent
+- May be skipped or marked in CI
+
+**Examples**
+- Catalog generation using real fonts
+- LaTeX PDF rendering
+- End-to-end CLI execution with system tools
+
+---
+
+## Test Marking and Organization
+
+- Tests MUST be explicitly marked (e.g. `@pytest.mark.unit`, `@pytest.mark.integration`).
+- Default test runs MUST execute unit tests only.
+- Integration tests MUST be opt-in.
+
+Directory structure SHOULD reflect intent, but markers are authoritative.
+
+---
+
+## CI Policy
+
+### Default CI Behavior
+
+- Run all unit tests.
+- Enforce coverage thresholds on unit tests only.
+- Skip integration tests unless explicitly enabled.
+
+### Optional CI Jobs
+
+- Integration test jobs MAY exist.
+- Failures in optional jobs MUST NOT block unrelated development.
+
+---
+
+## Coverage Policy
+
+- Coverage thresholds apply to:
+  - unit tests,
+  - deterministic code paths only.
+
+- Integration tests:
+  - contribute to confidence,
+  - but do not count toward coverage thresholds.
+
+Coverage reports MUST clearly distinguish:
+- covered vs uncovered code,
+- deterministic vs environment-dependent paths.
+
+---
+
+## Anti-Patterns
+
+The following are explicitly discouraged:
+
+- Mixing unit and integration behavior in the same test.
+- Writing tests that silently skip behavior without explanation.
+- Relying on local developer environments for CI success.
+
+---
+
+## Change Policy
+
+Changes to this strategy:
+- require explicit documentation,
+- must not invalidate existing guarantees silently.
+
+Historical versions of this document must remain accessible.
+
+---
+
+## Status
+
+This testing strategy is **active** and mandatory for all new
+tests and test refactors following v0.28.7.post14.

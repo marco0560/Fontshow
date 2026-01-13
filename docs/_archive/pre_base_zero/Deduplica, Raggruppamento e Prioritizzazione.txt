@@ -1,0 +1,197 @@
+*Archived after base-zero planning (v0.28.7.post14).
+All conceptual content has been absorbed into:
+
+ATOMIC_ACTION_LIST.md
+
+ISSUE_BACKLOG_SYNTHESIS.md
+
+contract documents.*
+
+AREA 1 — Core Data Model, Schema & Semantics
+
+1.  [P1] Formalize the inventory data model as a stable contract
+    1.1 Define stable vs extensible fields
+    1.2 Align schema, data_dictionary, and decisions.md
+    1.3 Explicitly document raw vs enriched data layers
+
+2.  [P1] Version and govern the JSON Schema
+    2.1 Define schema_version semantics and compatibility rules
+    2.2 Document backward/forward compatibility
+    2.3 Add schema regression tests
+
+3.  [P2] Strengthen semantic validation beyond language codes
+    3.1 Validate script codes (ISO 15924)
+    3.2 Validate Unicode blocks
+    3.3 Distinguish semantic warnings vs critical errors
+
+4.  [P2] Formalize warning contracts
+    4.1 Define an official warning catalog
+    4.2 Standardize severity levels
+    4.3 Centralize warning accumulation and rendering
+
+5.  [P3] Define an evolution path for the inventory format
+    5.1 Criteria for breaking vs non-breaking changes
+    5.2 Migration strategies for old inventories
+
+
+AREA 2 — Charset, Unicode Coverage & Language Inference
+
+6.  [P1] Separate raw vs normalized language data
+    6.1 Preserve Fontconfig language tags verbatim
+    6.2 Normalize ISO 639 languages in a separate field
+    6.3 Update schema and documentation accordingly
+
+7.  [P1] Improve observability of charset-derived data
+    7.1 Diagnostics comparing charset vs fontTools coverage
+    7.2 Structured warnings for major inconsistencies
+    7.3 No semantic mutation (diagnostic-only)
+
+8.  [P2] Introduce controlled charset-aware enrichment
+    8.1 Normalize charset bitmaps
+    8.2 Map charset → Unicode blocks
+    8.3 Map Unicode blocks → scripts
+    8.4 Define explicit precedence rules
+
+9.  [P2] Refine script and language inference
+    9.1 Distinguish declared vs inferred languages
+    9.2 Handle ambiguous scripts (e.g. Latn, CJK)
+    9.3 Add explainable inference metadata
+
+10. [P3] Extend inference strategies
+    10.1 Charset-based fallback when Unicode data is incomplete
+    10.2 Confidence/weight model for inferred scripts/languages
+
+
+AREA 3 — Logging, Diagnostics & Observability
+
+11. [P1] Close the gap between logging specification and implementation
+    11.1 Track unimplemented messages explicitly
+    11.2 Align code and decisions.md incrementally
+
+12. [P1] Consolidate structured logging as a stable subsystem
+    12.1 Clarify DEBUG vs TRACE semantics
+    12.2 Standardize payload structure
+    12.3 Document logging policy in docs/
+
+13. [P2] Improve diagnostic readability
+    13.1 Compact JSON formatting for numeric arrays
+    13.2 Optional human-friendly structured log rendering
+
+14. [P3] Support advanced logging backends
+    14.1 Optional JSON logger
+    14.2 Environment-variable driven activation
+
+
+AREA 4 — CLI Architecture, UX & Contracts
+
+15. [P1] Stabilize the three-layer CLI architecture
+    15.1 Enforce core / indirection / entrypoint separation
+    15.2 Ensure no sys.exit() in core logic
+
+16. [P1] Uniform exit code policy
+    16.1 Document official exit codes
+    16.2 Align all CLI commands
+    16.3 Add regression tests
+
+17. [P1] Improve preflight CLI UX
+    17.1 --format=json
+    17.2 --explain
+    17.3 --only-errors
+
+18. [P2] Refine CLI dispatcher and naming consistency
+    18.1 Align run_<cmd>, _run_<cmd>, main()
+    18.2 Reduce duplication in __main__.py
+    18.3 Improve contributor readability
+
+19. [P2] Provide structured CLI outputs
+    19.1 Machine-readable summaries for CI
+    19.2 Optional strict/permissive modes
+
+20. [P3] Introduce higher-level CLI orchestration
+    20.1 Unified pipeline/explain command
+    20.2 Future-proof UX extensions
+
+
+AREA 5 — Preflight System & Extensibility
+
+21. [P1] Formalize the preflight subsystem as stable
+    21.1 Define public vs internal APIs
+    21.2 Document backward compatibility guarantees
+
+22. [P1] Make the check registry an explicit public API
+    22.1 register_check() / unregister_check()
+    22.2 Ordering and resolution rules
+
+23. [P2] Improve preflight configurability
+    23.1 Select checks via CLI
+    23.2 Configuration file support (YAML/TOML)
+    23.3 CLI override rules
+
+24. [P2] Improve preflight reporting
+    24.1 Structured JSON/YAML output
+    24.2 CI integration guidelines
+
+25. [P3] External plugin support
+    25.1 Entry-point based loading
+    25.2 Error isolation and opt-in policy
+
+
+AREA 6 — Testing Strategy & Quality Assurance
+
+26. [P1] Consolidate testing documentation
+    26.1 Formal manual test procedures
+    26.2 Document known failures and edge cases
+
+27. [P1] Separate unit vs platform-dependent tests
+    27.1 Pytest markers
+    27.2 CI-safe defaults
+
+28. [P1] Define a formal coverage strategy
+    28.1 Coverage policy document
+    28.2 Introduce .coveragerc
+    28.3 Align local and CI coverage
+
+29. [P2] Expand native Linux (Gentoo) test coverage
+    29.1 Fontconfig behavior analysis
+    29.2 Charset extraction validation
+
+30. [P3] Add regression datasets
+    30.1 Versioned minimal font datasets
+    30.2 Golden inventory snapshots
+
+
+AREA 7 — LaTeX / Catalog Generation
+
+31. [P1] Improve LaTeX robustness and diagnostics
+    31.1 Per-font debug options
+    31.2 Better crash isolation
+
+32. [P2] Strengthen create_catalog as a model consumer
+    32.1 Validate prerequisites
+    32.2 Explicit input/output selection
+
+33. [P3] Modularize LaTeX rendering
+    33.1 Prepare for alternative outputs (HTML/MD)
+
+
+AREA 8 — Project Governance, Docs & Release Process
+
+34. [P1] Review decisions.md as an external contributor
+    34.1 Improve clarity and indexing
+    34.2 Separate active vs historical decisions
+
+35. [P1] Publish a clear technical roadmap
+    35.1 Stabilization vs feature evolution
+    35.2 Link roadmap to milestones and tags
+
+36. [P2] Improve contributor onboarding
+    36.1 CLI architecture excerpt in CONTRIBUTING.md
+    36.2 “How to add a CLI command” checklist
+
+37. [P2] Strengthen CI and automation incrementally
+    37.1 Schema validation in CI
+    37.2 Docs build validation
+
+38. [P3] Prepare long-term architectural evolution
+    38.1 Pluggable font discovery backends (v2.x.y)
+    38.2 Explicit support matrix

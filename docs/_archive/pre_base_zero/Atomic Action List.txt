@@ -1,0 +1,53 @@
+*Archived after base-zero planning (v0.28.7.post14).
+All conceptual content has been absorbed into:
+
+ATOMIC_ACTION_LIST.md
+
+ISSUE_BACKLOG_SYNTHESIS.md
+
+contract documents.*
+
+1.  Define and document stable vs extensible inventory fields
+2.  Explicitly document raw vs enriched inventory layers
+3.  Define semantic validation rules for scripts (ISO 15924)
+4.  Define semantic validation rules for Unicode blocks
+5.  Create an official warning code catalog
+6.  Define warning severity levels and semantics
+7.  Centralize warning accumulation and rendering
+8.  Finalize dual-field language strategy (raw vs normalized)
+9.  Update schema and docs for language dual fields
+10. Implement charset vs fontTools consistency diagnostics (logging-only)
+11. Define scope and non-goals of charset diagnostics
+12. Normalize Fontconfig charset bitmaps
+13. Map charset ranges to Unicode blocks
+14. Map Unicode blocks to script coverage
+15. Define precedence rules between charset and Unicode inference
+16. Close documented gaps between logging spec and implementation
+17. Clarify DEBUG vs TRACE semantics
+18. Document structured logging policy
+19. Improve JSON readability for numeric arrays
+20. Define and document CLI exit code policy
+21. Align exit codes across all CLI commands
+22. Add regression tests for CLI exit codes
+23. Implement preflight CLI flags (--format=json, --explain, --only-errors)
+24. Define public vs internal preflight APIs
+25. Formalize register_check() as public API
+26. Document preflight backward compatibility guarantees
+27. Add CLI-based selection of preflight checks
+28. Add configuration-file support for preflight checks
+29. Consolidate manual testing documentation
+30. Define pytest markers for platform-dependent tests
+31. Introduce a .coveragerc aligned with coverage strategy
+32. Document coverage exclusions and rationale
+33. Expand Gentoo-specific test coverage
+34. Add per-font LaTeX debug options
+35. Improve LaTeX crash isolation
+36. Validate create_catalog prerequisites explicitly
+37. Add explicit input/output selection to create_catalog
+38. Review decisions.md as an external contributor
+39. Separate active vs historical decisions
+40. Publish a versioned technical roadmap
+41. Improve contributor onboarding documentation
+42. Add “How to add a CLI command” checklist
+43. Define support matrix (Linux / WSL / CI / Windows / macOS)
+44. Draft pluggable font discovery backend interface (v2.x.y)

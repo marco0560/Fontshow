@@ -1,0 +1,28 @@
+# Archived after base-zero planning (v0.28.7.post14)
+
+[
+  {
+    "title": "Finalize dual-field language strategy (raw vs normalized)",
+    "body": "## Scope\n- Complete separation between raw Fontconfig language tags and normalized ISO 639 languages\n- Ensure raw data is preserved verbatim\n- Normalize ISO 639 codes in a dedicated field\n- Update schema, validation rules, and documentation\n\n## Acceptance Criteria\n- Gentoo full pipeline runs without excessive validation noise\n- Raw language tags are preserved\n- Normalized inventories remain schema-compliant\n\n## Notes\nThis issue completes the C5.3 design already documented in decisions.md.",
+    "labels": ["c5.x", "stabilization", "schema", "languages"],
+    "milestone": "0.29.0"
+  },
+  {
+    "title": "Charset vs fontTools coverage consistency diagnostics (logging-only)",
+    "body": "## Scope\n- Introduce diagnostic-only checks comparing charset-derived coverage with fontTools-derived coverage\n- Emit structured warnings only\n- No mutation of inventory data\n\n## Acceptance Criteria\n- Diagnostics are emitted only when both sources are present\n- All diagnostics are suppressible via log level\n- No semantic or schema changes\n\n## Notes\nThis issue corresponds to C5.2 and is intentionally observability-only.",
+    "labels": ["c5.x", "stabilization", "logging", "charset"],
+    "milestone": "0.29.0"
+  },
+  {
+    "title": "Close documented gaps between logging specification and implementation",
+    "body": "## Scope\n- Review logging matrices in decisions.md\n- Track which messages are implemented vs deferred\n- Align implementation incrementally where appropriate\n\n## Acceptance Criteria\n- Every documented log message is either implemented or explicitly marked as deferred\n- No undocumented discrepancy remains\nn## Notes\nThis is a process-oriented technical debt issue.",
+    "labels": ["c5.x", "techdebt", "logging", "docs"],
+    "milestone": "0.29.0"
+  },
+  {
+    "title": "Improve JSON readability for charset-derived numeric arrays",
+    "body": "## Scope\n- Adjust JSON formatting to render short numeric arrays compactly\n- Localized to formatting/serialization layer\n- No semantic changes\n\n## Acceptance Criteria\n- Charset-derived ranges are rendered compactly where reasonable\n- JSON remains valid and schema-compliant\n\n## Notes\nThis is a cosmetic/readability improvement.",
+    "labels": ["c5.x", "stabilization", "ux"],
+    "milestone": "0.29.0"
+  }
+]

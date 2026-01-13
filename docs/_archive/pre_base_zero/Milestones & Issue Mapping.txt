@@ -1,0 +1,39 @@
+# Archived after base-zero planning (v0.28.7.post14)
+
+Milestone 0.29.0 — C5.X Stabilization
+Includes:
+- Finalize dual-field language strategy
+- Charset vs fontTools diagnostics
+- Close logging specification gaps
+- Improve JSON readability
+
+Milestone 0.30.0 — C7 Testing & Validation
+Includes:
+- Manual testing documentation
+- Platform-dependent test markers
+- Coverage strategy and .coveragerc
+- Gentoo-specific tests
+
+Milestone 0.31.0 — C6 CLI & Preflight UX
+Includes:
+- Exit code policy
+- Preflight CLI UX improvements
+- Public preflight API stabilization
+
+Milestone 0.32.0 — Charset-aware Enrichment
+Includes:
+- Charset normalization
+- Charset → Unicode blocks
+- Unicode blocks → scripts
+- Precedence rules
+
+Milestone 0.33.0 — Governance & Roadmap
+Includes:
+- decisions.md external review
+- Contributor onboarding improvements
+- Published technical roadmap
+
+Milestone 2.0.0-alpha — Pluggable Backends
+Includes:
+- Backend interface definition
+- Support matrix

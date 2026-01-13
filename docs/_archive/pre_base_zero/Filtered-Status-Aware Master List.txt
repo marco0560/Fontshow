@@ -1,0 +1,165 @@
+*Archived after base-zero planning (v0.28.7.post14).
+All conceptual content has been absorbed into:
+
+ATOMIC_ACTION_LIST.md
+
+ISSUE_BACKLOG_SYNTHESIS.md
+
+contract documents.*
+
+AREA 1 — Core Data Model, Schema & Semantics
+
+1.  [P1][PARTIAL] Formalize the inventory data model as a stable contract
+    1.1 Define stable vs extensible fields
+    1.2 Align schema, data_dictionary, and decisions.md
+    1.3 Explicitly document raw vs enriched data layers
+
+2.  [P2][PARTIAL] Strengthen semantic validation beyond language codes
+    2.1 Validate script codes (ISO 15924)
+    2.2 Validate Unicode blocks
+    2.3 Distinguish semantic warnings vs critical errors
+
+3.  [P2][NOT IMPLEMENTED] Formalize warning contracts
+    3.1 Define an official warning catalog
+    3.2 Standardize severity levels
+    3.3 Centralize warning accumulation and rendering
+
+4.  [P3][NOT IMPLEMENTED] Define an evolution path for the inventory format
+    4.1 Criteria for breaking vs non-breaking changes
+    4.2 Migration strategies for old inventories
+
+
+AREA 2 — Charset, Unicode Coverage & Language Inference
+
+5.  [P1][PARTIAL] Separate raw vs normalized language data
+    5.1 Preserve Fontconfig language tags verbatim
+    5.2 Normalize ISO 639 languages in a separate field
+    5.3 Update schema and documentation accordingly
+
+6.  [P1][PARTIAL] Improve observability of charset-derived data
+    6.1 Diagnostics comparing charset vs fontTools coverage
+    6.2 Structured warnings for major inconsistencies
+    6.3 No semantic mutation (diagnostic-only)
+
+7.  [P2][NOT IMPLEMENTED] Introduce controlled charset-aware enrichment
+    7.1 Normalize charset bitmaps
+    7.2 Map charset → Unicode blocks
+    7.3 Map Unicode blocks → scripts
+    7.4 Define explicit precedence rules
+
+8.  [P2][NOT IMPLEMENTED] Refine script and language inference
+    8.1 Distinguish declared vs inferred languages
+    8.2 Handle ambiguous scripts (e.g. Latn, CJK)
+    8.3 Add explainable inference metadata
+
+
+AREA 3 — Logging, Diagnostics & Observability
+
+9.  [P1][PARTIAL] Close the gap between logging specification and implementation
+    9.1 Track unimplemented messages explicitly
+    9.2 Align code and decisions.md incrementally
+
+10. [P1][PARTIAL] Consolidate structured logging as a stable subsystem
+    10.1 Clarify DEBUG vs TRACE semantics
+    10.2 Standardize payload structure
+    10.3 Document logging policy
+
+11. [P2][PARTIAL] Improve diagnostic readability
+    11.1 Compact JSON formatting for numeric arrays
+    11.2 Optional human-friendly structured log rendering
+
+12. [P3][NOT IMPLEMENTED] Support advanced logging backends
+    12.1 Optional JSON logger
+    12.2 Env-driven activation
+
+
+AREA 4 — CLI Architecture, UX & Contracts
+
+13. [P1][PARTIAL] Uniform exit code policy
+    13.1 Document official exit codes
+    13.2 Align all CLI commands
+    13.3 Add regression tests
+
+14. [P1][PARTIAL] Improve preflight CLI UX
+    14.1 --format=json
+    14.2 --explain
+    14.3 --only-errors
+
+15. [P2][PARTIAL] Refine CLI dispatcher and naming consistency
+    15.1 Align run_<cmd>, _run_<cmd>, main()
+    15.2 Reduce duplication in __main__.py
+    15.3 Improve contributor readability
+
+16. [P2][NOT IMPLEMENTED] Provide structured CLI outputs
+    16.1 Machine-readable summaries for CI
+    16.2 Strict vs permissive modes
+
+
+AREA 5 — Preflight System & Extensibility
+
+17. [P1][PARTIAL] Formalize the preflight subsystem as stable
+    17.1 Define public vs internal APIs
+    17.2 Document backward compatibility guarantees
+
+18. [P1][PARTIAL] Make the check registry an explicit public API
+    18.1 register_check() / unregister_check()
+    18.2 Ordering and resolution rules
+
+19. [P2][NOT IMPLEMENTED] Improve preflight configurability
+    19.1 Select checks via CLI
+    19.2 Configuration file support
+    19.3 Override rules
+
+20. [P3][NOT IMPLEMENTED] External plugin support
+    20.1 Entry-point based loading
+    20.2 Error isolation
+
+
+AREA 6 — Testing Strategy & Quality Assurance
+
+21. [P1][PARTIAL] Consolidate testing documentation
+    21.1 Formal manual test procedures
+    21.2 Document known failures
+
+22. [P1][PARTIAL] Separate unit vs platform-dependent tests
+    22.1 Pytest markers
+    22.2 CI-safe defaults
+
+23. [P1][PARTIAL] Define a formal coverage strategy
+    23.1 Coverage policy document
+    23.2 Introduce .coveragerc
+    23.3 Align local and CI coverage
+
+24. [P2][NOT IMPLEMENTED] Expand native Linux (Gentoo) test coverage
+    24.1 Fontconfig behavior analysis
+    24.2 Charset extraction validation
+
+
+AREA 7 — LaTeX / Catalog Generation
+
+25. [P1][PARTIAL] Improve LaTeX robustness and diagnostics
+    25.1 Per-font debug options
+    25.2 Crash isolation
+
+26. [P2][PARTIAL] Strengthen create_catalog as a model consumer
+    26.1 Validate prerequisites
+    26.2 Explicit input/output selection
+
+
+AREA 8 — Project Governance, Docs & Release Process
+
+27. [P1][PARTIAL] Review decisions.md as an external contributor
+    27.1 Improve clarity and indexing
+    27.2 Separate active vs historical decisions
+
+28. [P1][PARTIAL] Publish a clear technical roadmap
+    28.1 Stabilization vs feature evolution
+    28.2 Link roadmap to milestones
+
+29. [P2][PARTIAL] Improve contributor onboarding
+    29.1 CLI architecture excerpt in CONTRIBUTING.md
+    29.2 “How to add a CLI command” checklist
+
+30. [P3][NOT IMPLEMENTED] Prepare long-term architectural evolution
+    30.1 Pluggable font discovery backends (v2.x.y)
+    30.2 Explicit support matrix
