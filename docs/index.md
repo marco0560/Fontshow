@@ -7,6 +7,20 @@
 - [Development scripts](scripts.md)
 - [Contributing guidelines](CONTRIBUTING.md)
 
+## Project planning and governance
+
+Fontshow development is guided by a canonical, version-controlled
+planning and governance document set, maintained directly in the repository.
+
+The planning set defines:
+
+- development phases and milestones
+- issue and atomic action models
+- testing and stabilization strategy
+- governance and evolution guidelines
+
+- [Planning document set overview](planning/00_Planning_Document_Set.md)
+
 ## Security & Release
 
 - [Security and Release Policy](security-and-release-policy.md)

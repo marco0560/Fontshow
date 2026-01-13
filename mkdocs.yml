@@ -65,6 +65,21 @@ nav:
     - Scripts: scripts.md
     - Contributing: CONTRIBUTING.md
 
+  - Planning & Governance:
+    - Overview: planning/00_Planning_Document_Set.md
+    - Timeline: planning/01_TIMELINE.md
+    - Phases: planning/02_PHASES.md
+    - Milestones definition: planning/03_MILESTONES_DEFINITION.md
+    - Issue model: planning/04_ISSUE_MODEL.md
+    - Atomic action list: planning/05_ATOMIC_ACTION_LIST.md
+    - Issue backlog synthesis: planning/06_ISSUE_BACKLOG_SYNTHESIS.md
+    - Testing strategy: planning/07_TESTING_STRATEGY.md
+    - Stabilization scope: planning/08_STABILIZATION_SCOPE.md
+    - CLI contract: planning/09_CLI_CONTRACT.md
+    - Pipeline robustness: planning/10_PIPELINE_ROBUSTNESS.md
+    - Governance notes: planning/11_GOVERNANCE_NOTES.md
+    - V2 design spike: planning/12_V2_DESIGN_SPIKE.md
+
   - Project:
     - Roadmap: roadmap.md
     - Decisions: decisions.md
