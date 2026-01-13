@@ -12,11 +12,13 @@
 This document enumerates **atomic actions** for the Fontshow project.
 
 An atomic action is:
+
 - the smallest meaningful unit of planned work,
 - below the level of a GitHub issue,
 - directly traceable to code, tests, or documentation changes.
 
 This list serves as:
+
 - a **planning substrate**,
 - a **decomposition aid** for issues,
 - and a **traceability anchor** during execution.
@@ -34,6 +36,7 @@ An atomic action represents:
 - producing an observable effect.
 
 Examples:
+
 - “Add explicit exit code mapping to preflight CLI”
 - “Split unit vs integration markers in pytest config”
 - “Document failure isolation rules in pipeline docs”
@@ -55,7 +58,7 @@ An atomic action is **not**:
 
 Each atomic action is identified by:
 
-```
+```txt
 A<number>
 ```
 

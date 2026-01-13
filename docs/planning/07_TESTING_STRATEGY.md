@@ -13,6 +13,7 @@ This document defines the **testing philosophy**, **test categorization**,
 and **coverage expectations** for the Fontshow project.
 
 Its goals are:
+
 - deterministic test behavior across environments,
 - clear separation of responsibilities between test types,
 - meaningful coverage metrics,
@@ -41,16 +42,19 @@ This document is **normative**.
 
 ### Unit Tests
 
-**Definition**
+#### Unit Tests Definition
+
 - Test pure logic and data transformations.
 - Must not depend on filesystem layout, FontConfig, LaTeX, or OS-specific tools.
 
-**Characteristics**
+#### Unit Tests Characteristics
+
 - Fast
 - Deterministic
 - Runnable on any platform
 
-**Examples**
+#### Unit Tests Examples
+
 - Language inference logic
 - Data normalization functions
 - Schema validation helpers
@@ -59,7 +63,8 @@ This document is **normative**.
 
 ### Integration Tests
 
-**Definition**
+#### Integration Tests Definition
+
 - Test interaction with external systems or tools.
 - May depend on:
   - filesystem,
@@ -67,12 +72,14 @@ This document is **normative**.
   - LaTeX,
   - OS-level capabilities.
 
-**Characteristics**
+#### Integration Tests Characteristics
+
 - Potentially slower
 - Explicitly environment-dependent
 - May be skipped or marked in CI
 
-**Examples**
+#### Integration Tests Examples
+
 - Catalog generation using real fonts
 - LaTeX PDF rendering
 - End-to-end CLI execution with system tools
@@ -115,6 +122,7 @@ Directory structure SHOULD reflect intent, but markers are authoritative.
   - but do not count toward coverage thresholds.
 
 Coverage reports MUST clearly distinguish:
+
 - covered vs uncovered code,
 - deterministic vs environment-dependent paths.
 
@@ -133,6 +141,7 @@ The following are explicitly discouraged:
 ## Change Policy
 
 Changes to this strategy:
+
 - require explicit documentation,
 - must not invalidate existing guarantees silently.
 

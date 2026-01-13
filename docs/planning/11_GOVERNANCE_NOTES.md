@@ -12,6 +12,7 @@
 This document defines the **governance model** for the Fontshow project.
 
 It explains:
+
 - how decisions are made and recorded,
 - how scope changes are approved,
 - how planning artifacts evolve over time.
@@ -38,11 +39,13 @@ The goal is to provide **clarity and continuity**, not bureaucracy.
 ### Planning Decisions
 
 Examples:
+
 - Roadmap changes
 - Milestone redefinitions
 - Timeline adjustments
 
 Requirements:
+
 - Document the decision.
 - State what is being replaced or superseded.
 - Record the rationale.
@@ -52,11 +55,13 @@ Requirements:
 ### Technical Decisions
 
 Examples:
+
 - API contracts
 - Testing strategy changes
 - CLI behavior guarantees
 
 Requirements:
+
 - Explain alternatives considered.
 - Record constraints and trade-offs.
 - State whether the decision is reversible.
@@ -66,11 +71,13 @@ Requirements:
 ### Scope Decisions
 
 Examples:
+
 - Deferring features
 - Rejecting proposed changes
 - Splitting or merging milestones
 
 Requirements:
+
 - Explicit justification.
 - Clear impact assessment.
 
@@ -87,6 +94,7 @@ Decisions SHOULD be recorded as lightweight notes containing:
 - **Consequences**
 
 Decision records MAY live in:
+
 - a dedicated documentation file,
 - or clearly labeled sections in relevant documents.
 

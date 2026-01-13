@@ -1,6 +1,6 @@
-# Archived after base-zero planning (v0.28.7.post14)
-
 # ROADMAP.md
+
+## Archived after base-zero planning (v0.28.7.post14)
 
 ## Fontshow — Project Roadmap
 
@@ -15,6 +15,7 @@ This roadmap describes the planned evolution of Fontshow starting from
 v0.28.7.post14. It replaces all earlier milestone plans and timelines.
 
 The roadmap focuses on:
+
 - Stability and correctness first
 - Explicit contracts and guarantees
 - Controlled, observable feature evolution
@@ -47,29 +48,37 @@ Implementation details are tracked in internal planning documents.
 ## Roadmap Phases Overview
 
 ### Phase 0 — Re-baseline, tooling & environment setup
+
 Establish a clean planning baseline and reproducible development environment.
 No functional changes.
 
 ### Phase 1 — Stabilization sprint
+
 Reduce friction and formalize existing behavior.
 Optional stabilization release candidate.
 
 ### Phase 2 — Testing strategy & coverage alignment
+
 Define and enforce a clear testing model with deterministic CI behavior.
 
 ### Phase 3 — LaTeX & catalog robustness
+
 Improve pipeline survivability and diagnostics in real-world conditions.
 
 ### Phase 4 — CLI UX & exit code contracts
+
 Stabilize CLI semantics and guarantees for both humans and automation.
 
 ### Phase 5 — Charset-aware enrichment
+
 Introduce charset decoding and enrichment in controlled, incremental steps.
 
 ### Phase 6 — Governance & contributor experience
+
 Improve documentation structure, onboarding, and long-term maintainability.
 
 ### Phase 7 — v2.x.y design spike (non-binding)
+
 Explore future architecture options without implementation commitment.
 
 ---
@@ -88,6 +97,7 @@ in dedicated planning documents.
 ## Change Policy
 
 This roadmap is a **living document**, but:
+
 - Changes must be explicit and justified.
 - Scope expansions require review.
 - Major reordering requires a planning checkpoint.

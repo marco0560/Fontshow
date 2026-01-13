@@ -12,6 +12,7 @@
 This document defines what a **milestone** means in the Fontshow project.
 
 It establishes:
+
 - a uniform milestone taxonomy,
 - strict scope and sizing rules,
 - completion criteria,
@@ -31,6 +32,7 @@ In Fontshow, a milestone is:
 - designed to deliver a **coherent, reviewable outcome**.
 
 A milestone is **not**:
+
 - a vague theme,
 - an unbounded backlog,
 - a placeholder for “future ideas”.
@@ -43,16 +45,18 @@ A milestone is **not**:
 
 Milestones MUST follow this format:
 
-```
+```txt
 <version> — <short descriptive title>
 ```
 
 Examples:
+
 - `0.29.0 — Stabilization`
 - `0.30.0 — Testing Alignment`
 - `0.31.0 — Pipeline Robustness`
 
 Rules:
+
 - Version numbers reflect **intent**, not release promises.
 - Patch or post-release suffixes are allowed only for corrective milestones
   (e.g. `0.29.1 — Stabilization Fixes`).

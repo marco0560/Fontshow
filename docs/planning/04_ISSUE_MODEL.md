@@ -12,6 +12,7 @@
 This document defines what a **GitHub issue** means in the Fontshow project.
 
 It establishes:
+
 - the required structure of an issue,
 - sizing and scope constraints,
 - lifecycle states,
@@ -43,6 +44,7 @@ An issue MUST be:
 - testable or verifiable in isolation.
 
 A “session” is defined as:
+
 - a contiguous block of focused work,
 - without relying on unfinished future issues.
 
@@ -72,22 +74,27 @@ Labels are descriptive, not contractual, but SHOULD be applied consistently.
 Every issue MUST include:
 
 ### 1. Title
+
 - Short, specific, action-oriented.
 - Avoid vague wording such as “improve” or “refactor” without context.
 
 ### 2. Context
+
 - Why this issue exists.
 - What problem it addresses.
 
 ### 3. Scope
+
 - What is included.
 - What is explicitly excluded.
 
 ### 4. Acceptance Criteria
+
 - Concrete, verifiable conditions for completion.
 - Prefer observable outcomes over internal implementation details.
 
 ### 5. References (if applicable)
+
 - Links to related issues, documents, or commits.
 
 ---
@@ -101,6 +108,7 @@ An issue MUST NOT:
 - silently expand scope during implementation.
 
 Scope changes require:
+
 - explicit documentation,
 - and possible issue splitting.
 

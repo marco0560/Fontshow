@@ -1,6 +1,6 @@
-# Archived after base-zero planning (v0.28.7.post14)
-
 # PLANNING_TIMELINE.md
+
+## Archived after base-zero planning (v0.28.7.post14)
 
 ## Fontshow — Internal Planning Timeline
 

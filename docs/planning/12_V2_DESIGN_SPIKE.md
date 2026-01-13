@@ -13,6 +13,7 @@ This document captures the **design exploration** for a potential
 Fontshow v2.x.y evolution.
 
 It exists to:
+
 - explore architectural options,
 - identify risks and unknowns,
 - inform a future go / no-go decision.
@@ -52,15 +53,18 @@ These motivations are exploratory, not prescriptive.
 ### Pluggable Backend Model
 
 Concept:
+
 - Define a narrow, explicit backend interface.
 - Allow multiple backend implementations (e.g. FontConfig-based, mock, future).
 
 Potential benefits:
+
 - Improved testability.
 - Reduced environment coupling.
 - Clearer separation of concerns.
 
 Risks:
+
 - Increased abstraction complexity.
 - Premature generalization.
 
@@ -69,14 +73,17 @@ Risks:
 ### Pipeline Stage Isolation
 
 Concept:
+
 - Treat major pipeline stages as independently testable units.
 - Define strict input/output contracts between stages.
 
 Potential benefits:
+
 - Easier reasoning about failures.
 - Improved robustness and diagnostics.
 
 Risks:
+
 - Additional coordination overhead.
 - Potential performance impact.
 

@@ -13,6 +13,7 @@ This document defines the **scope, rules, and acceptance criteria**
 for the stabilization phase.
 
 The stabilization phase exists to:
+
 - reduce friction,
 - formalize existing behavior,
 - and prepare the codebase for controlled evolution.

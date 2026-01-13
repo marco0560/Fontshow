@@ -13,6 +13,7 @@ This document defines the **behavioral contract** of the Fontshow
 Command Line Interface (CLI).
 
 It specifies:
+
 - exit code semantics,
 - error handling guarantees,
 - output expectations,
@@ -31,6 +32,7 @@ This contract applies to:
 - all subcommands and flags.
 
 It does not define:
+
 - internal implementation details,
 - performance guarantees,
 - future feature expansions.
@@ -50,7 +52,7 @@ It does not define:
 
 Exit codes MUST follow these rules:
 
-| Exit Code | Meaning                                  |
+| Exit Code | Meaning                                   |
 |----------:|-------------------------------------------|
 | 0         | Successful execution                      |
 | 1         | Expected failure (user error, validation) |
@@ -58,6 +60,7 @@ Exit codes MUST follow these rules:
 | >2        | Reserved (must be documented if used)     |
 
 Rules:
+
 - Exit codes MUST be consistent across environments.
 - A command MUST NOT return `0` if the requested operation failed.
 
@@ -68,11 +71,13 @@ Rules:
 ### User Errors
 
 Examples:
+
 - Invalid arguments
 - Missing required input
 - Invalid configuration
 
 Behavior:
+
 - Exit code `1`
 - Clear, human-readable error message
 - No stack trace by default
@@ -82,11 +87,13 @@ Behavior:
 ### Environment Errors
 
 Examples:
+
 - Missing external tools
 - Missing fonts
 - LaTeX not available
 
 Behavior:
+
 - Exit code `2`
 - Clear explanation of the missing capability
 - Guidance on remediation when possible

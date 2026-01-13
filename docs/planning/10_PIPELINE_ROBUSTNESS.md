@@ -13,6 +13,7 @@ This document defines the **robustness expectations** for the Fontshow
 processing pipeline.
 
 It establishes:
+
 - failure isolation principles,
 - diagnostic requirements,
 - survivability rules,
@@ -42,11 +43,13 @@ This document is **normative**.
 ### Recoverable Failures
 
 Examples:
+
 - A single font fails to process.
 - A LaTeX run fails for a specific document.
 - Metadata decoding fails for a specific entry.
 
 Expected behavior:
+
 - Record the failure.
 - Continue processing remaining items.
 - Surface a summary at the end.
@@ -56,11 +59,13 @@ Expected behavior:
 ### Non-Recoverable Failures
 
 Examples:
+
 - Corrupt global configuration.
 - Missing mandatory dependencies.
 - Invalid invocation parameters.
 
 Expected behavior:
+
 - Abort execution.
 - Emit a clear error message.
 - Exit with the appropriate non-zero exit code.

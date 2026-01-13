@@ -13,6 +13,7 @@ This document defines how **atomic actions** are grouped into
 **session-sized GitHub issues**.
 
 It acts as a bridge between:
+
 - low-level atomic planning (`ATOMIC_ACTION_LIST.md`),
 - and executable GitHub issues (`ISSUE_MODEL.md`).
 
@@ -42,7 +43,7 @@ Issue synthesis follows these rules:
 
 Issues are identified internally as:
 
-```
+```txt
 I<number>
 ```
 
