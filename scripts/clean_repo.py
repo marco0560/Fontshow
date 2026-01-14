@@ -21,6 +21,7 @@ from pathlib import Path
 # Paths that should never be removed, even if ignored by git
 PROTECTED_PATHS = {
     ".venv",
+    "node_modules",
 }
 
 

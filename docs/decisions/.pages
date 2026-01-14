@@ -1,0 +1,6 @@
+title: Decisions
+
+nav:
+  - Overview and current decisions: index.md
+  - "*"
+  - Legacy material: legacy_decisions.md

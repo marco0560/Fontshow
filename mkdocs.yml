@@ -28,6 +28,7 @@ markdown_extensions:
 
 plugins:
   - search
+  - awesome-pages
   - mkdocstrings:
       handlers:
         python:
@@ -84,10 +85,7 @@ nav:
       - V2 Design Spike: planning/12_V2_DESIGN_SPIKE.md
 
     - Decisions:
-      - Overview: decisions/index.md
-      - "0001 – Base-zero replanning": decisions/0001-base-zero-replanning.md
-      - "0002 – Planning system formalization": decisions/0002-planning-system-formalization.md
-      - Legacy material: decisions/legacy_decisions.md
+        decisions/index.md
 
   - Project:
     - Roadmap: roadmap.md
