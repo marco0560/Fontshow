@@ -1,3 +1,9 @@
+## [0.28.8](https://github.com/marco0560/Fontshow/compare/v0.28.7...v0.28.8) (2026-01-14)
+
+### Bug Fixes
+
+* **build:** restrict setuptools package discovery to fontshow ([b02f626](https://github.com/marco0560/Fontshow/commit/b02f626d8095d108a4ca9437d9a7300c8aa36778))
+
 ## [0.28.7](https://github.com/marco0560/Fontshow/compare/v0.28.6...v0.28.7) (2026-01-09)
 
 ### Bug Fixes
