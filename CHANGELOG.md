@@ -1,3 +1,9 @@
+## [0.28.9](https://github.com/marco0560/Fontshow/compare/v0.28.8...v0.28.9) (2026-01-14)
+
+### Bug Fixes
+
+* **docs:** add awesome-pages plugin for better page ordering ([cad6975](https://github.com/marco0560/Fontshow/commit/cad6975327c7c9a1151f91e850559e6509357ee3))
+
 ## [0.28.8](https://github.com/marco0560/Fontshow/compare/v0.28.7...v0.28.8) (2026-01-14)
 
 ### Bug Fixes
