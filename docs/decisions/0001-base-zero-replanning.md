@@ -1,7 +1,7 @@
 # Decision 0001 — Base-Zero Replanning and Governance Reset
 
 **Status:** Accepted
-**Date:** 2026-01-15
+**Date:** 2026-01-14
 **Context version:** v0.28.7.post14
 
 ---

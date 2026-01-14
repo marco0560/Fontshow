@@ -1,7 +1,7 @@
 # Decision 0001 — Planning System Formalization
 
 **Status:** Accepted
-**Date:** 2026-01-15
+**Date:** 2026-01-14
 
 ## Context
 
