@@ -91,3 +91,4 @@ maintainability at the current project maturity level.
 - `docs/planning/01_TIMELINE.md`
 - `docs/planning/03_MILESTONES_DEFINITION.md`
 - GitHub milestones `M1`, `M2`, `M3`
+- The completion of this decision is marked in the repository by the internal tag post-planning-v0.28.7.post14.

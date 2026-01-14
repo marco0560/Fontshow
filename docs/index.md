@@ -24,7 +24,7 @@ The planning set defines:
 Formal architectural and project decisions are tracked as individual,
 immutable records to preserve rationale and historical context.
 
-- [Decisions index](decisions/README.md)
+- [Decisions index](decisions/index.md)
 
 ## Security & Release
 

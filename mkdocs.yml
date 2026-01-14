@@ -5,6 +5,8 @@ site_author: Marco Coppola
 repo_name: fontshow
 repo_url: https://github.com/marco0560/Fontshow
 edit_uri: edit/main/docs/
+exclude_docs: |
+  _archive/
 
 theme:
   name: material
@@ -67,24 +69,27 @@ nav:
 
   - Documentation:
     - Planning & Governance:
-      - docs/planning/00_Planning_Document_Set.md
-      - docs/planning/01_TIMELINE.md
-      - docs/planning/02_PHASES.md
-      - docs/planning/03_MILESTONES_DEFINITION.md
-      - docs/planning/04_ISSUE_MODEL.md
-      - docs/planning/05_ATOMIC_ACTION_LIST.md
-      - docs/planning/06_ISSUE_BACKLOG_SYNTHESIS.md
-      - docs/planning/07_TESTING_STRATEGY.md
-      - docs/planning/08_STABILIZATION_SCOPE.md
-      - docs/planning/09_CLI_CONTRACT.md
-      - docs/planning/10_PIPELINE_ROBUSTNESS.md
-      - docs/planning/11_GOVERNANCE_NOTES.md
-      - docs/planning/12_V2_DESIGN_SPIKE.md
+      - Overview: planning/00_Planning_Document_Set.md
+      - Timeline: planning/01_TIMELINE.md
+      - Phases: planning/02_PHASES.md
+      - Milestones: planning/03_MILESTONES_DEFINITION.md
+      - Issue Model: planning/04_ISSUE_MODEL.md
+      - Atomic Actions: planning/05_ATOMIC_ACTION_LIST.md
+      - Issue Backlog: planning/06_ISSUE_BACKLOG_SYNTHESIS.md
+      - Testing Strategy: planning/07_TESTING_STRATEGY.md
+      - Stabilization Scope: planning/08_STABILIZATION_SCOPE.md
+      - CLI Contract: planning/09_CLI_CONTRACT.md
+      - Pipeline Robustness: planning/10_PIPELINE_ROBUSTNESS.md
+      - Governance Notes: planning/11_GOVERNANCE_NOTES.md
+      - V2 Design Spike: planning/12_V2_DESIGN_SPIKE.md
+
     - Decisions:
-      - docs/decisions/0001-base-zero-replanning.md
+      - Overview: decisions/index.md
+      - "0001 – Base-zero replanning": decisions/0001-base-zero-replanning.md
+      - "0002 – Planning system formalization": decisions/0002-planning-system-formalization.md
+      - Legacy material: decisions/legacy_decisions.md
 
   - Project:
     - Roadmap: roadmap.md
-    - Decisions: decisions.md
     - Security & release policy: security-and-release-policy.md
     - Key rotation: key-rotation.md
