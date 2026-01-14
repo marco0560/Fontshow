@@ -16,7 +16,8 @@ dependencies = [
 ]
 
 [tool.setuptools_scm]
-tag_regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
+tag_regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+(?:\\.post\\d+)?)$"
+git_describe_command = "git describe --dirty --tags --long --match v*"
 version_scheme = "post-release"
 local_scheme = "no-local-version"
 
