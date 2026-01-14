@@ -21,6 +21,11 @@ The planning set defines:
 
 - [Planning document set overview](planning/00_Planning_Document_Set.md)
 
+Formal architectural and project decisions are tracked as individual,
+immutable records to preserve rationale and historical context.
+
+- [Decisions index](decisions/README.md)
+
 ## Security & Release
 
 - [Security and Release Policy](security-and-release-policy.md)
@@ -30,7 +35,3 @@ The planning set defines:
 
 - [Schema](schema/index.md)
 - [Data Dictionary](data_dictionary.md)
-
-## Decisions
-
-- [Decisions](decisions.md)

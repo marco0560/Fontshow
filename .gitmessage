@@ -9,9 +9,7 @@ What:
 Notes:
 -
 
-Refs: #
-# <type>(<scope>): <short summary>
-#
+Refs:
 # Types:
 #   feat     = new feature (minor version bump)
 #   fix      = bug fix (patch version bump)
@@ -20,30 +18,30 @@ Refs: #
 #   refactor = code change that neither fixes a bug nor adds a feature
 #   test     = adding or updating tests
 #   chore    = maintenance, tooling, formatting, packaging
-#
+#----------------------------
 # Scopes (Fontshow):
-#   core       = core pipeline, data flow, orchestration
-#   cli        = cli interface
-#   dev        = development and debug tools, scripts
-#   schema     = json schema definition and data validation
-#   dump       = dump_fonts tool
-#   parser     = parse_font_inventory tool
-#   catalog    = create_catalog tool
-#   validation = validation tools
-#   docs       = documentation (MkDocs, README, architecture)
-#   output     = output format
-#   config     = configuration files
 #   build      = build system / github
-#   git        = git configuration
-#   dev        = development (tooling, hooks, scripts)
+#   catalog    = create_catalog tool
 #   ci         = CI / GitHub Actions
+#   cli        = cli interface
+#   config     = configuration files
+#   core       = core pipeline, data flow, orchestration
+#   dev        = development (tooling, hooks, scripts)
+#   docs       = documentation (MkDocs, README, architecture)
+#   dump       = dump_fonts tool
+#   git        = git configuration
+#   output     = output format
+#   parser     = parse_font_inventory tool
+#   planning   = planning and design documents
+#   schema     = json schema definition and data validation
 #   release    = versioning, tags, changelog
-#
-# Examples:
-#   feat(core): add inventory validation option
-#   docs(docs): document schema evolution rules
-#   fix(catalog): handle missing family names gracefully
-#   chore(core): convert Fontshow into a proper Python package
+#   validation = validation tools
+# ----------------------------
+# Rules:
+# - Subject line max 72 characters
+# - Use imperative mood ("add", "fix", "document")
+# - No trailing period
+# - Body is optional but encouraged for non-trivial changes
 #
 # Breaking changes:
 #   Add "!" after the type or include "BREAKING CHANGE:" in the body.
@@ -55,3 +53,14 @@ Refs: #
 #
 # Footer (optional):
 #   BREAKING CHANGE: <description>
+# ----------------------------
+# Body (optional):
+# Explain *why* the change is made, not just *what*.
+#
+# ----------------------------
+## Examples:
+#   feat(core): add inventory validation option
+#   docs(docs): document schema evolution rules
+#   fix(catalog): handle missing family names gracefully
+#   chore(core): convert Fontshow into a proper Python package
+#
