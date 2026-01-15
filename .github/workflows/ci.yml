@@ -79,7 +79,10 @@ jobs:
       - name: Install documentation dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mkdocs mkdocs-material mkdocstrings[python]
+          pip install mkdocs
+          pip install mkdocs-material
+          pip install mkdocs-awesome-pages-plugin
+          pip install mkdocstrings[python]
 
       - name: Build documentation
         run: |
