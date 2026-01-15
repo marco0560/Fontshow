@@ -4,7 +4,30 @@ This document lists the planning and governance documents
 to support the new base-zero roadmap. Each document is described
 by title, function, and a one-line content summary.
 
-## Proposed Document Set
+## Authority and scope
+
+This document set is the **canonical, normative source of truth**
+for Fontshow project planning.
+
+It defines:
+
+- scope
+- sequencing
+- milestones
+- constraints
+- governance rules
+
+All other planning-related documents (including the project roadmap)
+are **derived, descriptive, and non-normative**.
+
+The project roadmap is maintained for communication and orientation purposes:
+
+- [`docs/roadmap.md`](../roadmap.md)
+
+In case of conflicts or ambiguity, the planning document set
+**always takes precedence**.
+
+## Document Set
 
 ### 1. [ROADMAP](01_TIMELINE.md)
 

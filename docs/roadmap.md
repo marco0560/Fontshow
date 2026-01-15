@@ -4,6 +4,26 @@ This document describes the **actual state of the Fontshow project** as of versi
 aligning milestones, GitHub issues, and the intended evolution path.
 It is a **living document**, manually updated whenever a milestone is closed or redefined.
 
+## Status and role of this document
+
+This roadmap is a **strategic, non-normative** document.
+
+It provides a high-level view of the intended direction of the project,
+but it is **not** the authoritative source for scope, sequencing,
+or implementation details.
+
+The canonical and normative source of truth for planning is the
+**Planning Document Set**:
+
+- [`docs/planning/00_Planning_Document_Set.md`](planning/00_Planning_Document_Set.md)
+
+This roadmap is derived from, and must remain consistent with, the planning set.
+In case of discrepancies, the planning documents always take precedence.
+
+---
+
+This document outlines the planned evolution of the Fontshow project.
+
 ---
 
 ## Development Workflow Overview
