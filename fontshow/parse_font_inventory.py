@@ -1229,7 +1229,7 @@ def main(args) -> int:
     except Exception as exc:
         if not getattr(args, "quiet", False):
             print(f"ERROR: parse-inventory failed: {exc}", file=sys.stderr)
-        return 1
+        return 2
 
 
 if __name__ == "__main__":

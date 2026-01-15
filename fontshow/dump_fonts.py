@@ -1349,7 +1349,7 @@ def main(args) -> int:
     except Exception as exc:
         if not getattr(args, "quiet", False):
             print(f"ERROR: dump-fonts failed: {exc}", file=sys.stderr)
-        return 1
+        return 2
 
     if args.verbose and exit_code == 0:
         print(f"OK: wrote inventory to {args.output}")

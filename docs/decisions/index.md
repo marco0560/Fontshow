@@ -22,3 +22,4 @@ created before the adoption of the formal decision record system.
 - [0002 – Planning system formalization](0002-planning-system-formalization.md)
 - [0003 — Python Node Coexistence](0003-python-node-coexistence.md)
 - [0004 — Branching Strategy Formalization](0004-branch-strategy.md)
+- [0005 — cli-error-handling-normalization](0005-cli-error-handling-normalization.md)
