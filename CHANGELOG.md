@@ -1,3 +1,9 @@
+## [0.29.0](https://github.com/marco0560/Fontshow/compare/v0.28.9...v0.29.0) (2026-01-15)
+
+### Features
+
+* **output:** improve readability of charset-derived arrays in JSON output ([5213d39](https://github.com/marco0560/Fontshow/commit/5213d39cf095acdc0ba96a0269d2ca4ecf8c463e)), closes [#30](https://github.com/marco0560/Fontshow/issues/30)
+
 ## [0.28.9](https://github.com/marco0560/Fontshow/compare/v0.28.8...v0.28.9) (2026-01-14)
 
 ### Bug Fixes
