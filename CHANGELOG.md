@@ -1,3 +1,9 @@
+## [0.29.1](https://github.com/marco0560/Fontshow/compare/v0.29.0...v0.29.1) (2026-01-15)
+
+### Bug Fixes
+
+* **core:** normalize error handling across commands ([0d7303a](https://github.com/marco0560/Fontshow/commit/0d7303aa4692eef864146962d0f3d8dde070aa76)), closes [#33](https://github.com/marco0560/Fontshow/issues/33)
+
 ## [0.29.0](https://github.com/marco0560/Fontshow/compare/v0.28.9...v0.29.0) (2026-01-15)
 
 ### Features
