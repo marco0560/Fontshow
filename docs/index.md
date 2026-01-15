@@ -6,6 +6,7 @@
 - [Development environment](dev-environment.md)
 - [Development scripts](scripts.md)
 - [Contributing guidelines](CONTRIBUTING.md)
+- [CLI Contract](cli-contract.md)
 
 ## Project planning and governance
 

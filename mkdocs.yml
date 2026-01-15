@@ -69,6 +69,9 @@ nav:
     - Contributing: CONTRIBUTING.md
 
   - Documentation:
+    - CLI:
+      - CLI Contract: cli-contract.md
+
     - Planning & Governance:
       - Overview: planning/00_Planning_Document_Set.md
       - Timeline: planning/01_TIMELINE.md
@@ -79,7 +82,6 @@ nav:
       - Issue Backlog: planning/06_ISSUE_BACKLOG_SYNTHESIS.md
       - Testing Strategy: planning/07_TESTING_STRATEGY.md
       - Stabilization Scope: planning/08_STABILIZATION_SCOPE.md
-      - CLI Contract: planning/09_CLI_CONTRACT.md
       - Pipeline Robustness: planning/10_PIPELINE_ROBUSTNESS.md
       - Governance Notes: planning/11_GOVERNANCE_NOTES.md
       - V2 Design Spike: planning/12_V2_DESIGN_SPIKE.md

@@ -62,13 +62,6 @@ by title, function, and a one-line content summary.
 
 ---
 
-### 9. [CLI_CONTRACT](09_CLI_CONTRACT.md)
-
-**Function:** Formalize CLI behavior guarantees.
-**Content:** Exit codes, error semantics, machine-readable output rules, and backward compatibility notes.
-
----
-
 ### 10. [PIPELINE_ROBUSTNESS](10_PIPELINE_ROBUSTNESS.md)
 
 **Function:** Capture resilience expectations for LaTeX and catalog generation.
