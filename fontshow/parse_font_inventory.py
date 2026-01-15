@@ -26,6 +26,7 @@ from fontshow import __version__
 from fontshow.cli_utils import add_common_arguments
 from fontshow.dump_fonts import UNICODE_BLOCKS
 from fontshow.infer_languages import infer_languages
+from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log
 from fontshow.schema_validation import validate_inventory_schema
 
@@ -1202,7 +1203,7 @@ def run_parse_font_inventory(
 
     write_text_fn(
         args.output,
-        json.dumps(enriched, indent=2, ensure_ascii=False),
+        dumps_pretty(enriched, indent=2, ensure_ascii=False),
     )
     print_fn(f"OK: wrote enriched inventory to {args.output}")
     return 0
