@@ -1,4 +1,4 @@
-# Decision 0005 — cli-error-handling-normalization
+# Decision 0005 — CLI error handling normalization
 
 ## Status
 
