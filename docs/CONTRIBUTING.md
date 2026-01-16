@@ -24,6 +24,16 @@ and documentation consistent and to avoid noisy or accidental changes.
 Local semantic-release dry-runs require a temporary GitHub token
 (GH_TOKEN) due to mandatory GitHub plugin verification, even in dry-run mode.
 
+### Development tooling
+
+Fontshow provides a small set of development helpers implemented as Python
+scripts under the `scripts/` directory.
+
+For convenience, commonly used helpers are exposed via Git aliases
+(e.g. `git clean-artifacts`, `git test-coverage`, `git release-preview`).
+
+See `scripts.md` for details.
+
 ### Semantic-release and git hooks
 
 Fontshow uses `semantic-release` to automate versioning and changelog
@@ -46,7 +56,7 @@ This design ensures that:
 For local release previews, contributors can run:
 
 ```bash
-scripts/release-preview.sh
+python scripts/release-preview.py
 ```
 
 or use a convenience alias that injects a temporary `GH_TOKEN`.

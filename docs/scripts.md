@@ -11,6 +11,35 @@ They may change or be removed without notice.
 
 ---
 
+## Invocation via Git aliases
+
+Some development scripts are exposed via Git aliases for convenience and
+consistency across platforms.
+
+These aliases are defined in the local repository Git configuration
+(`.git/config`) and act as thin wrappers around Python scripts.
+
+Example aliases:
+
+- `git clean-artifacts`
+- `git test-coverage`
+- `git release-preview`
+
+Aliases forward all additional command-line arguments to the underlying
+Python script.
+
+For example:
+
+```bash
+git clean-artifacts --dry-run
+git release-preview --verbose
+```
+
+This allows scripts to support flags such as `--dry-run`, `--verbose`,
+or future options without modifying Git configuration.
+
+---
+
 ## clean_repo.py
 
 ### Purpose

@@ -24,3 +24,4 @@ created before the adoption of the formal decision record system.
 - [0004 — Branching Strategy Formalization](0004-branch-strategy.md)
 - [0005 — CLI error handling normalization](0005-cli-error-handling-normalization.md)
 - [0006 — CLI dispatch testability limitation](0006-cli-dispatch-testability-limit.md)
+- [0007 — Standardization of project scripts in Python](0007-standardization-project-scripts-python.md)

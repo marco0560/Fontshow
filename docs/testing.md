@@ -32,7 +32,18 @@ This separation ensures that:
 - environment-dependent behavior is tested in ``tests/preflight/``;
 - CLI behavior (output, quiet mode, exit codes) is tested in isolation;
 - end-to-end validation of the real pipeline is delegated to platform-specific
-  integration scripts (e.g. ``scripts/test_fontshow_gentoo.sh``).
+  integration scripts (e.g. ``scripts/test_fontshow_gentoo.py``).
+
+These scripts are intended for **manual, local execution only**.
+
+They are:
+
+- not executed in CI
+- not required for normal development
+- provided as documented helpers for platform-specific validation
+  (e.g. Gentoo Linux, LuaLaTeX, Fontconfig behavior)
+
+They may assume the presence of system-specific tools and configurations.
 
 In short:
 

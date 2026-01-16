@@ -3,9 +3,20 @@
 
 [core]
     editor = code --wait
+    pager = delta
 
 [diff]
     tool = winmerge
 
 [merge]
     tool = winmerge
+
+[delta]
+    light = true           # Fondamentale per il tuo sfondo crema
+    line-numbers = true
+    # Colori scuri per il testo delle patch (grigio scuro/nero)
+    minus-style = syntax "#440000"
+    plus-style = syntax "#004400"
+    # Sfondi pastello molto tenui per le righe intere
+    minus-emph-style = bold syntax "#f9c8c8"
+    plus-emph-style = bold syntax "#c8f9c8"
