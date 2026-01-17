@@ -63,6 +63,47 @@ implementation or revision.
 
 ---
 
+## Pipeline idempotency and output behavior
+
+The Fontshow pipeline is designed to be **safe to re-run** by construction.
+
+This does **not** imply strict idempotence in the mathematical sense
+(i.e. producing identical output files on every execution), but rather:
+
+- existing outputs are never modified or invalidated,
+- repeated executions do not corrupt or depend on previous runs,
+- side effects are limited to the creation of new artifacts,
+- execution order does not affect correctness.
+
+### dump-fonts
+
+The `dump-fonts` step always writes a single inventory file.
+
+Re-running the command overwrites the target file deterministically.
+This behavior is intentional and considered idempotent.
+
+### parse-inventory
+
+This step performs a pure transformation of the input inventory.
+
+It has no side effects and produces deterministic output given the same input.
+
+### create-catalog
+
+The `create-catalog` step intentionally generates **new output files**
+using unique filenames.
+
+This design avoids accidental overwrites and allows multiple catalog
+generations to coexist.
+
+As a result:
+
+- re-running the command is safe,
+- existing outputs are never modified,
+- idempotency is guaranteed at the pipeline level, not at the file level.
+
+This behavior is intentional and must not be interpreted as a defect.
+
 ## D37 - Decision: Language inference operates strictly on coverage-level data
 
 **Status**: IMPLEMENTED
