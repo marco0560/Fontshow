@@ -19,7 +19,53 @@ Any changes to these decisions must be:
 - reflected in this document;
 - traceable through dedicated commits.
 
+## Logging specification status
+
+This document contains both implemented and forward-looking design
+decisions.
+
+In particular, several sections describe **logging behavior and
+diagnostic messages that are not yet implemented** in the current
+codebase.
+
+This is intentional.
+
+The project follows a design-first approach where logging semantics
+and observability goals may be specified ahead of implementation.
+
+### Status conventions
+
+Each logging-related section in this document may declare one of the
+following statuses:
+
+- **IMPLEMENTED**
+  The described behavior is fully implemented in the current codebase.
+
+- **PLANNED**
+  The behavior is specified but not yet implemented.
+
+- **DEFERRED**
+  The behavior is intentionally postponed or out of current scope.
+
+Unless explicitly stated, logging specifications MUST NOT be assumed
+to be implemented.
+
+### Issue tracking
+
+When applicable, a section may reference a GitHub issue using:
+
+```text
+Tracked by: #<issue-number>
+```
+
+This indicates that the section is intentionally tracked for future
+implementation or revision.
+
+---
+
 ## D37 - Decision: Language inference operates strictly on coverage-level data
+
+**Status**: IMPLEMENTED
 
 ### Context
 
@@ -63,6 +109,9 @@ must preserve this separation of concerns.
   out of scope for language inference unit tests.
 
 ## D36 - Decision: Refine language inference using a global Unicode block coverage threshold
+
+**Status**: IMPLEMENTED
+**Notes**: Some refinements explicitly deferred
 
 ### D36 - Context
 
@@ -124,7 +173,7 @@ real-world font analysis.
   isolated codepoints
 - Coverage data remains fully available for advanced analysis and diagnostics
 
-### Future evolution
+### D36 -  Future evolution
 
 If systematic false negatives are observed, this global threshold may be
 replaced or refined by:
@@ -135,11 +184,14 @@ replaced or refined by:
 
 Such changes will be introduced only as explicit, documented decisions.
 
-### Status
+### D36 -  Status
 
 Accepted.
 
 ## D35 - Decision: Decode Fontconfig charset bitmap into Unicode ranges (C-Step 5.1)
+
+**Status**: PLANNED
+**Tracked by**: #27, #29
 
 ### D35 - Context
 
@@ -167,7 +219,7 @@ are introduced.
 - Automatic decoding avoids divergent inventory states.
 - Downstream enrichment requires explicit Unicode ranges.
 
-### Constraints
+### D35 -  Constraints
 
 - Decoding is best-effort and must not abort the pipeline.
 - Malformed bitmap lines must be skipped with structured warnings.
@@ -180,7 +232,7 @@ are introduced.
 - Additional C-Steps are required to define how charset-derived coverage
   interacts with other coverage sources.
 
-### Example
+### D35 -  Example
 
 Before decoding:
 
@@ -205,6 +257,9 @@ After decoding:
 Accepted — implementation scheduled as C-Step 5.1.
 
 ## D34 - Decision: TRACE logging semantics and testing strategy
+
+**Status**: PLANNED
+**Tracked by**: #26, #29
 
 ### D34 - Context
 
@@ -252,6 +307,9 @@ Accepted and implemented.
 
 ## D33 - Logging: reliable TRACE level and caller attribution
 
+**Status**: PLANNED
+**Tracked by**: #26, #29
+
 ### D33 - Context
 
 Fontshow relies on a custom logging facade to provide optional, zero-overhead
@@ -297,6 +355,9 @@ This behavior is considered part of the public debugging contract of Fontshow.
 
 ## D32 - Decision: Changelog as a derived summary, not a source of truth
 
+**Status**: PLANNED
+**Tracked by**: #26, #29
+
 ### D32 - Decision
 
 `CHANGELOG.md` is treated as a **derived, human-readable summary**.
@@ -322,6 +383,9 @@ Authoritative sources are:
 
 ## D31 - CLI return code contract
 
+**Status**: PLANNED
+**Tracked by**: #26, #29
+
 All Fontshow CLI commands adhere to the following return code contract:
 
 - `0` — successful execution
@@ -338,6 +402,9 @@ This contract applies uniformly to all subcommands and entrypoints.
 Documented and enforced through CLI tests.
 
 ## D30 - RuntimeWarning when executing `fontshow preflight`
+
+**Status**: PLANNED
+**Tracked by**: #26, #29
 
 ### D30 - Context
 
@@ -378,7 +445,7 @@ Known and accepted.
 
 ## D29 - Preflight command output and rendering responsibility
 
-**Status**: Completed
+**Status**: Implemented
 **Date**: 2026-01-08
 **Scope**: `preflight`
 
@@ -433,7 +500,7 @@ Implemented and validated via CLI tests and manual execution.
 
 ## D28 - CLI execution model unification (dispatcher vs module entrypoints)
 
-**Status**: Completed
+**Status**: Implemented
 **Date**: 2026-01-08
 **Scope**: `preflight` `dump_fonts.py` `parse_font_inventory.py` `create_catalog.py`
 
@@ -497,7 +564,7 @@ Applied to:
 
 ## D27 - C-Step: Charset-driven enrichment (5.1–5.3)
 
-**Status**: Completed
+**Status**: Implemented
 **Date**: 2026-01-07
 **Scope**: `parse_font_inventory.py`
 **Related components**: `dump_fonts.py`, `infer_languages.py`
@@ -587,6 +654,8 @@ A follow-up decision is required to determine whether:
 
 ## D26 - Decision — Charset lifecycle and current non-consumption
 
+**Status**: Implemented
+
 ### D26 - Context
 
 FontConfig-derived charset metadata is currently extracted during the
@@ -645,7 +714,7 @@ Avoiding premature consumption prevents:
 
 ### D25 - Status
 
-- **Status:** Accepted
+- **Status:** Accepted, Implemented
 - **Date:** 2026-01-06
 - **Scope:** Structured logging infrastructure for Fontshow
 
@@ -805,7 +874,7 @@ enrichment and are therefore not available here.
 
 ## D24 - Coverage Strategy and Rationale
 
-- **Status:** Accepted
+- **Status:** Accepted, Implemented
 - **Date:** 2026-01-05
 - **Scope:** Test coverage policy for Fontshow
 
@@ -880,7 +949,7 @@ Instead, the chosen approach:
 - Contributors are encouraged to add tests to core logic modules, not to inflate coverage numbers.
 - Coverage reports must be interpreted per-module, not as a single aggregate metric.
 
-### Future Work
+### D24 - Future Work
 
 Planned follow-up actions include:
 
@@ -897,7 +966,7 @@ Coverage is treated as a qualitative signal, not a numerical target. The current
 
 ## D23 - Decision: Script-aware sample text selection
 
-- **Status:** Accepted
+- **Status:** Accepted, Implemented
 - **Context:** Font catalog generation (`create_catalog`)
 - **Related versions:** v0.20.0+
 
@@ -964,7 +1033,7 @@ consumer of inference results.
 
 ## D22 - Decision: Preflight checks refactoring to a class-based, registry-backed model
 
-- **Status**: Accepted
+- **Status**: Accepted, Implemented
 - **Date**: 2026-01-04
 - **Scope**: `fontshow.preflight`
 
@@ -1069,6 +1138,8 @@ This results in a runner that is:
 
 ## D21 - Decision: Move preflight subsystem to a class-based design
 
+**Status**: Implemented
+
 ### D21 - Context
 
 The initial implementation of the preflight subsystem was function-based.
@@ -1140,7 +1211,7 @@ is now considered **stable** rather than experimental.
 
 ## D20 - Decision: Transition to a Class-Based Model for Preflight Checks
 
-- **Status:** Accepted
+- **Status:** Accepted, Implemented
 - **Area:** Preflight / Testing / Architecture
 - **Date:** 2026-01-03
 
@@ -1209,7 +1280,9 @@ for all preflight checks.
 
 ## D19 - Decision: Explicit Exposure of Check Modules in the Runner
 
-- **Status:** Accepted
+- **Status:** Accepted, PLANNED
+- **Tracked by**: #26
+- **Notes**: Logging spec ahead of implementation
 - **Area:** Testing / Public API
 - **Date:** 2026-01-03
 
@@ -1254,7 +1327,9 @@ This is a deliberate design choice and is documented as such.
 
 ## D18 - Decision: Font discovery preflight checks rely on fc-list only
 
-- **Status**: Accepted
+- **Status:** Accepted, PLANNED
+- **Tracked by**: #26
+- **Notes**: Logging spec ahead of implementation
 - **Context**: Preflight stage (C5.3)
 - **Date**: 2026-01-03
 
@@ -1290,6 +1365,10 @@ At that stage, backend-specific requirements (including `fc-query`) will be
 validated as part of backend selection and runtime readiness checks.
 
 ## D17 - Decision: Font Discovery
+
+- **Status:** Accepted, PLANNED
+- **Tracked by**: #26
+- **Notes**: Logging spec ahead of implementation
 
 ### D17 - Context
 
@@ -1357,6 +1436,10 @@ and auditable** with current GitHub capabilities.
 
 ## D15 - Decision: Version bumps driven by Conventional Commits
 
+- **Status:** Accepted, PLANNED
+- **Tracked by**: #26
+- **Notes**: Logging spec ahead of implementation
+
 ### D15 - Decision
 
 Fontshow version increments are driven exclusively by **Conventional Commits**
@@ -1380,6 +1463,8 @@ The effective version is materialized via Git tags and resolved at runtime.
 - Developers must treat commit messages as authoritative
 
 ## D14 - Decision: Single-source-of-truth versioning
+
+**Status:** IMPLEMENTED, OBSOLETE
 
 ### D14 - Decision
 
@@ -1406,6 +1491,8 @@ except PackageNotFoundError:
 
 ## D13 - Decision: Deferred Warning Emission via Structured Collection
 
+**Status:** IMPLEMENTED, OBSOLETE
+
 ### D13 - Decision
 
 Validation warnings are **not emitted directly**.
@@ -1426,6 +1513,8 @@ They are collected as structured records and returned to the caller.
 
 ## D12 - Decision: Coverage reporting without enforcement
 
+**Status:** IMPLEMENTED, OBSOLETE
+
 ### D12 - Decision
 
 Test coverage is measured and reported, but **no minimum threshold is enforced**.
@@ -1439,6 +1528,8 @@ Test coverage is measured and reported, but **no minimum threshold is enforced**
 Accepted
 
 ## D11 - Decision: CI quality gates via pre-commit and pytest
+
+**Status:** IMPLEMENTED, OBSOLETE
 
 ### D11 - Decision
 
@@ -1464,6 +1555,8 @@ The **docs job** only builds documentation.
 
 ## D10 - Decision: Separate CI jobs for tests and documentation
 
+**Status:** IMPLEMENTED, OBSOLETE
+
 ### D10 - Decision
 
 Tests and documentation are executed in **separate CI jobs**.
@@ -1474,6 +1567,8 @@ Tests and documentation are executed in **separate CI jobs**.
 - Documentation issues do not block test feedback
 
 ## D9 - Decision: Font entry `family` field required at top-level
+
+**Status:** IMPLEMENTED, OBSOLETE
 
 ### D9 - Decision
 
@@ -1544,6 +1639,8 @@ without long-term value.
 
 ## D6 - Work tracking and technical debt
 
+- **Status**: ONGOING
+- **Note**: Logging specifications intentionally precede implementation.
 - TODOs, bugs, and technical debt are tracked **exclusively via GitHub Issues**.
 - Static TODO files in the repository are not used.
 - Issues represent the operational state of the work.
