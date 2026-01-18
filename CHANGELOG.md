@@ -1,3 +1,9 @@
+## [0.29.2](https://github.com/marco0560/Fontshow/compare/v0.29.1...v0.29.2) (2026-01-18)
+
+### Bug Fixes
+
+* **core:** align logging architecture, CLI dispatch and tests ([a33a3d2](https://github.com/marco0560/Fontshow/commit/a33a3d2e666cfb357e7eb3ae0ac47ff3b364bda0)), closes [#43](https://github.com/marco0560/Fontshow/issues/43)
+
 ## [0.29.1](https://github.com/marco0560/Fontshow/compare/v0.29.0...v0.29.1) (2026-01-15)
 
 ### Bug Fixes
