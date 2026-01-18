@@ -53,6 +53,26 @@ except ImportError:
 if TYPE_CHECKING:
     from fontTools.ttLib import TTCollection, TTFont
 
+
+"""
+Logging conventions
+-------------------
+
+This module uses the shared Fontshow logger (`fontshow.logging_utils.log`).
+
+All log messages:
+- are structured (use `extra={}`),
+- never print directly to stdout,
+- are intended to be machine-readable,
+- may be formatted by the CLI layer.
+
+Logging levels:
+- INFO    → user-visible pipeline progress
+- DEBUG   → internal state / diagnostics
+- TRACE   → low-level execution tracing
+- WARNING → recoverable errors
+"""
+
 # -----------------------
 
 UNICODE_BLOCKS = [
@@ -1336,6 +1356,15 @@ def _run_dump_fonts(args) -> int:
     without touching the core implementation.
     """
     return run_dump_fonts(args)
+
+
+def run(args):
+    """
+    Public CLI entrypoint (kept stable).
+    Thin wrapper around the injectable runner.
+    Needed for tests via the top-level dispatcher.
+    """
+    return main(args)
 
 
 def main(args) -> int:

@@ -23,7 +23,7 @@ def test_inventory_parsing_emits_global_logs(
             level="medium",
         )
 
-    messages = [rec.message for rec in capture_fontshow_logs.records]
+    messages = [rec.getMessage() for rec in capture_fontshow_logs.records]
 
     assert "font inventory parsing started" in messages
     assert "font inventory parsing completed" in messages
@@ -47,7 +47,7 @@ def test_schema_validation_logging(
             level="medium",
         )
 
-    messages = [rec.message for rec in capture_fontshow_logs.records]
+    messages = [rec.getMessage() for rec in capture_fontshow_logs.records]
 
     assert "inventory schema validation requested" in messages
     assert "inventory schema validation completed" in messages

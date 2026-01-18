@@ -65,6 +65,7 @@ nav:
     - Architecture: architecture.md
     - Dev environment: dev-environment.md
     - Environment matrix: environment-matrix.md
+    - Logging system: logging.md
     - Scripts: scripts.md
     - Contributing: CONTRIBUTING.md
 

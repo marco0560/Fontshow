@@ -2,8 +2,8 @@
 
 ## Status
 
-**Status:** Accepted
-**Date:** 16/01/2026
+**Status:** Superseded
+**Superseded by:** Logging & CLI dispatch refactor (18/01/2026)
 
 ## Context
 
@@ -18,15 +18,23 @@ without modifying production code.
 
 ## Decision
 
-The limitation is accepted for now.
-CLI tests are aligned to the current architecture and explicitly document
-this behavior.
+This decision is no longer valid.
+
+The CLI dispatch mechanism has been refactored so that:
+
+- command handlers are injected via `argparse.set_defaults(func=...)`
+- handlers return exit codes instead of calling `sys.exit`
+- logging is fully testable
+- CLI behavior is deterministic and mockable
+
+The original limitation no longer applies.
 
 ## Consequences
 
-- CLI tests remain slightly less expressive than desired
-- No workaround or test-only hacks are introduced
-- A future refactor of CLI dispatch may address this limitation
+- CLI tests now fully exercise command behavior
+- Exit codes are deterministic
+- Logging is verifiable via `caplog`
+- No test-only hacks are required
 
 ## References
 

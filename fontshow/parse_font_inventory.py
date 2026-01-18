@@ -18,6 +18,7 @@ Default inference level: ``medium``.
 
 import argparse
 import json
+import logging
 import sys
 from pathlib import Path
 from typing import Any
@@ -27,8 +28,12 @@ from fontshow.cli_utils import add_common_arguments
 from fontshow.dump_fonts import UNICODE_BLOCKS
 from fontshow.infer_languages import infer_languages
 from fontshow.json_format import dumps_pretty
-from fontshow.logging_utils import log
 from fontshow.schema_validation import validate_inventory_schema
+
+# ============================================================
+# Set up logger
+# ============================================================
+logger = logging.getLogger("fontshow")
 
 # ============================================================
 # Inference thresholds
@@ -712,40 +717,45 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
 
 def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     """
-    Enrich a raw Fontshow inventory with inferred scripts and languages.
+    Parse and enrich a font inventory structure.
 
-    This function transforms a *raw* inventory (schema_version = 1.0)
-    into an *enriched* inventory (schema_version = 1.1).
+    This function:
+    - validates the inventory schema
+    - performs script and language inference
+    - enriches font entries with derived metadata
+    - emits structured log events during processing
 
-    Characteristics:
-    - enrichment is best-effort and non-destructive,
-    - original raw metadata is preserved,
-    - inference results are additive and audit-friendly,
-    - recoverable issues are reported via structured warnings.
+    Parameters
+    ----------
+    inventory : dict
+        Parsed JSON inventory as produced by `dump_fonts`.
+    level : str
+        Inference aggressiveness level ("low", "medium", "high").
 
-    Limitations:
-    - FontConfig-derived charset metadata is preserved but NOT consumed,
-      normalized, or interpreted at this stage.
-    - Script and language inference relies exclusively on Unicode
-      coverage metadata.
+    Returns
+    -------
+    dict
+        Enriched inventory with inferred metadata.
 
-    Returns:
-        The enriched inventory dictionary.
+    Notes
+    -----
+    - This function does NOT perform any I/O.
+    - Logging is emitted through the global `fontshow` logger.
     """
     # Standard library imports for debug purposes
     import os
     import pprint
 
-    log.info(
+    logger.info(
         "inventory schema validation requested",
         extra={
             "schema_version": data.get("schema_version"),
         },
     )
-    log.debug("inventory schema validation started")
+    logger.debug("inventory schema validation started")
     # --- Schema validation (C4.4) -----------------------------------------
     schema_warnings = validate_inventory_schema(data)
-    log.info(
+    logger.info(
         "inventory schema validation completed",
         extra={
             "schema_version": data.get("schema_version"),
@@ -758,7 +768,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
             sev = w.get("severity", "unknown")
             severity_counts[sev] = severity_counts.get(sev, 0) + 1
 
-        log.debug(
+        logger.debug(
             "inventory schema validation produced warnings",
             extra={
                 "schema_version": data.get("schema_version"),
@@ -775,7 +785,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         )
     # ----------------------------------------------------------------------
 
-    log.info(
+    logger.info(
         "font inventory parsing started",
         extra={
             "schema_version": data.get("schema_version"),
@@ -789,7 +799,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         family = identity.get("family")
         style = identity.get("style")
 
-        log.debug(
+        logger.debug(
             "font entry parsing started",
             extra={
                 "font_path": font_path,
@@ -812,7 +822,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
                     ranges = decode_fc_charset_bitmap(raw)
                     charset["ranges"] = ranges
 
-                    log.debug(
+                    logger.debug(
                         "fontconfig charset bitmap decoded",
                         extra={
                             "font_path": font_path,
@@ -821,7 +831,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
                     )
                 except Exception as exc:
                     charset["ranges"] = []
-                    log.warning(
+                    logger.warning(
                         "fontconfig charset bitmap decoding failed",
                         extra={
                             "font_path": font_path,
@@ -836,7 +846,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
             normalized = normalize_charset_ranges(charset["ranges"])
             coverage["normalized_charset"] = normalized
 
-            log.debug(
+            logger.debug(
                 "charset normalized",
                 extra={
                     "font_path": font_path,
@@ -851,7 +861,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
                 if blocks:
                     coverage["unicode_blocks_from_charset"] = blocks
 
-                    log.debug(
+                    logger.debug(
                         "unicode blocks derived from charset",
                         extra={
                             "font_path": font_path,
@@ -872,7 +882,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
             if script_cov:
                 coverage["script_coverage_from_charset"] = script_cov
 
-                log.debug(
+                logger.debug(
                     "script coverage derived from charset",
                     extra={
                         "font_path": font_path,
@@ -895,7 +905,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
                 severity="info",
             )
         if not declared_languages:
-            log.debug(
+            logger.debug(
                 "declared languages missing",
                 extra={
                     "font_path": font_path,
@@ -906,7 +916,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
 
         # C4.2 – Infer Unicode scripts from coverage metadata
         inferred_scripts: list[str] = list(infer_scripts(coverage, level) or [])
-        log.debug(
+        logger.debug(
             "scripts inferred",
             extra={
                 "font_path": font_path,
@@ -922,7 +932,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
             coverage,
             policy="permissive",
         )
-        log.debug(
+        logger.debug(
             "languages inferred",
             extra={
                 "font_path": font_path,
@@ -1006,7 +1016,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
             # Raw evidence used for inference
             "unicode_blocks": coverage.get("unicode_blocks", {}),
         }
-        log.debug(
+        logger.debug(
             "font entry parsing completed",
             extra={
                 "font_path": font_path,
@@ -1025,7 +1035,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     metadata["inference_level"] = level
     metadata.setdefault("input_inventory_tool", "parse_font_inventory")
     metadata.setdefault("input_inventory_tool_version", __version__)
-    log.info(
+    logger.info(
         "font inventory parsing completed",
         extra={
             "fonts_processed": len(data.get("fonts", [])),
@@ -1159,7 +1169,7 @@ def run_parse_font_inventory(
         eprint_fn("Hint: run dump_fonts.py first to generate the inventory.")
         return 1
 
-    log.debug(
+    logger.debug(
         "inference level enabled",
         extra={"infer_level": args.infer_level},
     )
@@ -1217,6 +1227,15 @@ def _run_parse_inventory(args) -> int:
     without touching the core implementation.
     """
     return run_parse_font_inventory(args)
+
+
+def run(args):
+    """
+    Public CLI entrypoint (kept stable).
+    Thin wrapper around the injectable runner.
+    Needed for tests via the top-level dispatcher.
+    """
+    return main(args)
 
 
 def main(args) -> int:

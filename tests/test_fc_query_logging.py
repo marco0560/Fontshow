@@ -31,7 +31,7 @@ def test_fc_query_extract_emits_basic_logs(
     with capture_fontshow_logs.at_level(logging.DEBUG, logger="fontshow"):
         fontshow.dump_fonts.fc_query_extract(Path("/fake/font.ttf"))
 
-    messages = [rec.message for rec in capture_fontshow_logs.records]
+    messages = [rec.getMessage() for rec in capture_fontshow_logs.records]
 
     assert "fc-query invocation prepared" in messages
     assert "fontconfig output parsed" in messages

@@ -123,16 +123,27 @@ def run_cli(main_func, argv):
         (exit_code, stdout)
     """
     old_argv = sys.argv
-    sys.argv = argv
+    sys.argv = argv[:]  # important: copy argv exactly as CLI would receive it
 
     stdout = StringIO()
     try:
         with redirect_stdout(stdout), redirect_stderr(stdout):
             try:
+                # Call the real CLI entrypoint.
+                # It is expected to read sys.argv[1:].
                 result = main_func()
-                code = result if isinstance(result, int) else 0
+
+                # Normalize return value to CLI semantics
+                if isinstance(result, int):
+                    raise SystemExit(result)
+                raise SystemExit(0)
+
             except SystemExit as exc:
                 code = exc.code if isinstance(exc.code, int) else 1
+
+            except Exception:
+                # Unexpected internal error
+                code = 2
     finally:
         sys.argv = old_argv
 

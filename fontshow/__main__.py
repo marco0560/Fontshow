@@ -11,7 +11,32 @@ import fontshow.preflight
 from fontshow.cli_utils import add_common_arguments
 
 
+def dispatch_command(args):
+    try:
+        # args.func is set by the subparser via set_defaults(func=...)
+        result = args.func(args)
+
+        # Normalize return value to exit code
+        return int(result) if result is not None else 0
+
+    except SystemExit as e:
+        return int(e.code) if e.code is not None else 0
+
+    except Exception:
+        # Unexpected internal error
+        return 2
+
+
 def main() -> int:
+    """
+    CLI entrypoint.
+
+    NOTE:
+    Logging configuration is intentionally NOT performed here.
+    Logging is handled centrally via `fontshow.logging_utils`
+    and test harnesses (pytest caplog).
+    """
+
     try:
         FONTSHOW_VERSION = version("fontshow")
     except PackageNotFoundError:
@@ -48,7 +73,7 @@ def main() -> int:
         help="Run environment and dependency checks",
     )
     add_common_arguments(preflight_parser)
-    preflight_parser.set_defaults(func=fontshow.preflight.main)
+    fontshow.preflight.register_cli(preflight_parser)
 
     # ------------------------------------------------------------------
     # dump-fonts
@@ -77,11 +102,11 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    if not hasattr(args, "func"):
+    if not getattr(args, "func", None):
         parser.print_help()
         return 0
 
-    return args.func(args)
+    return dispatch_command(args)
 
 
 if __name__ == "__main__":

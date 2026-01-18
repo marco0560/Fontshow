@@ -1228,6 +1228,15 @@ def _run_create_catalog(args) -> int:
     return run_create_catalog(args)
 
 
+def run(args):
+    """
+    Public CLI entrypoint (kept stable).
+    Thin wrapper around the injectable runner.
+    Needed for tests via the top-level dispatcher.
+    """
+    return main(args)
+
+
 def main(args) -> int:
     """
     CLI entrypoint for create-catalog.
@@ -1238,7 +1247,7 @@ def main(args) -> int:
         return _run_create_catalog(args)
     except Exception as exc:
         if not getattr(args, "quiet", False):
-            print(f"ERROR: create-catalog failed: {exc}", file=sys.stderr)
+            print(f"ERROR: create-catalog failed: {exc}", file=sys.__stderr__)
         return 2
 
 

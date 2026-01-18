@@ -11,7 +11,7 @@ def test_create_catalog_success(cli_runner, stub_create_catalog, tmp_path):
 @pytest.mark.parametrize(
     "stub_create_catalog, expected_code",
     [
-        ("fail", 2),  # errore atteso
+        ("fail", 1),  # errore atteso
         ("boom", 2),  # errore interno (eccezione)
     ],
     indirect=["stub_create_catalog"],

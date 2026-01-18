@@ -5,6 +5,11 @@ import os
 from collections.abc import Mapping
 from typing import Any
 
+# NOTE:
+# We intentionally do NOT attach handlers or formatters here.
+# Formatting and output policy is responsibility of the caller
+# (CLI, tests, or embedding application).
+
 # -----------------------------
 # TRACE level (custom)
 # -----------------------------
@@ -30,6 +35,8 @@ logging.Logger.trace = _trace  # type: ignore[attr-defined]
 # Logger initialization
 # -----------------------------
 
+# If FONTSHOW_LOG_LEVEL is not set, logging is disabled by design.
+
 _ENV_VAR = "FONTSHOW_LOG_LEVEL"
 
 
@@ -52,26 +59,11 @@ def _configure_root_logger() -> logging.Logger | None:
 
     logger = logging.getLogger("fontshow")
 
-    # Prevent propagation to root logger
-    logger.propagate = False
-
-    # Logger decides WHAT levels are enabled
+    # IMPORTANT:
+    # - allow propagation so pytest caplog can capture logs
+    # - do NOT attach handlers here
     logger.setLevel(level)
-
-    if not logger.handlers:
-        handler = logging.StreamHandler()
-        logger.addHandler(handler)
-    else:
-        handler = logger.handlers[0]
-
-    # Handler must NOT filter by level (or TRACE will be dropped)
-    handler.setLevel(logging.NOTSET)
-
-    formatter = logging.Formatter(
-        #        "%(levelname)s %(module)s.%(funcName)s: %(message)s"
-        "%(levelname)s %(module)s.%(funcName)s: %(message)s | %(extra)s"
-    )
-    handler.setFormatter(formatter)
+    logger.propagate = True
 
     return logger
 
@@ -97,6 +89,9 @@ class _LogFacade:
     - Disabled by default
     - Preserves caller module and function (via stacklevel)
     - Structured payload via 'extra'
+
+    stacklevel=2 ensures log origin points to caller, not facade
+
     """
 
     def _logger(self) -> logging.Logger | None:

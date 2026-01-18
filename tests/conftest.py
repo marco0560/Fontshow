@@ -22,9 +22,6 @@ def add_project_root_to_syspath():
 
 @pytest.fixture(scope="session", autouse=True)
 def ensure_fontshow_import_is_clean():
-    """
-    Ensure that fontshow modules are not cached across test sessions.
-    """
     yield
     for name in list(sys.modules):
         if name.startswith("fontshow"):
@@ -32,26 +29,13 @@ def ensure_fontshow_import_is_clean():
 
 
 # ---------------------------------------------------------------------------
-# Logging control (USED BY MANY NON-CLI TESTS)
+# Logging control
 # ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def enable_fontshow_logging(monkeypatch):
-    """
-    Enable Fontshow structured logging for tests.
-
-    This fixture:
-    - sets FONTSHOW_LOG_LEVEL=DEBUG
-    - reloads fontshow.logging_utils so the setting is applied
-
-    Notes:
-    - Modules that depend on logging_utils and read configuration at import
-      time (e.g. dump_fonts, parse_font_inventory) MUST be reloaded explicitly
-      by the test after using this fixture.
-    """
     monkeypatch.setenv("FONTSHOW_LOG_LEVEL", "DEBUG")
-
     import fontshow.logging_utils
 
     importlib.reload(fontshow.logging_utils)
@@ -59,9 +43,6 @@ def enable_fontshow_logging(monkeypatch):
 
 @pytest.fixture
 def disable_fontshow_logging():
-    """
-    Disable all logging temporarily.
-    """
     logging.disable(logging.CRITICAL)
     yield
     logging.disable(logging.NOTSET)
@@ -69,9 +50,6 @@ def disable_fontshow_logging():
 
 @pytest.fixture
 def silence_root_logger():
-    """
-    Temporarily silence the root logger.
-    """
     root = logging.getLogger()
     old_handlers = root.handlers[:]
     root.handlers.clear()
@@ -81,36 +59,25 @@ def silence_root_logger():
 
 @pytest.fixture
 def capture_fontshow_logs(caplog):
-    """
-    Attach pytest caplog handler to the 'fontshow' logger.
-
-    This is required because fontshow uses:
-      - a dedicated logger ('fontshow')
-      - propagate = False
-      - its own StreamHandler
-
-    The fixture ensures log records are visible to caplog.
-    """
     logger = logging.getLogger("fontshow")
-    logger.addHandler(caplog.handler)
 
-    try:
+    # 🔴 fondamentale
+    old_propagate = logger.propagate
+    logger.propagate = True
+
+    with caplog.at_level(logging.DEBUG):
         yield caplog
-    finally:
-        logger.removeHandler(caplog.handler)
+
+    logger.propagate = old_propagate
 
 
 # ---------------------------------------------------------------------------
-# CLI helpers
+# CLI runner
 # ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def cli_runner():
-    """
-    Run fontshow CLI commands and capture (exit_code, stdout).
-    """
-
     def _run(argv):
         return run_cli(fontshow_main, argv)
 
@@ -118,7 +85,19 @@ def cli_runner():
 
 
 # ---------------------------------------------------------------------------
-# Preflight stubs (CLI-only)
+# Helper: patch argparse dispatch
+# ---------------------------------------------------------------------------
+
+
+def patch_cli_func(monkeypatch, module, fake_func):
+    """
+    Patch the command entrypoint AFTER argparse parsing.
+    """
+    monkeypatch.setattr(module, "main", fake_func)
+
+
+# ---------------------------------------------------------------------------
+# PRE-FLIGHT
 # ---------------------------------------------------------------------------
 
 
@@ -128,12 +107,6 @@ class _FakeSeverity:
 
 
 class _FakePreflightResult:
-    """
-    Minimal object matching the real PreflightResult contract:
-    - .results → iterable of CheckResult (can be empty)
-    - .overall_severity.name → "OK" or "ERROR"
-    """
-
     def __init__(self, ok: bool):
         self.results = []
         self.overall_severity = _FakeSeverity("OK" if ok else "ERROR")
@@ -141,87 +114,82 @@ class _FakePreflightResult:
 
 @pytest.fixture
 def stub_preflight(monkeypatch, request):
-    """
-    Parametrized stub for CLI tests.
-
-    Usage:
-        @pytest.mark.parametrize("stub_preflight", ["ok"], indirect=True)
-        @pytest.mark.parametrize("stub_preflight", ["fail"], indirect=True)
-
-    Behaviour:
-      - ok   → preflight succeeds, exit code 0
-      - fail → preflight fails, exit code 1
-    """
     mode = request.param
     ok = mode == "ok"
 
-    def fake_run_preflight(*args, **kwargs):
-        return _FakePreflightResult(ok=ok)
+    def fake_run(args):
+        if ok:
+            print("Preflight passed.")
+            return 0
+        print("Preflight failed.")
+        return 1
 
-    # IMPORTANT:
-    # Patch the symbol as imported by the CLI entrypoint
+    import fontshow.preflight
+
+    # Patch the actual function used by argparse
     monkeypatch.setattr(
-        "fontshow.preflight.__main__.run_preflight",
-        fake_run_preflight,
+        fontshow.preflight,
+        "run",
+        fake_run,
+        raising=False,  # IMPORTANT: attribute may not exist yet
     )
 
-    monkeypatch.setattr(
-        "fontshow.preflight.__main__.preflight_exit_code",
-        lambda result: 0 if ok else 1,
-    )
 
-
-class _FakeDumpFontsResult:
-    def __init__(self, ok: bool):
-        self.ok = ok
+# ---------------------------------------------------------------------------
+# DUMP FONTS
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def stub_dump_fonts(monkeypatch, request):
     mode = request.param
-    ok = mode == "ok"
 
-    def fake_run_dump_fonts(*args, **kwargs):
-        if not ok:
-            raise RuntimeError("dump failed")
-        return 0
+    def fake_run(_args):
+        if mode == "ok":
+            return 0
+        raise RuntimeError("dump failed")
 
-    monkeypatch.setattr(
-        "fontshow.dump_fonts._run_dump_fonts",
-        fake_run_dump_fonts,
-    )
+    from fontshow import dump_fonts
+
+    patch_cli_func(monkeypatch, dump_fonts, fake_run)
 
 
-class _FakeParseInventoryResult(dict):
-    pass
+# ---------------------------------------------------------------------------
+# PARSE INVENTORY
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def stub_parse_inventory(monkeypatch, request):
     mode = request.param
-    ok = mode == "ok"
 
-    def fake_parse_inventory(inv, *args, **kwargs):
-        if not ok:
-            raise ValueError("parse failed")
-        return {"schema_version": "1.1", "fonts": []}
+    def fake_run(_args):
+        if mode == "ok":
+            return 0
+        raise ValueError("parse failed")
 
-    monkeypatch.setattr(
-        "fontshow.parse_font_inventory._run_parse_inventory",
-        fake_parse_inventory,
-    )
+    from fontshow import parse_font_inventory
+
+    patch_cli_func(monkeypatch, parse_font_inventory, fake_run)
+
+
+# ---------------------------------------------------------------------------
+# CREATE CATALOG
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def stub_create_catalog(monkeypatch, request):
     mode = request.param
-    ok = mode == "ok"
 
-    def fake_create_catalog(*args, **kwargs):
-        if not ok:
-            raise RuntimeError("catalog failed")
+    def fake_run(args):
+        if mode == "ok":
+            return 0
+        if mode == "fail":
+            return 1
+        if mode == "boom":
+            raise RuntimeError("boom")
 
-    monkeypatch.setattr(
-        "fontshow.create_catalog.run_create_catalog",
-        fake_create_catalog,
-    )
+    from fontshow import create_catalog
+
+    monkeypatch.setattr(create_catalog, "main", fake_run)

@@ -5,6 +5,7 @@
 - [Repository architecture](architecture.md)
 - [Development environment](dev-environment.md)
 - [Development scripts](scripts.md)
+- [Logging system](logging.md)
 - [Contributing guidelines](CONTRIBUTING.md)
 - [CLI Contract](cli-contract.md)
 
