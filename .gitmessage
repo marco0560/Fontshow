@@ -18,6 +18,7 @@ Refs:
 #   refactor = code change that neither fixes a bug nor adds a feature
 #   test     = adding or updating tests
 #   chore    = maintenance, tooling, formatting, packaging
+#   style    = formatting (spaces, lint, typos)
 #----------------------------
 # Scopes (Fontshow):
 #   build      = build system / github
@@ -26,6 +27,7 @@ Refs:
 #   cli        = cli interface
 #   config     = configuration files
 #   core       = core pipeline, data flow, orchestration
+#   decision   = formal decision (architecture, rules...)
 #   dev        = development (tooling, hooks, scripts)
 #   docs       = documentation (MkDocs, README, architecture)
 #   dump       = dump_fonts tool

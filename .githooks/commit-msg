@@ -10,24 +10,26 @@ ALLOWED_TYPES = {
     "refactor",
     "test",
     "chore",
+    "style",
 }
 ALLOWED_SCOPES = {
-    "core",
-    "cli",
-    "schema",
-    "dump",
-    "parser",
-    "catalog",
-    "validation",
-    "docs",
-    "planning",
-    "output",
-    "config",
     "build",
-    "git",
-    "dev",
+    "catalog",
     "ci",
+    "cli",
+    "config",
+    "core",
+    "decision",
+    "dev",
+    "docs",
+    "dump",
+    "git",
+    "output",
+    "parser",
+    "planning",
+    "schema",
     "release",
+    "validation",
 }
 
 msg_file = sys.argv[1]
@@ -36,7 +38,7 @@ with open(msg_file, encoding="utf-8") as f:
     first_line = f.readline().strip()
 
 pattern = re.compile(
-    r"^(?P<type>feat|fix|docs|perf|refactor|test|chore)"
+    r"^(?P<type>feat|fix|docs|perf|refactor|test|chore|style)"
     r"(\((?P<scope>[a-z0-9._-]+)\))?"
     r"(?P<breaking>!)?: "
     r".{1,72}$"
