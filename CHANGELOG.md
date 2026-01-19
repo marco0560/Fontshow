@@ -1,3 +1,9 @@
+## [0.29.3](https://github.com/marco0560/Fontshow/compare/v0.29.2...v0.29.3) (2026-01-19)
+
+### Bug Fixes
+
+* **cli:** normalize quiet/verbose behavior across core commands ([b1c927f](https://github.com/marco0560/Fontshow/commit/b1c927f9c959a1cb11507da61c5ff988f2738edf)), closes [#44](https://github.com/marco0560/Fontshow/issues/44)
+
 ## [0.29.2](https://github.com/marco0560/Fontshow/compare/v0.29.1...v0.29.2) (2026-01-18)
 
 ### Bug Fixes
