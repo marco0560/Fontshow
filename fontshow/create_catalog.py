@@ -1244,11 +1244,19 @@ def main(args) -> int:
     Handles user-facing output and delegates execution to the core.
     """
     try:
-        return _run_create_catalog(args)
+        exit_code = _run_create_catalog(args)
     except Exception as exc:
         if not getattr(args, "quiet", False):
             print(f"ERROR: create-catalog failed: {exc}", file=sys.__stderr__)
         return 2
+
+    if exit_code == 0 and not getattr(args, "quiet", False):
+        if getattr(args, "verbose", False):
+            print("OK: catalog created successfully")
+        else:
+            print("OK")
+
+    return exit_code
 
 
 if __name__ == "__main__":

@@ -1380,8 +1380,16 @@ def main(args) -> int:
             print(f"ERROR: dump-fonts failed: {exc}", file=sys.stderr)
         return 2
 
-    if args.verbose and exit_code == 0:
-        print(f"OK: wrote inventory to {args.output}")
+    if exit_code == 0:
+        if args.verbose:
+            print(f"OK: wrote inventory to {args.output}")
+        elif not args.quiet:
+            print("OK")
+    else:
+        if not args.quiet:
+            print(
+                f"ERROR: dump-fonts failed with exit code {exit_code}", file=sys.stderr
+            )
 
     return exit_code
 

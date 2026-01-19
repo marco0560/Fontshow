@@ -43,8 +43,11 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     (e.g. --version, --verbose, --quiet).
     """
     add_version_argument(parser)
-    add_verbose_argument(parser)
-    add_quiet_argument(parser)
+
+    group = parser.add_mutually_exclusive_group()
+
+    add_verbose_argument(group)
+    add_quiet_argument(group)
 
 
 def cli_validate_inventory() -> int:

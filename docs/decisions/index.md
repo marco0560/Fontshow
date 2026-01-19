@@ -26,3 +26,4 @@ created before the adoption of the formal decision record system.
 - [0006 — CLI dispatch testability limitation](0006-cli-dispatch-testability-limit.md)
 - [0007 — Standardization of project scripts in Python](0007-standardization-project-scripts-python.md)
 - [0008 — Developer tooling as first-class project code](0008-developer-tooling-first-class-project-code.md)
+- [0009 — CLI verbosity contract](0009-cli-verbosity-contract.md)

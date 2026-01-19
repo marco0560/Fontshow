@@ -1158,11 +1158,6 @@ def run_parse_font_inventory(
         def eprint_fn(msg: str) -> None:
             print_fn(msg, file=sys.stderr)
 
-    # NOTE: don't call parser.error here: args may come from dispatcher tests.
-    if getattr(args, "verbose", False) and getattr(args, "quiet", False):
-        eprint_fn("❌ Error: --verbose and --quiet are mutually exclusive")
-        return 2
-
     input_path = args.input
     if not input_path.exists():
         eprint_fn(f"❌ Error: input file not found: {input_path}")
@@ -1215,7 +1210,13 @@ def run_parse_font_inventory(
         args.output,
         dumps_pretty(enriched, indent=2, ensure_ascii=False),
     )
-    print_fn(f"OK: wrote enriched inventory to {args.output}")
+
+    if not args.quiet:
+        if args.verbose:
+            print_fn(f"✔ Inventory written to {args.output}")
+        else:
+            print_fn("OK")
+
     return 0
 
 
