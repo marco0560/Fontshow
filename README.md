@@ -1,6 +1,5 @@
 # Fontshow
 
-
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://marco0560.github.io/Fontshow/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![CI](https://github.com/marco0560/fontshow/actions/workflows/ci.yml/badge.svg)](https://github.com/marco0560/fontshow/actions/workflows/ci.yml)
@@ -108,8 +107,12 @@ git clone https://github.com/marco0560/Fontshow.git
 cd Fontshow
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e .
 ```
+
+This installs Fontshow in editable mode using the project’s
+`pyproject.toml` configuration.
+
 <!-- cheatsheet:end -->
 
 <!-- cheatsheet:start -->
@@ -150,12 +153,12 @@ without risking the local working environment.
 
 ## Available commands
 
-| Command | Description |
-|--------|-------------|
-| `fontshow preflight` | Run environment and dependency checks |
-| `fontshow dump-fonts` | Extract a raw font inventory |
-| `fontshow parse-inventory` | Enrich and validate a font inventory |
-| `fontshow create-catalog` | Generate output artifacts from an inventory |
+| Command                    | Description                                 |
+|----------------------------|---------------------------------------------|
+| `fontshow preflight`       | Run environment and dependency checks       |
+| `fontshow dump-fonts`      | Extract a raw font inventory                |
+| `fontshow parse-inventory` | Enrich and validate a font inventory        |
+| `fontshow create-catalog`  | Generate output artifacts from an inventory |
 
 Use `--help` on any command to see available options:
 
