@@ -93,4 +93,5 @@ nav:
   - Project:
     - Roadmap: roadmap.md
     - Security & release policy: security-and-release-policy.md
+    - Release Checklist: release/checklist.md
     - Key rotation: key-rotation.md

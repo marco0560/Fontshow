@@ -37,3 +37,7 @@ immutable records to preserve rationale and historical context.
 
 - [Schema](schema/index.md)
 - [Data Dictionary](data_dictionary.md)
+
+## Release Process
+
+- [Release Checklist](release/checklist.md)
