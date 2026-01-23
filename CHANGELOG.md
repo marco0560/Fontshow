@@ -1,3 +1,11 @@
+## [0.29.4](https://github.com/marco0560/Fontshow/compare/v0.29.3...v0.29.4) (2026-01-23)
+
+### Bug Fixes
+
+* **cli:** align --quiet semantics with stderr behavior and argparse rules ([8dca108](https://github.com/marco0560/Fontshow/commit/8dca108b37da2964eff5ef6208bb4ecc29ca983a)), closes [#46](https://github.com/marco0560/Fontshow/issues/46)
+* **cli:** normalize stdout/stderr and --quiet handling ([138215a](https://github.com/marco0560/Fontshow/commit/138215a4e789f003bfe524d80ed00183b0750a98))
+* **cli:** normalize stdout/stderr behavior and align tests ([b2b9d65](https://github.com/marco0560/Fontshow/commit/b2b9d658392aff1447a3a4c609b8dec43615c30d)), closes [#46](https://github.com/marco0560/Fontshow/issues/46)
+
 ## [0.29.3](https://github.com/marco0560/Fontshow/compare/v0.29.2...v0.29.3) (2026-01-19)
 
 ### Bug Fixes
