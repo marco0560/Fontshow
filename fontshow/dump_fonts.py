@@ -1376,8 +1376,7 @@ def main(args) -> int:
     try:
         exit_code = _run_dump_fonts(args)
     except Exception as exc:
-        if not getattr(args, "quiet", False):
-            print(f"ERROR: dump-fonts failed: {exc}", file=sys.stderr)
+        print(f"ERROR: dump-fonts failed: {exc}", file=sys.stderr)
         return 2
 
     if exit_code == 0:
@@ -1386,10 +1385,7 @@ def main(args) -> int:
         elif not args.quiet:
             print("OK")
     else:
-        if not args.quiet:
-            print(
-                f"ERROR: dump-fonts failed with exit code {exit_code}", file=sys.stderr
-            )
+        print(f"ERROR: dump-fonts failed with exit code {exit_code}", file=sys.stderr)
 
     return exit_code
 

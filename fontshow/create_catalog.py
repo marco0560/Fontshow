@@ -497,12 +497,15 @@ def load_font_inventory(path: Path) -> list[dict]:
     metadata = data.get("metadata", {}) or {}
     schema_version = metadata.get("schema_version")
 
-    if schema_version is None:
-        print("⚠️  Warning: inventory missing 'schema_version'; assuming legacy format")
-    elif schema_version != "1.0":
-        print(
-            f"⚠️  Warning: inventory schema_version '{schema_version}' not explicitly supported"
-        )
+    if not args.quiet:
+        if schema_version is None:
+            print(
+                "⚠️  Warning: inventory missing 'schema_version'; assuming legacy format"
+            )
+        elif schema_version != "1.0":
+            print(
+                f"⚠️  Warning: inventory schema_version '{schema_version}' not explicitly supported"
+            )
 
     fonts = data.get("fonts", [])
 
@@ -524,9 +527,10 @@ def as_font_desc_list(fonts: list) -> list[dict]:
         if isinstance(f, dict):
             out.append(f)
         else:
-            print(
-                f"⚠️  Warning: unexpected font entry type {type(f)}, coercing to string"
-            )
+            if not args.quiet:
+                print(
+                    f"⚠️  Warning: unexpected font entry type {type(f)}, coercing to string"
+                )
             out.append(
                 {
                     "identity": {"family": str(f)},
@@ -732,7 +736,8 @@ def get_installed_fonts_windows():
     The function reads the Windows registry and normalizes names via
     `clean_font_name`. Excluded names from `EXCLUDED_FONTS` are filtered out.
     """
-    print("Sistema: Windows. Scansione registro...")
+    if not args.quiet:
+        print("Sistema: Windows. Scansione registro...")
     font_list = set()
     registry_paths = [
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
@@ -814,7 +819,9 @@ def get_installed_fonts_linux() -> list[str]:
 
     Excluded families listed in `EXCLUDED_FONTS` are filtered out.
     """
-    print("Sistema: Linux. Uso 'fc-list' per l'estrazione dei font...")
+    if not args.quiet:
+        print("Sistema: Linux. Uso 'fc-list' per l'estrazione dei font...")
+
     try:
         # Executes fc-list and captures the output
         result = subprocess.run(
@@ -834,10 +841,13 @@ def get_installed_fonts_linux() -> list[str]:
         return sorted(list(font_list))
 
     except FileNotFoundError:
-        print("Error: 'fc-list' not found. Make sure fontconfig is installed.")
+        print(
+            "Error: 'fc-list' not found. Make sure fontconfig is installed.",
+            file=sys.stderr,
+        )
         return []
     except subprocess.CalledProcessError as e:
-        print(f"Error running fc-list: {e}")
+        print(f"Error running fc-list: {e}", file=sys.stderr)
         return []
 
 
@@ -871,9 +881,12 @@ def get_font_details_linux() -> list[dict]:
                 )
 
     except FileNotFoundError:
-        print("Error: 'fc-list' not found. Make sure fontconfig is installed.")
+        print(
+            "Error: 'fc-list' not found. Make sure fontconfig is installed.",
+            file=sys.stderr,
+        )
     except subprocess.CalledProcessError as e:
-        print(f"Error running fc-list: {e}")
+        print(f"Error running fc-list: {e}", file=sys.stderr)
 
     return details
 
@@ -888,11 +901,17 @@ def get_installed_fonts() -> list[str]:
     elif IS_LINUX:
         return get_installed_fonts_linux()
     else:
-        print(f"System '{sys.platform}' not supported or unrecognized.")
+        print(
+            f"System '{sys.platform}' not supported or unrecognized.", file=sys.stderr
+        )
         return []
 
 
-def generate_test_output(limit: int | None = None, filter_test: bool = False) -> None:
+def generate_test_output(
+    limit: int | None = None,
+    filter_test: bool = False,
+    quiet: bool = False,
+) -> None:
     """Produce a small text file with parsing details for manual inspection.
 
     Args:
@@ -904,7 +923,9 @@ def generate_test_output(limit: int | None = None, filter_test: bool = False) ->
     elif IS_WINDOWS:
         details = get_font_details_windows()
     else:
-        print(f"System '{sys.platform}' not supported or unrecognized.")
+        print(
+            f"System '{sys.platform}' not supported or unrecognized.", file=sys.stderr
+        )
         return
 
     if filter_test:
@@ -931,7 +952,7 @@ def generate_test_output(limit: int | None = None, filter_test: bool = False) ->
     try:
         test_filename = get_unique_filename(base_name, "txt")
     except ValueError as e:
-        print(f"Errore generazione file di test: {e}")
+        print(f"Errore generazione file di test: {e}", file=sys.stderr)
         return
     with open(test_filename, "w", encoding="utf-8") as f:
         for item in details:
@@ -939,7 +960,9 @@ def generate_test_output(limit: int | None = None, filter_test: bool = False) ->
             f.write(f"Extracted names: {', '.join(item['extracted_names'])}\n")
             f.write(f"Base names: {', '.join(item['base_names'])}\n")
             f.write("\n")
-    print(f"Test file generated: {test_filename}")
+
+    if not quiet:
+        print(f"Test file generated: {test_filename}")
 
 
 def generate_latex(font_list: list[dict]) -> str:
@@ -962,7 +985,8 @@ def generate_latex(font_list: list[dict]) -> str:
 
     font_list = unique_fonts
 
-    print(f"Generating LaTeX file for {len(font_list)} fonts...")
+    if not args.quiet:
+        print(f"Generating LaTeX file for {len(font_list)} fonts...")
 
     latex_code = LATEX_INITIAL_CODE
 
@@ -973,7 +997,7 @@ def generate_latex(font_list: list[dict]) -> str:
         badges = render_badges(font)
         sample_code = render_sample_code(font, fam)
 
-        if idx % 500 == 0 or idx == total:
+        if not args.quiet and (idx % 500 == 0 or idx == total):
             print(f"  ... processed {idx}/{total}")
 
         block = NORMAL_BLOCK.format(
@@ -1160,13 +1184,14 @@ def run_create_catalog(args) -> int:
     try:
         output_filename = get_unique_filename(base_name, "tex")
     except ValueError as e:
-        print(f"Error: {e}")
+        print(f"Error: {e}", file=sys.stderr)
         return 1
 
     if args.test:
-        generate_test_output(args.number, bool(TEST_FONTS))
+        generate_test_output(args.number, bool(TEST_FONTS), quiet=args.quiet)
 
-    print("[1/3] Loading font inventory (pipeline)...")
+    if not args.quiet:
+        print("[1/3] Loading font inventory (pipeline)...")
 
     inv_path = None
     if args.inventory:
@@ -1178,12 +1203,14 @@ def run_create_catalog(args) -> int:
 
     if inv_path and inv_path.exists():
         fonts = load_font_inventory(inv_path)
-        print(f"✓ Inventory loaded: {inv_path} ({len(fonts)} fonts)")
+        if not args.quiet:
+            print(f"✓ Inventory loaded: {inv_path} ({len(fonts)} fonts)")
     else:
-        print("[1/3] Inventory not found, fallback to legacy detection...")
+        if not args.quiet:
+            print("[1/3] Inventory not found, fallback to legacy detection...")
         fonts = get_installed_fonts()
         if not fonts:
-            print("✗ No fonts to catalog or system error.")
+            print("✗ No fonts to catalog or system error.", file=sys.stderr)
             return 1
 
     if TEST_FONTS:
@@ -1204,15 +1231,17 @@ def run_create_catalog(args) -> int:
 
     latex_content = generate_latex(fonts)
 
-    print(f"[2/3] Writing file {output_filename}...")
+    if not args.quiet:
+        print(f"[2/3] Writing file {output_filename}...")
     try:
         with open(output_filename, "w", encoding="utf-8") as f:
             f.write(latex_content)
-        print("✓ Done! LaTeX file generated successfully.")
-        print("[3/3] Ready for compilation.")
-        print(f"  Execute: lualatex {output_filename} (twice)")
+        if not args.quiet:
+            print("✓ Done! LaTeX file generated successfully.")
+            print("[3/3] Ready for compilation.")
+            print(f"  Execute: lualatex {output_filename} (twice)")
     except Exception as e:
-        print(f"✗ Error writing file: {e}")
+        print(f"✗ Error writing file: {e}", file=sys.stderr)
         return 1
 
     return 0
@@ -1246,14 +1275,13 @@ def main(args) -> int:
     try:
         exit_code = _run_create_catalog(args)
     except Exception as exc:
-        if not getattr(args, "quiet", False):
-            print(f"ERROR: create-catalog failed: {exc}", file=sys.__stderr__)
+        print(f"ERROR: create-catalog failed: {exc}", file=sys.stderr)
         return 2
 
-    if exit_code == 0 and not getattr(args, "quiet", False):
-        if getattr(args, "verbose", False):
+    if exit_code == 0:
+        if args.verbose:
             print("OK: catalog created successfully")
-        else:
+        elif not args.quiet:
             print("OK")
 
     return exit_code

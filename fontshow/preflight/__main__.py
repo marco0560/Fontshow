@@ -37,7 +37,11 @@ def _run_preflight_cli(
         lines = render_preflight_results(result.results, verbose=verbose)
         for line in lines:
             print(line)
-        print("Preflight passed." if exit_code == 0 else "Preflight failed.")
+
+    if exit_code == 0:
+        print("Preflight passed.")
+    else:
+        print(f"Preflight failed with exit code {exit_code}.", file=sys.stderr)
 
     return exit_code
 
