@@ -48,6 +48,7 @@ from pathlib import Path
 
 from fontshow import __version__
 from fontshow.cli_utils import add_common_arguments
+from fontshow.logging_utils import log
 
 # Platform-specific imports (deferred)
 if sys.platform == "win32":
@@ -497,15 +498,16 @@ def load_font_inventory(path: Path) -> list[dict]:
     metadata = data.get("metadata", {}) or {}
     schema_version = metadata.get("schema_version")
 
-    if not args.quiet:
-        if schema_version is None:
-            print(
-                "⚠️  Warning: inventory missing 'schema_version'; assuming legacy format"
-            )
-        elif schema_version != "1.0":
-            print(
-                f"⚠️  Warning: inventory schema_version '{schema_version}' not explicitly supported"
-            )
+    if schema_version is None:
+        print(
+            "⚠️  Warning: inventory missing 'schema_version'; assuming legacy format",
+            file=sys.stderr,
+        )
+    elif schema_version != "1.0":
+        print(
+            f"⚠️  Warning: inventory schema_version '{schema_version}' not explicitly supported",
+            file=sys.stderr,
+        )
 
     fonts = data.get("fonts", [])
 
@@ -527,10 +529,10 @@ def as_font_desc_list(fonts: list) -> list[dict]:
         if isinstance(f, dict):
             out.append(f)
         else:
-            if not args.quiet:
-                print(
-                    f"⚠️  Warning: unexpected font entry type {type(f)}, coercing to string"
-                )
+            print(
+                f"⚠️  Warning: unexpected font entry type {type(f)}, coercing to string",
+                file=sys.stderr,
+            )
             out.append(
                 {
                     "identity": {"family": str(f)},
@@ -736,8 +738,7 @@ def get_installed_fonts_windows():
     The function reads the Windows registry and normalizes names via
     `clean_font_name`. Excluded names from `EXCLUDED_FONTS` are filtered out.
     """
-    if not args.quiet:
-        print("Sistema: Windows. Scansione registro...")
+    log.info("Sistema: Windows. Scansione registro...")
     font_list = set()
     registry_paths = [
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
@@ -819,8 +820,7 @@ def get_installed_fonts_linux() -> list[str]:
 
     Excluded families listed in `EXCLUDED_FONTS` are filtered out.
     """
-    if not args.quiet:
-        print("Sistema: Linux. Uso 'fc-list' per l'estrazione dei font...")
+    log.info("Sistema: Linux. Uso 'fc-list' per l'estrazione dei font...")
 
     try:
         # Executes fc-list and captures the output
@@ -985,8 +985,7 @@ def generate_latex(font_list: list[dict]) -> str:
 
     font_list = unique_fonts
 
-    if not args.quiet:
-        print(f"Generating LaTeX file for {len(font_list)} fonts...")
+    log.info(f"Generating LaTeX file for {len(font_list)} fonts...")
 
     latex_code = LATEX_INITIAL_CODE
 
@@ -997,8 +996,8 @@ def generate_latex(font_list: list[dict]) -> str:
         badges = render_badges(font)
         sample_code = render_sample_code(font, fam)
 
-        if not args.quiet and (idx % 500 == 0 or idx == total):
-            print(f"  ... processed {idx}/{total}")
+        if idx % 500 == 0 or idx == total:
+            log.info(f"  ... processed {idx}/{total}")
 
         block = NORMAL_BLOCK.format(
             safe_name=safe_name,
@@ -1155,6 +1154,7 @@ def run_create_catalog(args) -> int:
 
     TEST_FONTS |= cli_fonts
 
+    # NOTE: --list-test-fonts intentionally ignores --quiet (documented decision).
     if args.list_test_fonts:
         print("TEST_FONTS configuration:")
         if not TEST_FONTS:
@@ -1190,10 +1190,7 @@ def run_create_catalog(args) -> int:
     if args.test:
         generate_test_output(args.number, bool(TEST_FONTS), quiet=args.quiet)
 
-    if not args.quiet:
-        print("[1/3] Loading font inventory (pipeline)...")
-
-    inv_path = None
+    inv_path: Path | None = None
     if args.inventory:
         inv_path = Path(args.inventory)
     else:
@@ -1201,17 +1198,26 @@ def run_create_catalog(args) -> int:
         if default.exists():
             inv_path = default
 
+    # Load fonts without printing progress first.
+    # This ensures error paths don't leak partial progress on stdout.
     if inv_path and inv_path.exists():
-        fonts = load_font_inventory(inv_path)
+        try:
+            fonts = load_font_inventory(inv_path)
+        except Exception as e:
+            print(f"ERROR: failed to load inventory: {e}", file=sys.stderr)
+            return 1
+
         if not args.quiet:
+            print("[1/3] Loading font inventory (pipeline)...")
             print(f"✓ Inventory loaded: {inv_path} ({len(fonts)} fonts)")
     else:
-        if not args.quiet:
-            print("[1/3] Inventory not found, fallback to legacy detection...")
         fonts = get_installed_fonts()
         if not fonts:
             print("✗ No fonts to catalog or system error.", file=sys.stderr)
             return 1
+
+        if not args.quiet:
+            print("[1/3] Inventory not found, fallback to legacy detection...")
 
     if TEST_FONTS:
         fonts = [
@@ -1233,9 +1239,11 @@ def run_create_catalog(args) -> int:
 
     if not args.quiet:
         print(f"[2/3] Writing file {output_filename}...")
+
     try:
         with open(output_filename, "w", encoding="utf-8") as f:
             f.write(latex_content)
+
         if not args.quiet:
             print("✓ Done! LaTeX file generated successfully.")
             print("[3/3] Ready for compilation.")

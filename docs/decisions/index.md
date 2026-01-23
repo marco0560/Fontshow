@@ -28,3 +28,4 @@ created before the adoption of the formal decision record system.
 - [0008 — Developer tooling as first-class project code](0008-developer-tooling-first-class-project-code.md)
 - [0009 — CLI verbosity contract](0009-cli-verbosity-contract.md)
 - [0010 — Separation CLI verbosity and debug](0010-separation-cli-verbosity-debug.md)
+- [0011 — CLI stdout / stderr semantics and `--quiet` behavior](0011-cli-stdout-stderr-semantics-quiet-behavior.md)
