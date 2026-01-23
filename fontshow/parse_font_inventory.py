@@ -497,8 +497,7 @@ def validate_inventory(
     warnings = 0
 
     if not isinstance(data, dict):
-        if not quiet:
-            print("❌ Inventory root is not a JSON object")
+        print("❌ Inventory root is not a JSON object", file=sys.stderr)
         return 1
 
     # Ensure inventory-level warnings container exists
@@ -524,8 +523,7 @@ def validate_inventory(
 
     fonts = data.get("fonts")
     if not isinstance(fonts, list):
-        if not quiet:
-            print("❌ 'fonts' field missing or not a list")
+        print("❌ 'fonts' field missing or not a list", file=sys.stderr)
         return 1
 
     for idx, font in enumerate(fonts):
@@ -535,10 +533,10 @@ def validate_inventory(
             fatal_errors += 1
             path = font.get("path") if isinstance(font, dict) else None
 
-            print(f"ERROR font[{idx}]")
-            print(f"  path: {path}")
+            print(f"ERROR font[{idx}]", file=sys.stderr)
+            print(f"  path: {path}", file=sys.stderr)
             for err in entry_errors:
-                print(f"  - {err}")
+                print(f"  - {err}", file=sys.stderr)
             print()
 
         # ---------- Non-fatal consistency warnings ----------
@@ -573,11 +571,14 @@ def validate_inventory(
                     f"{warning['code']} - {warning['message']}"
                 )
 
-    if not quiet:
-        if fatal_errors == 0:
+    if fatal_errors == 0:
+        if not quiet:
             print("✅ Inventory validation completed (no fatal errors)")
-        else:
-            print(f"❌ Inventory validation failed with {fatal_errors} invalid entries")
+    else:
+        print(
+            f"❌ Inventory validation failed with {fatal_errors} invalid entries",
+            file=sys.stderr,
+        )
 
     return fatal_errors
 

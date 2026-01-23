@@ -86,11 +86,12 @@ def cli_validate_inventory() -> int:
 
     semantic_warnings = validate_language_codes(data)
 
-    for w in semantic_warnings:
-        print(f"[{w['severity']}] {w['code']} ({w['font']}): {w['message']}")
+    if args.verbose:
+        for w in semantic_warnings:
+            print(f"[{w['severity']}] {w['code']} ({w['font']}): {w['message']}")
 
-    for w in warnings:
-        print(f"[{w['severity']}] {w['code']}: {w['message']}")
-
-    print("Schema validation passed.")
+        for w in warnings:
+            print(f"[{w['severity']}] {w['code']}: {w['message']}")
+    if not args.quiet:
+        print("Schema validation passed.")
     return 0
