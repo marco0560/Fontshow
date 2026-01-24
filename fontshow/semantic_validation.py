@@ -47,6 +47,9 @@ def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
                 alpha_3=code
             )
 
+            # Only validate normalized language codes.
+            # Raw language tags are stored in coverage["languages_raw"]
+            # and must not be validated here.
             if not lang:
                 warnings.append(
                     {
