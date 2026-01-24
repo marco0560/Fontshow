@@ -48,6 +48,116 @@ LuaLaTeX compilation (multi-pass)
 
 Each stage produces one or more intermediate artifacts, which can be retained for later analysis.
 
+## Pipeline Stages and Artifact Locality
+
+Fontshow’s pipeline is composed of distinct stages with different assumptions
+regarding execution environment and data locality.
+
+Understanding these boundaries is essential for correct usage and for
+interpreting validation results.
+
+---
+
+### Stage 1 — Preflight
+
+Preflight validates that the *current execution environment* is suitable
+for running subsequent stages.
+
+This includes:
+
+- availability of required tools
+- expected runtime capabilities
+- environment consistency
+
+Preflight results are **not persisted** and are valid only for the system
+on which they are executed.
+
+---
+
+### Stage 2 — dump-fonts
+
+This stage:
+
+- inspects the local filesystem
+- queries the system font configuration
+- discovers installed fonts
+- produces a serialized inventory
+
+This stage is **environment-dependent** and must be run on the system whose
+fonts are being analyzed.
+
+The resulting inventory is a **data artifact**, not a live reference.
+
+---
+
+### Stage 3 — parse-inventory
+
+This stage operates **exclusively on serialized data**.
+
+Important properties:
+
+- No font files are accessed
+- No filesystem paths are resolved
+- No environment assumptions are made
+- All paths are treated as opaque data
+
+This means:
+
+✔ The inventory JSON can be moved across machines
+✔ The stage is safe to run on a different system
+✔ No font files are required at this stage
+
+This behavior is intentional and enforced by design.
+
+---
+
+### Stage 4 — create-catalog
+
+This stage consumes the parsed inventory and produces catalog output.
+
+While it does not re-scan fonts, it **assumes that path references contained
+in the inventory are still meaningful** for the current environment.
+
+As a result:
+
+- Catalog generation may succeed across systems
+- But path-based features depend on compatibility of environments
+- No path normalization or remapping is performed
+
+---
+
+### Stage 5 — LaTeX Compilation
+
+LaTeX compilation requires:
+
+- actual access to font files
+- correct font resolution by the TeX engine
+- filesystem paths matching those recorded earlier
+
+For this reason, LaTeX compilation **must be performed on the same system**
+(or an equivalent environment) where fonts are available.
+
+This is an intentional design constraint.
+
+---
+
+### Summary: Environment Assumptions
+
+| Stage           | Requires Same Machine | Uses Filesystem | Portable |
+|-----------------|-----------------------|-----------------|----------|
+| Preflight       | ✔                     | ✔               | ❌       |
+| dump-fonts      | ✔                     | ✔               | ❌       |
+| parse-inventory | ❌                    | ❌              | ✔        |
+| create-catalog  | ⚠️                    | ⚠️              | Partial  |
+| LaTeX compile   | ✔                     | ✔               | ❌       |
+
+This separation allows:
+
+- reproducible inspection
+- artifact-based workflows
+- controlled cross-system validation
+- predictable failure modes
+
 ## Stage 0 — Preflight Checks
 
 ### Purpose
