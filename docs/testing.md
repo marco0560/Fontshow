@@ -11,6 +11,21 @@ cover:
 - non-regression tests
 - CI-based validation on commits or releases
 
+## Validation Layers
+
+Fontshow applies multiple layers of validation:
+
+1. Structural validation
+   - Enforced via JSON Schema
+   - Required for catalog output
+
+2. Semantic validation
+   - Checks domain consistency
+   - Emits warnings
+   - Does not block catalog generation
+
+This separation is intentional and reflects the variability of real-world font metadata.
+
 ## CLI tests and environment isolation
 
 CLI-level tests under ``tests/cli/`` are designed to be **environment-independent**.
