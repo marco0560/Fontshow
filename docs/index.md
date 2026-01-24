@@ -9,6 +9,16 @@
 - [Contributing guidelines](CONTRIBUTING.md)
 - [CLI Contract](cli-contract.md)
 
+## Engineering Notes
+
+This project maintains a set of internal engineering notes documenting
+design decisions, pitfalls, and lessons learned during development.
+
+These notes are not part of the public API or user documentation, but
+serve as long-term project memory for maintainers.
+
+- [Lessons Learned](engineering/lessons-learned.md)
+
 ## Project planning and governance
 
 Fontshow development is guided by a canonical, version-controlled
