@@ -812,6 +812,11 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         # Unicode coverage metadata extracted upstream
         coverage: dict[str, Any] = font.get("coverage", {}) or {}
 
+        # Preserve raw Fontconfig language tags verbatim (Issue #31, Phase 2)
+        # Phase 2 is population-only: no normalization, no validation, no warnings.
+        if "languages_raw" not in coverage:
+            coverage["languages_raw"] = list(coverage.get("languages", []) or [])
+
         # ------------------------------------------------------------
         # FontConfig charset decoding (C5.1)
         # ------------------------------------------------------------
