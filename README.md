@@ -144,6 +144,8 @@ Some paths are explicitly protected and will **never be removed**, even if
 ignored by Git. In particular:
 
 - `.venv` (Python virtual environment)
+- `.vscode` (Virtual Studio Code configuration)
+- `node_modules` (Nodejs modules)
 
 This ensures that the cleanup process is safe to run during development
 without risking the local working environment.
@@ -295,6 +297,14 @@ Each generated inventory records:
 
 The documentation is intentionally split between **what the tool does**
 and **why it is designed this way**.
+
+## Engineering Notes
+
+Development notes and lessons learned are tracked in:
+
+- `docs/engineering/lessons-learned.md`
+
+These notes are non-normative and intended for maintainers.
 
 ## License
 
