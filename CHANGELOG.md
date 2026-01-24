@@ -1,3 +1,10 @@
+## [0.29.5](https://github.com/marco0560/Fontshow/compare/v0.29.4...v0.29.5) (2026-01-24)
+
+### Bug Fixes
+
+* **build:** remove secondary CLI entrypoint ([328aaae](https://github.com/marco0560/Fontshow/commit/328aaaeb1c237f3bd3b4e2e0fd7ee57544180e98))
+* **ci:** Merge branch 'fix/packaging-entrypoints-37' ([2ee192d](https://github.com/marco0560/Fontshow/commit/2ee192dada37c4cd95172774df7ad24a288c3342)), closes [#37](https://github.com/marco0560/Fontshow/issues/37)
+
 ## [0.29.4](https://github.com/marco0560/Fontshow/compare/v0.29.3...v0.29.4) (2026-01-23)
 
 ### Bug Fixes
