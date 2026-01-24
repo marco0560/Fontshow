@@ -1,3 +1,13 @@
+## [0.30.0](https://github.com/marco0560/Fontshow/compare/v0.29.5...v0.30.0) (2026-01-24)
+
+### Features
+
+* **parser:** clarify semantic validation scope for language codes ([d0496d5](https://github.com/marco0560/Fontshow/commit/d0496d56f93bf64d18d0db5785e279edcc1f30ba))
+
+### Bug Fixes
+
+* **schema:** add languages_raw field to inventory schema ([7a3d70e](https://github.com/marco0560/Fontshow/commit/7a3d70e4319e0818008472aa75235c51cc6ae536))
+
 ## [0.29.5](https://github.com/marco0560/Fontshow/compare/v0.29.4...v0.29.5) (2026-01-24)
 
 ### Bug Fixes
