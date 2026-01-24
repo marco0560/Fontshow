@@ -1,35 +1,3 @@
-## [0.31.2](https://github.com/marco0560/Fontshow/compare/v0.31.1...v0.31.2) (2026-01-25)
-
-### Bug Fixes
-
-* **parser:** align field access with identity-based schema ([ca82289](https://github.com/marco0560/Fontshow/commit/ca82289b39ae346a0fe97185fde2f51def4b92bf))
-* **parser:** clarify validation errors for identity fields ([82df45e](https://github.com/marco0560/Fontshow/commit/82df45e427afa03d2da620c0b05a95835fda6520))
-* **schema:** stabilize inventory schema validation and regression coverage ([6564507](https://github.com/marco0560/Fontshow/commit/656450703d9e02b1dfe89d01e9558a847c918577))
-* **schema:** stabilize inventory validation and regression tests ([8e834be](https://github.com/marco0560/Fontshow/commit/8e834bee9b483a2b021f7b53a9c0ca0309738f7b))
-* **validation:** enforce correct semantics for identity and base_names ([ac20d8b](https://github.com/marco0560/Fontshow/commit/ac20d8b8d3a573ab122d31db18945a4a32730326)), closes [#48](https://github.com/marco0560/Fontshow/issues/48)
-
-## [0.31.1](https://github.com/marco0560/Fontshow/compare/v0.31.0...v0.31.1) (2026-01-25)
-
-### Bug Fixes
-
-* **cli:** align quiet/verbose behavior and document via tests ([ddbfe1e](https://github.com/marco0560/Fontshow/commit/ddbfe1ef67871c5937f452aa80f452c3c489e0be))
-
-## [0.31.0](https://github.com/marco0560/Fontshow/compare/v0.30.0...v0.31.0) (2026-01-25)
-
-### Features
-
-* **parser:** normalize languages and track dropped entries ([f3398d4](https://github.com/marco0560/Fontshow/commit/f3398d44be1e34db72878c6cbc5335fbe442ffb7))
-
-## [0.30.0](https://github.com/marco0560/Fontshow/compare/v0.29.5...v0.30.0) (2026-01-24)
-
-### Features
-
-* **parser:** clarify semantic validation scope for language codes ([d0496d5](https://github.com/marco0560/Fontshow/commit/d0496d56f93bf64d18d0db5785e279edcc1f30ba))
-
-### Bug Fixes
-
-* **schema:** add languages_raw field to inventory schema ([7a3d70e](https://github.com/marco0560/Fontshow/commit/7a3d70e4319e0818008472aa75235c51cc6ae536))
-
 ## [0.29.5](https://github.com/marco0560/Fontshow/compare/v0.29.4...v0.29.5) (2026-01-24)
 
 ### Bug Fixes
