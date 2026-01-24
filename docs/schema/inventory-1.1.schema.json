@@ -80,11 +80,19 @@
                 "type": "string"
             }
             },
+            "languages_raw": {
+                "type": "array",
+                "description": "Raw language tags as reported by Fontconfig (unvalidated)",
+                "items": {
+                    "type": "string"
+                }
+            },
             "languages": {
-            "type": "array",
-            "items": {
-                "type": "string"
-            }
+                "type": "array",
+                "description": "Normalized ISO language codes derived from languages_raw",
+                "items": {
+                    "type": "string"
+                }
             },
 
             "normalized_charset": {
