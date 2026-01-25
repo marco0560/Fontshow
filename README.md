@@ -292,7 +292,7 @@ Each generated inventory records:
 
 - `cli.md` — command-line interface reference
 - `decisions.md` — architectural and design decisions
-- `font-inventory-schema.md` — JSON Schema for inventories
+- Inventory schema documentation: `docs/schema/index.md`
 - `data_dictionary.md` — meaning of inventory fields
 
 The documentation is intentionally split between **what the tool does**
