@@ -427,15 +427,21 @@ def validate_font_entry(entry: dict, *, index: int) -> list[str]:
 
     path = identity.get("file")
     if not isinstance(path, str) or not path:
-        errors.append("missing or invalid 'identity.file'")
+        errors.append(
+            "missing required field: identity.file (expected non-empty string)"
+        )
 
     family = identity.get("family")
     if not isinstance(family, str) or not family:
-        errors.append("missing or invalid 'identity.family'")
+        errors.append(
+            "missing required field: identity.family (expected non-empty string)"
+        )
 
     style = identity.get("style")
     if not isinstance(style, str) or not style:
-        errors.append("missing or invalid 'identity.style'")
+        errors.append(
+            "missing required field: identity.style (expected non-empty string)"
+        )
 
     # --- sample_text validation (optional) ---
     if "sample_text" in entry:
