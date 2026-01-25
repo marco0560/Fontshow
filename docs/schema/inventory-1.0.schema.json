@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fontshow.org/schema/inventory-1.0.schema.json",
+  "title": "Fontshow Inventory Schema",
+  "description": "Schema for font inventory produced by dump-fonts and consumed by parse-inventory.",
+  "type": "object",
+  "required": ["metadata", "fonts"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["schema_version"],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0",
+          "description": "Inventory schema version"
+        }
+      },
+      "additionalProperties": true
+    },
+    "fonts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["identity"],
+        "properties": {
+          "identity": {
+            "type": "object",
+            "required": ["file", "family", "style"],
+            "properties": {
+              "file": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Absolute path to the font file"
+              },
+              "family": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Font family name"
+              },
+              "style": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Font style name"
+              }
+            },
+            "additionalProperties": true
+          },
+          "coverage": {
+            "type": "object",
+            "description": "Unicode and language coverage information",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}
