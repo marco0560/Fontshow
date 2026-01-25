@@ -1,122 +1,62 @@
 """
-Schema validation for Fontshow inventories.
+Schema validation utilities for Fontshow inventory files.
 
-This module performs best-effort validation of Fontshow inventories against the
-declared JSON Schema versions.
+This module validates the *structural correctness* of inventory files.
 
-Validation is warning-based:
-- recoverable issues generate structured warnings,
-- unrecoverable schema violations may raise exceptions,
-- validation does not modify inventory data.
+Supported schema versions:
+    - 1.0
+    - 1.1
 
-This module is not a pipeline gate and does not abort normal processing.
+This module performs schema validation only.
+Semantic validation is handled separately.
 """
-
-from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
-from jsonschema import Draft202012Validator, exceptions as jsonschema_exceptions
+from jsonschema import ValidationError, validate
 
-# Path allo schema (documentato e versionato)
-SCHEMA_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "docs"
-    / "schema"
-    / "inventory-1.1.schema.json"
-)
+SUPPORTED_SCHEMA_VERSIONS = {"1.0", "1.1"}
 
 
-def _load_schema() -> dict[str, Any]:
-    with SCHEMA_PATH.open(encoding="utf-8") as f:
-        return json.load(f)
-
-
-def validate_inventory_schema(data: dict[str, Any]) -> list[dict[str, Any]]:
+def validate_inventory_schema(data: dict, *, schema_version: str) -> None:
     """
-    Validate a Fontshow inventory against the JSON Schema v1.1.
-
-    This function supports both raw (schema_version = 1.0) and enriched
-    (schema_version = 1.1) inventories.
-
-    It returns structured warnings for recoverable situations and raises
-    an exception only for unrecoverable schema violations.
+    Validate inventory data against a specific schema version.
 
     Parameters
     ----------
-    data : dict[str, Any]
+    data : dict
         Parsed inventory data.
+    schema_version : str
+        Inventory schema version to validate against.
 
-    Returns
-    -------
-    list[dict[str, Any]]
-        A list of structured warnings.
+    Raises
+    ------
+    ValueError
+        If the schema version is unsupported or the input
+        does not conform to the selected schema.
     """
-    warnings: list[dict[str, Any]] = []
 
-    # --- Backward compatibility for raw inventories ----------------------
-    if "metadata" not in data:
-        data["metadata"] = {"schema_version": "1.0"}
-    elif "schema_version" not in data.get("metadata", {}):
-        data["metadata"]["schema_version"] = "1.0"
-    # ---------------------------------------------------------------------
-
-    SUPPORTED_SCHEMA_VERSIONS = {"1.0", "1.1"}
-
-    schema_version = data.get("metadata", {}).get("schema_version")
+    if not isinstance(schema_version, str):
+        raise ValueError("schema_version must be a string")
 
     if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
-        warnings.append(
-            {
-                "code": "schema_version_unknown",
-                "message": (
-                    f"Unknown schema_version '{schema_version}'. "
-                    "Proceeding with schema 1.1 validation."
-                ),
-                "schema_version": schema_version,
-            }
-        )
-        # Normalize to latest known schema for validation
-        data["metadata"]["schema_version"] = "1.1"
+        raise ValueError(f"Unsupported inventory schema version: {schema_version}")
 
-    schema = _load_schema()
-    validator = Draft202012Validator(schema)
+    schema_path = (
+        Path(__file__).parent.parent
+        / "docs"
+        / "schema"
+        / f"inventory-{schema_version}.schema.json"
+    )
 
-    # Collect all schema errors (do not stop at first)
-    errors = sorted(validator.iter_errors(data), key=lambda e: e.path)
+    if not schema_path.exists():
+        raise ValueError(f"Schema file not found: {schema_path}")
 
-    if errors:
-        # Non-recoverable: inventory does not conform to schema at all
-        raise jsonschema_exceptions.ValidationError(
-            f"Inventory does not conform to schema 1.1: {errors[0].message}"
-        )
+    with open(schema_path, encoding="utf-8") as f:
+        schema = json.load(f)
 
-    # Semantic checks beyond pure schema
-    metadata = data.get("metadata", {})
-    schema_version = metadata.get("schema_version")
-
-    if schema_version == "1.0":
-        warnings.append(
-            {
-                "code": "schema_version_deprecated",
-                "message": (
-                    "Inventory schema_version is 1.0. " "Schema 1.1 is recommended."
-                ),
-                "severity": "info",
-            }
-        )
-    elif schema_version != "1.1":
-        warnings.append(
-            {
-                "code": "schema_version_unknown",
-                "message": (
-                    f"Unknown schema_version '{schema_version}'. "
-                    "Validation performed against schema 1.1."
-                ),
-                "severity": "warning",
-            }
-        )
-
-    return warnings
+    try:
+        validate(instance=data, schema=schema)
+    except ValidationError as exc:
+        raise ValueError(f"Inventory schema validation failed: {exc.message}") from exc
