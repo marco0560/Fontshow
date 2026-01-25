@@ -3,12 +3,12 @@ Schema validation utilities for Fontshow inventory files.
 
 This module validates the *structural correctness* of inventory files.
 
-Supported schema versions:
-    - 1.0
-    - 1.1
-
-This module performs schema validation only.
-Semantic validation is handled separately.
+Design principles
+-----------------
+- Structural validation is strict and raises on failure
+- Public API remains backward-compatible
+- Semantic validation is handled elsewhere
+- Schema version selection is explicit
 """
 
 import json
@@ -19,26 +19,22 @@ from jsonschema import ValidationError, validate
 SUPPORTED_SCHEMA_VERSIONS = {"1.0", "1.1"}
 
 
-def validate_inventory_schema(data: dict, *, schema_version: str) -> None:
+def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> None:
     """
-    Validate inventory data against a specific schema version.
+    Perform strict schema validation.
 
     Parameters
     ----------
     data : dict
-        Parsed inventory data.
+        Inventory data.
     schema_version : str
-        Inventory schema version to validate against.
+        Schema version to validate against.
 
     Raises
     ------
     ValueError
-        If the schema version is unsupported or the input
-        does not conform to the selected schema.
+        If schema version is unsupported or validation fails.
     """
-
-    if not isinstance(schema_version, str):
-        raise ValueError("schema_version must be a string")
 
     if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
         raise ValueError(f"Unsupported inventory schema version: {schema_version}")
@@ -60,3 +56,36 @@ def validate_inventory_schema(data: dict, *, schema_version: str) -> None:
         validate(instance=data, schema=schema)
     except ValidationError as exc:
         raise ValueError(f"Inventory schema validation failed: {exc.message}") from exc
+
+
+def validate_inventory_schema(data: dict) -> list[dict]:
+    """
+    Validate inventory structure and return structured warnings.
+
+    This function is backward-compatible and MUST NOT raise.
+
+    Returns
+    -------
+    list[dict]
+        Structured schema warnings, empty if valid.
+    """
+
+    warnings: list[dict] = []
+
+    schema_version = data.get("metadata", {}).get("schema_version", "1.0")
+
+    try:
+        _validate_inventory_schema_strict(
+            data,
+            schema_version=schema_version,
+        )
+    except Exception as exc:
+        warnings.append(
+            {
+                "code": "invalid_schema",
+                "message": str(exc),
+                "schema_version": schema_version,
+            }
+        )
+
+    return warnings
