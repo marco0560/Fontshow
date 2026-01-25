@@ -1,7 +1,9 @@
 import pytest
-from jsonschema.exceptions import ValidationError
 
-from fontshow.schema_validation import validate_inventory_schema
+from fontshow.schema_validation import (
+    _validate_inventory_schema_strict,
+    validate_inventory_schema,
+)
 
 
 def test_raw_inventory_without_metadata_emits_deprecation_warning():
@@ -39,5 +41,27 @@ def test_invalid_inventory_structure_raises():
         # missing "fonts"
     }
 
-    with pytest.raises(ValidationError):
-        validate_inventory_schema(data)
+    with pytest.raises(ValueError, match="Inventory schema validation failed"):
+        _validate_inventory_schema_strict(data, schema_version="1.1")
+
+
+def test_legacy_schema_emits_deprecation_warning():
+    data = {
+        "fonts": [],
+    }
+
+    warnings = validate_inventory_schema(data)
+
+    assert len(warnings) == 1
+    assert warnings[0]["code"] == "schema_version_deprecated"
+    assert warnings[0]["severity"] == "warning"
+
+
+def test_invalid_schema_raises_validation_error():
+    data = {
+        "metadata": {"schema_version": "1.1"}
+        # missing "fonts"
+    }
+
+    with pytest.raises(ValueError, match="Inventory schema validation failed"):
+        _validate_inventory_schema_strict(data, schema_version="1.1")

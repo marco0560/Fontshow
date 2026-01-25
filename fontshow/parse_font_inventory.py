@@ -419,21 +419,35 @@ def validate_font_entry(entry: dict, *, index: int) -> list[str]:
     """
     errors: list[str] = []
 
-    # --- Required structural fields ---
     if not isinstance(entry, dict):
         return ["entry is not an object"]
 
-    path = entry.get("path")
-    if not isinstance(path, str) or not path:
-        errors.append("missing or invalid 'path'")
+    identity = entry.get("identity") or {}
+    identity_raw = entry.get("identity")
+    if identity_raw is not None and not isinstance(identity_raw, dict):
+        return ["identity must be an object or null"]
 
-    family = entry.get("family")
-    if not isinstance(family, str) or not family:
-        errors.append("missing or invalid 'family'")
+    identity = identity_raw or {}
 
-    style = entry.get("style")
-    if not isinstance(style, str) or not style:
-        errors.append("missing or invalid 'style'")
+    base_names = entry.get("base_names") or []
+
+    # If base_names is present, identity is optional
+    if not base_names:
+        if not isinstance(identity, dict):
+            errors.append("missing required field: identity (expected object)")
+        else:
+            if not identity.get("file"):
+                errors.append(
+                    "missing required field: identity.file (expected non-empty string)"
+                )
+            if not identity.get("family"):
+                errors.append(
+                    "missing required field: identity.family (expected non-empty string)"
+                )
+            if not identity.get("style"):
+                errors.append(
+                    "missing required field: identity.style (expected non-empty string)"
+                )
 
     # --- sample_text validation (optional) ---
     if "sample_text" in entry:

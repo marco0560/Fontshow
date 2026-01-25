@@ -157,5 +157,5 @@ All user documentation assumes the dispatcher form.
 ## Related documentation
 
 - `decisions.md` — authoritative design and architectural decisions
-- `font-inventory-schema.md` — JSON Schema reference
+- Inventory schema documentation: `docs/schema/index.md`
 - `data_dictionary.md` — meaning of inventory fields
