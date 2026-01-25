@@ -10,9 +10,93 @@ Semantic validation:
 Semantic validation is distinct from both schema validation and inference logic.
 """
 
+import re
 from typing import Any
 
 import pycountry
+
+
+def normalize_languages(raw_languages: list[str]) -> dict[str, list[dict[str, Any]]]:
+    """
+    Normalize raw language tags into ISO-compatible language codes.
+
+    Returns a dict with:
+        - "normalized": list[str]
+        - "dropped": list[{"raw": str, "reason": str}]
+
+    Rules:
+    - split on '-' or '_'
+    - remove trailing parentheses
+    - lowercase
+    - validate against ISO 639
+    - deduplicate while preserving order
+    """
+
+    normalized: list[str] = []
+    dropped: list[dict[str, Any]] = []
+
+    seen: set[str] = set()
+
+    for raw in raw_languages:
+        original = raw
+
+        # Basic sanity check
+        if not isinstance(raw, str) or not raw.strip():
+            dropped.append(
+                {
+                    "raw": original,
+                    "reason": "invalid_format",
+                }
+            )
+            continue
+
+        # Remove parenthesized suffixes: bem(s) → bem
+        value = re.sub(r"\(.*\)$", "", raw)
+
+        # Split on '-' or '_'
+        value = re.split(r"[-_]", value)[0]
+
+        # Normalize case
+        value = value.lower()
+
+        # ISO 639 validation
+        if not pycountry.languages.get(alpha_2=value) and not pycountry.languages.get(
+            alpha_3=value
+        ):
+            dropped.append(
+                {
+                    "raw": original,
+                    "reason": "unknown_language",
+                }
+            )
+            continue
+
+        # Deduplication
+        if value in seen:
+            dropped.append(
+                {
+                    "raw": original,
+                    "reason": "duplicate",
+                }
+            )
+            continue
+
+        # Variant stripped
+        if value != original.lower():
+            dropped.append(
+                {
+                    "raw": original,
+                    "reason": "variant_stripped",
+                }
+            )
+
+        normalized.append(value)
+        seen.add(value)
+
+    return {
+        "normalized": normalized,
+        "dropped": dropped,
+    }
 
 
 def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
