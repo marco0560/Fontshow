@@ -1,4 +1,4 @@
-# Decision: CLI stdout / stderr semantics and `--quiet` behavior
+# Decision 0011 - CLI stdout / stderr semantics and `--quiet` behavior
 
 ## Status
 

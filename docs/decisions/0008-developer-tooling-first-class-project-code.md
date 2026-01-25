@@ -1,4 +1,4 @@
-# 0008 - Developer tooling is first-class project code, but outside the public API surface
+# Decision 0008 - Developer tooling is first-class project code, but outside the public API surface
 
 Date: 16/01/2026
 Status: Accepted

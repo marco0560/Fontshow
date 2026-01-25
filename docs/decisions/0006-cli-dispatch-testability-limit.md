@@ -1,4 +1,4 @@
-# 0006 - CLI dispatch testability limitation
+# Decision 0006 - CLI dispatch testability limitation
 
 ## Status
 
