@@ -419,29 +419,35 @@ def validate_font_entry(entry: dict, *, index: int) -> list[str]:
     """
     errors: list[str] = []
 
-    # --- Required structural fields ---
     if not isinstance(entry, dict):
         return ["entry is not an object"]
 
-    identity = entry.get("identity", {})
+    identity = entry.get("identity") or {}
+    identity_raw = entry.get("identity")
+    if identity_raw is not None and not isinstance(identity_raw, dict):
+        return ["identity must be an object or null"]
 
-    path = identity.get("file")
-    if not isinstance(path, str) or not path:
-        errors.append(
-            "missing required field: identity.file (expected non-empty string)"
-        )
+    identity = identity_raw or {}
 
-    family = identity.get("family")
-    if not isinstance(family, str) or not family:
-        errors.append(
-            "missing required field: identity.family (expected non-empty string)"
-        )
+    base_names = entry.get("base_names") or []
 
-    style = identity.get("style")
-    if not isinstance(style, str) or not style:
-        errors.append(
-            "missing required field: identity.style (expected non-empty string)"
-        )
+    # If base_names is present, identity is optional
+    if not base_names:
+        if not isinstance(identity, dict):
+            errors.append("missing required field: identity (expected object)")
+        else:
+            if not identity.get("file"):
+                errors.append(
+                    "missing required field: identity.file (expected non-empty string)"
+                )
+            if not identity.get("family"):
+                errors.append(
+                    "missing required field: identity.family (expected non-empty string)"
+                )
+            if not identity.get("style"):
+                errors.append(
+                    "missing required field: identity.style (expected non-empty string)"
+                )
 
     # --- sample_text validation (optional) ---
     if "sample_text" in entry:

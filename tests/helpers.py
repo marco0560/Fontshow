@@ -12,11 +12,17 @@ def minimal_valid_entry(extra: dict | None = None) -> dict:
         "format": "TrueType",
         "style": "Regular",
         "family": "Test Family",
-        "identity": {"family": "Test Family"},
+        "identity": {
+            "file": "/usr/share/fonts/test.ttf",
+            "family": "Test Family",
+            "style": "Regular",
+        },
         "base_names": ["Test Family"],
     }
+
     if extra:
         entry.update(extra)
+
     return entry
 
 
