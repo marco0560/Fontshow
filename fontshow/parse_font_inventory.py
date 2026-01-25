@@ -29,6 +29,7 @@ from fontshow.dump_fonts import UNICODE_BLOCKS
 from fontshow.infer_languages import infer_languages
 from fontshow.json_format import dumps_pretty
 from fontshow.schema_validation import validate_inventory_schema
+from fontshow.semantic_validation import normalize_languages
 
 # ============================================================
 # Set up logger
@@ -826,10 +827,19 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         # Unicode coverage metadata extracted upstream
         coverage: dict[str, Any] = font.get("coverage", {}) or {}
 
-        # Preserve raw Fontconfig language tags verbatim (Issue #31, Phase 2)
-        # Phase 2 is population-only: no normalization, no validation, no warnings.
+        # Preserve raw Fontconfig language tags verbatim (Phase 2)
         if "languages_raw" not in coverage:
             coverage["languages_raw"] = list(coverage.get("languages", []) or [])
+
+        result = normalize_languages(coverage["languages_raw"])
+        coverage["languages"] = result["normalized"]
+
+        for item in result["dropped"]:
+            logger.warning(
+                "Dropped language '%s': %s",
+                item["raw"],
+                item["reason"],
+            )
 
         # ------------------------------------------------------------
         # FontConfig charset decoding (C5.1)
