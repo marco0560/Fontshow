@@ -1,4 +1,4 @@
-# 0010 - Separation between CLI verbosity and debug-only inference output
+# Decision 0010 - Separation between CLI verbosity and debug-only inference output
 
 Date: 23/01/2026
 Status: Accepted
