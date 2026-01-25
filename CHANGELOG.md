@@ -1,3 +1,9 @@
+## [0.31.1](https://github.com/marco0560/Fontshow/compare/v0.31.0...v0.31.1) (2026-01-25)
+
+### Bug Fixes
+
+* **cli:** align quiet/verbose behavior and document via tests ([ddbfe1e](https://github.com/marco0560/Fontshow/commit/ddbfe1ef67871c5937f452aa80f452c3c489e0be))
+
 ## [0.31.0](https://github.com/marco0560/Fontshow/compare/v0.30.0...v0.31.0) (2026-01-25)
 
 ### Features
