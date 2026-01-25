@@ -10,15 +10,18 @@ def run(args):
     """
     CLI entrypoint for `fontshow preflight`.
 
-    This function is called by argparse via:
+    Called by argparse via:
         parser.set_defaults(func=run)
 
-    It must:
-    - return an int exit code
-    - NOT print directly
-    - rely on logging for messages
+    Behavior:
+    - runs the preflight checks
+    - renders a human-readable report unless --quiet is set
+    - returns an int exit code (0 on success)
     """
-    return run_preflight(args)
+    # Reuse the preflight CLI renderer used by `python -m fontshow.preflight`
+    from .__main__ import _run_preflight_cli
+
+    return _run_preflight_cli(args=args, run_preflight_fn=run_preflight)
 
 
 def register_cli(parser):
