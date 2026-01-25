@@ -423,17 +423,19 @@ def validate_font_entry(entry: dict, *, index: int) -> list[str]:
     if not isinstance(entry, dict):
         return ["entry is not an object"]
 
-    path = entry.get("path")
+    identity = entry.get("identity", {})
+
+    path = identity.get("file")
     if not isinstance(path, str) or not path:
-        errors.append("missing or invalid 'path'")
+        errors.append("missing or invalid 'identity.file'")
 
-    family = entry.get("family")
+    family = identity.get("family")
     if not isinstance(family, str) or not family:
-        errors.append("missing or invalid 'family'")
+        errors.append("missing or invalid 'identity.family'")
 
-    style = entry.get("style")
+    style = identity.get("style")
     if not isinstance(style, str) or not style:
-        errors.append("missing or invalid 'style'")
+        errors.append("missing or invalid 'identity.style'")
 
     # --- sample_text validation (optional) ---
     if "sample_text" in entry:
