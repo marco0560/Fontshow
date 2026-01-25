@@ -30,4 +30,4 @@ def test_schema_validation_with_charset_enrichment():
     warnings = validate_inventory_schema(inventory)
 
     # Schema validation must succeed without errors or critical warnings
-    assert all(w["severity"] == "info" for w in warnings)
+    assert all(w["severity"] in {"info", "warning"} for w in warnings)

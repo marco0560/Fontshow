@@ -72,7 +72,27 @@ def validate_inventory_schema(data: dict) -> list[dict]:
 
     warnings: list[dict] = []
 
-    schema_version = data.get("metadata", {}).get("schema_version", "1.0")
+    schema_version = data.get("metadata", {}).get("schema_version")
+
+    if schema_version is None:
+        return [
+            {
+                "severity": "warning",
+                "code": "schema_version_deprecated",
+                "message": "Missing metadata.schema_version; assuming legacy schema 1.0",
+                "schema_version": "1.0",
+            }
+        ]
+
+    if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
+        return [
+            {
+                "severity": "error",
+                "code": "schema_version_unknown",
+                "message": f"Unknown schema version: {schema_version}",
+                "schema_version": schema_version,
+            }
+        ]
 
     try:
         _validate_inventory_schema_strict(
@@ -80,12 +100,13 @@ def validate_inventory_schema(data: dict) -> list[dict]:
             schema_version=schema_version,
         )
     except Exception as exc:
-        warnings.append(
+        return [
             {
+                "severity": "error",
                 "code": "invalid_schema",
                 "message": str(exc),
                 "schema_version": schema_version,
             }
-        )
+        ]
 
     return warnings
