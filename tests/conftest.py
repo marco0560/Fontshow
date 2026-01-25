@@ -114,7 +114,8 @@ class _FakePreflightResult:
 
 @pytest.fixture
 def stub_preflight(monkeypatch, request):
-    mode = request.param
+    # Default behavior if fixture is not parametrized
+    mode = getattr(request, "param", "ok")
     ok = mode == "ok"
 
     def fake_run(args):
@@ -131,7 +132,7 @@ def stub_preflight(monkeypatch, request):
         fontshow.preflight,
         "run",
         fake_run,
-        raising=False,  # IMPORTANT: attribute may not exist yet
+        raising=False,  # attribute may not exist yet
     )
 
 
