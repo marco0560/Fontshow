@@ -1,4 +1,4 @@
-# 0007 - Standardization of project scripts in Python
+# Decision 0007 - Standardization of project scripts in Python
 
 Date: 16/01/2026
 Status: Accepted

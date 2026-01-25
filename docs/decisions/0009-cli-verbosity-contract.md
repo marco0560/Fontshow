@@ -1,4 +1,4 @@
-# 0009 – CLI verbosity contract
+# Decision 0009 – CLI verbosity contract
 
 Date: 2026-01-19
 Status: Accepted

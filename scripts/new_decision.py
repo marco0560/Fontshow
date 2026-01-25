@@ -145,10 +145,10 @@ def main(argv: list[str] | None = None) -> int:
     filename = f"{num:04d}-{title}.md"
     decision_path = decisions_dir / filename
 
-    content = f"""# {num:04d} - {desc}
+    content = f"""# Decision {num:04d} - {desc}
 
-Date: {today}
-Status: Accepted
+**Date**: {today}
+**Status**: Accepted
 
 ## Context
 
