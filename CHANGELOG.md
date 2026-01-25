@@ -1,3 +1,9 @@
+## [0.31.0](https://github.com/marco0560/Fontshow/compare/v0.30.0...v0.31.0) (2026-01-25)
+
+### Features
+
+* **parser:** normalize languages and track dropped entries ([f3398d4](https://github.com/marco0560/Fontshow/commit/f3398d44be1e34db72878c6cbc5335fbe442ffb7))
+
 ## [0.30.0](https://github.com/marco0560/Fontshow/compare/v0.29.5...v0.30.0) (2026-01-24)
 
 ### Features
