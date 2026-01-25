@@ -1,3 +1,13 @@
+## [0.31.2](https://github.com/marco0560/Fontshow/compare/v0.31.1...v0.31.2) (2026-01-25)
+
+### Bug Fixes
+
+* **parser:** align field access with identity-based schema ([ca82289](https://github.com/marco0560/Fontshow/commit/ca82289b39ae346a0fe97185fde2f51def4b92bf))
+* **parser:** clarify validation errors for identity fields ([82df45e](https://github.com/marco0560/Fontshow/commit/82df45e427afa03d2da620c0b05a95835fda6520))
+* **schema:** stabilize inventory schema validation and regression coverage ([6564507](https://github.com/marco0560/Fontshow/commit/656450703d9e02b1dfe89d01e9558a847c918577))
+* **schema:** stabilize inventory validation and regression tests ([8e834be](https://github.com/marco0560/Fontshow/commit/8e834bee9b483a2b021f7b53a9c0ca0309738f7b))
+* **validation:** enforce correct semantics for identity and base_names ([ac20d8b](https://github.com/marco0560/Fontshow/commit/ac20d8b8d3a573ab122d31db18945a4a32730326)), closes [#48](https://github.com/marco0560/Fontshow/issues/48)
+
 ## [0.31.1](https://github.com/marco0560/Fontshow/compare/v0.31.0...v0.31.1) (2026-01-25)
 
 ### Bug Fixes
