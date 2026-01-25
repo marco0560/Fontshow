@@ -30,3 +30,4 @@ created before the adoption of the formal decision record system.
 - [0010 — Separation CLI verbosity and debug](0010-separation-cli-verbosity-debug.md)
 - [0011 — CLI stdout / stderr semantics and `--quiet` behavior](0011-cli-stdout-stderr-semantics-quiet-behavior.md)
 - [0012 — GitHub Pages deployment strategy](0012-github-pages-deployment-strategy.md)
+- [0013 — Language normalization strategy](0013-language-normalization-strategy.md)
