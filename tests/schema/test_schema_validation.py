@@ -43,3 +43,25 @@ def test_invalid_inventory_structure_raises():
 
     with pytest.raises(ValueError, match="Inventory schema validation failed"):
         _validate_inventory_schema_strict(data, schema_version="1.1")
+
+
+def test_legacy_schema_emits_deprecation_warning():
+    data = {
+        "fonts": [],
+    }
+
+    warnings = validate_inventory_schema(data)
+
+    assert len(warnings) == 1
+    assert warnings[0]["code"] == "schema_version_deprecated"
+    assert warnings[0]["severity"] == "warning"
+
+
+def test_invalid_schema_raises_validation_error():
+    data = {
+        "metadata": {"schema_version": "1.1"}
+        # missing "fonts"
+    }
+
+    with pytest.raises(ValueError, match="Inventory schema validation failed"):
+        _validate_inventory_schema_strict(data, schema_version="1.1")

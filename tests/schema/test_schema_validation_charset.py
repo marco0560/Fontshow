@@ -31,3 +31,28 @@ def test_schema_validation_with_charset_enrichment():
 
     # Schema validation must succeed without errors or critical warnings
     assert all(w["severity"] in {"info", "warning"} for w in warnings)
+
+
+def test_schema_validation_no_spurious_warnings():
+    inventory = {
+        "metadata": {"schema_version": "1.1"},
+        "fonts": [
+            {
+                "path": "/fake/font.ttf",
+                "identity": {
+                    "family": "Fake",
+                    "style": "Regular",
+                },
+                "coverage": {
+                    "normalized_charset": {
+                        "ranges": [[32, 126]],
+                        "codepoints_count": 95,
+                    }
+                },
+            }
+        ],
+    }
+
+    warnings = validate_inventory_schema(inventory)
+
+    assert warnings == []
