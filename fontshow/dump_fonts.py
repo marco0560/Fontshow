@@ -1312,7 +1312,27 @@ def run_dump_fonts(args) -> int:
                 }
             ]
 
+        skipped_non_opentype = 0
+        total_faces = 0
+
         for face in faces:
+            total_faces += 1
+
+            # Skip non-OpenType / bitmap fonts
+            if (face.get("ok") is False) and (
+                "Not a TrueType or OpenType font" in (face.get("error") or "")
+            ):
+                skipped_non_opentype += 1
+                log.warning(
+                    "skipping non-opentype font",
+                    extra={
+                        "font_path": str(font_path),
+                        "ttc_index": face.get("ttc_index"),
+                        "fonttools_error": face.get("error"),
+                    },
+                )
+                continue
+
             try:
                 desc = build_font_descriptor(
                     font_path=font_path,
@@ -1341,9 +1361,19 @@ def run_dump_fonts(args) -> int:
         "font inventory generation completed",
         extra={
             "total_fonts": len(inventory.get("fonts", [])),
+            "total_font_files": len(font_files),
+            "total_faces_seen": total_faces,
+            "skipped_non_opentype_faces": skipped_non_opentype,
             "include_fc_charset": bool(args.include_fc_charset and IS_LINUX),
         },
     )
+
+    if args.verbose:
+        print(
+            f"Processed {total_faces} font faces — "
+            f"{skipped_non_opentype} skipped (non-OpenType), "
+            f"{len(inventory.get('fonts', []))} kept"
+        )
 
     return 0
 
