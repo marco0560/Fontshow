@@ -1249,10 +1249,6 @@ def run_dump_fonts(args) -> int:
     cache_dir = args.cache_dir
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    # NOTE:
-    # dump_fonts produces a *raw* inventory.
-    # schema_version = "1.0" denotes a raw (non-enriched) inventory.
-    # Enriched inventories produced by parse_font_inventory use schema_version = "1.1".
     inventory: dict[str, Any] = {
         "metadata": {
             "schema_version": "1.0",
@@ -1276,6 +1272,10 @@ def run_dump_fonts(args) -> int:
     )
 
     font_files = get_installed_font_files()
+
+    # --- GLOBAL COUNTERS (must not reset per font file) ---
+    total_faces = 0
+    skipped_non_opentype = 0
 
     for font_path in font_files:
         fontconfig: dict[str, Any] | None = None
@@ -1312,9 +1312,6 @@ def run_dump_fonts(args) -> int:
                 }
             ]
 
-        skipped_non_opentype = 0
-        total_faces = 0
-
         for face in faces:
             total_faces += 1
 
@@ -1340,6 +1337,13 @@ def run_dump_fonts(args) -> int:
                     fonttools=face,
                     fontconfig=fontconfig,
                 )
+
+                # Normalize missing style for single-style fonts
+                if desc.get("identity", {}).get("family") and not desc.get(
+                    "identity", {}
+                ).get("style"):
+                    desc["identity"]["style"] = "Regular"
+
                 inventory["fonts"].append(desc)
             except Exception as e:
                 inventory["fonts"].append(
