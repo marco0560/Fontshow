@@ -25,7 +25,12 @@ def test_real_inventory_regression_no_errors():
     - no error-level warnings are emitted
     """
 
-    fixture = Path(__file__).parent / "fixtures" / "inventory_real_minimal.json"
+    fixture = (
+        Path(__file__).parent.parent
+        / "fixtures"
+        / "schema"
+        / "inventory_real_minimal.json"
+    )
     data = json.loads(fixture.read_text(encoding="utf-8"))
 
     warnings = validate_inventory_schema(data)
