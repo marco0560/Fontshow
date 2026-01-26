@@ -1,3 +1,23 @@
+## [0.32.0](https://github.com/marco0560/Fontshow/compare/v0.31.2...v0.32.0) (2026-01-26)
+
+### Features
+
+* **parser:** clarify semantic validation scope for language codes ([d385344](https://github.com/marco0560/Fontshow/commit/d385344e5dec7e16a1cf397ef558112e03b43095))
+* **parser:** normalize languages and track dropped entries ([322d37e](https://github.com/marco0560/Fontshow/commit/322d37e22977349e03ff0cee09a6c3fc5d318c6c))
+
+### Bug Fixes
+
+* **build:** remove secondary CLI entrypoint ([cf575b0](https://github.com/marco0560/Fontshow/commit/cf575b0a61c290b3551154d97380e35cb9d7408b))
+* **cli:** align quiet/verbose behavior and document via tests ([90689f8](https://github.com/marco0560/Fontshow/commit/90689f8d9ee43c1fa988d973682b12d9a79ab3f7))
+* **dump:** exclude non-OpenType fonts and normalize style ([b3dfde8](https://github.com/marco0560/Fontshow/commit/b3dfde8ff8d6e2fbb99e55873b58a2ea6fb0381f))
+* **dump:** normalize missing style and exclude non-OpenType fonts ([a2b9361](https://github.com/marco0560/Fontshow/commit/a2b93616398493dccefc2afd6069e40417c9d1ae))
+* **dump:** skip non-OpenType fonts and improve verbose summary ([748d8ce](https://github.com/marco0560/Fontshow/commit/748d8cef2d8c379c6770929a3488c51bd14f7a44))
+* **parser:** align field access with identity-based schema ([53a2b37](https://github.com/marco0560/Fontshow/commit/53a2b37d917e8666ebfb896d6650acfd3746cfae))
+* **parser:** clarify validation errors for identity fields ([3b064ba](https://github.com/marco0560/Fontshow/commit/3b064ba780d20568cd41a5fe147bd1fb9c6fbe2b))
+* **schema:** add languages_raw field to inventory schema ([0eacff8](https://github.com/marco0560/Fontshow/commit/0eacff88943d5011522e6d5da9f7ef992dcc14a6))
+* **schema:** stabilize inventory validation and regression tests ([645d0c3](https://github.com/marco0560/Fontshow/commit/645d0c3b95f7e8c6b00e008c121a07580ee44c02))
+* **validation:** enforce correct semantics for identity and base_names ([0e36fd4](https://github.com/marco0560/Fontshow/commit/0e36fd4879b77c7ca78d5e2726077f1f62a7edc9)), closes [#48](https://github.com/marco0560/Fontshow/issues/48)
+
 ## [0.31.2](https://github.com/marco0560/Fontshow/compare/v0.31.1...v0.31.2) (2026-01-25)
 
 ### Bug Fixes
