@@ -588,12 +588,16 @@ def validate_inventory(
 
     if fatal_errors == 0:
         if not quiet:
+            # NOTE:
+            # Do NOT replace this with a generic "OK" message.
+            # Unlike preflight or dump-fonts, parse-inventory is a
+            # user-facing diagnostic command and must emit a
+            # human-readable success message.
+            #
+            # See: docs/decisions/0009-cli-verbosity-contract.md
             print("✅ Inventory validation completed (no fatal errors)")
-    else:
-        print(
-            f"❌ Inventory validation failed with {fatal_errors} invalid entries",
-            file=sys.stderr,
-        )
+            if verbose:
+                print(f"ℹ️  Validation completed for {len(fonts)} font entries")
 
     return fatal_errors
 
