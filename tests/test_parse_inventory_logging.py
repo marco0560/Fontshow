@@ -1,8 +1,11 @@
 import importlib
+import json
 import logging
+from pathlib import Path
 
 import fontshow.logging_utils
 import fontshow.parse_font_inventory
+from tests.helpers import minimal_valid_entry
 
 
 def test_inventory_parsing_emits_global_logs(
@@ -51,3 +54,53 @@ def test_schema_validation_logging(
 
     assert "inventory schema validation requested" in messages
     assert "inventory schema validation completed" in messages
+
+
+def test_parse_inventory_verbosity_levels(capsys, tmp_path):
+    """
+    Regression test for CLI verbosity semantics (Decision 0009).
+
+    This test MUST provide an input file explicitly because it calls the
+    runner directly (bypassing argparse defaults).
+    """
+
+    from fontshow.parse_font_inventory import main
+
+    # Minimal valid inventory for validate-inventory mode
+    inventory = {
+        "metadata": {"schema_version": "1.0"},
+        "fonts": [minimal_valid_entry()],
+    }
+
+    input_path = tmp_path / "font_inventory.json"
+    input_path.write_text(json.dumps(inventory), encoding="utf-8")
+
+    class Args:
+        input = Path(input_path)
+        validate_inventory = True
+        quiet = False
+        verbose = False
+        infer_level = "medium"
+        output = tmp_path / "font_inventory_enriched.json"
+
+    # default
+    args = Args()
+    main(args)
+    captured_default = capsys.readouterr().out
+
+    # verbose
+    args.verbose = True
+    main(args)
+    captured_verbose = capsys.readouterr().out
+
+    # quiet
+    args.verbose = False
+    args.quiet = True
+    main(args)
+    captured_quiet = capsys.readouterr().out
+
+    # Assertions
+    assert captured_default.strip() != ""
+    assert captured_verbose.strip() != ""
+    assert captured_verbose != captured_default
+    assert captured_quiet.strip() == ""
