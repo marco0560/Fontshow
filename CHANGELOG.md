@@ -1,3 +1,9 @@
+## [0.32.1](https://github.com/marco0560/Fontshow/compare/v0.32.0...v0.32.1) (2026-01-27)
+
+### Bug Fixes
+
+* **cli:** enforce verbosity semantics for parse-inventory ([1184956](https://github.com/marco0560/Fontshow/commit/1184956f50c53f54860f614976885934b4d8fca2))
+
 ## [0.32.0](https://github.com/marco0560/Fontshow/compare/v0.31.2...v0.32.0) (2026-01-26)
 
 ### Features
