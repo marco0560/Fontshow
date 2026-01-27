@@ -70,6 +70,28 @@ These two mechanisms serve different audiences and purposes and **must not be me
 
 ---
 
+## Verbosity and command class distinction
+
+Verbosity levels (`--quiet`, `--verbose`) do not imply identical output
+semantics across all CLI commands.
+
+In particular:
+
+- **Machine-oriented commands** (e.g. `preflight`, `dump-fonts`)
+  may emit minimal success tokens such as `OK`, as their primary role
+  is automation and scripting.
+
+- **User-facing diagnostic commands** (e.g. `parse-inventory`)
+  MUST emit descriptive, human-readable output.
+  They MUST NOT replace success messages with generic tokens like `OK`.
+
+This distinction is intentional and aligns with
+Decision 0009 (CLI verbosity contract).
+
+Verbosity controls *amount of information*, not *semantic class of output*.
+
+---
+
 ## Related Work
 
 - CLI stdout/stderr normalization (M1)

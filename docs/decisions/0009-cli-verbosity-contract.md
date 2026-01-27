@@ -83,6 +83,42 @@ This contract applies to:
 
 ---
 
+## Command class distinctions
+
+Not all Fontshow CLI commands share the same output semantics.
+
+### Machine-oriented commands
+
+Examples:
+
+- `preflight`
+- `dump-fonts`
+
+Characteristics:
+
+- Intended for scripting and automation
+- May emit minimal status tokens such as `OK`
+- Output is optimized for machine consumption
+
+### User-facing diagnostic commands
+
+Examples:
+
+- `parse-inventory`
+- `create-catalog`
+
+Characteristics:
+
+- Intended for human interaction
+- MUST emit descriptive, human-readable messages
+- MUST NOT replace success messages with generic tokens like `OK`
+- `--verbose` must add information, not replace it
+
+This distinction is intentional and enforced to avoid ambiguity between
+diagnostic output and automation-oriented status signaling.
+
+---
+
 ## Non-goals
 
 - Introducing logging frameworks
