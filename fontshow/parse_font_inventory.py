@@ -660,6 +660,12 @@ def _language_base_tag(raw: str) -> str:
     return value
 
 
+def _extract_lang_from_message(msg: str) -> str:
+    # Supports: "Dropped language 'wen'" (and similar)
+    m = re.search(r"'([^']+)'", msg or "")
+    return m.group(1) if m else ""
+
+
 # ============================================================
 # Inference helpers
 # ============================================================
@@ -1367,10 +1373,12 @@ def run_parse_font_inventory(
 
                 ident = _format_font_identity(font, idx)
 
-                # Group language-related messages
+                # --- language-related aggregation ---
                 lang_norm_pairs: list[str] = []
                 lang_dups: list[str] = []
                 lang_dropped: list[str] = []
+
+                # other warnings (non-language or fallback)
                 other_warnings: list[tuple[str, str, str]] = []
 
                 for warning in font.get("warnings", []):
@@ -1381,14 +1389,21 @@ def run_parse_font_inventory(
                     code = warning.get("code", "unknown_warning")
                     message = warning.get("message", "")
                     extra = (
-                        warning.get("extra")
+                        warning.get("extra", {})
                         if isinstance(warning.get("extra"), dict)
                         else {}
                     )
 
-                    # ---- language normalization ----
+                    # helper: extract language from message if extra is missing
+                    def _extract_lang(msg: str) -> str:
+                        if not msg:
+                            return ""
+                        m = re.search(r"'([^']+)'", msg)
+                        return m.group(1) if m else ""
+
+                    # ---- language handling ----
                     if code == "language_normalized":
-                        raw = extra.get("raw")
+                        raw = extra.get("raw") or _extract_lang(message)
                         norm = extra.get("normalized")
                         if raw and norm:
                             lang_norm_pairs.append(f"{raw}→{norm}")
@@ -1396,55 +1411,51 @@ def run_parse_font_inventory(
                             lang_norm_pairs.append(raw)
                         continue
 
-                    # ---- duplicate language ----
                     if code == "language_duplicate":
-                        raw = extra.get("raw")
+                        raw = extra.get("raw") or _extract_lang(message)
                         if raw:
                             lang_dups.append(raw)
                         continue
 
-                    # ---- dropped language ----
                     if code == "language_dropped":
-                        raw = extra.get("raw")
-
-                        # Backward compatibility: extract from message
-                        if not raw and isinstance(message, str):
-                            m = re.search(r"'([^']+)'", message)
-                            if m:
-                                raw = m.group(1)
-
+                        raw = extra.get("raw") or _extract_lang(message)
                         if raw:
                             lang_dropped.append(raw)
                         continue
 
-                    # ---- everything else ----
+                    # ---- prevent duplicate printing of grouped language warnings ----
+                    if code in {
+                        "normalized_languages",
+                        "duplicate_languages",
+                        "dropped_languages",
+                    }:
+                        continue
+
+                    # ---- fallback: non-language warnings ----
                     if severity in ("warning", "error"):
                         other_warnings.append((severity, code, message))
 
-                # --- Emit grouped messages ---
-
-                # INFO: normalization (always informative, never warning)
+                # ---- grouped output ----
+                # ---- grouped output ----
                 if lang_norm_pairs:
                     print_fn(
                         f"ℹ️  {ident} normalized_languages: "
                         f"{', '.join(sorted(set(lang_norm_pairs)))}"
                     )
 
-                # INFO: duplicates (result of normalization)
                 if lang_dups:
                     print_fn(
                         f"ℹ️  {ident} duplicate_languages: "
                         f"{', '.join(sorted(set(lang_dups)))}"
                     )
 
-                # WARNING: real drops only
                 if lang_dropped:
                     print_fn(
                         f"⚠️  {ident} dropped_languages: "
                         f"{', '.join(sorted(set(lang_dropped)))}"
                     )
 
-                # Other warnings/errors
+                # ---- fallback: non-language warnings ----
                 for severity, code, message in other_warnings:
                     print_fn(f"⚠️  {ident} {code}: {message}")
 

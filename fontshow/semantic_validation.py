@@ -2,68 +2,106 @@
 Semantic validation for enriched Fontshow inventories.
 
 This module performs semantic consistency checks on enriched inventory data.
-
 Semantic validation:
-- does NOT perform inference
-- does NOT modify inventory content
-- reports issues via structured warnings only
-- distinguishes normalization from actual errors
+- does not perform inference,
+- does not normalize or modify data,
+- reports issues exclusively via structured warnings.
+
+Semantic validation is distinct from both schema validation and inference logic.
 """
 
+from __future__ import annotations
+
+import re
 from typing import Any
 
-import language_tags
 import pycountry
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+# NOTE:
+# pycountry is not a full mirror of the IANA language subtag registry.
+# Some valid BCP-47 primary language subtags may be missing in pycountry.
+#
+# We keep a *minimal* explicit allowlist for codes we know we want to accept
+# in Fontshow inventories (example: user reported 'yuw' as valid BCP-47).
+_EXTRA_LANGUAGE_ALLOWLIST: set[str] = {
+    "yuw",  # Yau (ISO 639-3) — user validated against IANA BCP-47 registry.
+    "ber",  # Berber languages (ISO 639-2 collective); may appear after stripping region.
+    "wen",  # Sorbian languages (ISO 639-2 collective); may appear as "wen".
+    "rif",  # Tarifit (ISO 639-3); user reported.
+    "kab",  # Kabyle (ISO 639-3); user reported.
+}
+
+# Minimal deprecated-language mapping.
+# This is intentionally small and explicit to avoid guessing large tables.
+_DEPRECATED_LANGUAGE_MAP: dict[str, str] = {
+    "mo": "ro",  # Moldavian/Moldovan → Romanian (common deprecation path).
+    "iw": "he",  # Hebrew (ISO 639-1) → Hebrew (ISO 639-2)
+    "ji": "yi",  # Yiddish (ISO 639-1) → Yiddish (ISO 639-2)
+    "in": "id",  # Indonesian (ISO 639-1) → Indonesian (ISO 639-2)
+    "sh": "sr",  # Serbo-Croatian (ISO 639-1) → Serbian (ISO 639-2)
+}
+
+# Heuristic BCP-47-ish structural check (not full ABNF):
+# - allow letters/digits separated by '-' or '_'
+# - allow optional trailing parenthesized suffix (e.g. yuw(s))
+# - we only use this when strict_bcp47=True
+_BCP47_HEURISTIC_RE = re.compile(r"^[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*(\(.*\))?$")
 
 
-def _is_valid_bcp47(tag: str) -> bool:
-    """Return True if tag is syntactically valid BCP-47."""
-    try:
-        language_tags.tags.check(tag)
+def _is_known_language(code: str) -> bool:
+    """
+    Check whether a primary language subtag is "known enough" for Fontshow.
+
+    Order:
+    1) explicit allowlist (covers gaps in pycountry)
+    2) pycountry ISO-639-1/3 lookup
+    """
+    if code in _EXTRA_LANGUAGE_ALLOWLIST:
         return True
-    except Exception:
-        return False
 
-
-def _is_known_language(tag: str) -> bool:
-    """Return True if tag matches an ISO 639 language."""
-    return (
-        pycountry.languages.get(alpha_2=tag) is not None
-        or pycountry.languages.get(alpha_3=tag) is not None
+    return bool(
+        pycountry.languages.get(alpha_2=code) or pycountry.languages.get(alpha_3=code)
     )
 
 
-# ---------------------------------------------------------------------------
-# Language normalization
-# ---------------------------------------------------------------------------
-
-
-def normalize_languages(raw_languages: list[str]) -> dict[str, list[dict]]:
+def normalize_languages(
+    raw_languages: list[str],
+    *,
+    strict_bcp47: bool = False,
+) -> dict[str, list[dict[str, Any]]]:
     """
-    Normalize raw language tags.
+    Normalize raw language tags into ISO-compatible primary language codes.
 
-    Pipeline:
-    1. Trim and lowercase
-    2. Strip parentheses
-    3. Strip region / script
-    4. Validate ISO-639
-    5. Deduplicate
+    Pipeline (non-strict):
+    - strip whitespace
+    - lowercase
+    - strip parentheses suffix   (yuw(s) -> yuw)
+    - strip region/script/variants (az-az -> az, pt_BR -> pt)
+    - map known deprecated codes  (mo -> ro)
+    - validate as ISO-639-1/3 (with a small allowlist)
+    - deduplicate (preserving order)
+
+    Pipeline (strict_bcp47=True):
+    - before any normalization, ensure raw matches a BCP-47-ish structural regex
+      (heuristic; not full ABNF). If it fails, drop as invalid_bcp47.
 
     Returns:
         {
             "normalized": [str],
-            "dropped": [
-                {"raw": str, "reason": str}
-            ]
+            "dropped": [{"raw": str, "reason": str, ...}]
         }
+
+    Reasons:
+    - invalid_format
+    - invalid_bcp47
+    - unknown_language
+    - duplicate
+    - variant_stripped
+    - deprecated_mapped
     """
 
     normalized: list[str] = []
-    dropped: list[dict] = []
+    dropped: list[dict[str, Any]] = []
     seen: set[str] = set()
 
     for raw in raw_languages:
@@ -73,90 +111,96 @@ def normalize_languages(raw_languages: list[str]) -> dict[str, list[dict]]:
             dropped.append({"raw": original, "reason": "invalid_format"})
             continue
 
-        value = raw.strip().lower()
+        value = raw.strip()
 
-        reason = None
+        if strict_bcp47 and not _BCP47_HEURISTIC_RE.match(value):
+            dropped.append({"raw": original, "reason": "invalid_bcp47"})
+            continue
 
-        # Strip parentheses
-        if "(" in value:
-            value = value.split("(", 1)[0]
-            reason = "variant_stripped"
+        # Normalize case early so that case-only differences don't become "variant_stripped".
+        value = value.lower()
 
-        # Strip region/script
-        if "-" in value:
-            value = value.split("-", 1)[0]
-            reason = "variant_stripped"
-        elif "_" in value:
-            value = value.split("_", 1)[0]
-            reason = "variant_stripped"
+        # Strip trailing parentheses suffixes: bem(s) -> bem
+        value = re.sub(r"\(.*\)$", "", value)
 
-        # ISO validation
-        if not _is_known_language(value):
+        # Strip region/script/variants by taking the first component.
+        base = re.split(r"[-_]", value)[0]
+
+        # Map deprecated codes if known.
+        mapped = _DEPRECATED_LANGUAGE_MAP.get(base, base)
+        if mapped != base:
+            # Record mapping as a non-problematic normalization.
+            # NOTE: we still allow this to be categorized as "duplicate" below if needed.
+            dropped.append({"raw": original, "reason": "deprecated_mapped"})
+
+        # Validate.
+        if not _is_known_language(mapped):
             dropped.append({"raw": original, "reason": "unknown_language"})
             continue
 
-        # Deduplication
-        if value in seen:
+        # Deduplicate (duplicate after normalization)
+        if mapped in seen:
             dropped.append(
                 {
                     "raw": original,
                     "reason": "duplicate_normalized",
-                    "normalized": value,
+                    "normalized": mapped,
                 }
             )
-
             continue
 
-        # If we normalized but kept the value
-        if reason:
-            dropped.append({"raw": original, "reason": reason})
+        # Variant stripped (only when it is the first occurrence).
+        # This ensures inputs like ar_IN, ar_IQ, ar_JO become:
+        # - first: variant_stripped
+        # - subsequent: duplicate
+        if mapped != original.strip().lower():
+            dropped.append({"raw": original, "reason": "variant_stripped"})
 
-        normalized.append(value)
-        seen.add(value)
+        normalized.append(mapped)
+        seen.add(mapped)
 
-    return {
-        "normalized": normalized,
-        "dropped": dropped,
-    }
-
-
-# ---------------------------------------------------------------------------
-# Semantic validation
-# ---------------------------------------------------------------------------
+    return {"normalized": normalized, "dropped": dropped}
 
 
 def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
     """
-    Validate normalized language codes in an enriched inventory.
+    Check semantic consistency of an enriched Fontshow inventory.
 
-    Rules:
-    - Only normalized language lists are checked
-    - Raw language tags are ignored
-    - 'unknown' is ignored
-    - Only invalid ISO-639 codes emit warnings
+    This function performs semantic checks without modifying data.
+    All detected issues are reported as structured warnings.
+
+    No inference, normalization, or enrichment is performed here.
     """
-
     warnings: list[dict[str, Any]] = []
 
-    for idx, font in enumerate(inventory.get("fonts", [])):
-        font_id = font.get("path") or f"font[{idx}]"
+    fonts = inventory.get("fonts", [])
 
-        codes = set()
+    for idx, font in enumerate(fonts):
+        font_name = font.get("name") or font.get("id") or f"font[{idx}]"
+
+        codes: set[str] = set()
+
+        # Declared languages
         codes.update(font.get("coverage", {}).get("languages", []) or [])
+
+        # Inferred languages
         codes.update(font.get("inference", {}).get("languages", []) or [])
 
         for code in sorted(codes):
             if code == "unknown":
                 continue
 
+            # Only validate normalized language codes.
+            # Raw language tags are stored in coverage["languages_raw"]
+            # and must not be validated here.
             if not _is_known_language(code):
                 warnings.append(
                     {
                         "severity": "warning",
                         "code": "invalid_language_code",
-                        "font": font_id,
+                        "font": font_name,
                         "language": code,
-                        "message": f"Invalid or deprecated language code: '{code}'",
+                        "message": f"Invalid language code: '{code}'",
                     }
                 )
 
