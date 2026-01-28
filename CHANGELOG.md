@@ -1,3 +1,9 @@
+## [0.32.2](https://github.com/marco0560/Fontshow/compare/v0.32.1...v0.32.2) (2026-01-28)
+
+### Bug Fixes
+
+* **cli:** improve parse-inventory warning output with schema-aware font identity ([25180b0](https://github.com/marco0560/Fontshow/commit/25180b071d88ea22350a0b78f1b28ca18f03bfa1))
+
 ## [0.32.1](https://github.com/marco0560/Fontshow/compare/v0.32.0...v0.32.1) (2026-01-27)
 
 ### Bug Fixes
