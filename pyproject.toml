@@ -12,7 +12,8 @@ license = { text = "MIT" }
 authors = [{ name = "Marco Coppola" }]
 dependencies = [
     "jsonschema>=4.23.0",
-    "pycountry>=24.6.1"
+    "language-tags>=1.2.0",
+    "pycountry>=22.3.5",
 ]
 
 [tool.setuptools_scm]

@@ -32,8 +32,8 @@ def test_duplicate_languages():
     result = normalize_languages(["en", "EN", "en"])
     assert result["normalized"] == ["en"]
     assert result["dropped"] == [
-        {"raw": "EN", "reason": "duplicate"},
-        {"raw": "en", "reason": "duplicate"},
+        {"raw": "EN", "reason": "duplicate_normalized", "normalized": "en"},
+        {"raw": "en", "reason": "duplicate_normalized", "normalized": "en"},
     ]
 
 
@@ -50,6 +50,6 @@ def test_mixed_case():
     assert result["normalized"] == ["ar"]
     assert result["dropped"] == [
         {"raw": "ar_IN", "reason": "variant_stripped"},
-        {"raw": "ar_IQ", "reason": "duplicate"},
-        {"raw": "ar_JO", "reason": "duplicate"},
+        {"raw": "ar_IQ", "reason": "duplicate_normalized", "normalized": "ar"},
+        {"raw": "ar_JO", "reason": "duplicate_normalized", "normalized": "ar"},
     ]

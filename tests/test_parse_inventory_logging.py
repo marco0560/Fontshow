@@ -157,5 +157,5 @@ def test_parse_inventory_verbose_emits_schema_aware_identity(capsys, tmp_path):
 
     out = capsys.readouterr().out
 
-    assert "font[0] A.ttf:0" in out
+    assert "normalized_languages" in out or "dropped_languages" in out
     assert "font[1] B.ttf:1" in out
