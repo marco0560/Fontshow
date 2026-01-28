@@ -1,3 +1,4 @@
+import argparse
 import importlib
 import json
 import logging
@@ -104,3 +105,57 @@ def test_parse_inventory_verbosity_levels(capsys, tmp_path):
     assert captured_verbose.strip() != ""
     assert captured_verbose != captured_default
     assert captured_quiet.strip() == ""
+
+
+def test_parse_inventory_verbose_emits_schema_aware_identity(capsys, tmp_path):
+    inventory = {
+        "metadata": {"schema_version": "1.0"},
+        "fonts": [
+            {
+                "identity": {
+                    "file": "/fonts/A.ttf",
+                    "face_index": 0,
+                },
+                "warnings": [
+                    {
+                        "code": "language_dropped",
+                        "message": "Dropped language 'wen'",
+                        "severity": "warning",
+                    }
+                ],
+            },
+            {
+                "identity": {
+                    "file": "/fonts/B.ttf",
+                    "face_index": 1,
+                },
+                "warnings": [
+                    {
+                        "code": "language_dropped",
+                        "message": "Dropped language 'pap'",
+                        "severity": "warning",
+                    }
+                ],
+            },
+        ],
+    }
+
+    input_path = tmp_path / "inventory.json"
+    output_path = tmp_path / "out.json"
+    input_path.write_text(json.dumps(inventory))
+
+    args = argparse.Namespace(
+        input=input_path,
+        output=output_path,
+        validate_inventory=False,
+        infer_level="medium",
+        verbose=True,
+        quiet=False,
+    )
+
+    fontshow.parse_font_inventory.run_parse_font_inventory(args)
+
+    out = capsys.readouterr().out
+
+    assert "font[0] A.ttf:0" in out
+    assert "font[1] B.ttf:1" in out
