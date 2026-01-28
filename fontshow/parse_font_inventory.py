@@ -602,6 +602,36 @@ def validate_inventory(
     return fatal_errors
 
 
+def _format_font_identity(font: dict, index: int) -> str:
+    """
+    Return a human-readable identifier for a font entry,
+    compatible with schema 1.0 and 1.1.
+
+    Format:
+        font[<index>] <filename>:<face_index>
+    """
+    label = f"font[{index}]"
+
+    identity = font.get("identity", {})
+    path = identity.get("file")
+    face_index = identity.get("face_index")
+    family = identity.get("family")
+    style = identity.get("style")
+
+    if path:
+        name = Path(path).name
+        if family is not None:
+            if style is not None:
+                name += f" ({family} {style})"
+            else:
+                name += f" ({family})"
+        if face_index is not None:
+            return f"{label} {name}:{face_index}"
+        return f"{label} {name}"
+
+    return label
+
+
 # ============================================================
 # Inference helpers
 # ============================================================
@@ -839,10 +869,17 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         coverage["languages"] = result["normalized"]
 
         for item in result["dropped"]:
-            logger.warning(
-                "Dropped language '%s': %s",
-                item["raw"],
-                item["reason"],
+            font.setdefault("warnings", []).append(
+                {
+                    "code": "language_dropped",
+                    "message": f"Dropped language '{item['raw']}'",
+                    "severity": "warning",
+                    "source": "language_normalization",
+                    "extra": {
+                        "raw": item["raw"],
+                        "reason": item["reason"],
+                    },
+                }
             )
 
         # ------------------------------------------------------------
@@ -865,14 +902,21 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
                     )
                 except Exception as exc:
                     charset["ranges"] = []
-                    logger.warning(
-                        "fontconfig charset bitmap decoding failed",
-                        extra={
-                            "font_path": font_path,
-                            "error_type": type(exc).__name__,
-                            "error_reason": str(exc),
-                        },
+
+                    font.setdefault("warnings", []).append(
+                        {
+                            "code": "charset_decode_failed",
+                            "message": "Fontconfig charset bitmap decoding failed",
+                            "severity": "warning",
+                            "source": "fontconfig_charset",
+                            "extra": {
+                                "font_path": font_path,
+                                "error_type": type(exc).__name__,
+                                "error_reason": str(exc),
+                            },
+                        }
                     )
+
         # ------------------------------------------------------------
 
         charset = coverage.get("charset")
@@ -1244,6 +1288,23 @@ def run_parse_font_inventory(
         args.output,
         dumps_pretty(enriched, indent=2, ensure_ascii=False),
     )
+
+    # Emit structured warnings only in verbose mode
+    if args.verbose:
+        fonts = enriched.get("fonts", [])
+        if isinstance(fonts, list):
+            for idx, font in enumerate(fonts):
+                if not isinstance(font, dict):
+                    continue
+                for warning in font.get("warnings", []):
+                    if not isinstance(warning, dict):
+                        continue
+
+                    code = warning.get("code", "unknown_warning")
+                    message = warning.get("message", "")
+                    ident = _format_font_identity(font, idx)
+
+                    print_fn(f"⚠️  {ident} {code}: {message}")
 
     if not args.quiet:
         if args.verbose:
