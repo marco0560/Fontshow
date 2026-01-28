@@ -19,6 +19,7 @@ Default inference level: ``medium``.
 import argparse
 import json
 import logging
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -632,6 +633,33 @@ def _format_font_identity(font: dict, index: int) -> str:
     return label
 
 
+def _language_base_tag(raw: str) -> str:
+    """
+    Extract a conservative base language tag used by our normalization rules.
+
+    Examples:
+        "yuw(s)"  -> "yuw"
+        "az-az"   -> "az"
+        "pt_BR"   -> "pt"
+    """
+    if not isinstance(raw, str):
+        return ""
+
+    value = raw.strip().lower()
+
+    # Strip parenthesized suffix
+    if "(" in value:
+        value = value.split("(", 1)[0]
+
+    # Strip region/script/variants
+    if "-" in value:
+        value = value.split("-", 1)[0]
+    elif "_" in value:
+        value = value.split("_", 1)[0]
+
+    return value
+
+
 # ============================================================
 # Inference helpers
 # ============================================================
@@ -869,15 +897,55 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         coverage["languages"] = result["normalized"]
 
         for item in result["dropped"]:
+            raw = item["raw"]
+            reason = item["reason"]
+
+            # NOTE: "dropped" includes both real drops and benign normalization events.
+            # We must keep them distinct to avoid reporting normalization as WARNING.
+            if reason == "variant_stripped":
+                base = _language_base_tag(raw)
+                font.setdefault("warnings", []).append(
+                    {
+                        "code": "language_normalized",
+                        "message": f"Normalized language '{raw}' → '{base}'",
+                        "severity": "info",
+                        "source": "language_normalization",
+                        "extra": {
+                            "raw": raw,
+                            "reason": reason,
+                            "normalized": base,
+                        },
+                    }
+                )
+                continue
+
+            if reason == "duplicate":
+                base = _language_base_tag(raw)
+                font.setdefault("warnings", []).append(
+                    {
+                        "code": "language_duplicate",
+                        "message": f"Duplicate language '{raw}' (base '{base}')",
+                        "severity": "info",
+                        "source": "language_normalization",
+                        "extra": {
+                            "raw": raw,
+                            "reason": reason,
+                            "normalized": base,
+                        },
+                    }
+                )
+                continue
+
+            # Real drops: invalid_format / unknown_language (incl. deprecated/obsolete codes)
             font.setdefault("warnings", []).append(
                 {
                     "code": "language_dropped",
-                    "message": f"Dropped language '{item['raw']}'",
+                    "message": f"Dropped language '{raw}'",
                     "severity": "warning",
                     "source": "language_normalization",
                     "extra": {
-                        "raw": item["raw"],
-                        "reason": item["reason"],
+                        "raw": raw,
+                        "reason": reason,
                     },
                 }
             )
@@ -1296,14 +1364,88 @@ def run_parse_font_inventory(
             for idx, font in enumerate(fonts):
                 if not isinstance(font, dict):
                     continue
+
+                ident = _format_font_identity(font, idx)
+
+                # Group language-related messages
+                lang_norm_pairs: list[str] = []
+                lang_dups: list[str] = []
+                lang_dropped: list[str] = []
+                other_warnings: list[tuple[str, str, str]] = []
+
                 for warning in font.get("warnings", []):
                     if not isinstance(warning, dict):
                         continue
 
+                    severity = warning.get("severity", "warning")
                     code = warning.get("code", "unknown_warning")
                     message = warning.get("message", "")
-                    ident = _format_font_identity(font, idx)
+                    extra = (
+                        warning.get("extra")
+                        if isinstance(warning.get("extra"), dict)
+                        else {}
+                    )
 
+                    # ---- language normalization ----
+                    if code == "language_normalized":
+                        raw = extra.get("raw")
+                        norm = extra.get("normalized")
+                        if raw and norm:
+                            lang_norm_pairs.append(f"{raw}→{norm}")
+                        elif raw:
+                            lang_norm_pairs.append(raw)
+                        continue
+
+                    # ---- duplicate language ----
+                    if code == "language_duplicate":
+                        raw = extra.get("raw")
+                        if raw:
+                            lang_dups.append(raw)
+                        continue
+
+                    # ---- dropped language ----
+                    if code == "language_dropped":
+                        raw = extra.get("raw")
+
+                        # Backward compatibility: extract from message
+                        if not raw and isinstance(message, str):
+                            m = re.search(r"'([^']+)'", message)
+                            if m:
+                                raw = m.group(1)
+
+                        if raw:
+                            lang_dropped.append(raw)
+                        continue
+
+                    # ---- everything else ----
+                    if severity in ("warning", "error"):
+                        other_warnings.append((severity, code, message))
+
+                # --- Emit grouped messages ---
+
+                # INFO: normalization (always informative, never warning)
+                if lang_norm_pairs:
+                    print_fn(
+                        f"ℹ️  {ident} normalized_languages: "
+                        f"{', '.join(sorted(set(lang_norm_pairs)))}"
+                    )
+
+                # INFO: duplicates (result of normalization)
+                if lang_dups:
+                    print_fn(
+                        f"ℹ️  {ident} duplicate_languages: "
+                        f"{', '.join(sorted(set(lang_dups)))}"
+                    )
+
+                # WARNING: real drops only
+                if lang_dropped:
+                    print_fn(
+                        f"⚠️  {ident} dropped_languages: "
+                        f"{', '.join(sorted(set(lang_dropped)))}"
+                    )
+
+                # Other warnings/errors
+                for severity, code, message in other_warnings:
                     print_fn(f"⚠️  {ident} {code}: {message}")
 
     if not args.quiet:
