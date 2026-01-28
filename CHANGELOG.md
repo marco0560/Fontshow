@@ -1,3 +1,9 @@
+## [0.33.0](https://github.com/marco0560/Fontshow/compare/v0.32.2...v0.33.0) (2026-01-28)
+
+### Features
+
+* **parser:** structured language normalization & grouped warnings ([92e46e0](https://github.com/marco0560/Fontshow/commit/92e46e08510c32d70e77fd37abfd9bb5bde766bb))
+
 ## [0.32.2](https://github.com/marco0560/Fontshow/compare/v0.32.1...v0.32.2) (2026-01-28)
 
 ### Bug Fixes
