@@ -1,3 +1,9 @@
+## [0.33.1](https://github.com/marco0560/Fontshow/compare/v0.33.0...v0.33.1) (2026-01-28)
+
+### Bug Fixes
+
+* **parser:** correct language normalization, deduplication, and warning emission ([30a4f83](https://github.com/marco0560/Fontshow/commit/30a4f83c0c1ebc046e5f9a9cad9ef27c59455cdb))
+
 ## [0.33.0](https://github.com/marco0560/Fontshow/compare/v0.32.2...v0.33.0) (2026-01-28)
 
 ### Features
