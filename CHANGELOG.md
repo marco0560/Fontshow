@@ -1,3 +1,9 @@
+## [0.33.2](https://github.com/marco0560/Fontshow/compare/v0.33.1...v0.33.2) (2026-01-29)
+
+### Bug Fixes
+
+* **cli:** normalize warning output and remove non-ASCII symbols for Windows consoles ([4410270](https://github.com/marco0560/Fontshow/commit/4410270c71d5c5cefb4da58423c8582ac2acb558))
+
 ## [0.33.1](https://github.com/marco0560/Fontshow/compare/v0.33.0...v0.33.1) (2026-01-28)
 
 ### Bug Fixes
