@@ -1,3 +1,9 @@
+## [0.33.3](https://github.com/marco0560/Fontshow/compare/v0.33.2...v0.33.3) (2026-01-29)
+
+### Bug Fixes
+
+* **output:** suppress normalization logs when no effective change occurs ([92e6ac9](https://github.com/marco0560/Fontshow/commit/92e6ac9040a0b3989c637ad47202d02c18e5acac))
+
 ## [0.33.2](https://github.com/marco0560/Fontshow/compare/v0.33.1...v0.33.2) (2026-01-29)
 
 ### Bug Fixes
