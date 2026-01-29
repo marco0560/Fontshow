@@ -19,6 +19,8 @@ Default inference level: ``medium``.
 import argparse
 import json
 import logging
+import os
+import pprint
 import re
 import sys
 from pathlib import Path
@@ -513,7 +515,7 @@ def validate_inventory(
     warnings = 0
 
     if not isinstance(data, dict):
-        print("❌ Inventory root is not a JSON object", file=sys.stderr)
+        print("[ERR] Inventory root is not a JSON object", file=sys.stderr)
         return 1
 
     # Ensure inventory-level warnings container exists
@@ -539,7 +541,7 @@ def validate_inventory(
 
     fonts = data.get("fonts")
     if not isinstance(fonts, list):
-        print("❌ 'fonts' field missing or not a list", file=sys.stderr)
+        print("[ERR] 'fonts' field missing or not a list", file=sys.stderr)
         return 1
 
     for idx, font in enumerate(fonts):
@@ -547,9 +549,9 @@ def validate_inventory(
         entry_errors = validate_font_entry(font, index=idx)
         if entry_errors:
             fatal_errors += 1
-            path = font.get("path") if isinstance(font, dict) else None
+            path = _get_font_path_for_diagnostics(font)
 
-            print(f"ERROR font[{idx}]", file=sys.stderr)
+            print(f"[ERR] font[{idx}]", file=sys.stderr)
             print(f"  path: {path}", file=sys.stderr)
             for err in entry_errors:
                 print(f"  - {err}", file=sys.stderr)
@@ -581,9 +583,10 @@ def validate_inventory(
 
     if verbose:
         for idx, font in enumerate(fonts):
+            ident = _format_font_identity(font, index=idx)
             for warning in font.get("warnings", []):
                 print(
-                    f"⚠️  Warning font[{idx}]: "
+                    f"[WARN] Warning [{ident}]: "
                     f"{warning['code']} - {warning['message']}"
                 )
 
@@ -596,9 +599,9 @@ def validate_inventory(
             # human-readable success message.
             #
             # See: docs/decisions/0009-cli-verbosity-contract.md
-            print("✅ Inventory validation completed (no fatal errors)")
+            print("[OK] Inventory validation completed (no fatal errors)")
             if verbose:
-                print(f"ℹ️  Validation completed for {len(fonts)} font entries")
+                print(f"[INFO] Validation completed for {len(fonts)} font entries")
 
     return fatal_errors
 
@@ -614,7 +617,7 @@ def _format_font_identity(font: dict, index: int) -> str:
     label = f"font[{index}]"
 
     identity = font.get("identity", {})
-    path = identity.get("file")
+    path = _get_font_path_for_diagnostics(font)
     face_index = identity.get("face_index")
     family = identity.get("family")
     style = identity.get("style")
@@ -658,6 +661,27 @@ def _language_base_tag(raw: str) -> str:
         value = value.split("_", 1)[0]
 
     return value
+
+
+def _get_font_path_for_diagnostics(font: dict) -> str | None:
+    """
+    Return the best-available path for diagnostics purposes only.
+
+    Preference order:
+    1. font["path"]            (schema >= 1.1)
+    2. font["identity"]["file"] (schema 1.0)
+
+    This function MUST NOT mutate data.
+    """
+    if isinstance(font, dict):
+        if font.get("path"):
+            return font.get("path")
+
+        identity = font.get("identity")
+        if isinstance(identity, dict):
+            return identity.get("file")
+
+    return None
 
 
 def _extract_lang_from_message(msg: str) -> str:
@@ -826,9 +850,6 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
     - This function does NOT perform any I/O.
     - Logging is emitted through the global `fontshow` logger.
     """
-    # Standard library imports for debug purposes
-    import os
-    import pprint
 
     logger.info(
         "inventory schema validation requested",
@@ -1312,7 +1333,7 @@ def run_parse_font_inventory(
 
     input_path = args.input
     if not input_path.exists():
-        eprint_fn(f"❌ Error: input file not found: {input_path}")
+        eprint_fn(f"[ERR] Error: input file not found: {input_path}")
         eprint_fn("Hint: run dump_fonts.py first to generate the inventory.")
         return 1
 
@@ -1344,7 +1365,7 @@ def run_parse_font_inventory(
 
     fonts = data.get("fonts")
     if not isinstance(fonts, list):
-        eprint_fn("❌ Error: Invalid inventory JSON: 'fonts' must be a list")
+        eprint_fn("[ERR] Invalid inventory JSON: 'fonts' must be a list")
         return 1
 
     if args.validate_inventory:
@@ -1436,32 +1457,31 @@ def run_parse_font_inventory(
                         other_warnings.append((severity, code, message))
 
                 # ---- grouped output ----
-                # ---- grouped output ----
                 if lang_norm_pairs:
                     print_fn(
-                        f"ℹ️  {ident} normalized_languages: "
+                        f"[INFO] {ident} normalized_languages: "
                         f"{', '.join(sorted(set(lang_norm_pairs)))}"
                     )
 
                 if lang_dups:
                     print_fn(
-                        f"ℹ️  {ident} duplicate_languages: "
+                        f"[INFO] {ident} duplicate_languages: "
                         f"{', '.join(sorted(set(lang_dups)))}"
                     )
 
                 if lang_dropped:
                     print_fn(
-                        f"⚠️  {ident} dropped_languages: "
+                        f"[WARN] {ident} dropped_languages: "
                         f"{', '.join(sorted(set(lang_dropped)))}"
                     )
 
                 # ---- fallback: non-language warnings ----
                 for severity, code, message in other_warnings:
-                    print_fn(f"⚠️  {ident} {code}: {message}")
+                    print_fn(f"[WARN] {ident} {code}: {message}")
 
     if not args.quiet:
         if args.verbose:
-            print_fn(f"✔ Inventory written to {args.output}")
+            print_fn(f"[OK] Inventory written to {args.output}")
         else:
             print_fn("OK")
 
@@ -1496,7 +1516,7 @@ def main(args) -> int:
         return _run_parse_inventory(args)
     except Exception as exc:
         if not getattr(args, "quiet", False):
-            print(f"ERROR: parse-inventory failed: {exc}", file=sys.stderr)
+            print(f"[ERR] parse-inventory failed: {exc}", file=sys.stderr)
         return 2
 
 
