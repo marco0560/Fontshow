@@ -931,20 +931,21 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
             # We must keep them distinct to avoid reporting normalization as WARNING.
             if reason == "variant_stripped":
                 base = _language_base_tag(raw)
-                font.setdefault("warnings", []).append(
-                    {
-                        "code": "language_normalized",
-                        "message": f"Normalized language '{raw}' → '{base}'",
-                        "severity": "info",
-                        "source": "language_normalization",
-                        "extra": {
-                            "raw": raw,
-                            "reason": reason,
-                            "normalized": base,
-                        },
-                    }
-                )
-                continue
+                if base != raw:
+                    font.setdefault("warnings", []).append(
+                        {
+                            "code": "language_normalized",
+                            "message": f"Normalized language '{raw}' -> '{base}'",
+                            "severity": "info",
+                            "source": "language_normalization",
+                            "extra": {
+                                "raw": raw,
+                                "reason": reason,
+                                "normalized": base,
+                            },
+                        }
+                    )
+                    continue
 
             if reason == "duplicate":
                 base = _language_base_tag(raw)
@@ -1427,7 +1428,7 @@ def run_parse_font_inventory(
                         raw = extra.get("raw") or _extract_lang(message)
                         norm = extra.get("normalized")
                         if raw and norm:
-                            lang_norm_pairs.append(f"{raw}→{norm}")
+                            lang_norm_pairs.append(f"{raw} -> {norm}")
                         elif raw:
                             lang_norm_pairs.append(raw)
                         continue
