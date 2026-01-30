@@ -1,5 +1,19 @@
 # Fontshow Documentation
 
+## Getting started
+
+- [Getting started](getting_started.md)
+- [CLI overview](cli.md)
+- [Cheatsheet](cheatsheet.md)
+- [Commands](tools/preflight.md)
+
+## Data model
+
+- [Data dictionary](data_dictionary.md)
+- [Schema overview](schema/index.md)
+- [Inventory schema v1.0](schema/inventory-1.0.md)
+- [Inventory schema v1.1](schema/inventory-1.1.md)
+
 ## Development and maintenance
 
 - [Repository architecture](architecture.md)
@@ -9,13 +23,10 @@
 - [Contributing guidelines](CONTRIBUTING.md)
 - [CLI Contract](cli-contract.md)
 
-## Engineering Notes
+## Engineering Notes (internal)
 
-This project maintains a set of internal engineering notes documenting
-design decisions, pitfalls, and lessons learned during development.
-
-These notes are not part of the public API or user documentation, but
-serve as long-term project memory for maintainers.
+These notes are not part of the public API or user documentation, but serve as long-term project
+memory for maintainers.
 
 - [Lessons Learned](engineering/lessons-learned.md)
 
