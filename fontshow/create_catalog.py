@@ -74,6 +74,7 @@ else:
 
 # --- Configuration ---
 DATE_STR = datetime.now().strftime("%Y%m%d")
+ACCEPTED_SCHEMA_VERSIONS = {"1.0", "1.1"}
 TEST_FONTS: set[str] = set()
 DEFAULT_INVENTORY = "font_inventory_enriched.json"
 SCRIPT_BADGE_MAP = {
@@ -500,7 +501,7 @@ def load_font_inventory(path: Path) -> list[dict]:
 
     if schema_version is None:
         log_warn("inventory missing 'schema_version'; assuming legacy format")
-    elif schema_version != "1.0":
+    elif schema_version not in ACCEPTED_SCHEMA_VERSIONS:
         log_warn(
             f"inventory schema_version '{schema_version}' not explicitly supported"
         )
