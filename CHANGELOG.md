@@ -1,3 +1,9 @@
+## [0.34.1](https://github.com/marco0560/Fontshow/compare/v0.34.0...v0.34.1) (2026-01-30)
+
+### Bug Fixes
+
+* **catalog:** use module-level quiet flag instead of args in helpers ([06b0d36](https://github.com/marco0560/Fontshow/commit/06b0d3694c35657f404ba3a754269c729e47734d))
+
 ## [0.34.0](https://github.com/marco0560/Fontshow/compare/v0.33.4...v0.34.0) (2026-01-30)
 
 ### Features
