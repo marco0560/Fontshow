@@ -1,3 +1,14 @@
+## [0.34.0](https://github.com/marco0560/Fontshow/compare/v0.33.4...v0.34.0) (2026-01-30)
+
+### Features
+
+* **parser:** add strict_bcp47 to test namespace ([ef332ea](https://github.com/marco0560/Fontshow/commit/ef332ea8c1297e7648fc4bf7f34b826db7d049b0))
+
+### Bug Fixes
+
+* **catalog:** accept schema_version 1.1 in create-catalog ([bf1bda1](https://github.com/marco0560/Fontshow/commit/bf1bda10c8de1e8f887fd1608978be15d1749716))
+* **catalog:** silence misleading warnings in legacy font detection ([0e24514](https://github.com/marco0560/Fontshow/commit/0e2451414dcf1797eb66b2d3bf051b9daaca5ed2))
+
 ## [0.33.4](https://github.com/marco0560/Fontshow/compare/v0.33.3...v0.33.4) (2026-01-30)
 
 ### Bug Fixes
