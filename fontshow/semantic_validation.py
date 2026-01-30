@@ -88,6 +88,7 @@ def normalize_languages(
     Returns:
         {
             "normalized": [str],
+            "deprecated": [{"raw": str, "from": str, "to": str}],
             "dropped": [{"raw": str, "reason": str, ...}]
         }
 
@@ -95,12 +96,12 @@ def normalize_languages(
     - invalid_format
     - invalid_bcp47
     - unknown_language
-    - duplicate
+    - duplicate_normalized
     - variant_stripped
-    - deprecated_mapped
     """
 
     normalized: list[str] = []
+    deprecated: list[dict[str, Any]] = []
     dropped: list[dict[str, Any]] = []
     seen: set[str] = set()
 
@@ -129,9 +130,7 @@ def normalize_languages(
         # Map deprecated codes if known.
         mapped = _DEPRECATED_LANGUAGE_MAP.get(base, base)
         if mapped != base:
-            # Record mapping as a non-problematic normalization.
-            # NOTE: we still allow this to be categorized as "duplicate" below if needed.
-            dropped.append({"raw": original, "reason": "deprecated_mapped"})
+            deprecated.append({"raw": original, "from": base, "to": mapped})
 
         # Validate.
         if not _is_known_language(mapped):
@@ -153,13 +152,15 @@ def normalize_languages(
         # This ensures inputs like ar_IN, ar_IQ, ar_JO become:
         # - first: variant_stripped
         # - subsequent: duplicate
-        if mapped != original.strip().lower():
+        #
+        # NOTE: deprecated remaps are reported via the "deprecated" bucket instead.
+        if mapped == base and mapped != original.strip().lower():
             dropped.append({"raw": original, "reason": "variant_stripped"})
 
         normalized.append(mapped)
         seen.add(mapped)
 
-    return {"normalized": normalized, "dropped": dropped}
+    return {"normalized": normalized, "deprecated": deprecated, "dropped": dropped}
 
 
 def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
