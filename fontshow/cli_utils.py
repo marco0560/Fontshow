@@ -10,6 +10,34 @@ from fontshow.schema_validation import validate_inventory_schema
 from fontshow.semantic_validation import validate_language_codes
 
 
+def log_ok(msg: str) -> None:
+    print(f"[OK  ] {msg}")
+
+
+def log_info(msg: str) -> None:
+    print(f"[INFO] {msg}")
+
+
+def log_warn(msg: str) -> None:
+    print(f"[WARN] {msg}", file=sys.stderr)
+
+
+def log_err(msg: str) -> None:
+    print(f"[ERR ] {msg}", file=sys.stderr)
+
+
+def _log_by_severity(severity: str, message: str) -> None:
+    sev = (severity or "").strip().lower()
+    if sev in {"warn", "warning"}:
+        log_warn(message)
+    elif sev in {"err", "error"}:
+        log_err(message)
+    elif sev in {"ok", "success"}:
+        log_ok(message)
+    else:
+        log_info(message)
+
+
 def add_version_argument(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "-V",
@@ -67,31 +95,35 @@ def cli_validate_inventory() -> int:
     inventory_path = Path(args.path)
 
     if not inventory_path.exists():
-        print(f"Error: file not found: {inventory_path}", file=sys.stderr)
+        log_err(f"file not found: {inventory_path}")
         return 1
 
     try:
-        with inventory_path.open(encoding="utf-8") as f:
-            data = json.load(f)
+        raw = inventory_path.read_text(encoding="utf-8")
+        data = json.loads(raw)
     except json.JSONDecodeError as e:
-        print(f"Error: invalid JSON file: {e}", file=sys.stderr)
+        log_err(f"invalid JSON file: {e}")
         return 1
 
     try:
-        warnings = validate_inventory_schema(data)
+        validate_inventory_schema(data)
     except ValidationError as e:
-        print("Schema validation failed:", file=sys.stderr)
-        print(str(e), file=sys.stderr)
+        log_err("Schema validation failed")
+        log_err(str(e))
         return 1
 
     semantic_warnings = validate_language_codes(data)
+    warnings = data.get("warnings", [])
 
-    if args.verbose:
+    if not args.quiet:
         for w in semantic_warnings:
-            print(f"[{w['severity']}] {w['code']} ({w['font']}): {w['message']}")
+            _log_by_severity(
+                w["severity"], f"{w['code']} ({w['font']}): {w['message']}"
+            )
 
         for w in warnings:
-            print(f"[{w['severity']}] {w['code']}: {w['message']}")
+            _log_by_severity(w["severity"], f"{w['code']}: {w['message']}")
+
     if not args.quiet:
-        print("Schema validation passed.")
+        log_ok("Schema validation passed.")
     return 0

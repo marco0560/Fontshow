@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import sys
 
+from fontshow.cli_utils import log_err, log_info, log_ok, log_warn
+
 from .render import preflight_exit_code, render_preflight_results
 from .runner import run_preflight
 
@@ -34,16 +36,22 @@ def _run_preflight_cli(
     verbose = getattr(args, "verbose", False) if args is not None else False
 
     if not quiet:
-        lines = render_preflight_results(result.results, verbose=verbose)
-        for line in lines:
-            print(line)
+        rendered = render_preflight_results(result.results, verbose=verbose)
+        for severity, message in rendered:
+            if severity.name == "OK":
+                log_ok(message)
+            elif severity.name == "INFO":
+                log_info(message)
+            elif severity.name == "WARN":
+                log_warn(message)
+            else:
+                log_err(message)
 
     if not quiet:
         if exit_code == 0:
-            print("Preflight passed.")
+            log_ok("Preflight passed.")
         else:
-            print(f"Preflight failed with exit code {exit_code}.", file=sys.stderr)
-
+            log_err(f"Preflight failed with exit code {exit_code}.")
     return exit_code
 
 

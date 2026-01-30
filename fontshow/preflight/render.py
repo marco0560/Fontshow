@@ -24,9 +24,9 @@ def render_preflight_results(
 
         prefix = {
             Severity.INFO: "[INFO]",
-            Severity.OK: "[ OK ]",
+            Severity.OK: "[OK  ]",
             Severity.WARN: "[WARN]",
-            Severity.ERROR: "[ERROR]",
+            Severity.ERROR: "[ERR ]",
         }[r.severity]
 
         lines.append(f"{prefix} {r.check_id}: {r.message}")

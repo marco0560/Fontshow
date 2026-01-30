@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from fontshow import __version__
-from fontshow.cli_utils import add_common_arguments
+from fontshow.cli_utils import add_common_arguments, log_err, log_info, log_ok, log_warn
 from fontshow.dump_fonts import UNICODE_BLOCKS
 from fontshow.infer_languages import infer_languages
 from fontshow.json_format import dumps_pretty
@@ -515,7 +515,7 @@ def validate_inventory(
     warnings = 0
 
     if not isinstance(data, dict):
-        print("[ERR] Inventory root is not a JSON object", file=sys.stderr)
+        log_err("Inventory root is not a JSON object")
         return 1
 
     # Ensure inventory-level warnings container exists
@@ -541,7 +541,7 @@ def validate_inventory(
 
     fonts = data.get("fonts")
     if not isinstance(fonts, list):
-        print("[ERR] 'fonts' field missing or not a list", file=sys.stderr)
+        log_err("'fonts' field missing or not a list")
         return 1
 
     for idx, font in enumerate(fonts):
@@ -551,11 +551,10 @@ def validate_inventory(
             fatal_errors += 1
             path = _get_font_path_for_diagnostics(font)
 
-            print(f"[ERR] font[{idx}]", file=sys.stderr)
-            print(f"  path: {path}", file=sys.stderr)
+            log_err(f"[ERR] font[{idx}]")
+            log_err(f"  path: {path}")
             for err in entry_errors:
-                print(f"  - {err}", file=sys.stderr)
-            print()
+                log_err(f"  - {err}")
 
         # ---------- Non-fatal consistency warnings ----------
         if not isinstance(font, dict):
@@ -585,10 +584,7 @@ def validate_inventory(
         for idx, font in enumerate(fonts):
             ident = _format_font_identity(font, index=idx)
             for warning in font.get("warnings", []):
-                print(
-                    f"[WARN] Warning [{ident}]: "
-                    f"{warning['code']} - {warning['message']}"
-                )
+                log_warn(f"Warning [{ident}]: {warning['code']} - {warning['message']}")
 
     if fatal_errors == 0:
         if not quiet:
@@ -599,9 +595,9 @@ def validate_inventory(
             # human-readable success message.
             #
             # See: docs/decisions/0009-cli-verbosity-contract.md
-            print("[OK] Inventory validation completed (no fatal errors)")
+            log_ok("Inventory validation completed (no fatal errors)")
             if verbose:
-                print(f"[INFO] Validation completed for {len(fonts)} font entries")
+                log_info(f"Validation completed for {len(fonts)} font entries")
 
     return fatal_errors
 
@@ -1165,37 +1161,37 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         # DEBUG: inference inspection (opt-in via env var)
         # ------------------------------------------------------------
         if os.environ.get("FONTSHOW_DEBUG_INFERENCE") == "1":
-            print("\n[DEBUG] Font inference diagnostics")
-            print(
+            log_info("\n[DEBUG] Font inference diagnostics")
+            log_info(
                 "  font identity:",
                 font.get("identity", {}).get("family"),
                 font.get("identity", {}).get("style"),
             )
-            print("  unicode blocks:")
+            log_info("  unicode blocks:")
             for block, count in coverage.get("unicode_blocks", {}).items():
-                print(f"    {block}: {count}")
-            print("  inferred_languages_map:")
+                log_info(f"    {block}: {count}")
+            log_info("  inferred_languages_map:")
             for lang, info in inferred_languages_map.items():
-                print(f"    {lang}: {info}")
-            print("  language primary script matching:")
+                log_info(f"    {lang}: {info}")
+            log_info("  language primary script matching:")
             for lang in inferred_languages_map.keys():
                 primary_script = LANGUAGE_PRIMARY_SCRIPT.get(lang)
                 matches = primary_script in font_scripts if primary_script else False
-                print(
+                log_info(
                     f"    {lang}: primary_script={primary_script}, "
                     f"matches_font={matches}"
                 )
-            print(f"  inferred_scripts (raw): {inferred_scripts}")
-            print(f"  inferred_scripts (normalized): {normalized_scripts}")
-            print("  inferred_languages_map:")
-            pprint.pprint(inferred_languages_map)
-            print("  language primary scripts:")
+            log_info(f"  inferred_scripts (raw): {inferred_scripts}")
+            log_info(f"  inferred_scripts (normalized): {normalized_scripts}")
+            log_info("  inferred_languages_map:")
+            for _line in pprint.pformat(inferred_languages_map).splitlines():
+                log_info(_line)
+            log_info("  language primary scripts:")
             for lang in inferred_languages_map.keys():
                 ps = LANGUAGE_PRIMARY_SCRIPT.get(lang)
                 match = ps in font_scripts if ps else False
-                print(f"    - {lang}: primary_script={ps}, matches_font={match}")
-            print(f"  final language order: {inferred_languages}")
-            print()
+                log_info(f"    - {lang}: primary_script={ps}, matches_font={match}")
+            log_info(f"  final language order: {inferred_languages}")
         # ------------------------------------------------------------
 
         # Persist inference results (rich, audit-friendly structure)
@@ -1300,8 +1296,6 @@ def run_parse_font_inventory(
     # injectable I/O helpers (test-friendly)
     read_text_fn=None,
     write_text_fn=None,
-    print_fn=print,
-    eprint_fn=None,
 ) -> int:
     """
     Internal runner for the parse-font-inventory CLI.
@@ -1334,7 +1328,7 @@ def run_parse_font_inventory(
 
     Contract:
     - returns an int exit code
-    - performs user-facing output via print_fn/eprint_fn
+    - performs user-facing output via log_info/log_warn/log_err/log_ok
     """
     if read_text_fn is None:
 
@@ -1346,15 +1340,10 @@ def run_parse_font_inventory(
         def write_text_fn(p: Path, s: str) -> None:
             return p.write_text(s, encoding="utf-8")
 
-    if eprint_fn is None:
-
-        def eprint_fn(msg: str) -> None:
-            print_fn(msg, file=sys.stderr)
-
     input_path = args.input
     if not input_path.exists():
-        eprint_fn(f"[ERR] Error: input file not found: {input_path}")
-        eprint_fn("Hint: run dump_fonts.py first to generate the inventory.")
+        log_err(f"input file not found: {input_path}")
+        log_err("Hint: run dump_fonts.py first to generate the inventory.")
         return 1
 
     logger.debug(
@@ -1385,7 +1374,7 @@ def run_parse_font_inventory(
 
     fonts = data.get("fonts")
     if not isinstance(fonts, list):
-        eprint_fn("[ERR] Invalid inventory JSON: 'fonts' must be a list")
+        log_err("Invalid inventory JSON: 'fonts' must be a list")
         return 1
 
     if args.validate_inventory:
@@ -1478,32 +1467,32 @@ def run_parse_font_inventory(
 
                 # ---- grouped output ----
                 if lang_norm_pairs:
-                    print_fn(
-                        f"[INFO] {ident} normalized_languages: "
+                    log_info(
+                        f"{ident} normalized_languages: "
                         f"{', '.join(sorted(set(lang_norm_pairs)))}"
                     )
 
                 if lang_dups:
-                    print_fn(
-                        f"[INFO] {ident} duplicate_languages: "
+                    log_info(
+                        f"{ident} duplicate_languages: "
                         f"{', '.join(sorted(set(lang_dups)))}"
                     )
 
                 if lang_dropped:
-                    print_fn(
-                        f"[WARN] {ident} dropped_languages: "
+                    log_warn(
+                        f"{ident} dropped_languages: "
                         f"{', '.join(sorted(set(lang_dropped)))}"
                     )
 
                 # ---- fallback: non-language warnings ----
                 for severity, code, message in other_warnings:
-                    print_fn(f"[WARN] {ident} {code}: {message}")
+                    log_warn(f"{ident} {code}: {message}")
 
     if not args.quiet:
         if args.verbose:
-            print_fn(f"[OK] Inventory written to {args.output}")
+            log_ok(f"Inventory written to {args.output}")
         else:
-            print_fn("OK")
+            log_ok("Done.")
 
     return 0
 
@@ -1536,7 +1525,7 @@ def main(args) -> int:
         return _run_parse_inventory(args)
     except Exception as exc:
         if not getattr(args, "quiet", False):
-            print(f"[ERR] parse-inventory failed: {exc}", file=sys.stderr)
+            log_err(f"parse-inventory failed: {exc}")
         return 2
 
 
