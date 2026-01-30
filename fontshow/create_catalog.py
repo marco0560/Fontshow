@@ -513,7 +513,7 @@ def load_font_inventory(path: Path) -> list[dict]:
     return fonts
 
 
-def as_font_desc_list(fonts: list) -> list[dict]:
+def as_font_desc_list(fonts: list, *, legacy_mode: bool = False) -> list[dict]:
     """
     Normalize input fonts into a list of descriptors.
 
@@ -526,7 +526,15 @@ def as_font_desc_list(fonts: list) -> list[dict]:
         if isinstance(f, dict):
             out.append(f)
         else:
-            log_warn(f"unexpected font entry type {type(f)}, coercing to string")
+            if legacy_mode:
+                if not args.quiet:
+                    log_info(f"found font '{f}'")
+            else:
+                log_warn(
+                    f"unexpected font entry type {type(f)} "
+                    f"for font '{f}', coercing to string"
+                )
+
             out.append(
                 {
                     "identity": {"family": str(f)},
@@ -1198,12 +1206,12 @@ def run_create_catalog(args) -> int:
             log_err("No fonts to catalog or system error.")
             return 1
 
-        if not args.quiet:
-            log_info("Inventory not found, fallback to legacy detection...")
+        log_warn("Inventory not found, fallback to legacy detection...")
+
     if TEST_FONTS:
         fonts = [
             f
-            for f in as_font_desc_list(fonts)
+            for f in as_font_desc_list(fonts, legacy_mode=True)
             if any(sub.lower() in font_family(f).lower() for sub in TEST_FONTS)
         ]
 
@@ -1213,7 +1221,9 @@ def run_create_catalog(args) -> int:
         else:
             fonts = fonts[args.number :]
 
-    fonts = sorted(as_font_desc_list(fonts), key=font_family)
+    fonts = sorted(
+        as_font_desc_list(fonts, legacy_mode=not bool(args.inventory)), key=font_family
+    )
     fonts = group_fonts_by_family(fonts)
 
     latex_content = generate_latex(fonts)
