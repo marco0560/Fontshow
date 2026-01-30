@@ -819,7 +819,12 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
 # ============================================================
 
 
-def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
+def parse_inventory(
+    data: dict[str, Any],
+    level: str,
+    *,
+    strict_bcp47: bool = False,
+) -> dict[str, Any]:
     """
     Parse and enrich a font inventory structure.
 
@@ -916,7 +921,11 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         if "languages_raw" not in coverage:
             coverage["languages_raw"] = list(coverage.get("languages", []) or [])
 
-        result = normalize_languages(coverage["languages_raw"])
+        result = normalize_languages(
+            coverage["languages_raw"],
+            strict_bcp47=strict_bcp47,
+        )
+
         coverage["languages"] = result["normalized"]
 
         for item in result.get("deprecated", []):
@@ -1274,6 +1283,12 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="Validate inventory structure and exit (no output generation)",
     )
+    parser.add_argument(
+        "-s",
+        "--strict-bcp47",
+        action="store_true",
+        help="Reject non-compliant BCP-47 language tags",
+    )
     add_common_arguments(parser)
 
 
@@ -1386,7 +1401,11 @@ def run_parse_font_inventory(
             )
         )
 
-    enriched = parse_inventory_fn(data, args.infer_level)
+    enriched = parse_inventory_fn(
+        data,
+        args.infer_level,
+        strict_bcp47=args.strict_bcp47,
+    )
 
     write_text_fn(
         args.output,

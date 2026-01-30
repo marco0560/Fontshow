@@ -23,3 +23,23 @@ def test_parse_inventory_success(cli_runner, stub_parse_inventory, tmp_path):
 def test_parse_inventory_failure(cli_runner, stub_parse_inventory, expected_code):
     code, out = cli_runner(["fontshow", "parse-inventory", "--input", "inv.json"])
     assert code == expected_code
+
+
+def test_parse_inventory_accepts_strict_bcp47_flag(cli_runner, tmp_path):
+    input_file = tmp_path / "in.json"
+    output_file = tmp_path / "out.json"
+
+    input_file.write_text('{"metadata": {"schema_version": "1.0"}, "fonts": []}')
+
+    code, out = cli_runner(
+        [
+            "fontshow",
+            "parse-inventory",
+            str(input_file),
+            "-o",
+            str(output_file),
+            "--strict-bcp47",
+        ]
+    )
+
+    assert code == 0
