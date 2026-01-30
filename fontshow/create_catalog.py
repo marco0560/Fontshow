@@ -74,6 +74,7 @@ else:
 
 # --- Configuration ---
 DATE_STR = datetime.now().strftime("%Y%m%d")
+_QUIET = False
 ACCEPTED_SCHEMA_VERSIONS = {"1.0", "1.1"}
 TEST_FONTS: set[str] = set()
 DEFAULT_INVENTORY = "font_inventory_enriched.json"
@@ -527,7 +528,7 @@ def as_font_desc_list(fonts: list, *, legacy_mode: bool = False) -> list[dict]:
             out.append(f)
         else:
             if legacy_mode:
-                if not args.quiet:
+                if not _QUIET:
                     log_info(f"found font '{f}'")
             else:
                 log_warn(
@@ -903,7 +904,6 @@ def get_installed_fonts() -> list[str]:
 def generate_test_output(
     limit: int | None = None,
     filter_test: bool = False,
-    quiet: bool = False,
 ) -> None:
     """Produce a small text file with parsing details for manual inspection.
 
@@ -952,7 +952,7 @@ def generate_test_output(
             f.write(f"Base names: {', '.join(item['base_names'])}\n")
             f.write("\n")
 
-    if not quiet:
+    if not _QUIET:
         log_ok(f"Test file generated: {test_filename}")
 
 
@@ -1179,7 +1179,7 @@ def run_create_catalog(args) -> int:
         return 1
 
     if args.test:
-        generate_test_output(args.number, bool(TEST_FONTS), quiet=args.quiet)
+        generate_test_output(args.number, bool(TEST_FONTS), quiet=_QUIET)
 
     inv_path: Path | None = None
     if args.inventory:
@@ -1198,7 +1198,7 @@ def run_create_catalog(args) -> int:
             log_err(f"failed to load inventory: {e}")
             return 1
 
-        if not args.quiet:
+        if not _QUIET:
             log_ok(f"Inventory loaded: {inv_path} ({len(fonts)} fonts)")
     else:
         fonts = get_installed_fonts()
@@ -1228,22 +1228,21 @@ def run_create_catalog(args) -> int:
 
     latex_content = generate_latex(fonts)
 
-    if not args.quiet:
+    if not _QUIET:
         log_info(f"Writing file {output_filename}...")
 
     try:
         with open(output_filename, "w", encoding="utf-8") as f:
             f.write(latex_content)
 
-        if not args.quiet:
+        if not _QUIET:
             log_ok("Done! LaTeX file generated successfully.")
             log_ok("Ready for compilation.")
             log_ok(
                 f"  Execute: lualatex -interaction=nonstopmode {output_filename} | texlogsieve (twice)"
             )
-    except Exception as e:
-        log_err(f"Error writing file: {e}")
-        return 1
+    except Exception:
+        raise
 
     return 0
 
@@ -1273,6 +1272,10 @@ def main(args) -> int:
 
     Handles user-facing output and delegates execution to the core.
     """
+
+    global _QUIET
+    _QUIET = bool(getattr(args, "quiet", False))
+
     try:
         exit_code = _run_create_catalog(args)
     except Exception as exc:
@@ -1282,7 +1285,7 @@ def main(args) -> int:
     if exit_code == 0:
         if args.verbose:
             log_ok("catalog created successfully")
-        elif not args.quiet:
+        elif not _QUIET:
             log_ok("Done.")
 
     return exit_code
