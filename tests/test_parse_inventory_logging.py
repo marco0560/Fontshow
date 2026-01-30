@@ -149,6 +149,7 @@ def test_parse_inventory_verbose_emits_schema_aware_identity(capsys, tmp_path):
         output=output_path,
         validate_inventory=False,
         infer_level="medium",
+        strict_bcp47=False,
         verbose=True,
         quiet=False,
     )
