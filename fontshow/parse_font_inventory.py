@@ -923,6 +923,25 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
         result = normalize_languages(coverage["languages_raw"])
         coverage["languages"] = result["normalized"]
 
+        for item in result.get("deprecated", []):
+            raw = item["raw"]
+            from_code = item["from"]
+            to_code = item["to"]
+
+            font.setdefault("warnings", []).append(
+                {
+                    "code": "language_deprecated",
+                    "message": f"Deprecated language '{from_code}' from '{raw}' -> '{to_code}'",
+                    "severity": "info",
+                    "source": "language_normalization",
+                    "extra": {
+                        "raw": raw,
+                        "from": from_code,
+                        "to": to_code,
+                    },
+                }
+            )
+
         for item in result["dropped"]:
             raw = item["raw"]
             reason = item["reason"]
@@ -947,8 +966,8 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
                     )
                     continue
 
-            if reason == "duplicate":
-                base = _language_base_tag(raw)
+            if reason == "duplicate_normalized":
+                base = item.get("normalized") or _language_base_tag(raw)
                 font.setdefault("warnings", []).append(
                     {
                         "code": "language_duplicate",
@@ -964,7 +983,7 @@ def parse_inventory(data: dict[str, Any], level: str) -> dict[str, Any]:
                 )
                 continue
 
-            # Real drops: invalid_format / unknown_language (incl. deprecated/obsolete codes)
+            # Real drops: invalid_format / unknown_language / invalid_bcp47
             font.setdefault("warnings", []).append(
                 {
                     "code": "language_dropped",
