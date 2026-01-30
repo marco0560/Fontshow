@@ -12,7 +12,7 @@ def test_render_hides_ok_and_info_by_default():
     lines = render_preflight_results(results, verbose=False)
 
     assert len(lines) == 1
-    assert "[ERROR]" in lines[0]
+    assert "[ERR ]" in lines[0]
 
 
 def test_render_shows_all_with_verbose():

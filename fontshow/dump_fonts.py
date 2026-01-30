@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from fontshow import __version__
-from fontshow.cli_utils import add_common_arguments
+from fontshow.cli_utils import add_common_arguments, log_err, log_info, log_ok
 from fontshow.logging_utils import log
 
 try:
@@ -1373,7 +1373,7 @@ def run_dump_fonts(args) -> int:
     )
 
     if args.verbose:
-        print(
+        log_info(
             f"Processed {total_faces} font faces — "
             f"{skipped_non_opentype} skipped (non-OpenType), "
             f"{len(inventory.get('fonts', []))} kept"
@@ -1410,16 +1410,16 @@ def main(args) -> int:
     try:
         exit_code = _run_dump_fonts(args)
     except Exception as exc:
-        print(f"ERROR: dump-fonts failed: {exc}", file=sys.stderr)
+        log_err(f"dump-fonts failed: {exc}")
         return 2
 
     if exit_code == 0:
         if args.verbose:
-            print(f"OK: wrote inventory to {args.output}")
+            log_ok(f"wrote inventory to {args.output}")
         elif not args.quiet:
-            print("OK")
+            log_ok("dump-fonts completed successfully")
     else:
-        print(f"ERROR: dump-fonts failed with exit code {exit_code}", file=sys.stderr)
+        log_err(f"dump-fonts failed with exit code {exit_code}")
 
     return exit_code
 
