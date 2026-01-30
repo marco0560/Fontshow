@@ -1,3 +1,10 @@
+## [0.33.4](https://github.com/marco0560/Fontshow/compare/v0.33.3...v0.33.4) (2026-01-30)
+
+### Bug Fixes
+
+* **cli:** centralize console logging and enforce stdout/stderr semantics ([3e05710](https://github.com/marco0560/Fontshow/commit/3e0571009aee126003fe5021d5aded30293f3150))
+* **parser:** make deprecated mappings explicit ([4073b0d](https://github.com/marco0560/Fontshow/commit/4073b0d27ae690bbcc0b81e50b0921bfe6ca99dc))
+
 ## [0.33.3](https://github.com/marco0560/Fontshow/compare/v0.33.2...v0.33.3) (2026-01-29)
 
 ### Bug Fixes
