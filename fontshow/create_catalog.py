@@ -1181,13 +1181,8 @@ def run_create_catalog(args) -> int:
 
             from fontshow.semantic_validation import enforce_semantic_validation
 
-            semantic_input = {
-                "fonts": fonts,
-                "warnings": inventory.get("warnings", []),
-            }
-
             ok, semantic_warnings = enforce_semantic_validation(
-                semantic_input,
+                inventory,
                 strict=bool(args.strict_semantic),
             )
 
