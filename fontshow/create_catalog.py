@@ -573,6 +573,51 @@ def _normalize_inventory_paths(inventory: dict) -> None:
             identity["file"] = font["path"]
 
 
+def _diagnose_coverage_mismatch(
+    font_name: str,
+    declared: set[str],
+    detected: set[str],
+) -> None:
+    """
+    Emit diagnostic logs for mismatches between declared and detected coverage.
+
+    This function is diagnostic-only and must not affect execution.
+    """
+
+    if not declared and not detected:
+        return
+
+    if declared and not detected:
+        log_warn(
+            f'Coverage mismatch for font "{font_name}":\n'
+            f"  Declared: {sorted(declared)}\n"
+            f"  Detected:  []"
+        )
+        return
+
+    if detected and not declared:
+        log_info(
+            f'Undeclared coverage for font "{font_name}":\n'
+            f"  Detected: {sorted(detected)}"
+        )
+        return
+
+    missing = declared - detected
+    extra = detected - declared
+
+    if missing:
+        log_warn(
+            f'Coverage mismatch for font "{font_name}":\n'
+            f"  Declared: {sorted(declared)}\n"
+            f"  Detected:  {sorted(detected)}"
+        )
+    elif extra:
+        log_info(
+            f'Undeclared coverage for font "{font_name}":\n'
+            f"  Detected: {sorted(detected)}"
+        )
+
+
 def font_family(font: dict) -> str:
     """Best-effort family name for LaTeX rendering and sorting."""
     ident = font.get("identity", {}) if isinstance(font, dict) else {}
@@ -1199,7 +1244,6 @@ def run_create_catalog(args) -> int:
     # ------------------------------------------------------------------
     if inv_path and inv_path.exists():
         try:
-            # Load full inventory
             with open(inv_path, encoding="utf-8") as f:
                 inventory = json.load(f)
 
@@ -1238,6 +1282,23 @@ def run_create_catalog(args) -> int:
             return 1
 
         log_warn("Inventory not found, fallback to legacy detection...")
+
+    # ------------------------------------------------------------------
+    # CONSISTENCY DIAGNOSTICS (Issue #29)
+    # ------------------------------------------------------------------
+    # Diagnostics apply ONLY to inventory-based execution
+    # and must respect --quiet.
+    if not _QUIET and inv_path and inv_path.exists():
+        for font in fonts:
+            if not isinstance(font, dict):
+                continue  # safety guard
+
+            declared = set(font.get("coverage", {}).get("languages", []))
+
+            if not declared:
+                log_info(
+                    f'Font "{font.get("name", "<unknown>")}" has no declared language coverage'
+                )
 
     # ------------------------------------------------------------------
     # FONT FILTERING / OUTPUT
