@@ -547,6 +547,32 @@ def as_font_desc_list(fonts: list, *, legacy_mode: bool = False) -> list[dict]:
     return out
 
 
+def _normalize_inventory_paths(inventory: dict) -> None:
+    """
+    Normalize inventory font entries so that identity.file is always present
+    when a file path is available.
+
+    This function:
+    - does not modify schema version
+    - does not delete fields
+    - does not emit warnings
+    - is idempotent
+    """
+
+    fonts = inventory.get("fonts", [])
+    for font in fonts:
+        identity = font.get("identity")
+
+        if not isinstance(identity, dict):
+            continue
+
+        if "file" in identity:
+            continue
+
+        if "path" in font:
+            identity["file"] = font["path"]
+
+
 def font_family(font: dict) -> str:
     """Best-effort family name for LaTeX rendering and sorting."""
     ident = font.get("identity", {}) if isinstance(font, dict) else {}
@@ -1073,8 +1099,8 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         "-i",
         "--inventory",
         type=str,
-        default=None,
-        help="Path to font_inventory_enriched.json (if omitted, uses default if present).",
+        default=DEFAULT_INVENTORY,
+        help="Path to font inventory JSON file to be used.",
     )
     parser.add_argument(
         "-s",
@@ -1176,6 +1202,8 @@ def run_create_catalog(args) -> int:
             # Load full inventory
             with open(inv_path, encoding="utf-8") as f:
                 inventory = json.load(f)
+
+            _normalize_inventory_paths(inventory)
 
             fonts = inventory.get("fonts", [])
 
