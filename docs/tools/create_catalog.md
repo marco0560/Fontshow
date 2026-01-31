@@ -44,6 +44,28 @@ This separation ensures that:
 
 ---
 
+## Semantic Validation
+
+During catalog generation, semantic validation is performed on the
+enriched inventory.
+
+By default:
+
+- semantic issues are reported as warnings
+- catalog generation continues
+
+When `--strict-semantic` is enabled:
+
+- semantic warnings are treated as errors
+- catalog generation aborts
+- a non-zero exit code is returned
+
+This mode does not affect:
+
+- schema validation
+- language normalization
+- parsing or discovery stages
+
 ## API reference
 
 ::: fontshow.create_catalog
