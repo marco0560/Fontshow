@@ -1077,6 +1077,12 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         help="Path to font_inventory_enriched.json (if omitted, uses default if present).",
     )
     parser.add_argument(
+        "-s",
+        "--strict-semantic",
+        action="store_true",
+        help="Fail catalog generation if semantic validation reports issues.",
+    )
+    parser.add_argument(
         "-n",
         "--number",
         type=int,
@@ -1194,6 +1200,21 @@ def run_create_catalog(args) -> int:
     if inv_path and inv_path.exists():
         try:
             fonts = load_font_inventory(inv_path)
+
+            from fontshow.semantic_validation import enforce_semantic_validation
+
+            ok, semantic_warnings = enforce_semantic_validation(
+                {"fonts": fonts},
+                strict=bool(args.strict_semantic),
+            )
+
+            if not ok:
+                for w in semantic_warnings:
+                    sev = (w.get("severity") or "").lower()
+                    if sev in ("warn", "warning", "error"):
+                        log_err(w.get("message", "semantic validation error"))
+                return 1
+
         except Exception as e:
             log_err(f"failed to load inventory: {e}")
             return 1
