@@ -16,6 +16,30 @@ It operates purely on JSON data and never inspects font binaries.
 
 ---
 
+## Scope and non-responsibilities
+
+The `parse-inventory` stage is responsible for validating and normalizing
+inventory data produced by earlier stages.
+
+It is **not** responsible for:
+
+- discovering fonts on the system
+- inspecting font files directly
+- extracting raw font metadata
+- generating output artifacts
+- performing LaTeX compilation
+
+All font discovery and metadata extraction are performed upstream by
+the dump stage.
+
+All output generation is handled by the catalog generation stage.
+
+This separation ensures that:
+
+- parsing remains deterministic
+- validation rules are centralized
+- pipeline stages remain loosely coupled
+
 ## Structured warnings
 
 Fontshow uses **structured warnings** to report non-fatal issues detected
@@ -130,6 +154,91 @@ The following sources are checked:
 
 Semantic validation is performed by the `fontshow-validate` command and
 emits structured warnings without failing the validation process.
+
+---
+
+## Language normalization and validation
+
+This section documents how `parse-inventory` handles language data extracted
+from font metadata.
+
+Language processing is intentionally split into two independent stages:
+
+- **normalization**
+- **validation**
+
+These stages affect behavior but do **not** change the inventory schema.
+
+---
+
+### Language normalization
+
+Normalization is a best-effort transformation applied to language tags in order
+to improve consistency across heterogeneous font metadata.
+
+Normalization MAY include:
+
+- canonical casing (e.g. `en-us` → `en-US`)
+- replacement of deprecated subtags
+- removal of unsupported private extensions
+- mapping of legacy identifiers where possible
+
+Normalization:
+
+- does not guarantee correctness
+- does not enforce standards
+- does not fail processing
+
+Its purpose is to reduce noise while preserving information.
+
+---
+
+### Validation modes
+
+`parse-inventory` supports two validation modes.
+
+#### Permissive mode (default)
+
+- Invalid or deprecated language tags are accepted
+- Warnings may be emitted
+- Processing continues
+- Normalized values may be produced
+
+This mode prioritizes compatibility with real-world font metadata.
+
+---
+
+#### Strict mode (`--strict-bcp47`)
+
+When enabled:
+
+- Only RFC-compliant BCP-47 language tags are accepted
+- Deprecated or malformed tags cause a hard failure
+- No silent normalization is applied
+- Inventory generation stops on first violation
+
+Strict mode:
+
+- affects validation only
+- does not alter schema structure
+- does not change output layout
+
+---
+
+### Design principles
+
+- Normalization ≠ validation
+- Validation ≠ enforcement
+- Enforcement is always explicit
+- Behavior is deterministic and observable
+
+---
+
+### Non-goals
+
+- Automatic language inference
+- Linguistic correctness guarantees
+- Silent mutation of source metadata
 
 ---
 

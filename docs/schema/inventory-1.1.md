@@ -150,6 +150,101 @@ Used when:
 
 ---
 
+## Language normalization and validation
+
+### Language tags processing
+
+Fontshow performs language processing as part of inventory normalization.
+This process is intentionally split into **normalization** and **validation**.
+
+These steps apply only to language-related fields and do not alter schema
+structure.
+
+---
+
+### Normalization
+
+Normalization is applied to language tags derived from font metadata.
+
+Its goals are:
+
+- increase consistency across heterogeneous inputs
+- normalize casing and structure
+- map deprecated tags to modern equivalents where possible
+
+Normalization is **non-destructive** and best-effort.
+
+Examples of normalization:
+
+- canonical casing (`en-us` → `en-US`)
+- deprecated subtags mapped to current forms
+- removal of unsupported private extensions
+
+Fontshow applies **non-destructive normalization** to language tags in order to:
+
+- align non-standard or deprecated tags to modern equivalents
+- ensure consistent downstream processing
+- preserve as much original semantic meaning as possible
+
+Normalization may include:
+
+- case normalization
+- script or region canonicalization
+- replacement of deprecated subtags
+
+Normalization **does not imply validation success**.
+
+### Deprecated vs obsolete vs invalid tags
+
+Language tags are classified as:
+
+| Category   | Meaning                     | Behavior                               |
+|------------|-----------------------------|----------------------------------------|
+| Deprecated | Tag is valid but superseded | Accepted, normalized, warning emitted  |
+| Obsolete   | Tag is no longer defined    | Accepted (non-strict), warning emitted |
+| Invalid    | Not RFC-compliant           | Rejected in strict mode                |
+
+---
+
+### Validation modes
+
+Fontshow supports two validation modes.
+
+#### Permissive (default)
+
+- Invalid or deprecated tags are accepted
+- Warnings are emitted
+- Processing continues
+- Normalized values are used when possible
+
+#### Strict (`--strict-bcp47`)
+
+- Only RFC-compliant BCP-47 tags are allowed
+- Deprecated or malformed tags cause failure
+- No silent normalization is applied
+- Processing aborts on first violation
+
+Strict mode affects **validation only** and does not alter the schema.
+
+---
+
+### Design criteria
+
+- Normalization ≠ validation
+- Validation ≠ enforcement
+- Enforcement is explicit and opt-in
+- Behavior must be observable and documented
+
+---
+
+### Non-goals
+
+- Automatic language inference
+- Linguistic correctness guarantees
+- Silent mutation of user data
+
+---
+
 ## Design principles
 
 - Real-world font data is imperfect
@@ -165,3 +260,5 @@ Used when:
 ✔ Production schema
 ✔ Backward-compatible with v1.0
 ✔ Used by `parse_inventory`
+
+---
