@@ -1,3 +1,9 @@
+## [0.35.2](https://github.com/marco0560/Fontshow/compare/v0.35.1...v0.35.2) (2026-01-31)
+
+### Bug Fixes
+
+* **catalog:** add inventory coverage diagnostics (non-intrusive) ([30c828f](https://github.com/marco0560/Fontshow/commit/30c828f2383d0c05604c3ba0cb3026b4d90e5a15)), closes [#29](https://github.com/marco0560/Fontshow/issues/29)
+
 ## [0.35.1](https://github.com/marco0560/Fontshow/compare/v0.35.0...v0.35.1) (2026-01-31)
 
 ### Bug Fixes
