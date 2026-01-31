@@ -1,3 +1,9 @@
+## [0.35.0](https://github.com/marco0560/Fontshow/compare/v0.34.1...v0.35.0) (2026-01-31)
+
+### Features
+
+* add strict semantic validation mode to create-catalog ([d91bd3e](https://github.com/marco0560/Fontshow/commit/d91bd3ef89c20c10398cde475b10e1fb6b38eb88)), closes [#47](https://github.com/marco0560/Fontshow/issues/47)
+
 ## [0.34.1](https://github.com/marco0560/Fontshow/compare/v0.34.0...v0.34.1) (2026-01-30)
 
 ### Bug Fixes
