@@ -1,3 +1,9 @@
+## [0.35.1](https://github.com/marco0560/Fontshow/compare/v0.35.0...v0.35.1) (2026-01-31)
+
+### Bug Fixes
+
+* **catalog:** enforce strict semantic validation on full inventory ([5811403](https://github.com/marco0560/Fontshow/commit/581140383dbeb76a2c435a31f305ca025011290c)), closes [#49](https://github.com/marco0560/Fontshow/issues/49)
+
 ## [0.35.0](https://github.com/marco0560/Fontshow/compare/v0.34.1...v0.35.0) (2026-01-31)
 
 ### Features
