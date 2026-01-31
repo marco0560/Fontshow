@@ -206,3 +206,30 @@ def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
                 )
 
     return warnings
+
+
+def enforce_semantic_validation(
+    inventory: dict, strict: bool
+) -> tuple[bool, list[dict]]:
+    """
+    Perform semantic validation.
+
+    Returns:
+        (ok, warnings)
+
+    - ok == True  → semantic validation passed
+    - ok == False → semantic validation failed (only possible in strict mode)
+
+    This function does not raise exceptions.
+    """
+    warnings = validate_language_codes(inventory)
+
+    if not strict:
+        return True, warnings
+
+    for w in warnings:
+        severity = (w.get("severity") or "").lower()
+        if severity in ("warn", "warning", "error"):
+            return False, warnings
+
+    return True, warnings
