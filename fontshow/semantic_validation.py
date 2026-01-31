@@ -222,14 +222,22 @@ def enforce_semantic_validation(
 
     This function does not raise exceptions.
     """
-    warnings = validate_language_codes(inventory)
+    warnings = []
+
+    # Language-level semantic warnings
+    warnings.extend(validate_language_codes(inventory))
+
+    # Inventory-level semantic warnings
+    inv_warnings = inventory.get("warnings", [])
+    if isinstance(inv_warnings, list):
+        warnings.extend(inv_warnings)
 
     if not strict:
         return True, warnings
 
     for w in warnings:
-        severity = (w.get("severity") or "").lower()
-        if severity in ("warn", "warning", "error"):
+        sev = (w.get("severity") or "").lower()
+        if sev in ("warn", "warning", "error"):
             return False, warnings
 
     return True, warnings

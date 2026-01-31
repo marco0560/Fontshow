@@ -252,6 +252,21 @@ Strict mode:
 
 ---
 
+## Semantic Validation
+
+`parse-font-inventory` does not perform semantic validation.
+
+At this stage:
+
+- language normalization is performed
+- inference may occur
+- warnings may be generated
+
+Semantic validation is deferred to later pipeline stages
+(e.g. create-catalog), where strict validation rules may apply.
+
+---
+
 ## API reference
 
 ::: fontshow.parse_font_inventory

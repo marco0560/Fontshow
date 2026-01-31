@@ -57,6 +57,30 @@ Two validation modes exist:
 
 ---
 
+## Semantic Validation
+
+Semantic validation is performed after language normalization and operates
+on the fully normalized inventory.
+
+Semantic validation:
+
+- does not modify data
+- does not perform normalization
+- does not perform schema validation
+- only inspects semantic correctness of values
+
+Currently, semantic validation includes:
+
+- detection of invalid or unknown language codes
+- validation of normalized language identifiers
+
+Semantic validation may emit warnings.
+
+When strict semantic mode is enabled (see create-catalog),
+semantic warnings are treated as fatal errors.
+
+---
+
 ## Design constraints
 
 - Normalization must never imply correctness

@@ -129,6 +129,23 @@ This decision explicitly does **not** include:
 
 ---
 
+## Relation to Semantic Validation
+
+Language normalization and semantic validation are separate concerns.
+
+Normalization:
+
+- transforms input into canonical form
+- never fails execution
+
+Semantic validation:
+
+- evaluates correctness of normalized data
+- may fail execution when strict mode is enabled
+- is applied at catalog generation time
+
+---
+
 ## Related Documentation
 
 - `docs/tools/parse-inventory.md`

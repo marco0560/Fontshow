@@ -1104,36 +1104,9 @@ def register_cli(parser) -> None:
 def run_create_catalog(args) -> int:
     """
     Core implementation for create-catalog.
-
-    This function contains the full business logic and is intentionally
-    injectable for CLI testing.
-
-        Generate output artifacts from an enriched Fontshow inventory.
-
-        This command consumes a validated and enriched inventory (schema v1.1)
-        and produces one or more output artifacts, such as PDF font catalogs
-        or auxiliary files, depending on the selected options.
-
-        The function assumes that all command-line arguments have already been
-        parsed by the caller (either the Fontshow dispatcher or the module
-        entrypoint) and performs no argument parsing itself.
-
-        Parameters
-        ----------
-        args : argparse.Namespace
-            Parsed command-line arguments, including input inventory path,
-            output options, and rendering configuration.
-
-        Returns
-        -------
-        int
-            Exit code:
-            - 0 on successful catalog generation
-            - 1 on unrecoverable errors during processing or rendering
     """
 
     global TEST_FONTS
-
     TEST_FONTS = set()
 
     cli_fonts: set[str] = set()
@@ -1151,7 +1124,7 @@ def run_create_catalog(args) -> int:
 
     TEST_FONTS |= cli_fonts
 
-    # NOTE: --list-test-fonts intentionally ignores --quiet (documented decision).
+    # NOTE: --list-test-fonts intentionally ignores --quiet
     if args.list_test_fonts:
         log_info("TEST_FONTS configuration:")
         if not TEST_FONTS:
@@ -1195,16 +1168,26 @@ def run_create_catalog(args) -> int:
         if default.exists():
             inv_path = default
 
-    # Load fonts without printing progress first.
-    # This ensures error paths don't leak partial progress on stdout.
+    # ------------------------------------------------------------------
+    # INVENTORY MODE
+    # ------------------------------------------------------------------
     if inv_path and inv_path.exists():
         try:
-            fonts = load_font_inventory(inv_path)
+            # Load full inventory
+            with open(inv_path, encoding="utf-8") as f:
+                inventory = json.load(f)
+
+            fonts = inventory.get("fonts", [])
 
             from fontshow.semantic_validation import enforce_semantic_validation
 
+            semantic_input = {
+                "fonts": fonts,
+                "warnings": inventory.get("warnings", []),
+            }
+
             ok, semantic_warnings = enforce_semantic_validation(
-                {"fonts": fonts},
+                semantic_input,
                 strict=bool(args.strict_semantic),
             )
 
@@ -1221,6 +1204,10 @@ def run_create_catalog(args) -> int:
 
         if not _QUIET:
             log_ok(f"Inventory loaded: {inv_path} ({len(fonts)} fonts)")
+
+    # ------------------------------------------------------------------
+    # SYSTEM FONT MODE
+    # ------------------------------------------------------------------
     else:
         fonts = get_installed_fonts()
         if not fonts:
@@ -1229,6 +1216,9 @@ def run_create_catalog(args) -> int:
 
         log_warn("Inventory not found, fallback to legacy detection...")
 
+    # ------------------------------------------------------------------
+    # FONT FILTERING / OUTPUT
+    # ------------------------------------------------------------------
     if TEST_FONTS:
         fonts = [
             f
@@ -1243,7 +1233,8 @@ def run_create_catalog(args) -> int:
             fonts = fonts[args.number :]
 
     fonts = sorted(
-        as_font_desc_list(fonts, legacy_mode=not bool(args.inventory)), key=font_family
+        as_font_desc_list(fonts, legacy_mode=not bool(args.inventory)),
+        key=font_family,
     )
     fonts = group_fonts_by_family(fonts)
 
