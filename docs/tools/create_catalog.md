@@ -17,6 +17,33 @@ rendering and layout.
 
 ---
 
+## Scope and non-responsibilities
+
+The `create-catalog` stage is responsible for transforming a validated
+inventory into final output artifacts.
+
+It operates exclusively on **already validated input** and does not perform:
+
+- font discovery
+- metadata extraction
+- inventory normalization
+- semantic or structural validation
+- error recovery for upstream stages
+
+In particular:
+
+- all validation errors must be resolved before this stage
+- input data is assumed to be consistent and complete
+- failures at this stage indicate output or rendering issues, not data errors
+
+This separation ensures that:
+
+- validation logic remains centralized
+- output generation remains deterministic
+- failures are easy to attribute to their correct stage
+
+---
+
 ## API reference
 
 ::: fontshow.create_catalog

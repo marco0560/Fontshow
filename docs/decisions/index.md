@@ -33,3 +33,4 @@ created before the adoption of the formal decision record system.
 - [0013 — Language normalization strategy](0013-language-normalization-strategy.md)
 - [0014 — Exclude bitmap / non-OpenType fonts from inventory](0014-exclude-bitmap-non-opentype-fonts-inventory.md)
 - [0015 — ASCII-only console output](0015-ascii-console-output.md)
+- [0016 — Language Normalization and Validation Strategy](0016-language-normalization-validation-strategy.md)

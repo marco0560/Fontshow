@@ -7,6 +7,28 @@
 - [Cheatsheet](cheatsheet.md)
 - [Commands](tools/preflight.md)
 
+### Command documentation
+
+Each command in the Fontshow pipeline has a dedicated documentation page
+describing its behavior, inputs, outputs, and validation rules.
+
+The authoritative command documentation is located under:
+
+- Preflight checks
+  → `tools/preflight.md`
+
+- Inventory parsing and validation
+  → `tools/parse-inventory.md`
+
+- Font inspection and metadata extraction
+  → `tools/dump-fonts.md`
+
+- Catalog generation
+  → `tools/create-catalog.md`
+
+These documents describe *how each stage behaves*, while the pipeline
+documentation describes *how the stages relate to each other*.
+
 ## Data model
 
 - [Data dictionary](data_dictionary.md)

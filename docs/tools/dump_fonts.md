@@ -38,6 +38,34 @@ individual font faces, resulting in empty charset data.
 
 ---
 
+## Scope and non-responsibilities
+
+The `dump-fonts` stage is responsible for **discovering fonts** and
+**extracting raw metadata** from the system.
+
+It is intentionally limited to data collection and does **not** perform:
+
+- semantic validation
+- language normalization
+- charset interpretation
+- inventory consistency checks
+- catalog generation
+
+In particular:
+
+- No assumptions are made about the correctness of extracted metadata
+- No normalization or enrichment is applied
+- No validation errors are raised at this stage
+
+All semantic interpretation and validation are delegated to the
+inventory parsing stage.
+
+This separation ensures that:
+
+- font discovery remains environment-specific
+- metadata extraction stays lossless
+- higher-level logic remains centralized and testable
+
 ## API reference
 
 ::: fontshow.dump_fonts
