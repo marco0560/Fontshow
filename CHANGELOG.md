@@ -1,3 +1,9 @@
+## [0.35.3](https://github.com/marco0560/Fontshow/compare/v0.35.2...v0.35.3) (2026-02-01)
+
+### Bug Fixes
+
+* **validation:** repair CLI rendering and exit path in __main__ ([74daae5](https://github.com/marco0560/Fontshow/commit/74daae5cd7ac07ea60e8f59f58cf53d898c54e83))
+
 ## [0.35.2](https://github.com/marco0560/Fontshow/compare/v0.35.1...v0.35.2) (2026-01-31)
 
 ### Bug Fixes
