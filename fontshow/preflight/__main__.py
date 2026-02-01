@@ -36,22 +36,29 @@ def _run_preflight_cli(
     verbose = getattr(args, "verbose", False) if args is not None else False
 
     if not quiet:
-        rendered = render_preflight_results(result.results, verbose=verbose)
-        for severity, message in rendered:
-            if severity.name == "OK":
-                log_ok(message)
-            elif severity.name == "INFO":
-                log_info(message)
-            elif severity.name == "WARN":
-                log_warn(message)
-            else:
-                log_err(message)
+        # render_preflight_results() returns list[str]
+        rendered_lines = render_preflight_results(
+            result.results,
+            verbose=verbose,
+        )
 
-    if not quiet:
+        for line in rendered_lines:
+            # Severity prefix is already embedded in the rendered line
+            if line.startswith("[OK"):
+                log_ok(line[5:])
+            elif line.startswith("[INFO"):
+                log_info(line[7:])
+            elif line.startswith("[WARN"):
+                log_warn(line[7:])
+            else:
+                # Includes [ERR ] and any unexpected severity
+                log_err(line[6:])
+
         if exit_code == 0:
             log_ok("Preflight passed.")
         else:
             log_err(f"Preflight failed with exit code {exit_code}.")
+
     return exit_code
 
 
