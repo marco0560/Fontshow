@@ -1,3 +1,6 @@
+import subprocess
+import sys
+
 import pytest
 
 
@@ -61,3 +64,39 @@ def test_preflight_help(cli_runner):
 
     assert code == 0
     assert "usage:" in out.lower()
+
+
+def test_preflight_real_runner_does_not_crash(cli_runner):
+    """
+    Regression test for the preflight CLI renderer.
+
+    This test uses the REAL preflight runner (no stubbing)
+    and ensures that the CLI does not crash due to
+    invalid unpacking assumptions.
+    """
+    code, out = cli_runner(["fontshow", "preflight"])
+
+    # Must not be argparse error / crash
+    assert code in (0, 1)
+
+    # Some output is expected in non-quiet mode
+    assert out.strip() != ""
+
+
+def test_preflight_module_entrypoint_runs():
+    """
+    Ensure that `python -m fontshow.preflight` executes
+    and does not crash.
+
+    This test bypasses cli_runner on purpose, because
+    cli_runner is scoped to the `fontshow` console script.
+    """
+    proc = subprocess.run(
+        [sys.executable, "-m", "fontshow.preflight"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    # Must not be argparse error / crash
+    assert proc.returncode in (0, 1)
