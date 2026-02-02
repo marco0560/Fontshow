@@ -171,6 +171,30 @@ fix(catalog): escape LaTeX special characters
 docs(docs): update security policy
 ```
 
+### Git commit message template
+
+This repository uses a commit message template stored in `.gitmessage`.
+
+To ensure consistent behavior across platforms (Linux, Windows, macOS)
+and tools (CLI, VS Code), the template is configured at **repository level**
+using:
+
+```bash
+git config commit.template .gitmessage
+```
+
+Notes:
+
+- `.gitignore` does not affect already tracked files.
+- VS Code relies on Git configuration for commit templates.
+- Do NOT set a user-specific global commit template for this repo.
+
+If the template does not appear in your editor, verify with:
+
+```bash
+git config --get commit.template
+```
+
 ## Verification
 
 You can verify your last commit with:
