@@ -2,9 +2,24 @@
   "files.eol": "\n",
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
+
   "editor.detectIndentation": false,
   "editor.renderWhitespace": "boundary",
+
   "git.useEditorAsCommitInput": true,
+
+  // ----------------------------
+  // Ruff (critical for parity)
+  // ----------------------------
+  "ruff.configuration": "pyproject.toml",
+  "ruff.lint.enable": true,
+  "ruff.lint.run": "onType",
+  "ruff.format.enable": true,
+
+  // Optional but recommended: avoid double diagnostics
+  "python.linting.enabled": false,
+  "python.formatting.provider": "none",
+
   "editor.tokenColorCustomizations": {
     "textMateRules": [
       {

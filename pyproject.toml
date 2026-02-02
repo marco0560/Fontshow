@@ -50,3 +50,10 @@ line-length = 88
 
 [tool.ruff]
 line-length = 88
+target-version = "py311"
+select = ["ALL"]
+
+[tool.ruff.lint]
+select = [
+  "ALL",
+]
