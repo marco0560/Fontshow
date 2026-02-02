@@ -93,8 +93,7 @@ def test_preflight_module_entrypoint_runs():
     """
     proc = subprocess.run(
         [sys.executable, "-m", "fontshow.preflight"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         text=True,
     )
 
