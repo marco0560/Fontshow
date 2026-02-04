@@ -62,6 +62,7 @@ nav:
     - Inventory schema v1.0 (JSON): schema/inventory-1.0.schema.json
     - Inventory schema v1.1 (Docs): schema/inventory-1.1.md
     - Inventory schema v1.1 (JSON): schema/inventory-1.1.schema.json
+    - Language normalization: schema/language-normalization.md
 
   - Development:
     - Architecture: architecture.md
@@ -73,6 +74,7 @@ nav:
 
   - Engineering:
     - Lessons Learned: engineering/lessons-learned.md
+    - Codex evaluation: engineering/codex-evaluation-04-02-2026.md
 
   - Documentation:
     - CLI:
