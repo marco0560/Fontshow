@@ -35,6 +35,7 @@ documentation describes *how the stages relate to each other*.
 - [Schema overview](schema/index.md)
 - [Inventory schema v1.0](schema/inventory-1.0.md)
 - [Inventory schema v1.1](schema/inventory-1.1.md)
+- [Language normalization](schema/language-normalization.md)
 
 ## Development and maintenance
 
@@ -51,6 +52,7 @@ These notes are not part of the public API or user documentation, but serve as l
 memory for maintainers.
 
 - [Lessons Learned](engineering/lessons-learned.md)
+- [Codex evaluation](engineering/codex-evaluation-04-02-2026.md)
 
 ## Project planning and governance
 
