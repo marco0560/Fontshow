@@ -54,6 +54,61 @@ target-version = "py311"
 select = ["ALL"]
 
 [tool.ruff.lint]
+# --- Temporary relaxed baseline (Phase C) ---
+# Goal: silence noise, keep core correctness, re-enable gradually
+
 select = [
-  "ALL",
+    "E",    # pycodestyle errors (real issues)
+    "F",    # pyflakes (real bugs)
+    "I",    # import order / correctness
+]
+
+ignore = [
+    # --- Documentation / style ---
+    "D",
+
+    # --- Typing strictness ---
+    "ANN",
+    "FBT",
+
+    # --- Exception semantics (will re-enable first) ---
+    "BLE",
+    "TRY",
+    "EM",
+    "S110",
+    "S112",
+
+    # --- Security (review later intentionally) ---
+    "S603",
+    "S324",
+
+    # --- Complexity ---
+    "C901",
+    "PLR0911",
+    "PLR0912",
+    "PLR0915",
+
+    # --- Magic values / minor design ---
+    "PLR2004",
+
+    # --- pathlib migration ---
+    "PTH",
+
+    # --- Import typing boundary ---
+    "TC",
+
+    # --- Formatting ---
+    "COM812",
+    "E501",
+
+    # --- Hygiene / TODO ---
+    "TD",
+    "ERA001",
+    "FIX002",
+
+    # --- Minor refactors / micro rules ---
+    "SIM",
+    "FURB",
+    "PERF",
+    "ARG",
 ]

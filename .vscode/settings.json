@@ -9,18 +9,23 @@
   "git.useEditorAsCommitInput": true,
 
   // ----------------------------
-  // Ruff (critical for parity)
+  // Ruff — native language server ONLY
   // ----------------------------
+  "ruff.enable": true,
   "ruff.configuration": "pyproject.toml",
-  "ruff.lint.enable": true,
-  //"ruff.lint.run": "onType",
+
+  // Use Ruff for formatting
   "ruff.format.enable": true,
 
-  // Optional but recommended: avoid double diagnostics
+  // ----------------------------
+  // Disable other Python tooling
+  // ----------------------------
   "python.linting.enabled": false,
   "python.formatting.provider": "none",
 
-
+  // ----------------------------
+  // UI / cosmetics
+  // ----------------------------
   "editor.tokenColorCustomizations": {
     "textMateRules": [
       {
