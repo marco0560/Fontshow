@@ -516,6 +516,134 @@ Generating LaTeX file for 3116 fonts...
   - catalog generation succeeds
 - The pipeline is robust against incomplete or partially invalid inventory data.
 
+---
+
+## Windows 11 — Manual validation (Fontconfig / charset / catalog)
+
+Environment (example run):
+
+- OS: Windows 11
+- Fontshow: 0.35.3.post6
+- PowerShell: 7.5.4
+
+### Charset extraction
+
+Observed:
+
+- `fontshow dump-fonts --include-fc-charset` produces **no charset data**:
+  - Fonts discovered: 466
+  - Fonts with `coverage.charset`: 0
+- Behavior identical with and without `--include-fc-charset`.
+
+Interpretation:
+
+- Windows build does **not use Fontconfig**.
+- Fontconfig charset information is therefore unavailable.
+- `coverage.charset` remaining null is **expected behavior**.
+
+---
+
+### dump-fonts / parse-inventory
+
+Observed:
+
+- `dump-fonts` completes successfully.
+- `parse-inventory` completes successfully.
+- Deterministic output, no structural failures.
+
+---
+
+### Catalog generation (LuaLaTeX)
+
+Observed:
+
+- LaTeX file generated successfully.
+- LuaLaTeX compilation completes without fatal errors.
+- However, fonts are **not loaded correctly** by LuaLaTeX.
+
+Example result:
+
+- Fonts analyzed: 1
+- Working fonts: 0
+- Problematic fonts: 1
+- Reported as: `Unknown Font → Non Caricato`
+
+Interpretation:
+
+- Windows font identity resolution is incomplete.
+- This matches the known limitation tracked in **Issue #51**.
+- Not a regression.
+
+---
+
+### Summary (Windows)
+
+- Charset extraction: **unsupported on Windows**
+- dump/parse pipeline: **stable**
+- Catalog generation: **functional but limited by font identity**
+- Reference: **Issue #51**
+
+---
+
+## WSL (Fedora 43) — Manual validation (Fontconfig / charset / catalog)
+
+Environment (example run):
+
+- Platform: WSL2 (Windows Subsystem for Linux)
+- Kernel: 6.6.87.2-microsoft-standard-WSL2
+- Fontconfig: 2.17.0
+- Fontshow: 0.35.3.post6
+
+### Charset extraction
+
+Observed:
+
+- Direct `fc-query` on font file fails:
+  - Example: `Can't query face 4294967295`
+- However, `fontshow dump-fonts --include-fc-charset` **successfully populates charset**:
+  - Fonts discovered: 1295
+  - Fonts with `coverage.charset`: 1295
+- Without `--include-fc-charset`: 0 fonts contain charset.
+
+Interpretation:
+
+- Direct `fc-query` CLI is unreliable in this environment.
+- Fontshow Fontconfig integration successfully extracts charset in practice.
+- Behavior matches Gentoo in outcome (full charset coverage), though not in `fc-query` CLI behavior.
+
+---
+
+### dump-fonts / parse-inventory
+
+Observed:
+
+- `dump-fonts` completes successfully.
+- `parse-inventory` completes successfully.
+- Deterministic output, no structural failures.
+
+---
+
+### Catalog generation (LuaLaTeX)
+
+Observed:
+
+- LaTeX file generated successfully.
+- No fatal errors during generation.
+- Catalog generation is functional.
+
+Notes:
+
+- Some fonts report `"<unknown>" has no declared language coverage`.
+- This does not affect generation and is informational.
+
+---
+
+### Summary (WSL Fedora 43)
+
+- Charset extraction: **supported via Fontshow (not via direct fc-query)**
+- dump/parse pipeline: **stable**
+- Catalog generation: **functional**
+
 ## LuaLaTeX compilation (reduced font set, Gentoo)
 
 ### LuaLaTeX compilation Rationale
