@@ -1229,7 +1229,7 @@ def run_create_catalog(args) -> int:
         return 1
 
     if args.test:
-        generate_test_output(args.number, bool(TEST_FONTS), quiet=_QUIET)
+        generate_test_output(args.number, bool(TEST_FONTS))
 
     inv_path: Path | None = None
     if args.inventory:
@@ -1289,15 +1289,36 @@ def run_create_catalog(args) -> int:
     # Diagnostics apply ONLY to inventory-based execution
     # and must respect --quiet.
     if not _QUIET and inv_path and inv_path.exists():
+        missing_lang_count = 0
+        total_fonts = 0
+
         for font in fonts:
             if not isinstance(font, dict):
                 continue  # safety guard
 
+            total_fonts += 1
             declared = set(font.get("coverage", {}).get("languages", []))
 
             if not declared:
+                missing_lang_count += 1
+
+        if missing_lang_count:
+            ratio = missing_lang_count / total_fonts if total_fonts else 0.0
+
+            if ratio < 0.10:
                 log_info(
-                    f'Font "{font.get("name", "<unknown>")}" has no declared language coverage'
+                    f"{missing_lang_count} fonts have no declared language coverage "
+                    f"({ratio:.0%})"
+                )
+            elif ratio < 0.50:
+                log_warn(
+                    f"{missing_lang_count} fonts have no declared language coverage "
+                    f"({ratio:.0%})"
+                )
+            else:
+                log_warn(
+                    f"{missing_lang_count} fonts have no declared language coverage "
+                    f"({ratio:.0%}) — catalog usefulness may be severely degraded"
                 )
 
     # ------------------------------------------------------------------
