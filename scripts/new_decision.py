@@ -57,7 +57,8 @@ def slugify(text: str) -> str:
     """
 
     if not text.strip():
-        raise ValueError("slugify(): empty input")
+        msg = "slugify(): empty input"
+        raise ValueError(msg)
 
     # Normalize accents (é → e, ò → o, …)
     text = unicodedata.normalize("NFKD", text)
@@ -73,7 +74,8 @@ def slugify(text: str) -> str:
     tokens = [t for t in text.split() if t and t not in _STOPWORDS]
 
     if not tokens:
-        raise ValueError("slugify(): title contains only stopwords")
+        msg = "slugify(): title contains only stopwords"
+        raise ValueError(msg)
 
     return "-".join(tokens)
 
@@ -182,10 +184,10 @@ def main(argv: list[str] | None = None) -> int:
         with index_file.open("a", encoding="utf-8") as f:
             f.write(index_entry)
 
-    except Exception as exc:
+    except (OSError, ValueError):
         if created_file and decision_path.exists():
             decision_path.unlink()
-        fail(f"Failed to create decision: {exc}")
+        raise
 
     print("Decision created successfully:")
     print(f"  {decision_path}")

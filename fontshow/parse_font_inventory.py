@@ -1020,7 +1020,7 @@ def parse_inventory(
                             "ranges_count": len(ranges),
                         },
                     )
-                except Exception as exc:
+                except (ValueError, TypeError, IndexError) as exc:
                     charset["ranges"] = []
 
                     font.setdefault("warnings", []).append(
@@ -1542,7 +1542,7 @@ def main(args) -> int:
     """
     try:
         return _run_parse_inventory(args)
-    except Exception as exc:
+    except TypeError as exc:
         if not getattr(args, "quiet", False):
             log_err(f"parse-inventory failed: {exc}")
         return 2

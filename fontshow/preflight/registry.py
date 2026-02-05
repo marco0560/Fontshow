@@ -15,7 +15,8 @@ def register_check(check_cls: type[BaseCheck]) -> None:
     Registration order is preserved.
     """
     if not issubclass(check_cls, BaseCheck):
-        raise TypeError(f"Cannot register {check_cls!r}: not a subclass of BaseCheck")
+        msg = f"Cannot register {check_cls!r}: not a subclass of BaseCheck"
+        raise TypeError(msg)
 
     if check_cls not in _CHECK_REGISTRY:
         _CHECK_REGISTRY.append(check_cls)

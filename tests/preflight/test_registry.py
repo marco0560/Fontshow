@@ -13,7 +13,8 @@ class DummyCheckA(BaseCheck):
     check_id = "dummy.a"
 
     def run(self):
-        raise RuntimeError("not executed")
+        msg = "not executed"
+        raise RuntimeError(msg)
 
 
 class DummyCheckB(BaseCheck):
@@ -21,7 +22,8 @@ class DummyCheckB(BaseCheck):
     check_id = "dummy.b"
 
     def run(self):
-        raise RuntimeError("not executed")
+        msg = "not executed"
+        raise RuntimeError(msg)
 
 
 class NotACheck:

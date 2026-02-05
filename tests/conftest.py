@@ -148,7 +148,8 @@ def stub_dump_fonts(monkeypatch, request):
     def fake_run(_args):
         if mode == "ok":
             return 0
-        raise RuntimeError("dump failed")
+        msg = "dump failed"
+        raise RuntimeError(msg)
 
     from fontshow import dump_fonts
 
@@ -167,7 +168,8 @@ def stub_parse_inventory(monkeypatch, request):
     def fake_run(_args):
         if mode == "ok":
             return 0
-        raise ValueError("parse failed")
+        msg = "parse failed"
+        raise ValueError(msg)
 
     from fontshow import parse_font_inventory
 
@@ -189,7 +191,7 @@ def stub_create_catalog(monkeypatch, request):
         if mode == "fail":
             return 1
         if mode == "boom":
-            raise RuntimeError("boom")
+            raise RuntimeError(mode)
 
     from fontshow import create_catalog
 

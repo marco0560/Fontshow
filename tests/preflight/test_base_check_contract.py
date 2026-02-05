@@ -60,8 +60,8 @@ def test_run_returns_checkresult(monkeypatch):
         monkeypatch.setattr(
             runner.environment, "detect_execution_mode", lambda: "bare-metal"
         )
-    except Exception:
-        # Defensive: environment plumbing should not break contract tests
+    except Exception:  # noqa: BLE001,S110
+        # (intentional: defensive test plumbing must not fail contract tests)
         pass
 
     for check_cls in BaseCheck.registry:

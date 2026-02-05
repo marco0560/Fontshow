@@ -435,9 +435,8 @@ def get_unique_filename(base_name, extension):
         filename = f"{base_name}{suffix}.{extension}"
         if not os.path.exists(filename):
             return filename
-    raise ValueError(
-        f"Impossibile trovare un nome file unico per {base_name}.{extension} dopo 1000 tentativi."
-    )
+    msg = f"Impossibile trovare un nome file unico per {base_name}.{extension} dopo 1000 tentativi."
+    raise ValueError(msg)
 
 
 def nfss_family_id(font: dict) -> str:
@@ -510,7 +509,8 @@ def load_font_inventory(path: Path) -> list[dict]:
     fonts = data.get("fonts", [])
 
     if not isinstance(fonts, list):
-        raise TypeError("Invalid inventory JSON: expected key 'fonts' to be a list.")
+        msg = "Invalid inventory JSON: expected key 'fonts' to be a list."
+        raise TypeError(msg)
     return fonts
 
 
@@ -1265,7 +1265,7 @@ def run_create_catalog(args) -> int:
                         log_err(w.get("message", "semantic validation error"))
                 return 1
 
-        except Exception as e:
+        except (OSError, json.JSONDecodeError, TypeError) as e:
             log_err(f"failed to load inventory: {e}")
             return 1
 
@@ -1348,18 +1348,16 @@ def run_create_catalog(args) -> int:
     if not _QUIET:
         log_info(f"Writing file {output_filename}...")
 
-    try:
-        with open(output_filename, "w", encoding="utf-8") as f:
-            f.write(latex_content)
+    with open(output_filename, "w", encoding="utf-8") as f:
+        f.write(latex_content)
 
-        if not _QUIET:
-            log_ok("Done! LaTeX file generated successfully.")
-            log_ok("Ready for compilation.")
-            log_ok(
-                f"  Execute: lualatex -interaction=nonstopmode {output_filename} | texlogsieve (twice)"
-            )
-    except Exception:
-        raise
+    if not _QUIET:
+        log_ok("Done! LaTeX file generated successfully.")
+        log_ok("Ready for compilation.")
+        log_ok(
+            f"  Execute: lualatex -interaction=nonstopmode {output_filename} | texlogsieve (twice)"
+        )
+    # removed useless try/except (exception propagates unchanged)
 
     return 0
 
@@ -1395,7 +1393,8 @@ def main(args) -> int:
 
     try:
         exit_code = _run_create_catalog(args)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
+        # (Crash barrier: convert unexpected failure → exit code 2)
         log_err(f"create-catalog failed: {exc}")
         return 2
 

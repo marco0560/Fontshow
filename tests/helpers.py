@@ -141,14 +141,14 @@ def run_cli(main_func, argv):
 
                 # Normalize return value to CLI semantics
                 if isinstance(result, int):
-                    raise SystemExit(result)
-                raise SystemExit(0)
+                    raise SystemExit(result)  # noqa: TRY301
+                raise SystemExit(0)  # noqa: TRY301
 
             except SystemExit as exc:
                 code = exc.code if isinstance(exc.code, int) else 1
 
-            except Exception:
-                # Unexpected internal error
+            except Exception:  # noqa: BLE001
+                # (intentional: map any unexpected error to exit code 2)
                 code = 2
     finally:
         sys.argv = old_argv

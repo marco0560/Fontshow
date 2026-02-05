@@ -45,70 +45,88 @@ docs = [
 [project.scripts]
 fontshow = "fontshow.__main__:main"
 
+# -------------------------------------------------
+# Formatting
+# -------------------------------------------------
+
 [tool.black]
 line-length = 88
 
 [tool.ruff]
 line-length = 88
 target-version = "py311"
-select = ["ALL"]
+
+# -------------------------------------------------
+# Ruff linting policy (Phase C + Phase 1)
+# -------------------------------------------------
 
 [tool.ruff.lint]
-# --- Temporary relaxed baseline (Phase C) ---
-# Goal: silence noise, keep core correctness, re-enable gradually
+# Baseline: real bugs + imports
+# Phase 1: exception semantics
 
 select = [
-    "E",    # pycodestyle errors (real issues)
-    "F",    # pyflakes (real bugs)
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
     "I",    # import order / correctness
-]
+    "UP",   # pyupgrade
 
-ignore = [
-    # --- Documentation / style ---
-    "D",
-
-    # --- Typing strictness ---
-    "ANN",
-    "FBT",
-
-    # --- Exception semantics (will re-enable first) ---
+    # Phase 1 — Exception semantics
     "BLE",
     "TRY",
     "EM",
     "S110",
     "S112",
+]
 
-    # --- Security (review later intentionally) ---
+ignore = [
+    # Documentation / style
+    "D",
+
+    # Typing strictness
+    "ANN",
+    "FBT",
+
+    # Security (later phase)
     "S603",
     "S324",
 
-    # --- Complexity ---
+    # Complexity (mapping later)
     "C901",
     "PLR0911",
     "PLR0912",
     "PLR0915",
 
-    # --- Magic values / minor design ---
+    # Magic values / design
     "PLR2004",
 
-    # --- pathlib migration ---
+    # pathlib migration
     "PTH",
 
-    # --- Import typing boundary ---
-    "TC",
-
-    # --- Formatting ---
+    # Formatting (handled elsewhere)
     "COM812",
     "E501",
 
-    # --- Hygiene / TODO ---
+    # Hygiene / TODO
     "TD",
     "ERA001",
     "FIX002",
 
-    # --- Minor refactors / micro rules ---
+    # Micro-refactors / perf
     "SIM",
     "FURB",
     "PERF",
     "ARG",
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["fontshow"]
+combine-as-imports = true
+
+# -------------------------------------------------
+# Ruff formatter
+# -------------------------------------------------
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

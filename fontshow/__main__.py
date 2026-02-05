@@ -22,8 +22,8 @@ def dispatch_command(args):
     except SystemExit as e:
         return int(e.code) if e.code is not None else 0
 
-    except Exception:
-        # Unexpected internal error
+    except Exception:  # noqa: BLE001
+        # (Top-level crash barrier: convert unexpected failure → exit code 2)
         return 2
 
 

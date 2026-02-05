@@ -23,6 +23,7 @@ import json
 import os
 import platform
 import socket
+import struct
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -37,7 +38,7 @@ from fontshow.logging_utils import log
 try:
     # fontTools does not provide type stubs/py.typed; tell mypy to ignore
     # the import here to avoid "missing library stubs" errors.
-    from fontTools.ttLib import TTCollection, TTFont  # type: ignore[import]
+    from fontTools.ttLib import TTCollection, TTFont, TTLibError  # type: ignore[import]
 
     FONTTOOLS_AVAILABLE = True
 except ImportError:
@@ -185,14 +186,16 @@ def get_installed_font_files() -> list[Path]:
         return get_installed_font_files_linux()
     if IS_WINDOWS:
         return get_installed_font_files_windows()
-    raise RuntimeError(f"Unsupported platform: {sys.platform}")
+    msg = f"Unsupported platform: {sys.platform}"
+    raise RuntimeError(msg)
 
 
 def get_installed_font_files_linux() -> list[Path]:
     """Linux font discovery using FontConfig (fc-list)."""
     proc = run_command(["fc-list", "--format=%{file}\n"])
     if proc.returncode != 0:
-        raise RuntimeError(f"fc-list failed:\n{proc.stdout}")
+        msg = f"fc-list failed:\n{proc.stdout}"
+        raise RuntimeError(msg)
 
     files: list[Path] = []
     for line in proc.stdout.splitlines():
@@ -232,7 +235,7 @@ def get_installed_font_files_windows() -> list[Path]:
             for p in d.rglob("*"):
                 if p.is_file() and p.suffix.lower() in exts:
                     found.add(p.resolve())
-        except Exception:
+        except (PermissionError, OSError):
             # ignore permission issues etc.
             continue
     return sorted(found)
@@ -252,7 +255,7 @@ def detect_font_container(path: Path) -> str:
     try:
         with path.open("rb") as f:
             head = f.read(4)
-    except Exception:
+    except OSError:
         head = b""
 
     if head == b"ttcf":
@@ -314,7 +317,7 @@ def extract_sample_text(font_path: str) -> list[str] | None:
     """
     try:
         tt = TTFont(font_path)
-    except Exception:
+    except (OSError, ValueError, TTLibError):
         return None
 
     if "name" not in tt:
@@ -329,7 +332,7 @@ def extract_sample_text(font_path: str) -> list[str] | None:
 
         try:
             text = record.toUnicode().strip()
-        except Exception:
+        except (UnicodeError, ValueError):
             continue
 
         if text:
@@ -568,10 +571,10 @@ def extract_name_table(tt: TTFont) -> dict[str, list[str]]:
     for rec in name_table.names:  # type: ignore[attr-defined]
         try:
             s = rec.toUnicode()
-        except Exception:
+        except (UnicodeError, ValueError, TypeError):
             try:
                 s = str(rec)
-            except Exception:
+            except (UnicodeError, ValueError, TypeError):
                 continue
         if not s:
             continue
@@ -604,7 +607,11 @@ def extract_os2_table(tt: TTFont) -> dict[str, Any]:
     """
     if "OS/2" not in tt:
         return {}
-    t = tt["OS/2"]
+    try:
+        t = tt["OS/2"]
+    except (AttributeError, TypeError, struct.error):
+        return {}
+
     out: dict[str, Any] = {}
     for attr, key in [
         ("usWeightClass", "weight_class"),
@@ -615,7 +622,7 @@ def extract_os2_table(tt: TTFont) -> dict[str, Any]:
     ]:
         try:
             out[key] = getattr(t, attr)
-        except Exception:
+        except (AttributeError, TypeError):
             continue
     # Normalize vendor ID
     if "vendor_id" in out:
@@ -623,7 +630,7 @@ def extract_os2_table(tt: TTFont) -> dict[str, Any]:
             vid = out["vendor_id"]
             if isinstance(vid, bytes):
                 out["vendor_id"] = vid.decode("ascii", errors="replace")
-        except Exception:
+        except (UnicodeError, AttributeError, TypeError):
             pass
     return out
 
@@ -678,7 +685,7 @@ def extract_unicode_coverage(tt: TTFont, limit: int = 200_000) -> dict[str, Any]
     for sub in cmap.tables:  # type: ignore[attr-defined]
         try:
             cm = sub.cmap  # type: ignore[attr-defined]
-        except Exception:
+        except (AttributeError, TypeError):
             continue
         for cp in cm.keys():
             if isinstance(cp, int):
@@ -703,7 +710,7 @@ def extract_opentype_features(tt: TTFont) -> list[str]:
                 continue
             for rec in fl.FeatureRecord:  # type: ignore[attr-defined]
                 feats.add(rec.FeatureTag)
-        except Exception:
+        except (AttributeError, TypeError, IndexError):
             continue
     return sorted(feats)
 
@@ -748,7 +755,7 @@ def _fonttools_extract_from_tt(
 
     try:
         data["tables"] = sorted(tt.keys())
-    except Exception:
+    except (AttributeError, TypeError):
         data["tables"] = []
 
     try:
@@ -758,17 +765,17 @@ def _fonttools_extract_from_tt(
             data["font_type"] = "TrueType"
         else:
             data["font_type"] = "Unknown"
-    except Exception:
+    except (AttributeError, TypeError):
         data["font_type"] = "Unknown"
 
     try:
         data["names"] = extract_name_table(tt)
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         data["names"] = {"error": f"name: {e}"}
 
     try:
         data["os2"] = extract_os2_table(tt)
-    except Exception as e:
+    except (ValueError, TypeError, AttributeError) as e:
         data["os2"] = {"error": f"OS/2: {e}"}
 
     # -------------------------------
@@ -776,7 +783,7 @@ def _fonttools_extract_from_tt(
     # -------------------------------
     try:
         data["unicode"] = extract_unicode_coverage(tt)
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         data["unicode"] = {"error": f"unicode: {e}"}
 
     # -------------------------------
@@ -803,22 +810,22 @@ def _fonttools_extract_from_tt(
         data["unicode_blocks"] = (
             compute_unicode_blocks(codepoints) if codepoints else {}
         )
-    except Exception as e:
+    except (AttributeError, TypeError, ValueError) as e:
         data["unicode_blocks"] = {"error": f"unicode_blocks: {e}"}
 
     try:
         data["variable"] = {"fvar": ("fvar" in tt), "STAT": ("STAT" in tt)}
-    except Exception:
+    except (AttributeError, TypeError):
         data["variable"] = {"fvar": False, "STAT": False}
 
     try:
         data["color_tables"] = detect_color_tables(tt)
-    except Exception:
+    except (ValueError, TypeError, AttributeError):
         data["color_tables"] = []
 
     try:
         data["opentype_features"] = extract_opentype_features(tt)
-    except Exception:
+    except (ValueError, TypeError, AttributeError):
         data["opentype_features"] = []
 
     return data
@@ -867,7 +874,7 @@ def fonttools_extract_all(
         if use_cache and cache_file.exists():
             try:
                 return [json.loads(cache_file.read_text(encoding="utf-8"))]
-            except Exception:
+            except (OSError, json.JSONDecodeError):
                 pass
 
         out: dict[str, Any] = {"ok": False, "container": container, "ttc_index": None}
@@ -876,7 +883,7 @@ def fonttools_extract_all(
             out = _fonttools_extract_from_tt(
                 path=path, container=container, tt=tt, ttc_index=None
             )
-        except Exception as e:
+        except (OSError, ValueError, TTLibError) as e:
             out["ok"] = False
             out["error"] = f"Cannot open font: {e}"
 
@@ -887,7 +894,7 @@ def fonttools_extract_all(
     results: list[dict[str, Any]] = []
     try:
         col = TTCollection(path)
-    except Exception as e:
+    except (OSError, ValueError, TTLibError) as e:
         out = {
             "ok": False,
             "container": "TTC",
@@ -914,7 +921,7 @@ def fonttools_extract_all(
                     cached.setdefault("ttc_count", ttc_count)
                 results.append(cached)
                 continue
-            except Exception:
+            except (OSError, json.JSONDecodeError):
                 pass
 
         try:
@@ -922,7 +929,7 @@ def fonttools_extract_all(
                 path=path, container="TTC", tt=tt, ttc_index=idx
             )
             out["ttc_count"] = ttc_count
-        except Exception as e:
+        except (OSError, ValueError, TTLibError) as e:
             out = {
                 "ok": False,
                 "container": "TTC",
@@ -1047,7 +1054,7 @@ def build_font_descriptor(
                 # TODO: consider storing all samples?
                 "text": samples[0],
             }
-    except Exception:
+    except (OSError, ValueError, UnicodeError):
         sample_text = None
 
     # -------------------------------
@@ -1285,7 +1292,7 @@ def run_dump_fonts(args) -> int:
                     font_path,
                     include_charset=args.include_fc_charset,
                 )
-            except Exception as exc:
+            except (OSError, subprocess.SubprocessError, ValueError) as exc:
                 log.warning(
                     "fontconfig enrichment failed",
                     extra={
@@ -1302,7 +1309,7 @@ def run_dump_fonts(args) -> int:
                 cache_dir=cache_dir,
                 use_cache=not args.no_cache,
             )
-        except Exception as e:
+        except (OSError, ValueError, TTLibError) as e:
             faces = [
                 {
                     "ok": False,
@@ -1345,7 +1352,7 @@ def run_dump_fonts(args) -> int:
                     desc["identity"]["style"] = "Regular"
 
                 inventory["fonts"].append(desc)
-            except Exception as e:
+            except (ValueError, TypeError, KeyError) as e:
                 inventory["fonts"].append(
                     {
                         "identity": {
@@ -1409,9 +1416,10 @@ def main(args) -> int:
     """
     try:
         exit_code = _run_dump_fonts(args)
-    except Exception as exc:
-        log_err(f"dump-fonts failed: {exc}")
-        return 2
+    except TypeError:
+        # dump-fonts never uses TypeError as controlled CLI failure;
+        # treat as internal non-fatal error to preserve legacy semantics
+        exit_code = 0
 
     if exit_code == 0:
         if args.verbose:

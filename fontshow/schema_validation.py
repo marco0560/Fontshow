@@ -37,7 +37,8 @@ def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> Non
     """
 
     if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
-        raise ValueError(f"Unsupported inventory schema version: {schema_version}")
+        msg = f"Unsupported inventory schema version: {schema_version}"
+        raise ValueError(msg)
 
     schema_path = (
         Path(__file__).parent.parent
@@ -47,7 +48,8 @@ def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> Non
     )
 
     if not schema_path.exists():
-        raise ValueError(f"Schema file not found: {schema_path}")
+        msg = f"Schema file not found: {schema_path}"
+        raise ValueError(msg)
 
     with open(schema_path, encoding="utf-8") as f:
         schema = json.load(f)
@@ -55,7 +57,8 @@ def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> Non
     try:
         validate(instance=data, schema=schema)
     except ValidationError as exc:
-        raise ValueError(f"Inventory schema validation failed: {exc.message}") from exc
+        msg = f"Inventory schema validation failed: {exc.message}"
+        raise ValueError(msg) from exc
 
 
 def validate_inventory_schema(data: dict) -> list[dict]:
@@ -99,7 +102,7 @@ def validate_inventory_schema(data: dict) -> list[dict]:
             data,
             schema_version=schema_version,
         )
-    except Exception as exc:
+    except ValueError as exc:
         return [
             {
                 "severity": "error",
