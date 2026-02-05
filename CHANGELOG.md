@@ -1,3 +1,9 @@
+## [0.36.0](https://github.com/marco0560/Fontshow/compare/v0.35.3...v0.36.0) (2026-02-05)
+
+### Features
+
+* **catalog:** aggregate missing language coverage + ratio-based severity in create_catalog ([2b3d64a](https://github.com/marco0560/Fontshow/commit/2b3d64acb7d23e45826ca34a538ab2b1f14e81e2)), closes [#4](https://github.com/marco0560/Fontshow/issues/4)
+
 ## [0.35.3](https://github.com/marco0560/Fontshow/compare/v0.35.2...v0.35.3) (2026-02-01)
 
 ### Bug Fixes
