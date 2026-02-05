@@ -13,6 +13,13 @@
   // ----------------------------
   "ruff.configuration": "pyproject.toml",
   "ruff.lint.enable": true,
+  //"ruff.lint.run": "onType",
+  "ruff.format.enable": true,
+
+  // Optional but recommended: avoid double diagnostics
+  "python.linting.enabled": false,
+  "python.formatting.provider": "none",
+
 
   "editor.tokenColorCustomizations": {
     "textMateRules": [

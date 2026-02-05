@@ -104,7 +104,7 @@ A dual-field strategy has been approved:
 This separation preserves raw data while allowing strict validation
 and clean downstream processing.
 
-See corresponding design decision in `decisions.md`.
+See corresponding design decision [Decision 0013 - Language normalization strategy](`decisions/0013-language-normalization-strategy.md`).
 
 ## Language Inference Threshold Tests
 
@@ -165,16 +165,33 @@ conservative default behavior.
 
 ## Gentoo Linux — Fontconfig charset extraction
 
-On native Gentoo Linux systems, Fontconfig-based charset extraction via
-`fc-query` has been manually verified.
+On native Gentoo Linux systems, charset extraction has been manually verified
+with Fontshow and cross-checked against direct `fc-query` behavior.
+
+Environment (example run):
+
+- Fontconfig: 2.17.1
+- Fontshow: 0.35.3.post3
 
 Observed behavior:
 
-- `fc-query` is correctly invoked for each font file.
-- The multiline `charset:` bitmap block is reliably detected and extracted.
-- The raw Fontconfig charset bitmap is preserved verbatim in
-  `coverage.charset.raw` when `--include-fc-charset` is enabled.
-- When `--include-fc-charset` is disabled, no charset data is included.
+- Direct `fc-query` (file-based):
+  - TrueType fonts: `charset:` bitmap is present.
+  - OpenType / Type1 / variable fonts: `fc-query` may fail with:
+    `Can't query face 4294967295`.
+
+- Direct `fc-query` (pattern-based `family:style=...`):
+  - Charset extraction fails (not usable for this purpose).
+
+- Fontshow `dump-fonts --include-fc-charset`:
+  - `coverage.charset.raw` is populated (verified at scale: 5246/5246 fonts).
+  - When `--include-fc-charset` is disabled, `coverage.charset` is absent.
+
+Interpretation:
+
+- Direct `fc-query` CLI behavior is not a reliable baseline for charset coverage.
+- Fontshow can still capture and serialize Fontconfig charset bitmaps in practice
+  even when direct `fc-query` fails for certain font types.
 
 Current limitations (by design):
 
