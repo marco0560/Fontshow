@@ -42,14 +42,27 @@ try:
 
     FONTTOOLS_AVAILABLE = True
 except ImportError:
-    # At runtime, when fontTools isn't available, leave `TTFont` as None.
-    # We do not annotate `TTFont` (e.g. `TTFont: Any = None`) nor add a
-    # separate `if TYPE_CHECKING: from fontTools.ttLib import TTFont` block
-    # because such patterns led to mypy "name already defined" or
-    # redefinition issues in this module. The runtime import above uses
-    # `# type: ignore[import]` to silence missing-stubs warnings from mypy,
-    # which is sufficient for our static checks.
+    # At runtime, when fontTools isn't available, provide safe fallbacks
+    # to avoid NameError while preserving current behavior (feature disabled).
     FONTTOOLS_AVAILABLE = False
+
+    class TTLibError(Exception):
+        """Fallback error type when fontTools is not installed."""
+
+    class TTFont:
+        """Runtime placeholder to avoid NameError when fontTools is missing."""
+
+        def __init__(self, *args, **kwargs) -> None:
+            msg = "fontTools is not installed"
+            raise TTLibError(msg)
+
+    class TTCollection:
+        """Runtime placeholder to avoid NameError when fontTools is missing."""
+
+        def __init__(self, *args, **kwargs) -> None:
+            msg = "fontTools is not installed"
+            raise TTLibError(msg)
+
 
 if TYPE_CHECKING:
     from fontTools.ttLib import TTCollection, TTFont
