@@ -37,7 +37,6 @@ sensitive and used directly by the renderer.
 
 import argparse
 import json
-import os
 import platform
 import re
 import subprocess
@@ -428,12 +427,12 @@ def script_badges(font: dict) -> list[str]:
     return [SCRIPT_BADGE_MAP[s] for s in scripts if s in SCRIPT_BADGE_MAP]
 
 
-def get_unique_filename(base_name, extension):
+def get_unique_filename(base_name: str, extension: str) -> str:
     """Genera un nome file unico aggiungendo un contatore a tre cifre (000-999)."""
     for i in range(1000):
         suffix = f"_{i:03d}"
         filename = f"{base_name}{suffix}.{extension}"
-        if not os.path.exists(filename):
+        if not Path(filename).exists():
             return filename
     msg = f"Impossibile trovare un nome file unico per {base_name}.{extension} dopo 1000 tentativi."
     raise ValueError(msg)
@@ -1016,7 +1015,7 @@ def generate_test_output(
     except ValueError as e:
         log_err(f"Error generating test file: {e}")
         return
-    with open(test_filename, "w", encoding="utf-8") as f:
+    with Path(test_filename).open("w", encoding="utf-8") as f:
         for item in details:
             f.write(f"Raw line: {item['raw_line']}\n")
             f.write(f"Extracted names: {', '.join(item['extracted_names'])}\n")
@@ -1244,7 +1243,7 @@ def run_create_catalog(args) -> int:
     # ------------------------------------------------------------------
     if inv_path and inv_path.exists():
         try:
-            with open(inv_path, encoding="utf-8") as f:
+            with inv_path.open(encoding="utf-8") as f:
                 inventory = json.load(f)
 
             _normalize_inventory_paths(inventory)
@@ -1348,7 +1347,7 @@ def run_create_catalog(args) -> int:
     if not _QUIET:
         log_info(f"Writing file {output_filename}...")
 
-    with open(output_filename, "w", encoding="utf-8") as f:
+    with Path(output_filename).open("w", encoding="utf-8") as f:
         f.write(latex_content)
 
     if not _QUIET:

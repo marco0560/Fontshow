@@ -19,12 +19,13 @@ def detect_os() -> str:
 
 def detect_execution_mode() -> str:
     import os
+    from pathlib import Path
 
     if os.environ.get("CI"):
         return "ci"
     if "WSL_DISTRO_NAME" in os.environ:
         return "wsl"
-    if os.path.exists("/.dockerenv"):
+    if Path("/.dockerenv").exists():
         return "container"
     return "bare-metal"
 

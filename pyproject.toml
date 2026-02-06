@@ -79,6 +79,9 @@ select = [
 
     # Phase 2 — Import/type boundary (TEMPORARY for editor)
     "TC",
+
+    # Phase 3 - pathlib migration
+    "PTH",
 ]
 
 ignore = [
@@ -101,9 +104,6 @@ ignore = [
 
     # Magic values / design
     "PLR2004",
-
-    # pathlib migration
-    "PTH",
 
     # Formatting (handled elsewhere)
     "COM812",

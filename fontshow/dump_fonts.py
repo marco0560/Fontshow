@@ -159,13 +159,13 @@ def make_font_id(path: str, ttc_index: int | None) -> str:
 
 def collect_environment_metadata() -> dict:
     def is_wsl():
+        proc_version = Path("/proc/version")
         return "WSL_DISTRO_NAME" in os.environ or (
-            os.path.exists("/proc/version")
-            and "microsoft" in open("/proc/version").read().lower()
+            proc_version.exists() and "microsoft" in proc_version.read_text().lower()
         )
 
     def is_container():
-        return os.path.exists("/.dockerenv") or os.path.exists("/run/.containerenv")
+        return Path("/.dockerenv").exists() or Path("/run/.containerenv").exists()
 
     exec_type = "native"
     if is_wsl():

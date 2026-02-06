@@ -1,7 +1,7 @@
 import importlib
 import logging
-import os
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -15,8 +15,9 @@ from tests.helpers import run_cli
 
 @pytest.fixture(scope="session", autouse=True)
 def add_project_root_to_syspath():
-    root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    if root not in sys.path:
+    root = (Path(__file__).parent / "..").resolve()
+    root_str = str(root)
+    if root_str not in sys.path:
         sys.path.insert(0, root)
 
 

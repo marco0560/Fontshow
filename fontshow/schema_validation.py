@@ -51,7 +51,7 @@ def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> Non
         msg = f"Schema file not found: {schema_path}"
         raise ValueError(msg)
 
-    with open(schema_path, encoding="utf-8") as f:
+    with schema_path.open(encoding="utf-8") as f:
         schema = json.load(f)
 
     try:
