@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
 
 # NOTE:
 # We intentionally do NOT attach handlers or formatters here.

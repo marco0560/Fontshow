@@ -29,7 +29,7 @@ import sys
 from datetime import UTC, datetime
 from hashlib import sha1
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from fontshow import __version__
 from fontshow.cli_utils import add_common_arguments, log_err, log_info, log_ok
@@ -62,10 +62,6 @@ except ImportError:
         def __init__(self, *args, **kwargs) -> None:
             msg = "fontTools is not installed"
             raise TTLibError(msg)
-
-
-if TYPE_CHECKING:
-    from fontTools.ttLib import TTCollection, TTFont
 
 
 """

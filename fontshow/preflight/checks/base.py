@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import inspect
 from abc import ABC, abstractmethod
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
-from fontshow.preflight.model import CheckResult
+if TYPE_CHECKING:
+    from fontshow.preflight.model import CheckResult
 
 
 class BaseCheck(ABC):

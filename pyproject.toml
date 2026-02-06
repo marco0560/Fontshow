@@ -76,6 +76,9 @@ select = [
     "EM",
     "S110",
     "S112",
+
+    # Phase 2 — Import/type boundary (TEMPORARY for editor)
+    "TC",
 ]
 
 ignore = [
