@@ -1,3 +1,9 @@
+## [0.36.1](https://github.com/marco0560/Fontshow/compare/v0.36.0...v0.36.1) (2026-02-06)
+
+### Bug Fixes
+
+* **dump:** make fontTools optional dependency safe (fallback types) ([f5f7601](https://github.com/marco0560/Fontshow/commit/f5f76018ba26700146f0e4d10f138b6227b1c27f))
+
 ## [0.36.0](https://github.com/marco0560/Fontshow/compare/v0.35.3...v0.36.0) (2026-02-05)
 
 ### Features
