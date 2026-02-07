@@ -3,9 +3,14 @@ set -e
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# Block direct push to main unless explicitly allowed (git release)
+# Allow git rel to bypass double audit
+if [ -z "${SKIP_RELEASE_AUDIT:-}" ]; then
+  echo "🔐 Running release safety audit..."
+  scripts/release_audit.sh || exit 1
+fi
+
 if [ "$BRANCH" = "main" ] && [ -z "${ALLOW_MAIN_PUSH:-}" ]; then
-  echo "Use: git release (direct push to main blocked)"
+  echo "Use: git rel (push diretto bloccato)"
   exit 1
 fi
 
