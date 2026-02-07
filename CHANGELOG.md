@@ -1,3 +1,9 @@
+## [0.36.7](https://github.com/marco0560/Fontshow/compare/v0.36.6...v0.36.7) (2026-02-07)
+
+### Bug Fixes
+
+* **core:** complete Ruff Phase 5 and Phase 6 hardening ([d8f1985](https://github.com/marco0560/Fontshow/commit/d8f1985a3d2984a9adf07a019c9b446e137ca814))
+
 ## [0.36.6](https://github.com/marco0560/Fontshow/compare/v0.36.5...v0.36.6) (2026-02-07)
 
 ### Bug Fixes
