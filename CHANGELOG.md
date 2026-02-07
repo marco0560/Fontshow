@@ -1,3 +1,10 @@
+## [0.36.2](https://github.com/marco0560/Fontshow/compare/v0.36.1...v0.36.2) (2026-02-07)
+
+### Bug Fixes
+
+* **ci:** make release_audit accept branch ahead of remote ([046e3f1](https://github.com/marco0560/Fontshow/commit/046e3f1288a0c9ff52be7672d170c26e5a40eeda))
+* **ci:** make release_audit semantic-release safe (no fetch, merged tags only) ([f4b4961](https://github.com/marco0560/Fontshow/commit/f4b4961b6457319826e6dc6382c8edb6ef8a02c9))
+
 ## [0.36.1](https://github.com/marco0560/Fontshow/compare/v0.36.0...v0.36.1) (2026-02-06)
 
 ### Bug Fixes
