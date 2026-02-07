@@ -16,27 +16,21 @@ fi
 # [2] Branch must not be diverged
 # (NO fetch here — pre-push safe)
 ########################################
-echo "[2] Checking divergence..."
+echo "[3] Checking divergence..."
+LOCAL=$(git rev-parse @)
+REMOTE=$(git rev-parse @{u})
+BASE=$(git merge-base @ @{u})
 
-if git rev-parse --abbrev-ref @{u} >/dev/null 2>&1; then
-  LOCAL=$(git rev-parse @)
-  REMOTE=$(git rev-parse @{u})
-  BASE=$(git merge-base @ @{u})
-
-  if [ "$LOCAL" != "$REMOTE" ]; then
-    if [ "$LOCAL" = "$BASE" ]; then
-      echo "ERROR: branch behind remote"
-      exit 1
-    elif [ "$REMOTE" = "$BASE" ]; then
-      echo "ERROR: branch ahead without push"
-      exit 1
-    else
-      echo "ERROR: branch diverged"
-      exit 1
-    fi
-  fi
+if [ "$LOCAL" = "$REMOTE" ]; then
+  echo "OK: branch aligned"
+elif [ "$LOCAL" = "$BASE" ]; then
+  echo "ERROR: branch behind remote"
+  exit 1
+elif [ "$REMOTE" = "$BASE" ]; then
+  echo "OK: branch ahead (push expected)"
 else
-  echo "WARN: no upstream configured — skipping divergence check"
+  echo "ERROR: branch diverged"
+  exit 1
 fi
 
 ########################################
