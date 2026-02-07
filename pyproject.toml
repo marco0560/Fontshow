@@ -70,55 +70,104 @@ select = [
     "I",    # import order / correctness
     "UP",   # pyupgrade
 
+    # ------------------------------------------------------------
     # Phase 1 — Exception semantics
+    # ------------------------------------------------------------
     "BLE",
     "TRY",
     "EM",
     "S110",
     "S112",
 
-    # Phase 2 — Import/type boundary (TEMPORARY for editor)
+    # ------------------------------------------------------------
+    # Phase 2 — Import/type boundary
+    # ------------------------------------------------------------
     "TC",
 
-    # Phase 3 - pathlib migration
+    # ------------------------------------------------------------
+    # Phase 3 — pathlib migration
+    # ------------------------------------------------------------
     "PTH",
+
+    # ------------------------------------------------------------
+    # Phase 4 — Bug-risk & correctness (NEW)
+    # ------------------------------------------------------------
+    "B",      # flake8-bugbear (high-value correctness rules)
 ]
 
 ignore = [
+    # ------------------------------------------------------------
     # Documentation / style
+    # ------------------------------------------------------------
     "D",
 
-    # Typing strictness
+    # ------------------------------------------------------------
+    # Typing strictness (future phase)
+    # ------------------------------------------------------------
     "ANN",
     "FBT",
 
-    # Security (later phase)
+    # ------------------------------------------------------------
+    # Security — postponed
+    # ------------------------------------------------------------
     "S603",
     "S324",
 
-    # Complexity (mapping later)
+    # ------------------------------------------------------------
+    # Complexity — postponed
+    # ------------------------------------------------------------
     "C901",
     "PLR0911",
     "PLR0912",
     "PLR0915",
 
+    # ------------------------------------------------------------
     # Magic values / design
+    # ------------------------------------------------------------
     "PLR2004",
 
+    # ------------------------------------------------------------
     # Formatting (handled elsewhere)
+    # ------------------------------------------------------------
     "COM812",
     "E501",
 
+    # ------------------------------------------------------------
     # Hygiene / TODO
+    # ------------------------------------------------------------
     "TD",
     "ERA001",
     "FIX002",
 
-    # Micro-refactors / perf
+    # ------------------------------------------------------------
+    # Micro-refactors / perf — postponed
+    # ------------------------------------------------------------
     "SIM",
     "FURB",
     "PERF",
     "ARG",
+
+    # ------------------------------------------------------------
+    # Bugbear rules intentionally ignored
+    # ------------------------------------------------------------
+    "B008",   # function calls in default args (used intentionally sometimes)
+    "B905",   # zip() strict — too noisy for now
+]
+
+fixable = [
+    "I",      # import sorting
+    "UP",     # pyupgrade
+    "B007",   # unused loop variable → _var
+    "B009",   # getattr(const) → attribute
+]
+
+unfixable = [
+    "E501",   # never auto-wrap long lines (TeX/regex risk)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/test_charset_decoding.py" = [
+    "B017",   # So only truly generic-failure tests allow broad Exception
 ]
 
 [tool.ruff.lint.isort]

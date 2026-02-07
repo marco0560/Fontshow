@@ -4,6 +4,20 @@ set -euo pipefail
 echo "== Release Audit =="
 
 ########################################
+# [0] History check
+########################################
+echo "[0] Checking history not rewritten after first release..."
+
+FIRST_TAG=$(git tag --sort=v:refname | head -1)
+
+if [ -n "$FIRST_TAG" ]; then
+  if ! git merge-base --is-ancestor "$FIRST_TAG" HEAD; then
+    echo "ERROR: history rewritten after first release (rebase detected)"
+    exit 1
+  fi
+fi
+
+########################################
 # [1] Working tree must be clean
 ########################################
 echo "[1] Checking working tree clean..."

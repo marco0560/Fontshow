@@ -1,6 +1,12 @@
 #!/bin/sh
 set -e
 
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" = "main" ]; then
+  echo "Use: git release (push diretto bloccato)"
+  exit 1
+fi
+
 echo "🔐 Running release safety audit..."
 scripts/release_audit.sh || exit 1
 

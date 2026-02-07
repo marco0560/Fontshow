@@ -3,6 +3,13 @@ set -e
 
 echo "== Tag Guard =="
 
+if git tag | grep -q .; then
+  if git log --oneline --decorate | grep -q "(rewritten)"; then
+    echo "ERROR: history rewritten after release"
+    exit 1
+  fi
+fi
+
 git fetch --tags --force
 
 LATEST=$(git tag -l "v[0-9]*" --sort=-v:refname | head -1)
