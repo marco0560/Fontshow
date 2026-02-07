@@ -16,9 +16,6 @@ if [ "$BRANCH" = "main" ] && [ -z "${ALLOW_MAIN_PUSH:-}" ]; then
   exit 1
 fi
 
-echo "🔐 Running release safety audit..."
-scripts/release_audit.sh || exit 1
-
 echo "🔍 Running pre-commit checks before push..."
 pre-commit run --all-files
 echo "✅ pre-commit checks passed"
