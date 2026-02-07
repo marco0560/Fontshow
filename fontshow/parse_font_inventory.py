@@ -1146,7 +1146,9 @@ def parse_inventory(
         normalized_scripts: list[str] = [str(s).upper() for s in inferred_scripts]
         font_scripts = set(normalized_scripts)
 
-        def _language_sort_key(lang: str) -> tuple[int, str]:
+        def _language_sort_key(
+            lang: str, _font_scripts=font_scripts
+        ) -> tuple[int, str]:
             """
             Sort languages by compatibility with the font primary scripts.
 
@@ -1156,7 +1158,7 @@ def parse_inventory(
             """
             primary_script = LANGUAGE_PRIMARY_SCRIPT.get(lang)
             return (
-                0 if primary_script and primary_script in font_scripts else 1,
+                0 if primary_script and primary_script in _font_scripts else 1,
                 lang,
             )
 
@@ -1504,7 +1506,7 @@ def run_parse_font_inventory(
                     )
 
                 # ---- fallback: non-language warnings ----
-                for severity, code, message in other_warnings:
+                for _severity, code, message in other_warnings:
                     log_warn(f"{ident} {code}: {message}")
 
     if not args.quiet:
