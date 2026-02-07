@@ -42,9 +42,7 @@ def test_all_checks_implement_run_method():
     """
     for check_cls in BaseCheck.registry:
         assert hasattr(check_cls, "run"), f"{check_cls.__name__} missing run()"
-        assert callable(
-            getattr(check_cls, "run")
-        ), f"{check_cls.__name__}.run is not callable"
+        assert callable(check_cls.run), f"{check_cls.__name__}.run is not callable"
 
 
 def test_run_returns_checkresult(monkeypatch):
