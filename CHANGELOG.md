@@ -1,3 +1,9 @@
+## [0.36.4](https://github.com/marco0560/Fontshow/compare/v0.36.3...v0.36.4) (2026-02-07)
+
+### Bug Fixes
+
+* **git:** complete and document release system ([6f3c81e](https://github.com/marco0560/Fontshow/commit/6f3c81ebc1721fae9e314cc3b8f9fcfe47f52c3e))
+
 ## [0.36.3](https://github.com/marco0560/Fontshow/compare/v0.36.2...v0.36.3) (2026-02-07)
 
 ### Bug Fixes
