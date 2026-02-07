@@ -21,7 +21,7 @@ fi
 
 echo "[2] Checking newest version matches latest tag..."
 
-LATEST_TAG=$(git tag --sort=-creatordate | head -1 | sed 's/^v//')
+LATEST_TAG=$(git tag -l 'v*' | sed 's/^v//' | sort -V | tail -1)
 TOP_CHANGELOG=$(grep -m1 -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' "$FILE" \
                 | sed -E 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/')
 
