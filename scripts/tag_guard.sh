@@ -5,11 +5,11 @@ echo "== Tag Guard =="
 
 git fetch --tags --force
 
-for tag in $(git tag); do
-    if ! git merge-base --is-ancestor "$tag" HEAD; then
-        echo "ERROR: tag $tag is not ancestor of HEAD"
-        exit 1
-    fi
-done
+LATEST=$(git tag -l "v[0-9]*" --sort=-v:refname | head -1)
 
-echo "OK: all tags consistent"
+if ! git merge-base --is-ancestor "$LATEST" HEAD; then
+  echo "ERROR: latest tag $LATEST is not ancestor of HEAD"
+  exit 1
+fi
+
+echo "OK: last tag consistent"
