@@ -62,7 +62,25 @@ target-version = "py311"
 
 [tool.ruff.lint]
 # Baseline: real bugs + imports
-# Phase 1: exception semantics
+# Phase 1 — Exception semantics
+# Phase 2 — Import/type boundary
+# Phase 3 — pathlib migration
+# Phase 4 — Bug-risk & correctness
+# Phase 5 — Return & logging correctness
+# ------------------------------------------------------------
+# Phase 6 — Robustness hardening (low-noise / high-value)
+#
+# Adds:
+#   PLR  → risky constructs (not complexity limits)
+#   RSE  → raise misuse (exception correctness)
+#   SIM  → logic simplification traps (can reveal hidden bugs)
+#   ICN  → import alias / shadowing correctness
+#   TCH  → typing boundary correctness helpers
+#
+# Goal:
+#   Catch remaining real defects without enabling high-noise families
+#   (docstrings, typing completeness, complexity, perf, style).
+# ------------------------------------------------------------
 
 select = [
     "E",    # pycodestyle errors
@@ -90,9 +108,24 @@ select = [
     "PTH",
 
     # ------------------------------------------------------------
-    # Phase 4 — Bug-risk & correctness (NEW)
+    # Phase 4 — Bug-risk & correctness
     # ------------------------------------------------------------
     "B",      # flake8-bugbear (high-value correctness rules)
+
+    # ------------------------------------------------------------
+    # Phase 5 — Return & logging correctness
+    # ------------------------------------------------------------
+    "RET",    # return correctness
+    "LOG",    # logging misuse
+
+    # ------------------------------------------------------------
+    # Phase 6 — Robustness hardening (NEW)
+    # ------------------------------------------------------------
+    "PLR",    # pylint refactor (risky constructs only; complexity still ignored)
+    "RSE",    # raise misuse / exception correctness
+    "SIM",    # simplification rules revealing hidden logic issues
+    "ICN",    # import alias / shadowing correctness
+    "TCH",    # typing boundary correctness helpers
 ]
 
 ignore = [
@@ -108,7 +141,8 @@ ignore = [
     "FBT",
 
     # ------------------------------------------------------------
-    # Security — postponed
+    # Security — partially enforced
+    # (S101 and S108 disabled in tests via per-file-ignores)
     # ------------------------------------------------------------
     "S603",
     "S324",
@@ -140,9 +174,8 @@ ignore = [
     "FIX002",
 
     # ------------------------------------------------------------
-    # Micro-refactors / perf — postponed
+    # Performance / micro-refactors — still optional
     # ------------------------------------------------------------
-    "SIM",
     "FURB",
     "PERF",
     "ARG",
@@ -166,8 +199,12 @@ unfixable = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S108"] # Allow asserts in tests
 "tests/test_charset_decoding.py" = [
     "B017",   # So only truly generic-failure tests allow broad Exception
+]
+"tests/helpers.py" = [
+    "PLR0913",   # test helper requires multiple independent knobs
 ]
 
 [tool.ruff.lint.isort]

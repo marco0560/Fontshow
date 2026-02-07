@@ -800,9 +800,7 @@ def clean_font_name(name: str) -> str:
     clean_name = re.sub(r"\s*\((TrueType|OpenType|True Type|Type 1)\)\s*$", "", name)
 
     variants = r"\s+(Bold|Italic|Light|Regular|Medium|Semibold|Black|Thin|Heavy|Narrow|Condensed|Extended|Grassetto|Corsivo|Chiaro|Normale|Medio|Nero|Sottile|Pesante|Condensato|Esteso).*$"
-    base_name = re.sub(variants, "", clean_name, flags=re.IGNORECASE).strip()
-
-    return base_name
+    return re.sub(variants, "", clean_name, flags=re.IGNORECASE).strip()
 
 
 def get_installed_fonts_windows():
@@ -879,13 +877,14 @@ def extract_font_family(line):
 
     if len(parts) < 2:
         return ""
-    elif len(parts) == 2:
+
+    if len(parts) == 2:
         # Format: path:family
         return parts[1].strip()
-    else:
-        # Format: path:family:style or path:family:other:style
-        # Join all elements except the first and last
-        return ":".join(parts[1:2]).strip()
+
+    # Format: path:family:style or path:family:other:style
+    # Join all elements except the first and last
+    return ":".join(parts[1:2]).strip()
 
 
 def get_installed_fonts_linux() -> list[str]:
@@ -964,11 +963,12 @@ def get_installed_fonts() -> list[str]:
     """
     if IS_WINDOWS:
         return get_installed_fonts_windows()
-    elif IS_LINUX:
+
+    if IS_LINUX:
         return get_installed_fonts_linux()
-    else:
-        log_err(f"System '{sys.platform}' not supported or unrecognized.")
-        return []
+
+    log_err(f"System '{sys.platform}' not supported or unrecognized.")
+    return []
 
 
 def generate_test_output(
@@ -1001,10 +1001,7 @@ def generate_test_output(
         ]
 
     if limit:
-        if limit > 0:
-            details = details[:limit]
-        else:
-            details = details[limit:]
+        details = details[:limit] if limit > 0 else details[limit:]
 
     # Sort alphabetically for the first base name
     details.sort(key=lambda x: x["base_names"][0].lower() if x["base_names"] else "")
@@ -1331,10 +1328,7 @@ def run_create_catalog(args) -> int:
         ]
 
     if args.number:
-        if args.number > 0:
-            fonts = fonts[: args.number]
-        else:
-            fonts = fonts[args.number :]
+        fonts = fonts[: args.number] if args.number > 0 else fonts[args.number :]
 
     fonts = sorted(
         as_font_desc_list(fonts, legacy_mode=not bool(args.inventory)),

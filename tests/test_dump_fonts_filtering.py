@@ -31,14 +31,14 @@ def test_dump_fonts_excludes_non_opentype(tmp_path, monkeypatch):
                     "ttc_index": None,
                 }
             ]
-        else:
-            return [
-                {
-                    "ok": False,
-                    "error": "Not a TrueType or OpenType font",
-                    "ttc_index": None,
-                }
-            ]
+
+        return [
+            {
+                "ok": False,
+                "error": "Not a TrueType or OpenType font",
+                "ttc_index": None,
+            }
+        ]
 
     monkeypatch.setattr(
         "fontshow.dump_fonts.fonttools_extract_all",

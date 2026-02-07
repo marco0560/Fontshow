@@ -586,18 +586,17 @@ def validate_inventory(
             for warning in font.get("warnings", []):
                 log_warn(f"Warning [{ident}]: {warning['code']} - {warning['message']}")
 
-    if fatal_errors == 0:
-        if not quiet:
-            # NOTE:
-            # Do NOT replace this with a generic "OK" message.
-            # Unlike preflight or dump-fonts, parse-inventory is a
-            # user-facing diagnostic command and must emit a
-            # human-readable success message.
-            #
-            # See: docs/decisions/0009-cli-verbosity-contract.md
-            log_ok("Inventory validation completed (no fatal errors)")
-            if verbose:
-                log_info(f"Validation completed for {len(fonts)} font entries")
+    if fatal_errors == 0 and not quiet:
+        # NOTE:
+        # Do NOT replace this with a generic "OK" message.
+        # Unlike preflight or dump-fonts, parse-inventory is a
+        # user-facing diagnostic command and must emit a
+        # human-readable success message.
+        #
+        # See: docs/decisions/0009-cli-verbosity-contract.md
+        log_ok("Inventory validation completed (no fatal errors)")
+        if verbose:
+            log_info(f"Validation completed for {len(fonts)} font entries")
 
     return fatal_errors
 
@@ -1185,7 +1184,7 @@ def parse_inventory(
             for lang, info in inferred_languages_map.items():
                 log_info(f"    {lang}: {info}")
             log_info("  language primary script matching:")
-            for lang in inferred_languages_map.keys():
+            for lang in inferred_languages_map:
                 primary_script = LANGUAGE_PRIMARY_SCRIPT.get(lang)
                 matches = primary_script in font_scripts if primary_script else False
                 log_info(
@@ -1198,7 +1197,7 @@ def parse_inventory(
             for _line in pprint.pformat(inferred_languages_map).splitlines():
                 log_info(_line)
             log_info("  language primary scripts:")
-            for lang in inferred_languages_map.keys():
+            for lang in inferred_languages_map:
                 ps = LANGUAGE_PRIMARY_SCRIPT.get(lang)
                 match = ps in font_scripts if ps else False
                 log_info(f"    - {lang}: primary_script={ps}, matches_font={match}")

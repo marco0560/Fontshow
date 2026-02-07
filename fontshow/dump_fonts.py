@@ -223,7 +223,7 @@ def _windows_font_dirs() -> list[Path]:
       %LOCALAPPDATA%\Microsoft\Windows\Fonts
     """
     dirs: list[Path] = []
-    windir = os.environ.get("WINDIR") or os.environ.get("SystemRoot")
+    windir = os.environ.get("WINDIR") or os.environ.get("SYSTEMROOT")
     if windir:
         dirs.append(Path(windir) / "Fonts")
 
@@ -696,7 +696,7 @@ def extract_unicode_coverage(tt: TTFont, limit: int = 200_000) -> dict[str, Any]
             cm = sub.cmap  # type: ignore[attr-defined]
         except (AttributeError, TypeError):
             continue
-        for cp in cm.keys():
+        for cp in cm:
             if isinstance(cp, int):
                 cps.add(cp)
         if len(cps) > limit:
@@ -808,7 +808,7 @@ def _fonttools_extract_from_tt(
                 if not sub.isUnicode():
                     continue
                 # sub.cmap is {codepoint:int -> glyphName:str}
-                for cp in sub.cmap.keys():  # type: ignore[attr-defined]
+                for cp in sub.cmap:  # type: ignore[attr-defined]
                     codepoints.add(int(cp))
                     # Guard rail: avoid pathological fonts exploding memory
                     if len(codepoints) >= 200_000:

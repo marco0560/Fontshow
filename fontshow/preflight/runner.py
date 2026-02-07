@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import fontshow.preflight.checks.environment as environment
-import fontshow.preflight.checks.font_discovery as font_discovery
-import fontshow.preflight.checks.latex as latex
+from fontshow.preflight.checks import environment, font_discovery, latex
 from fontshow.preflight.model import CheckResult, PreflightResult
 from fontshow.preflight.registry import get_registered_checks
 

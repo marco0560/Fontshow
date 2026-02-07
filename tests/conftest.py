@@ -1,6 +1,7 @@
 import importlib
 import logging
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
@@ -102,9 +103,9 @@ def patch_cli_func(monkeypatch, module, fake_func):
 # ---------------------------------------------------------------------------
 
 
+@dataclass
 class _FakeSeverity:
-    def __init__(self, name: str):
-        self.name = name
+    name: str
 
 
 class _FakePreflightResult:
@@ -193,6 +194,7 @@ def stub_create_catalog(monkeypatch, request):
             return 1
         if mode == "boom":
             raise RuntimeError(mode)
+        return 2  # explicit fallback (non-None exit code)
 
     from fontshow import create_catalog
 

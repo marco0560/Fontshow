@@ -1,6 +1,6 @@
 import pytest
 
-import fontshow.preflight.checks.environment as environment
+from fontshow.preflight.checks import environment
 from fontshow.preflight.model import Severity
 from fontshow.preflight.runner import run_preflight
 

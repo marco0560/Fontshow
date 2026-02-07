@@ -2,8 +2,8 @@
 
 import pytest
 
-import fontshow.preflight.checks.font_discovery as font_discovery
-import fontshow.preflight.runner as runner
+from fontshow.preflight import runner
+from fontshow.preflight.checks import font_discovery
 from fontshow.preflight.model import Severity
 
 

@@ -2,8 +2,8 @@
 
 import pytest
 
-import fontshow.preflight.checks.latex as latex
-import fontshow.preflight.runner as runner
+from fontshow.preflight import runner
+from fontshow.preflight.checks import latex
 from fontshow.preflight.model import Severity
 
 
