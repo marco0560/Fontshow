@@ -2,8 +2,10 @@
 set -e
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-if [ "$BRANCH" = "main" ]; then
-  echo "Use: git release (push diretto bloccato)"
+
+# Block direct push to main unless explicitly allowed (git release)
+if [ "$BRANCH" = "main" ] && [ -z "${ALLOW_MAIN_PUSH:-}" ]; then
+  echo "Use: git release (direct push to main blocked)"
   exit 1
 fi
 
