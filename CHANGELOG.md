@@ -1,3 +1,11 @@
+## [0.36.3](https://github.com/marco0560/Fontshow/compare/v0.36.2...v0.36.3) (2026-02-07)
+
+### Bug Fixes
+
+* **git:** allow git release to bypass main push block ([96061bf](https://github.com/marco0560/Fontshow/commit/96061bf3c131efa21ff42da7ad90d0098c564d7c))
+* **git:** refine git safeguards for release process ([1d81872](https://github.com/marco0560/Fontshow/commit/1d818725286f0c7b0c5197a968d54b8f652d907f))
+* **parser:** resolve B023 closure binding in language sort key ([67720d3](https://github.com/marco0560/Fontshow/commit/67720d36dc03d4c190d1226ae9a781094f2c3610))
+
 ## [0.36.2](https://github.com/marco0560/Fontshow/compare/v0.36.1...v0.36.2) (2026-02-07)
 
 ### Bug Fixes
