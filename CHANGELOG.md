@@ -1,3 +1,9 @@
+## [0.36.6](https://github.com/marco0560/Fontshow/compare/v0.36.5...v0.36.6) (2026-02-07)
+
+### Bug Fixes
+
+* **git:** avoid running twice (again!) the checks on git rel ([0270bdb](https://github.com/marco0560/Fontshow/commit/0270bdb6a8594f8238b177198df31cca4736c19a))
+
 ## [0.36.5](https://github.com/marco0560/Fontshow/compare/v0.36.4...v0.36.5) (2026-02-07)
 
 ### Bug Fixes
