@@ -92,7 +92,7 @@ UNICODE_BLOCK_SIZES: dict[str, int] = {
     "Arabic": 256,
     "Arabic Supplement": 48,
     "Arabic Extended-A": 96,
-    # Indic (partial, common)
+    # Indic - partial and common
     "Devanagari": 128,
     "Bengali": 128,
     "Gurmukhi": 128,

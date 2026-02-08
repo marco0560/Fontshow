@@ -31,8 +31,8 @@ def git_ignored_paths() -> Iterable[Path]:
     Return a list of paths that are ignored by git and currently present
     in the working tree.
     """
-    result = subprocess.run(
-        ["git", "status", "--ignored", "--porcelain"],
+    result = subprocess.run(  # (trusted fixed binary, no user input, no shell)
+        ["git", "status", "--ignored", "--porcelain"],  # noqa: S607
         capture_output=True,
         text=True,
         check=True,

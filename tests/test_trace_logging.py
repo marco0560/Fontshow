@@ -74,7 +74,15 @@ def test_debug_vs_trace_logging(
         assert trace_records, "TRACE records expected but not emitted"
 
         callers = {(r.module, r.funcName) for r in trace_records}
-        assert ("dump_fonts", "fc_query_extract") in callers
+
+        # TRACE must originate from the dump_fonts module, but may come
+        # from either the public API (fc_query_extract) or a functional
+        # helper (_run_fc_query). The important contract is that TRACE
+        # reports a real execution layer, not logging_utils internals.
+        assert any(
+            mod == "dump_fonts" and fn in {"fc_query_extract", "_run_fc_query"}
+            for mod, fn in callers
+        )
     else:
         assert not trace_records, "TRACE records emitted at DEBUG level"
 
@@ -127,5 +135,13 @@ def test_trace_logging_emitted_with_correct_caller(
     assert "fc-query executed" in messages
     assert "fc-query raw output received" in messages
 
-    callers = {(rec.module, rec.funcName) for rec in trace_records}
-    assert ("dump_fonts", "fc_query_extract") in callers
+    callers = {(r.module, r.funcName) for r in trace_records}
+
+    # TRACE must originate from the dump_fonts module, but may come
+    # from either the public API (fc_query_extract) or a functional
+    # helper (_run_fc_query). The important contract is that TRACE
+    # reports a real execution layer, not logging_utils internals.
+    assert any(
+        mod == "dump_fonts" and fn in {"fc_query_extract", "_run_fc_query"}
+        for mod, fn in callers
+    )

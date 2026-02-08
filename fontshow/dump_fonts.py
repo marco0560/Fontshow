@@ -381,39 +381,26 @@ def _parse_fc_charset_ranges(raw: str) -> list[str]:
     return ranges
 
 
-def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any]:
+# ------------------------------------------------------------------
+# fc-query execution
+# ------------------------------------------------------------------
+
+
+def _run_fc_query(path: Path) -> str:
     """
-    Extract a limited set of FontConfig-derived metadata (Linux only).
+    Execute `fc-query` and return raw stdout (empty string if none).
 
-    This function invokes ``fc-query`` and parses a *small, stable subset*
-    of its output, suitable for inclusion in the Fontshow *raw* inventory.
-
-    Important notes:
-    - Extraction is **file-level**, not face-level.
-    - For TTC files, FontConfig may describe multiple faces together.
-    - All extracted fields are best-effort and may be incomplete.
-    - FontConfig charset data, when included, is preserved verbatim and
-      NOT normalized or interpreted at this stage.
-
-    The returned metadata is intended for downstream enrichment and
-    MUST NOT be treated as semantically authoritative.
-
-    Args:
-        path: Path to the font file.
-        include_charset: If ``True``, include the raw FontConfig charset blob.
-            This data can be large and is disabled by default.
-
-    Returns:
-        A dictionary containing zero or more FontConfig-derived fields.
+    Logging and error semantics identical to original implementation.
     """
     log.debug(
         "fc-query invocation prepared",
         extra={
             "font_path": str(path),
-            "include_charset": include_charset,
         },
     )
+
     proc = run_command(["fc-query", str(path)])
+
     log.trace(
         "fc-query executed",
         extra={
@@ -421,6 +408,7 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
             "exit_code": proc.returncode,
         },
     )
+
     if proc.returncode != 0:
         log.warning(
             "fc-query execution failed",
@@ -431,7 +419,8 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
             },
         )
 
-    raw = proc.stdout if proc.stdout else ""
+    raw = proc.stdout or ""
+
     log.trace(
         "fc-query raw output received",
         extra={
@@ -440,47 +429,33 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
         },
     )
 
-    # Normalize fc-query output:
-    # FontConfig prefixes fields with tabs; strip leading whitespace
-    lines = [line.lstrip() for line in raw.splitlines()]
+    return raw
+
+
+# ------------------------------------------------------------------
+# fc-query line parsing (languages, scripts, flags)
+# ------------------------------------------------------------------
+
+
+def _parse_fc_query_core_fields(path: Path, lines: list[str]) -> dict[str, Any]:
+    """
+    Parse languages, scripts, and boolean flags from normalized fc-query lines.
+    """
 
     def _find_line(prefix: str) -> str | None:
-        """Return the payload of the first line starting with ``prefix``."""
         for line in lines:
             if line.startswith(prefix):
                 return line[len(prefix) :].strip()
         return None
 
-    def _extract_charset_block() -> str | None:
-        collecting = False
-        buf: list[str] = []
-
-        for line in lines:
-            if line.startswith("charset:"):
-                collecting = True
-                continue
-
-            if collecting:
-                # Charset bitmap lines start with hex offsets (e.g. "0000:")
-                # A new FontConfig field starts with an alphabetic key.
-                if line and line[0].isalpha() and ":" in line:
-                    break
-                if line != "(s)":
-                    buf.append(line)
-
-        return "\n".join(buf) if buf else None
-
     lang = _find_line("lang:")
     languages: list[str] = []
-    charset: dict[str, Any] | None = None
-    raw_charset = _extract_charset_block()
-
     if lang:
         languages = [x.strip() for x in lang.split("|") if x.strip()]
 
-    decorative = (_find_line("decorative:") or "").strip().lower() == "true"
-    color = (_find_line("color:") or "").strip().lower() == "true"
-    variable = (_find_line("variable:") or "").strip().lower() == "true"
+    decorative = (_find_line("decorative:") or "").lower() == "true"
+    color = (_find_line("color:") or "").lower() == "true"
+    variable = (_find_line("variable:") or "").lower() == "true"
     capability = _find_line("capability:")
 
     scripts: list[str] = []
@@ -488,6 +463,7 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
         for token in capability.replace('"', "").split():
             if token.startswith("otlayout:"):
                 scripts.append(token.split(":", 1)[1])
+
     log.debug(
         "fontconfig output parsed",
         extra={
@@ -506,30 +482,107 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
         },
     )
 
-    if include_charset and raw_charset:
+    return {
+        "languages": languages,
+        "scripts": sorted(set(scripts)),
+        "decorative": decorative,
+        "color": color,
+        "variable": variable,
+    }
+
+
+# ------------------------------------------------------------------
+# charset extraction
+# ------------------------------------------------------------------
+
+
+def _extract_fc_query_charset(
+    path: Path,
+    lines: list[str],
+    *,
+    include_charset: bool,
+) -> dict[str, Any] | None:
+    """
+    Extract raw charset block and parsed ranges from fc-query output.
+    """
+
+    if not include_charset:
+        return None
+
+    collecting = False
+    buf: list[str] = []
+
+    for line in lines:
+        if line.startswith("charset:"):
+            collecting = True
+            continue
+
+        if collecting:
+            if line and line[0].isalpha() and ":" in line:
+                break
+            if line != "(s)":
+                buf.append(line)
+
+    raw_charset = "\n".join(buf) if buf else None
+
+    charset: dict[str, Any] | None = None
+
+    if raw_charset:
         ranges = _parse_fc_charset_ranges(raw_charset)
         charset = {
             "raw": raw_charset,
             "ranges": ranges,
         }
 
-    if include_charset:
-        log.debug(
-            "fontconfig charset extraction result",
-            extra={
-                "font_path": str(path),
-                "charset_present": raw_charset is not None,
-                "ranges_count": len(charset["ranges"]) if charset else 0,
-            },
-        )
+    log.debug(
+        "fontconfig charset extraction result",
+        extra={
+            "font_path": str(path),
+            "charset_present": raw_charset is not None,
+            "ranges_count": len(charset["ranges"]) if charset else 0,
+        },
+    )
+
+    return charset
+
+
+# ------------------------------------------------------------------
+# Refactored fc_query_extract (balanced complexity)
+# ------------------------------------------------------------------
+
+
+def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any]:
+    """
+    Extract a limited subset of FontConfig-derived metadata.
+
+    Refactored design:
+    - Execution layer: `_run_fc_query`
+    - Core parsing: `_parse_fc_query_core_fields`
+    - Charset extraction: `_extract_fc_query_charset`
+
+    Behavior identical to original implementation.
+    """
+
+    raw = _run_fc_query(path)
+
+    # Normalize fc-query output: strip leading whitespace
+    lines = [line.lstrip() for line in raw.splitlines()]
+
+    core = _parse_fc_query_core_fields(path, lines)
+
+    charset = _extract_fc_query_charset(
+        path,
+        lines,
+        include_charset=include_charset,
+    )
 
     return {
-        "languages": languages,
-        "scripts": sorted(set(scripts)),
+        "languages": core["languages"],
+        "scripts": core["scripts"],
         "charset": charset,
-        "decorative": decorative,
-        "color": color,
-        "variable": variable,
+        "decorative": core["decorative"],
+        "color": core["color"],
+        "variable": core["variable"],
     }
 
 
@@ -723,8 +776,11 @@ def extract_opentype_features(tt: TTFont) -> list[str]:
             continue
     return sorted(feats)
 
+    # TODO(#0): REFACTOR if touching
+    # Complex extractor, split if extraction logic grows
 
-def _fonttools_extract_from_tt(
+
+def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
     *,
     path: Path,
     container: str,
@@ -840,7 +896,9 @@ def _fonttools_extract_from_tt(
     return data
 
 
-def fonttools_extract_all(
+# TODO(#0): REFACTOR if touching:
+# Extraction pipeline; refactor if caching or TTC logic expands
+def fonttools_extract_all(  # noqa: C901
     path: Path, cache_dir: Path, use_cache: bool = True
 ) -> list[dict[str, Any]]:
     """Extract fontTools metadata for one file, returning one entry per face.
@@ -1042,7 +1100,7 @@ def build_font_descriptor(
     )
 
     # -------------------------------
-    # Identity (names + file)
+    # Identity - names and file
     # -------------------------------
     family = _best_name(names, NAME_ID_FAMILY)
     style = _best_name(names, NAME_ID_SUBFAMILY)
@@ -1060,7 +1118,7 @@ def build_font_descriptor(
                 "source": "font",
                 # Use the first sample only for simplicity
                 # (usually there's only one anyway)
-                # TODO: consider storing all samples?
+                # TODO(#0): consider storing all samples?
                 "text": samples[0],
             }
     except (OSError, ValueError, UnicodeError):
@@ -1119,7 +1177,7 @@ def build_font_descriptor(
     }
 
     # -------------------------------
-    # Typography (metrics + features)
+    # Typography - metrics and features
     # -------------------------------
     typography = {
         "weight_class": None,

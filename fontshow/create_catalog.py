@@ -39,6 +39,7 @@ import argparse
 import json
 import platform
 import re
+import shutil
 import subprocess
 import sys
 from collections import OrderedDict
@@ -896,9 +897,15 @@ def get_installed_fonts_linux() -> list[str]:
 
     try:
         # Executes fc-list and captures the output
+        fc_list = shutil.which("fc-list")
+        if not fc_list:
+            msg = "fc-list not found in PATH"
+            raise RuntimeError(msg)
+
         result = subprocess.run(
-            ["fc-list", ":family"], capture_output=True, text=True, check=True
+            [fc_list, ":family"], capture_output=True, text=True, check=True
         )
+
         lines = result.stdout.strip().split("\n")
 
         font_list = set()
@@ -929,8 +936,12 @@ def get_font_details_linux() -> list[dict]:
     details = []
     try:
         # Executes fc-list and captures the output
+        fc_list = shutil.which("fc-list")
+        if not fc_list:
+            msg = "fc-list not found in PATH"
+            raise RuntimeError(msg)
         result = subprocess.run(
-            ["fc-list", ":family"], capture_output=True, text=True, check=True
+            [fc_list, ":family"], capture_output=True, text=True, check=True
         )
         lines = result.stdout.strip().split("\n")
 
@@ -1168,14 +1179,20 @@ def register_cli(parser) -> None:
     parser.set_defaults(func=main)
 
 
-def run_create_catalog(args) -> int:
-    """
-    Core implementation for create-catalog.
-    """
+# ------------------------------------------------------------------
+# TEST FONT CONFIGURATION
+# ------------------------------------------------------------------
 
-    global TEST_FONTS
-    TEST_FONTS = set()
 
+def _configure_test_fonts(args) -> set[str]:
+    """
+    Build the effective TEST_FONTS set from CLI arguments.
+
+    Semantics preserved:
+    - "__DEFAULT__" enables DEFAULT_TEST_FONTS
+    - explicit values extend the set
+    - returns the final TEST_FONTS set
+    """
     cli_fonts: set[str] = set()
     use_default = False
 
@@ -1186,145 +1203,217 @@ def run_create_catalog(args) -> int:
             else:
                 cli_fonts.add(value)
 
+    test_fonts = set()
+
     if use_default:
-        TEST_FONTS |= DEFAULT_TEST_FONTS
+        test_fonts |= DEFAULT_TEST_FONTS
 
-    TEST_FONTS |= cli_fonts
+    test_fonts |= cli_fonts
+    return test_fonts
 
-    # NOTE: --list-test-fonts intentionally ignores --quiet
-    if args.list_test_fonts:
-        log_info("TEST_FONTS configuration:")
-        if not TEST_FONTS:
-            log_info("  (empty)")
-        else:
-            for name in sorted(TEST_FONTS):
-                log_info(f"  - {name}")
 
-        log_info("Installed fonts matching TEST_FONTS:")
+def _handle_list_test_fonts(test_fonts: set[str]) -> int:
+    """
+    Implements --list-test-fonts behavior.
 
-        installed_fonts = get_installed_fonts()
-        matched = [
-            fname
-            for fname in installed_fonts
-            if font_matches_test_set(fname, TEST_FONTS)
-        ]
+    IMPORTANT:
+    - Must ignore --quiet by contract
+    - Lists configured TEST_FONTS and matching installed fonts
+    - Returns exit code (0)
+    """
+    log_info("TEST_FONTS configuration:")
 
-        if not matched:
-            log_info("  (none)")
-        else:
-            for name in sorted(matched):
-                log_info(f"  - {name}")
+    if not test_fonts:
+        log_info("  (empty)")
+    else:
+        for name in sorted(test_fonts):
+            log_info(f"  - {name}")
 
-        return 0
+    log_info("Installed fonts matching TEST_FONTS:")
 
+    installed_fonts = get_installed_fonts()
+    matched = [
+        fname for fname in installed_fonts if font_matches_test_set(fname, test_fonts)
+    ]
+
+    if not matched:
+        log_info("  (none)")
+    else:
+        for name in sorted(matched):
+            log_info(f"  - {name}")
+
+    return 0
+
+
+# ------------------------------------------------------------------
+# OUTPUT FILE PREPARATION
+# ------------------------------------------------------------------
+
+
+def _prepare_output_filename() -> tuple[int, str | None]:
+    """
+    Build a unique output filename based on platform and DATE_STR.
+
+    Returns:
+        (exit_code, filename)
+        exit_code == 0 → success
+        exit_code == 1 → error already logged
+    """
     base_name = f"fontshow_{platform.system()}_{DATE_STR}"
+
     try:
         output_filename = get_unique_filename(base_name, "tex")
     except ValueError as e:
         log_err(f"Error: {e}")
-        return 1
-
-    if args.test:
-        generate_test_output(args.number, bool(TEST_FONTS))
-
-    inv_path: Path | None = None
-    if args.inventory:
-        inv_path = Path(args.inventory)
+        return 1, None
     else:
-        default = Path(DEFAULT_INVENTORY)
-        if default.exists():
-            inv_path = default
+        return 0, output_filename
 
-    # ------------------------------------------------------------------
-    # INVENTORY MODE
-    # ------------------------------------------------------------------
-    if inv_path and inv_path.exists():
-        try:
-            with inv_path.open(encoding="utf-8") as f:
-                inventory = json.load(f)
 
-            _normalize_inventory_paths(inventory)
+# ------------------------------------------------------------------
+# INVENTORY / FONT SOURCE
+# ------------------------------------------------------------------
 
-            fonts = inventory.get("fonts", [])
 
-            from fontshow.semantic_validation import enforce_semantic_validation
+def _resolve_inventory_path(args) -> Path | None:
+    """
+    Resolve the inventory file path following CLI semantics.
 
-            ok, semantic_warnings = enforce_semantic_validation(
-                inventory,
-                strict=bool(args.strict_semantic),
-            )
+    Priority:
+    1. --inventory explicit path
+    2. DEFAULT_INVENTORY if exists
+    3. None → fallback to system font mode
+    """
+    if args.inventory:
+        return Path(args.inventory)
 
-            if not ok:
-                for w in semantic_warnings:
-                    sev = (w.get("severity") or "").lower()
-                    if sev in ("warn", "warning", "error"):
-                        log_err(w.get("message", "semantic validation error"))
-                return 1
+    default = Path(DEFAULT_INVENTORY)
+    if default.exists():
+        return default
 
-        except (OSError, json.JSONDecodeError, TypeError) as e:
-            log_err(f"failed to load inventory: {e}")
-            return 1
+    return None
 
+
+def _load_inventory(inv_path: Path, strict: bool) -> tuple[int, list]:
+    """
+    Load and validate inventory file.
+
+    Returns:
+        (exit_code, fonts)
+        exit_code == 0 → success
+        exit_code == 1 → error already logged
+    """
+    try:
+        with inv_path.open(encoding="utf-8") as f:
+            inventory = json.load(f)
+
+        _normalize_inventory_paths(inventory)
+        fonts = inventory.get("fonts", [])
+
+        from fontshow.semantic_validation import enforce_semantic_validation
+
+        ok, semantic_warnings = enforce_semantic_validation(
+            inventory,
+            strict=strict,
+        )
+
+        if not ok:
+            for w in semantic_warnings:
+                sev = (w.get("severity") or "").lower()
+                if sev in ("warn", "warning", "error"):
+                    log_err(w.get("message", "semantic validation error"))
+            return 1, []
+
+        # Ruff TRY300 intentionally ignored: logging must not control return
         if not _QUIET:
             log_ok(f"Inventory loaded: {inv_path} ({len(fonts)} fonts)")
 
-    # ------------------------------------------------------------------
-    # SYSTEM FONT MODE
-    # ------------------------------------------------------------------
+        return 0, fonts  # noqa: TRY300
+
+    except (OSError, json.JSONDecodeError, TypeError) as e:
+        log_err(f"failed to load inventory: {e}")
+        return 1, []
+
+
+def _load_system_fonts() -> tuple[int, list]:
+    """
+    Fallback: detect system fonts when inventory is unavailable.
+
+    Returns:
+        (exit_code, fonts)
+    """
+    fonts = get_installed_fonts()
+
+    if not fonts:
+        log_err("No fonts to catalog or system error.")
+        return 1, []
+
+    log_warn("Inventory not found, fallback to legacy detection...")
+    return 0, fonts
+
+
+# ------------------------------------------------------------------
+# DIAGNOSTICS
+# ------------------------------------------------------------------
+
+
+def _run_inventory_diagnostics(fonts: list) -> None:
+    """
+    Consistency diagnostics for inventory-based execution.
+
+    Applies only when:
+    - inventory mode active
+    - not quiet
+    """
+    missing_lang_count = 0
+    total_fonts = 0
+
+    for font in fonts:
+        if not isinstance(font, dict):
+            continue
+
+        total_fonts += 1
+        declared = set(font.get("coverage", {}).get("languages", []))
+
+        if not declared:
+            missing_lang_count += 1
+
+    if not missing_lang_count:
+        return
+
+    ratio = missing_lang_count / total_fonts if total_fonts else 0.0
+
+    if ratio < 0.10:
+        log_info(
+            f"{missing_lang_count} fonts have no declared language coverage "
+            f"({ratio:.0%})"
+        )
+    elif ratio < 0.50:
+        log_warn(
+            f"{missing_lang_count} fonts have no declared language coverage "
+            f"({ratio:.0%})"
+        )
     else:
-        fonts = get_installed_fonts()
-        if not fonts:
-            log_err("No fonts to catalog or system error.")
-            return 1
+        log_warn(
+            f"{missing_lang_count} fonts have no declared language coverage "
+            f"({ratio:.0%}) — catalog usefulness may be severely degraded"
+        )
 
-        log_warn("Inventory not found, fallback to legacy detection...")
 
-    # ------------------------------------------------------------------
-    # CONSISTENCY DIAGNOSTICS (Issue #29)
-    # ------------------------------------------------------------------
-    # Diagnostics apply ONLY to inventory-based execution
-    # and must respect --quiet.
-    if not _QUIET and inv_path and inv_path.exists():
-        missing_lang_count = 0
-        total_fonts = 0
+# ------------------------------------------------------------------
+# FONT FILTERING / OUTPUT GENERATION
+# ------------------------------------------------------------------
 
-        for font in fonts:
-            if not isinstance(font, dict):
-                continue  # safety guard
 
-            total_fonts += 1
-            declared = set(font.get("coverage", {}).get("languages", []))
-
-            if not declared:
-                missing_lang_count += 1
-
-        if missing_lang_count:
-            ratio = missing_lang_count / total_fonts if total_fonts else 0.0
-
-            if ratio < 0.10:
-                log_info(
-                    f"{missing_lang_count} fonts have no declared language coverage "
-                    f"({ratio:.0%})"
-                )
-            elif ratio < 0.50:
-                log_warn(
-                    f"{missing_lang_count} fonts have no declared language coverage "
-                    f"({ratio:.0%})"
-                )
-            else:
-                log_warn(
-                    f"{missing_lang_count} fonts have no declared language coverage "
-                    f"({ratio:.0%}) — catalog usefulness may be severely degraded"
-                )
-
-    # ------------------------------------------------------------------
-    # FONT FILTERING / OUTPUT
-    # ------------------------------------------------------------------
-    if TEST_FONTS:
+def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
+    """
+    Apply TEST_FONTS filtering, slicing, normalization, and grouping.
+    """
+    if test_fonts:
         fonts = [
             f
             for f in as_font_desc_list(fonts, legacy_mode=True)
-            if any(sub.lower() in font_family(f).lower() for sub in TEST_FONTS)
+            if any(sub.lower() in font_family(f).lower() for sub in test_fonts)
         ]
 
     if args.number:
@@ -1334,10 +1423,14 @@ def run_create_catalog(args) -> int:
         as_font_desc_list(fonts, legacy_mode=not bool(args.inventory)),
         key=font_family,
     )
-    fonts = group_fonts_by_family(fonts)
 
-    latex_content = generate_latex(fonts)
+    return group_fonts_by_family(fonts)
 
+
+def _write_latex_output(output_filename: str, latex_content: str) -> None:
+    """
+    Write generated LaTeX catalog to disk and emit user messages.
+    """
     if not _QUIET:
         log_info(f"Writing file {output_filename}...")
 
@@ -1350,7 +1443,75 @@ def run_create_catalog(args) -> int:
         log_ok(
             f"  Execute: lualatex -interaction=nonstopmode {output_filename} | texlogsieve (twice)"
         )
-    # removed useless try/except (exception propagates unchanged)
+
+
+def run_create_catalog(args) -> int:
+    """
+    Core implementation for create-catalog.
+
+    Refactored structure:
+    - Configure TEST_FONTS
+    - Handle --list-test-fonts early exit
+    - Prepare output filename
+    - Resolve font source (inventory or system)
+    - Run diagnostics (inventory mode only)
+    - Filter + prepare fonts
+    - Generate and write LaTeX output
+
+    Behavior identical to pre-refactor implementation.
+    """
+
+    global TEST_FONTS
+
+    # --------------------------------------------------------------
+    # TEST FONT CONFIGURATION
+    # --------------------------------------------------------------
+    TEST_FONTS = _configure_test_fonts(args)
+
+    if args.list_test_fonts:
+        return _handle_list_test_fonts(TEST_FONTS)
+
+    # --------------------------------------------------------------
+    # OUTPUT FILE PREPARATION
+    # --------------------------------------------------------------
+    rc, output_filename = _prepare_output_filename()
+    if rc != 0 or not output_filename:
+        return 1
+
+    if args.test:
+        generate_test_output(args.number, bool(TEST_FONTS))
+
+    # --------------------------------------------------------------
+    # INVENTORY / FONT SOURCE
+    # --------------------------------------------------------------
+    inv_path = _resolve_inventory_path(args)
+
+    if inv_path and inv_path.exists():
+        rc, fonts = _load_inventory(inv_path, bool(args.strict_semantic))
+        if rc != 0:
+            return 1
+    else:
+        rc, fonts = _load_system_fonts()
+        if rc != 0:
+            return 1
+
+    # --------------------------------------------------------------
+    # CONSISTENCY DIAGNOSTICS (inventory mode only)
+    # --------------------------------------------------------------
+    if not _QUIET and inv_path and inv_path.exists():
+        _run_inventory_diagnostics(fonts)
+
+    # --------------------------------------------------------------
+    # FONT FILTERING / OUTPUT PREPARATION
+    # --------------------------------------------------------------
+    fonts = _filter_and_prepare_fonts(fonts, args, TEST_FONTS)
+
+    latex_content = generate_latex(fonts)
+
+    # --------------------------------------------------------------
+    # WRITE OUTPUT
+    # --------------------------------------------------------------
+    _write_latex_output(output_filename, latex_content)
 
     return 0
 

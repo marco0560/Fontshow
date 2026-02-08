@@ -21,10 +21,10 @@ def test_macos_is_error(monkeypatch):
         ("linux", "wsl", Severity.WARN),
         ("linux", "container", Severity.WARN),
         ("linux", "ci", Severity.WARN),
-        # Windows (experimental)
+        # Windows (experimental platform)
         ("windows", "bare-metal", Severity.WARN),
         ("windows", "ci", Severity.WARN),
-        # macOS (unsupported)
+        # macOS (unsupported platform)
         ("macos", "bare-metal", Severity.ERROR),
         ("macos", "ci", Severity.ERROR),
         # Unknown OS

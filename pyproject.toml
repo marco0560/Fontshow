@@ -57,7 +57,7 @@ line-length = 88
 target-version = "py311"
 
 # -------------------------------------------------
-# Ruff linting policy (Phase C + Phase 1)
+# Ruff linting policy
 # -------------------------------------------------
 
 [tool.ruff.lint]
@@ -80,6 +80,17 @@ target-version = "py311"
 # Goal:
 #   Catch remaining real defects without enabling high-noise families
 #   (docstrings, typing completeness, complexity, perf, style).
+# ------------------------------------------------------------
+# Phase 7 — Engineering strictness (maturity phase, still low-noise)
+#
+# Adds:
+#   S602, S607, S610, S701 → core subprocess / execution hygiene
+#   C901, PLR0912          → light complexity detection
+#   ERA                    → commented-out / dead code detection
+#
+# Goal:
+#   Improve maintainability and execution safety without opening
+#   style, typing, or documentation flood.
 # ------------------------------------------------------------
 
 select = [
@@ -119,13 +130,25 @@ select = [
     "LOG",    # logging misuse
 
     # ------------------------------------------------------------
-    # Phase 6 — Robustness hardening (NEW)
+    # Phase 6 — Robustness hardening
     # ------------------------------------------------------------
     "PLR",    # pylint refactor (risky constructs only; complexity still ignored)
     "RSE",    # raise misuse / exception correctness
     "SIM",    # simplification rules revealing hidden logic issues
     "ICN",    # import alias / shadowing correctness
     "TCH",    # typing boundary correctness helpers
+
+    # ------------------------------------------------------------
+    # Phase 7 — Engineering strictness (NEW)
+    # ------------------------------------------------------------
+    "S602",   # subprocess with shell=True
+    "S607",   # partial path execution
+    "S610",   # subprocess execution hygiene
+    "S701",   # template autoescape (harmless if unused)
+    "C901",   # function complexity
+    "PLR0912",# too many branches
+    "ERA",    # commented-out code / dead code
+    "TD",     # type comment detection (encourage migration to inline typing)
 ]
 
 ignore = [
@@ -148,11 +171,9 @@ ignore = [
     "S324",
 
     # ------------------------------------------------------------
-    # Complexity — postponed
+    # Complexity — postponed (except C901 + PLR0912 enabled in Phase 7)
     # ------------------------------------------------------------
-    "C901",
     "PLR0911",
-    "PLR0912",
     "PLR0915",
 
     # ------------------------------------------------------------
@@ -169,8 +190,6 @@ ignore = [
     # ------------------------------------------------------------
     # Hygiene / TODO
     # ------------------------------------------------------------
-    "TD",
-    "ERA001",
     "FIX002",
 
     # ------------------------------------------------------------
@@ -199,13 +218,23 @@ unfixable = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "S108"] # Allow asserts in tests
+"tests/*" = [
+    "S101",  # asserts allowed in tests
+    "S108",  # temp files allowed
+    "S607",  # CLI tests intentionally invoke entrypoints via PATH (portable & venv-safe)
+]
 "tests/test_charset_decoding.py" = [
-    "B017",   # So only truly generic-failure tests allow broad Exception
+    "B017", # So only truly generic-failure tests allow broad Exception
 ]
 "tests/helpers.py" = [
-    "PLR0913",   # test helper requires multiple independent knobs
+    "PLR0913", # test helper requires multiple independent knobs
 ]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.pylint]
+max-branches = 18
 
 [tool.ruff.lint.isort]
 known-first-party = ["fontshow"]

@@ -59,8 +59,8 @@ def main(argv: list[str] | None = None) -> int:
 
     # Check semantic-release is available locally (node_modules)
     try:
-        subprocess.run(
-            ["npx", "--no-install", "semantic-release", "--version"],
+        subprocess.run(  # (trusted fixed binary, no user input, no shell)
+            ["npx", "--no-install", "semantic-release", "--version"],  # noqa: S607
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             check=True,
