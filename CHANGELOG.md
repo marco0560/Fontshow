@@ -1,3 +1,9 @@
+## [0.36.8](https://github.com/marco0560/Fontshow/compare/v0.36.7...v0.36.8) (2026-02-08)
+
+### Bug Fixes
+
+* **core:** Ruff Phase 7 stabilization + refactors, all tests green ([ae0098c](https://github.com/marco0560/Fontshow/commit/ae0098c95b212fd291ed269a6f453f785944736e))
+
 ## [0.36.7](https://github.com/marco0560/Fontshow/compare/v0.36.6...v0.36.7) (2026-02-07)
 
 ### Bug Fixes
