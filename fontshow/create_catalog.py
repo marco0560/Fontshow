@@ -48,7 +48,7 @@ from pathlib import Path
 
 from fontshow import __version__
 from fontshow.cli_utils import add_common_arguments, log_err, log_info, log_ok, log_warn
-from fontshow.logging_utils import log
+from fontshow.logging_utils import log, log_trace_cat
 
 # Platform-specific imports (deferred)
 if sys.platform == "win32":
@@ -471,7 +471,19 @@ def group_fonts_by_family(fonts: list[dict]) -> list[dict]:
     for font in fonts:
         fam = font_family(font)
         families.setdefault(fam, []).append(font)
-    return [entries[0] for entries in families.values()]
+    result = [entries[0] for entries in families.values()]
+
+    log_trace_cat(
+        log,
+        "flow",
+        "fonts grouped by family",
+        extra={
+            "families": len(result),
+            "input_fonts": len(fonts),
+        },
+    )
+
+    return result
 
 
 # ============================================================
@@ -750,6 +762,15 @@ def render_sample_code(font: dict, fam: str) -> str:
     - For RTL scripts use TestNonLatin (polyglossia + harfbuzz).
     - For LTR scripts use a minimal, NFSS-safe fontspec call.
     """
+    log_trace_cat(
+        log,
+        "latex",
+        "rendering sample code",
+        extra={
+            "family": fam,
+        },
+    )
+
     txt = render_sample_text(font)
     ps = primary_script(font)
 
@@ -933,6 +954,8 @@ def get_font_details_linux() -> list[dict]:
     Each item contains `raw_line`, `extracted_names` and `base_names` for
     easier inspection while tuning parsers.
     """
+    from time import perf_counter
+
     details = []
     try:
         # Executes fc-list and captures the output
@@ -940,8 +963,29 @@ def get_font_details_linux() -> list[dict]:
         if not fc_list:
             msg = "fc-list not found in PATH"
             raise RuntimeError(msg)
+        from time import perf_counter
+
+        log_trace_cat(
+            log,
+            "io",
+            "fc-list start",
+            extra={"cmd": fc_list},
+        )
+
+        t0 = perf_counter()
         result = subprocess.run(
             [fc_list, ":family"], capture_output=True, text=True, check=True
+        )
+        duration_ms = int((perf_counter() - t0) * 1000)
+        log_trace_cat(
+            log,
+            "perf",
+            "fc-list timing",
+            extra={
+                "cmd": fc_list,
+                "duration_ms": duration_ms,
+                "exit_code": result.returncode,
+            },
         )
         lines = result.stdout.strip().split("\n")
 
@@ -963,6 +1007,15 @@ def get_font_details_linux() -> list[dict]:
     except FileNotFoundError:
         log_err("'fc-list' not found. Make sure fontconfig is installed.")
     except subprocess.CalledProcessError as e:
+        log_trace_cat(
+            log,
+            "io",
+            "fc-list failed",
+            extra={
+                "cmd": "fc-list",
+                "exit_code": e.returncode,
+            },
+        )
         log_err(f"Error running fc-list: {e}")
     return details
 
@@ -1306,6 +1359,15 @@ def _load_inventory(inv_path: Path, strict: bool) -> tuple[int, list]:
     try:
         with inv_path.open(encoding="utf-8") as f:
             inventory = json.load(f)
+            log_trace_cat(
+                log,
+                "flow",
+                "inventory JSON loaded",
+                extra={
+                    "fonts_count": len(inventory.get("fonts", [])),
+                    "path": str(inv_path),
+                },
+            )
 
         _normalize_inventory_paths(inventory)
         fonts = inventory.get("fonts", [])
@@ -1315,6 +1377,16 @@ def _load_inventory(inv_path: Path, strict: bool) -> tuple[int, list]:
         ok, semantic_warnings = enforce_semantic_validation(
             inventory,
             strict=strict,
+        )
+        log_trace_cat(
+            log,
+            "flow",
+            "semantic validation completed",
+            extra={
+                "ok": ok,
+                "warnings": len(semantic_warnings),
+                "strict": strict,
+            },
         )
 
         if not ok:
@@ -1409,6 +1481,15 @@ def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
     """
     Apply TEST_FONTS filtering, slicing, normalization, and grouping.
     """
+    log_trace_cat(
+        log,
+        "flow",
+        "font filtering started",
+        extra={
+            "input_fonts": len(fonts),
+        },
+    )
+
     if test_fonts:
         fonts = [
             f
@@ -1424,7 +1505,17 @@ def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
         key=font_family,
     )
 
-    return group_fonts_by_family(fonts)
+    result = group_fonts_by_family(fonts)
+    log_trace_cat(
+        log,
+        "flow",
+        "font filtering completed",
+        extra={
+            "output_fonts": len(result),
+        },
+    )
+
+    return result
 
 
 def _write_latex_output(output_filename: str, latex_content: str) -> None:
@@ -1512,6 +1603,23 @@ def run_create_catalog(args) -> int:
     # WRITE OUTPUT
     # --------------------------------------------------------------
     _write_latex_output(output_filename, latex_content)
+    log_trace_cat(
+        log,
+        "io",
+        "catalog tex written",
+        extra={
+            "path": str(output_filename),
+        },
+    )
+    log_trace_cat(
+        log,
+        "flow",
+        "create-catalog completed",
+        extra={
+            "fonts_used": len(fonts),
+            "output": str(output_filename),
+        },
+    )
 
     return 0
 
@@ -1550,6 +1658,15 @@ def main(args) -> int:
     except Exception as exc:  # noqa: BLE001
         # (Crash barrier: convert unexpected failure → exit code 2)
         log_err(f"create-catalog failed: {exc}")
+        log_trace_cat(
+            log,
+            "perf",
+            "catalog metrics",
+            extra={
+                "exit_code": 2,
+                "exception": True,
+            },
+        )
         return 2
 
     if exit_code == 0:
@@ -1557,6 +1674,15 @@ def main(args) -> int:
             log_ok("catalog created successfully")
         elif not _QUIET:
             log_ok("Done.")
+
+    log_trace_cat(
+        log,
+        "perf",
+        "catalog metrics",
+        extra={
+            "exit_code": exit_code,
+        },
+    )
 
     return exit_code
 

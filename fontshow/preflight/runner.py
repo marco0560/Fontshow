@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from fontshow.logging_utils import log, log_trace_cat
 from fontshow.preflight.checks import environment, font_discovery, latex
 from fontshow.preflight.model import CheckResult, PreflightResult
 from fontshow.preflight.registry import get_registered_checks
@@ -85,6 +86,17 @@ def run_preflight(
 
     By default, all checks listed in CHECKS are executed in deterministic order.
     """
+    log_trace_cat(
+        log,
+        "flow",
+        "preflight started",
+        extra={
+            "enabled_count": None if enabled is None else len(enabled),
+            "disabled_count": None if disabled is None else len(disabled),
+            "checks_override": checks is not None,
+        },
+    )
+
     results: list[CheckResult] = []
 
     if checks is not None:
@@ -98,7 +110,35 @@ def run_preflight(
         )
 
     for check_cls in active_checks:
+        log_trace_cat(
+            log,
+            "flow",
+            "preflight check started",
+            extra={
+                "check_id": check_cls.check_id,
+            },
+        )
         check = check_cls()
-        results.append(check.run())
+        result = check.run()
+        log_trace_cat(
+            log,
+            "flow",
+            "preflight check completed",
+            extra={
+                "check_id": check_cls.check_id,
+                "severity": result.severity.name,
+                "skipped": result.skipped,
+            },
+        )
+        results.append(result)
+
+    log_trace_cat(
+        log,
+        "flow",
+        "preflight completed",
+        extra={
+            "checks_run": len(results),
+        },
+    )
 
     return PreflightResult(results)

@@ -17,6 +17,8 @@ from typing import Any
 
 import pycountry
 
+from fontshow.logging_utils import log, log_trace_cat
+
 # NOTE:
 # pycountry is not a full mirror of the IANA language subtag registry.
 # Some valid BCP-47 primary language subtags may be missing in pycountry.
@@ -174,6 +176,13 @@ def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
     """
     warnings: list[dict[str, Any]] = []
 
+    log_trace_cat(
+        log,
+        "validate",
+        "semantic validation started",
+        extra={},
+    )
+
     fonts = inventory.get("fonts", [])
 
     for idx, font in enumerate(fonts):
@@ -195,6 +204,19 @@ def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
             # Raw language tags are stored in coverage["languages_raw"]
             # and must not be validated here.
             if not _is_known_language(code):
+                log_trace_cat(
+                    log,
+                    "validate",
+                    "semantic rule triggered",
+                    extra={
+                        "severity": "warning",
+                        "code": "invalid_language_code",
+                        "font": font_name,
+                        "language": code,
+                        "rule": code,
+                        "message": f"Invalid language code: '{code}'",
+                    },
+                )
                 warnings.append(
                     {
                         "severity": "warning",
@@ -238,6 +260,26 @@ def enforce_semantic_validation(
     for w in warnings:
         sev = (w.get("severity") or "").lower()
         if sev in ("warn", "warning", "error"):
+            log_trace_cat(
+                log,
+                "validate",
+                "semantic validation failed",
+                extra={
+                    "rule": "strict_semantic_validation",
+                    "severity": sev,
+                    "strict": True,
+                    "warnings_count": len(warnings),
+                },
+            )
             return False, warnings
+
+    log_trace_cat(
+        log,
+        "validate",
+        "semantic validation completed",
+        extra={
+            "warnings_count": len(warnings),
+        },
+    )
 
     return True, warnings

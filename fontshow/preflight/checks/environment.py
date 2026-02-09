@@ -1,5 +1,6 @@
 # fontshow/preflight/checks/environment.py
 
+from fontshow.logging_utils import log, log_trace_cat
 from fontshow.preflight.checks.base import BaseCheck
 from fontshow.preflight.model import CheckResult, Severity
 
@@ -36,6 +37,16 @@ class EnvironmentSupportCheck(BaseCheck):
     def run(self) -> CheckResult:
         os_name = detect_os()
         execution_mode = detect_execution_mode()
+
+        log_trace_cat(
+            log,
+            "raw",
+            "environment detected",
+            extra={
+                "os_name": os_name,
+                "execution_mode": execution_mode,
+            },
+        )
 
         if os_name == "linux" and execution_mode == "bare-metal":
             return CheckResult(

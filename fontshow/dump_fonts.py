@@ -33,7 +33,7 @@ from typing import Any
 
 from fontshow import __version__
 from fontshow.cli_utils import add_common_arguments, log_err, log_info, log_ok
-from fontshow.logging_utils import log
+from fontshow.logging_utils import log, log_trace_cat
 
 try:
     # fontTools does not provide type stubs/py.typed; tell mypy to ignore
@@ -201,7 +201,22 @@ def get_installed_font_files() -> list[Path]:
 
 def get_installed_font_files_linux() -> list[Path]:
     """Linux font discovery using FontConfig (fc-list)."""
+    from time import perf_counter
+
+    t0 = perf_counter()
     proc = run_command(["fc-list", "--format=%{file}\n"])
+    duration_ms = int((perf_counter() - t0) * 1000)
+
+    log_trace_cat(
+        log,
+        "perf",
+        "fc-list timing",
+        extra={
+            "duration_ms": duration_ms,
+            "exit_code": proc.returncode,
+        },
+    )
+
     if proc.returncode != 0:
         msg = f"fc-list failed:\n{proc.stdout}"
         raise RuntimeError(msg)
@@ -398,10 +413,36 @@ def _run_fc_query(path: Path) -> str:
             "font_path": str(path),
         },
     )
+    log_trace_cat(
+        log,
+        "io",
+        "fc-query start",
+        extra={
+            "font_path": str(path),
+            "cmd": "fc-query",
+        },
+    )
 
+    from time import perf_counter
+
+    t0 = perf_counter()
     proc = run_command(["fc-query", str(path)])
+    duration_ms = int((perf_counter() - t0) * 1000)
 
-    log.trace(
+    log_trace_cat(
+        log,
+        "perf",
+        "fc-query timing",
+        extra={
+            "font_path": str(path),
+            "duration_ms": duration_ms,
+            "exit_code": proc.returncode,
+        },
+    )
+
+    log_trace_cat(
+        log,
+        "io",
         "fc-query executed",
         extra={
             "font_path": str(path),
@@ -419,14 +460,26 @@ def _run_fc_query(path: Path) -> str:
             },
         )
 
-    raw = proc.stdout or ""
+    raw = proc.stdout if proc.stdout else ""
+    log_trace_cat(
+        log,
+        "io",
+        "fc-query raw output",
+        extra={
+            "font_path": str(path),
+            "raw_length": len(raw),
+        },
+        raw=raw,
+    )
 
-    log.trace(
+    log_trace_cat(
+        log,
+        "raw",
         "fc-query raw output received",
         extra={
             "font_path": str(path),
-            "stdout": raw,
         },
+        raw=raw,
     )
 
     return raw
@@ -564,6 +617,16 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
     """
 
     raw = _run_fc_query(path)
+    log_trace_cat(
+        log,
+        "io",
+        "fc-query raw output",
+        extra={
+            "font_path": str(path),
+            "raw_length": len(raw) if raw else 0,
+        },
+        raw=raw,
+    )
 
     # Normalize fc-query output: strip leading whitespace
     lines = [line.lstrip() for line in raw.splitlines()]
@@ -574,6 +637,19 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
         path,
         lines,
         include_charset=include_charset,
+    )
+    log_trace_cat(
+        log,
+        "io",
+        "fc-query parsed",
+        extra={
+            "font_path": str(path),
+            "languages": core["languages"],
+            "scripts": sorted(set(core["scripts"])),
+            "decorative": core["decorative"],
+            "color": core["color"],
+            "variable": core["variable"],
+        },
     )
 
     return {
@@ -932,19 +1008,51 @@ def fonttools_extract_all(  # noqa: C901
                 "error": "fontTools not available",
             }
         ]
+
+    from time import perf_counter
+
+    t0_total = perf_counter()
+
     container = detect_font_container(path)
+    log_trace_cat(
+        log,
+        "io",
+        "container detected",
+        extra={
+            "font_path": str(path),
+            "container": container,
+        },
+    )
 
     # Single-face formats
     if container != "TTC":
         key = font_cache_key(path, None)
         cache_file = cache_dir / f"{key}.json"
         if use_cache and cache_file.exists():
+            log_trace_cat(
+                log,
+                "cache",
+                "cache hit",
+                extra={
+                    "font_path": str(path),
+                    "cache_file": str(cache_file),
+                },
+            )
             try:
                 return [json.loads(cache_file.read_text(encoding="utf-8"))]
             except (OSError, json.JSONDecodeError):
                 pass
 
         out: dict[str, Any] = {"ok": False, "container": container, "ttc_index": None}
+        log_trace_cat(
+            log,
+            "cache",
+            "cache miss",
+            extra={
+                "font_path": str(path),
+            },
+        )
+
         try:
             tt = TTFont(path, lazy=True, recalcBBoxes=False, recalcTimestamp=False)  # type: ignore[misc]
             out = _fonttools_extract_from_tt(
@@ -953,8 +1061,31 @@ def fonttools_extract_all(  # noqa: C901
         except (OSError, ValueError, TTLibError) as e:
             out["ok"] = False
             out["error"] = f"Cannot open font: {e}"
+            log_trace_cat(
+                log,
+                "io",
+                "fonttools extraction failed",
+                extra={
+                    "font_path": str(path),
+                    "error": str(e),
+                },
+            )
 
         cache_file.write_text(json.dumps(out, indent=2), encoding="utf-8")
+
+        duration_ms = int((perf_counter() - t0_total) * 1000)
+        log_trace_cat(
+            log,
+            "perf",
+            "fonttools extraction timing",
+            extra={
+                "font_path": str(path),
+                "container": container,
+                "duration_ms": duration_ms,
+                "faces": 1,
+            },
+        )
+
         return [out]
 
     # TTC formats (multi-face)
@@ -969,6 +1100,15 @@ def fonttools_extract_all(  # noqa: C901
             "error": f"Cannot open TTC: {e}",
         }
         # cache file-level error
+        log_trace_cat(
+            log,
+            "io",
+            "fonttools extraction failed",
+            extra={
+                "font_path": str(path),
+                "error": str(e),
+            },
+        )
         key = font_cache_key(path, None)
         (cache_dir / f"{key}.json").write_text(
             json.dumps(out, indent=2), encoding="utf-8"
@@ -977,6 +1117,17 @@ def fonttools_extract_all(  # noqa: C901
 
     ttc_count = len(col.fonts)
     for idx, tt in enumerate(col.fonts):
+        log_trace_cat(
+            log,
+            "io",
+            "TTC face extraction",
+            extra={
+                "font_path": str(path),
+                "face_index": idx,
+                "ttc_count": ttc_count,
+            },
+        )
+
         key = font_cache_key(path, idx)
         cache_file = cache_dir / f"{key}.json"
         if use_cache and cache_file.exists():
@@ -991,6 +1142,7 @@ def fonttools_extract_all(  # noqa: C901
             except (OSError, json.JSONDecodeError):
                 pass
 
+        t0_face = perf_counter()
         try:
             out = _fonttools_extract_from_tt(
                 path=path, container="TTC", tt=tt, ttc_index=idx
@@ -1005,8 +1157,33 @@ def fonttools_extract_all(  # noqa: C901
                 "error": f"TTC face extract failed: {e}",
             }
 
+        duration_ms = int((perf_counter() - t0_face) * 1000)
+        log_trace_cat(
+            log,
+            "perf",
+            "fonttools face extraction timing",
+            extra={
+                "font_path": str(path),
+                "face_index": idx,
+                "duration_ms": duration_ms,
+            },
+        )
+
         cache_file.write_text(json.dumps(out, indent=2), encoding="utf-8")
         results.append(out)
+
+    duration_ms = int((perf_counter() - t0_total) * 1000)
+    log_trace_cat(
+        log,
+        "perf",
+        "fonttools extraction timing",
+        extra={
+            "font_path": str(path),
+            "container": "TTC",
+            "duration_ms": duration_ms,
+            "faces": ttc_count,
+        },
+    )
 
     return results
 
@@ -1346,6 +1523,14 @@ def run_dump_fonts(args) -> int:
     )
 
     font_files = get_installed_font_files()
+    log_trace_cat(
+        log,
+        "perf",
+        "font discovery metrics",
+        extra={
+            "fonts_found": len(font_files),
+        },
+    )
 
     # --- GLOBAL COUNTERS (must not reset per font file) ---
     total_faces = 0
@@ -1443,6 +1628,14 @@ def run_dump_fonts(args) -> int:
             "total_faces_seen": total_faces,
             "skipped_non_opentype_faces": skipped_non_opentype,
             "include_fc_charset": bool(args.include_fc_charset and IS_LINUX),
+        },
+    )
+    log_trace_cat(
+        log,
+        "perf",
+        "inventory metrics",
+        extra={
+            "fonts_total": len(inventory.get("fonts", [])),
         },
     )
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -97,6 +98,30 @@ class _LogFacade:
 
     """
 
+    def isEnabledFor(self, level: int) -> bool:
+        """Proxy to underlying stdlib logger."""
+        logger = self._logger()
+        return bool(logger and logger.isEnabledFor(level))
+
+    def log(self, level: int, msg: str, *args, **kwargs) -> None:
+        """
+        Proxy to stdlib logger.log().
+
+        Contract:
+            - MUST never raise
+            - If logging is disabled/uninitialized, MUST be a no-op.
+
+        Note on stacklevel:
+            - We accept a `stacklevel` kwarg and increment it by 1 to account
+              for this facade frame.
+        """
+        logger = self._logger()
+        if logger is None:
+            return
+
+        stacklevel = kwargs.pop("stacklevel", 1)
+        logger.log(level, msg, *args, stacklevel=stacklevel + 1, **kwargs)
+
     def _logger(self) -> logging.Logger | None:
         return _ROOT_LOGGER
 
@@ -149,3 +174,240 @@ class _LogFacade:
 
 
 log = _LogFacade()
+
+# ============================================================
+# TRACE selective architecture (Phase B-DEEP)
+# ============================================================
+
+# ------------------------------------------------------------
+# TRACE categories (stable identifiers)
+# ------------------------------------------------------------
+
+TRACE_CATEGORIES: set[str] = {
+    "io",
+    "raw",
+    "parse",
+    "infer",
+    "validate",
+    "cache",
+    "perf",
+    "flow",
+    "latex",
+}
+
+# ------------------------------------------------------------
+# Category selector parsing
+# ------------------------------------------------------------
+
+
+@lru_cache(maxsize=1)
+def _parse_trace_selector() -> tuple[set[str] | None, set[str] | None]:
+    """
+    Parse FONTSHOW_TRACE selector.
+
+    Returns:
+        (include_set | None, exclude_set | None)
+
+    Rules:
+        None include_set → treat as "all"
+        Special tokens:
+            all
+            none
+    """
+    raw = os.environ.get("FONTSHOW_TRACE")
+    if not raw:
+        return None, None  # default = all
+
+    raw = raw.strip().lower()
+
+    if raw == "all":
+        return None, None
+
+    if raw == "none":
+        return set(), None
+
+    include: set[str] = set()
+    exclude: set[str] = set()
+
+    for token in raw.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        if token.startswith("-"):
+            exclude.add(token[1:])
+        else:
+            include.add(token)
+
+    return include, exclude
+
+
+def trace_enabled(category: str) -> bool:
+    """
+    Fast check whether TRACE is enabled for a category.
+
+    Requires global TRACE level already active.
+    """
+    include, exclude = _parse_trace_selector()
+
+    if include is None:
+        # default = all categories allowed
+        return not (exclude and category in exclude)
+
+    if not include:
+        return False
+
+    if category not in include:
+        return False
+
+    return not (exclude and category in exclude)
+
+
+# ------------------------------------------------------------
+# RAW truncation guard
+# ------------------------------------------------------------
+
+
+@lru_cache(maxsize=1)
+def _raw_max_len() -> int:
+    val = os.environ.get("FONTSHOW_TRACE_RAW_MAXLEN")
+    if not val:
+        return 4096
+    try:
+        return max(0, int(val))
+    except ValueError:
+        return 4096
+
+
+def _truncate_raw(value: str) -> tuple[str, dict]:
+    """
+    Truncate raw TRACE payload if needed.
+
+    Returns:
+        (possibly_truncated_value, metadata)
+    """
+    max_len = _raw_max_len()
+    if max_len <= 0:
+        return "", {"raw_truncated": True, "raw_len": len(value)}
+
+    if len(value) <= max_len:
+        return value, {}
+
+    return (
+        value[:max_len],
+        {"raw_truncated": True, "raw_len": len(value)},
+    )
+
+
+# ------------------------------------------------------------
+# TRACE output formatting
+# ------------------------------------------------------------
+
+
+@lru_cache(maxsize=1)
+def _trace_format() -> str:
+    fmt = os.environ.get("FONTSHOW_TRACE_FORMAT", "json").lower()
+    return "human" if fmt == "human" else "json"
+
+
+def _format_trace_human(msg: str, extra: dict | None) -> str:
+    """
+    Convert structured TRACE into readable form.
+    """
+    if not extra:
+        return msg
+
+    parts = [msg]
+
+    cat = extra.get("trace_category")
+    if cat:
+        parts.append(f"[{cat}]")
+
+    for k, v in extra.items():
+        if k == "trace_category":
+            continue
+        parts.append(f"{k}={v}")
+
+    return " | ".join(parts)
+
+
+# ------------------------------------------------------------
+# TRACE entry point
+# ------------------------------------------------------------
+
+
+def log_trace_cat(
+    logger,
+    category: str,
+    message: str,
+    *,
+    extra: dict | None = None,
+    raw: str | None = None,
+    **kwargs,
+) -> None:
+    """
+    Emit a TRACE event under a category.
+
+    Conditions:
+        - global TRACE level must be active
+        - category must be enabled
+
+    Structured field:
+        extra["trace_category"] = category
+    """
+
+    if not logger.isEnabledFor(TRACE_LEVEL_NUM):
+        return
+
+    if category not in TRACE_CATEGORIES:
+        return
+
+    if not trace_enabled(category):
+        return
+
+    if extra is None:
+        extra = {}
+
+    extra = dict(extra)
+    extra["trace_category"] = category
+
+    if raw is not None:
+        raw_val, meta = _truncate_raw(raw)
+        extra["raw"] = raw_val
+        extra.update(meta)
+
+    # NOTE:
+    # We intentionally report TRACE events as coming from the public caller
+    # (e.g. dump_fonts.fc_query_extract), not from logging_utils internals.
+    # Stack shape (typical):
+    #   _run_fc_query -> log_trace_cat -> _LogFacade.log -> stdlib logger.log
+    # stacklevel=3 points at fc_query_extract.
+    # TRACE CALLER CONTRACT
+    # ---------------------
+    # TRACE must report the *functional emitter* (the function performing
+    # the traced operation), not:
+    #   - logging_utils internals
+    #   - higher public wrappers
+    #
+    # Typical stack:
+    #   fc_query_extract -> _run_fc_query -> log_trace_cat -> _LogFacade.log -> stdlib
+    #
+    # stacklevel=3 points to the functional emitter (_run_fc_query).
+    # This is intentional and part of the TRACE design contract.
+    _stacklevel_public = 3
+
+    if _trace_format() == "human":
+        message = _format_trace_human(message, extra)
+        logger.log(
+            TRACE_LEVEL_NUM,
+            message,
+            stacklevel=_stacklevel_public,
+            **kwargs,
+        )
+    else:
+        logger.log(
+            TRACE_LEVEL_NUM,
+            message,
+            extra=extra,
+            stacklevel=_stacklevel_public,
+            **kwargs,
+        )

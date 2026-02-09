@@ -17,6 +17,8 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from fontshow.logging_utils import log, log_trace_cat
+
 
 def _is_short_numeric_list(value: Any, *, max_len: int) -> bool:
     if not isinstance(value, list):
@@ -38,6 +40,18 @@ def dumps_pretty(
     compact_numeric_lists_max_len: int = 8,
 ) -> str:
     """Serialize *value* to JSON with stable indentation and compact numeric lists."""
+
+    log_trace_cat(
+        log,
+        "raw",
+        "json formatting started",
+        extra={
+            "indent": indent,
+            "ensure_ascii": ensure_ascii,
+            "sort_keys": sort_keys,
+            "compact_numeric_lists_max_len": compact_numeric_lists_max_len,
+        },
+    )
 
     def write(v: Any, level: int) -> str:
         if v is None or isinstance(v, str | int | float | bool):
@@ -61,6 +75,15 @@ def dumps_pretty(
 
         if isinstance(v, Sequence) and not isinstance(v, bytes | bytearray):
             if _is_short_numeric_list(v, max_len=compact_numeric_lists_max_len):
+                log_trace_cat(
+                    log,
+                    "raw",
+                    "json compact numeric list applied",
+                    extra={
+                        "length": len(v),
+                        "max_len": compact_numeric_lists_max_len,
+                    },
+                )
                 return json.dumps(
                     list(v),
                     ensure_ascii=ensure_ascii,
@@ -81,4 +104,13 @@ def dumps_pretty(
 
         return json.dumps(v, ensure_ascii=ensure_ascii)
 
-    return write(value, 0) + "\n"
+    out = write(value, 0) + "\n"
+    log_trace_cat(
+        log,
+        "raw",
+        "json formatting completed",
+        extra={
+            "bytes": len(out.encode("utf-8")),
+        },
+    )
+    return out

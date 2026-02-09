@@ -29,6 +29,7 @@ from fontshow.cli_utils import add_common_arguments, log_err, log_info, log_ok, 
 from fontshow.dump_fonts import UNICODE_BLOCKS
 from fontshow.infer_languages import infer_languages
 from fontshow.json_format import dumps_pretty
+from fontshow.logging_utils import log, log_trace_cat
 from fontshow.schema_validation import validate_inventory_schema
 from fontshow.semantic_validation import normalize_languages
 
@@ -1054,6 +1055,16 @@ def _process_charset(
     normalized = normalize_charset_ranges(charset["ranges"])
     coverage["normalized_charset"] = normalized
 
+    log_trace_cat(
+        log,
+        "infer",
+        "charset normalized",
+        extra={
+            "ranges_count": len(normalized.get("ranges", [])),
+            "codepoints_count": normalized.get("codepoints_count"),
+        },
+    )
+
     logger.debug(
         "charset normalized",
         extra={
@@ -1066,7 +1077,15 @@ def _process_charset(
     blocks = unicode_blocks_from_charset_ranges(normalized["ranges"])
     if blocks:
         coverage["unicode_blocks_from_charset"] = blocks
-
+        log_trace_cat(
+            log,
+            "infer",
+            "unicode blocks derived",
+            extra={
+                "blocks": sorted(blocks.keys()),
+                "blocks_count": len(blocks),
+            },
+        )
         logger.debug(
             "unicode blocks derived from charset",
             extra={"font_path": font_path, "blocks_count": len(blocks)},
@@ -1080,7 +1099,15 @@ def _process_charset(
 
     if script_cov:
         coverage["script_coverage_from_charset"] = script_cov
-
+        log_trace_cat(
+            log,
+            "infer",
+            "script coverage from charset",
+            extra={
+                "scripts": sorted(script_cov.keys()),
+                "scripts_count": len(script_cov),
+            },
+        )
         logger.debug(
             "script coverage derived from charset",
             extra={"font_path": font_path, "scripts_count": len(script_cov)},
@@ -1105,8 +1132,30 @@ def _infer_and_attach_metadata(
     family = identity.get("family")
     style = identity.get("style")
 
+    log_trace_cat(
+        log,
+        "infer",
+        "inference started",
+        extra={
+            "font_path": font_path,
+            "family": family,
+            "style": style,
+            "coverage_keys": sorted(list(coverage.keys())),
+        },
+    )
+
     declared_scripts = list(coverage.get("scripts", []) or [])
     declared_languages = list(coverage.get("languages", []) or [])
+
+    log_trace_cat(
+        log,
+        "infer",
+        "declared metadata",
+        extra={
+            "declared_scripts": declared_scripts,
+            "declared_languages": declared_languages,
+        },
+    )
 
     if not declared_languages:
         add_structured_warning(
@@ -1120,9 +1169,40 @@ def _infer_and_attach_metadata(
         )
 
     inferred_scripts = list(infer_scripts(coverage, level) or [])
+
+    log_trace_cat(
+        log,
+        "infer",
+        "scripts inferred",
+        extra={
+            "raw_inferred_scripts": inferred_scripts,
+            "level": level,
+        },
+    )
+
     inferred_languages_map = infer_languages(coverage, policy="permissive")
 
+    log_trace_cat(
+        log,
+        "infer",
+        "language candidates inferred",
+        extra={
+            "candidates": sorted(inferred_languages_map.keys()),
+            "candidates_count": len(inferred_languages_map),
+        },
+    )
+
     normalized_scripts = [str(s).upper() for s in inferred_scripts]
+
+    log_trace_cat(
+        log,
+        "infer",
+        "scripts normalized",
+        extra={
+            "normalized_scripts": normalized_scripts,
+        },
+    )
+
     font_scripts = set(normalized_scripts)
 
     def _language_sort_key(lang: str) -> tuple[int, str]:
@@ -1135,6 +1215,15 @@ def _infer_and_attach_metadata(
     inferred_languages = sorted(
         inferred_languages_map.keys(),
         key=_language_sort_key,
+    )
+
+    log_trace_cat(
+        log,
+        "infer",
+        "languages ranked",
+        extra={
+            "ordered_languages": inferred_languages,
+        },
     )
 
     _debug_dump_inference(
@@ -1152,6 +1241,18 @@ def _infer_and_attach_metadata(
         "declared_languages": declared_languages,
         "unicode_blocks": coverage.get("unicode_blocks", {}),
     }
+
+    log_trace_cat(
+        log,
+        "infer",
+        "inference completed",
+        extra={
+            "final_scripts": normalized_scripts,
+            "final_languages": inferred_languages,
+            "declared_scripts": declared_scripts,
+            "declared_languages": declared_languages,
+        },
+    )
 
     logger.debug(
         "font entry parsing completed",
@@ -1478,6 +1579,20 @@ def run_parse_font_inventory(
     - helpers extracted
     - behavior unchanged
     """
+    strict_bcp47 = bool(getattr(args, "strict_bcp47", False))
+
+    log_trace_cat(
+        log,
+        "flow",
+        "parse-inventory runner started",
+        extra={
+            "input": str(args.input),
+            "output": str(args.output),
+            "infer_level": getattr(args, "infer_level", None),
+            "strict_bcp47": strict_bcp47,
+            "validate_only": bool(getattr(args, "validate_inventory", False)),
+        },
+    )
 
     read_text_fn = read_text_fn or _default_read_text
     write_text_fn = write_text_fn or _default_write_text
@@ -1491,6 +1606,15 @@ def run_parse_font_inventory(
     logger.debug("inference level enabled", extra={"infer_level": args.infer_level})
 
     data: dict[str, Any] = json.loads(read_text_fn(input_path))
+    log_trace_cat(
+        log,
+        "io",
+        "inventory JSON loaded",
+        extra={
+            "fonts": len(data.get("fonts", [])),
+            "schema_version": data.get("schema_version"),
+        },
+    )
 
     _soft_schema_guard(data)
 
@@ -1499,6 +1623,14 @@ def run_parse_font_inventory(
         return 1
 
     if args.validate_inventory:
+        log_trace_cat(
+            log,
+            "flow",
+            "validate-only mode",
+            extra={
+                "fonts": len(data.get("fonts", [])),
+            },
+        )
         return int(
             validate_inventory_fn(
                 data,
@@ -1512,10 +1644,36 @@ def run_parse_font_inventory(
         args.infer_level,
         strict_bcp47=args.strict_bcp47,
     )
+    log_trace_cat(
+        log,
+        "flow",
+        "inventory enriched",
+        extra={
+            "fonts": len(enriched.get("fonts", [])),
+            "schema_version": enriched.get("metadata", {}).get("schema_version"),
+        },
+    )
 
     write_text_fn(
         args.output,
         dumps_pretty(enriched, indent=2, ensure_ascii=False),
+    )
+    log_trace_cat(
+        log,
+        "io",
+        "enriched inventory written",
+        extra={
+            "path": str(args.output),
+            "fonts": len(enriched.get("fonts", [])),
+        },
+    )
+    log_trace_cat(
+        log,
+        "flow",
+        "verbose warning emission started",
+        extra={
+            "fonts": len(enriched.get("fonts", [])),
+        },
     )
 
     if args.verbose:
@@ -1523,6 +1681,15 @@ def run_parse_font_inventory(
 
     if not args.quiet:
         log_ok(f"Inventory written to {args.output}" if args.verbose else "Done.")
+    log_trace_cat(
+        log,
+        "flow",
+        "parse-inventory runner completed",
+        extra={
+            "fonts": len(enriched.get("fonts", [])),
+            "output": str(args.output),
+        },
+    )
 
     return 0
 
@@ -1551,12 +1718,45 @@ def main(args) -> int:
     Public CLI entrypoint (kept stable).
     Thin wrapper around the injectable runner.
     """
+    from time import perf_counter
+
+    t0 = perf_counter()
     try:
-        return _run_parse_inventory(args)
+        exit_code = _run_parse_inventory(args)
+        log_trace_cat(
+            log,
+            "perf",
+            "inventory parse metrics",
+            extra={
+                "exit_code": exit_code,
+            },
+        )
     except TypeError as exc:
         if not getattr(args, "quiet", False):
             log_err(f"parse-inventory failed: {exc}")
-        return 2
+        log_trace_cat(
+            log,
+            "perf",
+            "inventory parse metrics",
+            extra={
+                "exit_code": 2,
+                "exception": True,
+            },
+        )
+        exit_code = 2
+    finally:
+        duration_ms = int((perf_counter() - t0) * 1000)
+        log_trace_cat(
+            log,
+            "perf",
+            "parse-inventory timing",
+            extra={
+                "duration_ms": duration_ms,
+                "exit_code": exit_code,
+            },
+        )
+
+    return exit_code
 
 
 if __name__ == "__main__":

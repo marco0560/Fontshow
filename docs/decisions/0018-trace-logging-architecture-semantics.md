@@ -5,231 +5,297 @@
 **Scope**: Logging / Observability / Diagnostics
 **Applies to**: Entire Fontshow codebase
 
-## 1. Context
+## 1. Purpose
 
-Fontshow emits three categories of logs:
+TRACE is the **lowest-level observability channel** in Fontshow.
 
-- **User layer**: user-facing CLI output (`log_ok`, `log_info`, `log_warn`, `log_err`)
-- **Developer layer**: DEBUG-level diagnostics
-- **Trace layer**: TRACE-level execution tracing
+It is intended for:
 
-TRACE semantics were previously only partially specified and some tests implicitly relied on a strict interpretation of “public caller attribution”. Recent refactoring introduced functional helpers that represent real execution boundaries, which must remain visible in TRACE without reverting to logging-helper attribution.
+- execution tracing
+- raw data inspection
+- parsing pipeline diagnostics
+- inference reasoning
+- internal state transitions
 
-## 2. Goals
+TRACE **must not** be used for user diagnostics, warnings, or standard debugging output.
 
-This decision establishes a stable observability contract:
+---
 
-- Deterministic behavior
-- Clear separation of User vs DEBUG vs TRACE
-- Caller attribution rules that avoid logging-helper noise
-- Structured fields for machine-readable diagnostics
-- Test contract that is robust to refactors
-- Near-zero overhead when TRACE is disabled
+## 2. TRACE Semantic Contract
 
-## 3. Logging layers
+### TRACE MUST be used for
 
-### 3.1 User layer (CLI contract)
+- external interactions (subprocess / filesystem / tools)
+- raw external outputs (bounded)
+- parsing pipeline steps
+- internal decision paths (not results)
+- cache behavior
+- inference reasoning
 
-User-facing messages:
+### TRACE MUST NOT be used for
 
-- MUST respect `--quiet`
-- MUST preserve established CLI semantics and wording where contractually specified
-- MUST NOT leak internal debug information
-- SHOULD remain human-readable and actionable
+- user-visible diagnostics
+- warnings/errors
+- normal DEBUG logging
+- formatted summaries
 
-This layer is the stable “public contract”.
+---
 
-### 3.2 DEBUG layer (semantic diagnostics)
+## 3. TRACE Categories
 
-DEBUG logs are for developers and maintainers:
+TRACE is divided into **selectively activatable categories**:
 
-- SHOULD report semantic state and decisions
-- SHOULD remain deterministic
-- SHOULD include structured fields in `extra` where applicable
-- MUST NOT depend on the ordering of unrelated logs for correctness
+| Category   | Meaning                                                            |
+|------------|--------------------------------------------------------------------|
+| `io`       | External interaction (subprocess, OS, filesystem probing)          |
+| `raw`      | Raw external data (stdout blobs, raw fc-query, etc.)               |
+| `parse`    | Parsing pipeline internal steps                                    |
+| `infer`    | Script/language inference reasoning                                |
+| `validate` | Schema/semantic validation decisions                               |
+| `cache`    | Cache hit/miss and persistence                                     |
+| `perf`     | Optional timing / performance micro-metrics                        |
+| `flow`     | Execution flow, pipeline/stage boundaries, orchestration lifecycle |
+| `latex`    | LaTeX generation, formatting, and layout decisions                 |
 
-Examples:
+Categories are **closed and stable identifiers** used both in code and configuration.
+No dynamic categories are allowed.
 
-- validation summaries
-- normalization outcomes
-- inference summaries
-- extracted metadata counts
+---
 
-### 3.3 TRACE layer (execution flow)
+## 4. TRACE Activation Model
 
-TRACE logs are for deep debugging of execution flow:
+TRACE emission requires **two conditions**:
 
-- SHOULD report operational events and mechanisms
-- SHOULD include structured fields in `extra` where applicable
-- MUST avoid expensive formatting when TRACE is disabled
+1. Global log level allows TRACE
+2. TRACE category is enabled
 
-Examples:
+### 4.1 Global Level
 
-- subprocess execution and exit codes
-- raw external tool output receipt
-- branch/fallback activation
-- parsing stages at a mechanical level
+```bash
+FONTSHOW_LOG_LEVEL=TRACE
+```
 
-### 3.4 — Activating logging levels
+If TRACE level is not active, **no TRACE is emitted** regardless of category settings.
 
-Fontshow logging is controlled through the environment variable `FONTSHOW_LOG_LEVEL`.
-Accepted values (case-insensitive) are:
+---
 
-- `ERROR` → only fatal errors
-- `WARN`  → warnings and errors
-- `INFO`  → user-level informational messages (default)
-- `DEBUG` → developer diagnostics (semantic state, validation, inference)
-- `TRACE` → deep execution tracing (subprocess calls, parsing flow, raw inputs)
+### 4.2 Category Selector
+
+Environment variable:
+
+```text
+FONTSHOW_TRACE
+```
+
+Syntax:
+
+- `all` → enable all categories
+- `none` → disable all TRACE
+- `cat1,cat2` → enable only listed categories
+- `-cat` → exclude category
+- `cat1,cat2,-cat3` → mixed include/exclude
+
+Defaults:
+
+- If TRACE level active and selector unset → behaves as `all`
+- If TRACE level inactive → selector ignored
+
+Unknown categories are ignored.
 
 Examples:
 
 ```bash
-# Enable DEBUG diagnostics
-export FONTSHOW_LOG_LEVEL=DEBUG
-fontshow create-catalog
-
-# Enable full TRACE execution tracing
-export FONTSHOW_LOG_LEVEL=TRACE
-fontshow dump-fonts
-
-# One-shot activation
-FONTSHOW_LOG_LEVEL=TRACE fontshow parse-inventory
+FONTSHOW_LOG_LEVEL=TRACE FONTSHOW_TRACE=all
+FONTSHOW_LOG_LEVEL=TRACE FONTSHOW_TRACE=io,parse
+FONTSHOW_LOG_LEVEL=TRACE FONTSHOW_TRACE=infer,-raw
+FONTSHOW_LOG_LEVEL=TRACE FONTSHOW_TRACE=none
 ```
 
-Notes:
+---
 
-- `--quiet` suppresses **user-layer output only** and does **not** disable DEBUG/TRACE logs.
-- TRACE may generate large volumes of output and should be used only for debugging.
-- When TRACE is disabled, its overhead is negligible by design.
+## 5. Inference Debugging
 
-#### Inference-specific debug tracing
-
-Language and script inference can be inspected independently of the global
-logging level through the environment variable:
+The legacy variable:
 
 ```bash
-FONTSHOW_DEBUG_INFERENCE=1
+FONTSHOW_DEBUG_INFERENCE
 ```
 
-When enabled, Fontshow emits a structured diagnostic dump for each processed
-font, including:
+**has been removed.**
 
-- Raw Unicode blocks and counts
-- Inferred scripts (raw and normalized)
-- Candidate languages with scoring details
-- Script–language compatibility checks
-- Final language ordering decision
+Inference diagnostics are now emitted exclusively through:
 
-Examples:
+```text
+TRACE category: infer
+```
+
+Example:
 
 ```bash
-# Enable inference diagnostics only
-export FONTSHOW_DEBUG_INFERENCE=1
-fontshow parse-inventory
-
-# Combine with DEBUG logging
-FONTSHOW_LOG_LEVEL=DEBUG FONTSHOW_DEBUG_INFERENCE=1 \
-    fontshow parse-inventory
-
-# Full deep inspection
-FONTSHOW_LOG_LEVEL=TRACE FONTSHOW_DEBUG_INFERENCE=1 \
-    fontshow parse-inventory
+FONTSHOW_LOG_LEVEL=TRACE FONTSHOW_TRACE=infer fontshow parse-inventory
 ```
 
-Notes:
+---
 
-- Inference debug is **orthogonal** to the logging level and can be enabled
-  independently.
-- Output is intended for developer diagnostics and may be verbose.
-- This facility is stable but subject to future restructuring (see TRACE policy).
+## 6. Structured TRACE Output
 
-## 4. Caller attribution rules
+All TRACE events are structured and include:
 
-TRACE MUST avoid reporting logging helper internals as the caller.
+```python
+extra["trace_category"] = "<category>"
+```
 
-Caller classes:
+This allows:
 
-- **Public functions** (user-facing or module-level API): MUST be allowed as TRACE callers.
-- **Functional helpers** (internal helpers that represent real execution layers): MUST be allowed as TRACE callers.
-- **Logging helpers / wrappers** (infrastructure that forwards logs): MUST NOT appear as TRACE callers.
+- machine filtering
+- testing
+- post-processing
+- future trace exporters
 
-Rationale:
+TRACE payload MUST:
 
-- Functional helpers are meaningful execution boundaries.
-- Logging wrappers are infrastructure noise and harm trace usefulness.
+- use snake_case field names
+- remain deterministic
+- avoid unbounded data
 
-## 5. DEBUG vs TRACE boundary
+---
 
-DEBUG and TRACE have different responsibilities:
+## 7. Human-Readable TRACE Rendering
 
-- DEBUG: semantic state and outcomes (what was decided / derived)
-- TRACE: execution flow and mechanisms (what happened / how it happened)
+By default, TRACE is structured and optimized for machine consumption.
 
-Both layers MUST remain deterministic.
+To force human-readable rendering:
 
-## 6. Structured logging schema
+```bash
+FONTSHOW_TRACE_FORMAT=human
+```
 
-For DEBUG and TRACE events, logs SHOULD use:
+Behavior:
 
-- `message: str`
-- `extra: dict[str, Any]`
+- Formats TRACE messages in readable text form
+- Includes `trace_category`
+- Includes selected `extra` fields
+- Preserves existing log formatting style
 
-Recommended stable keys (where applicable):
+If unset or set to `json` (default), structured TRACE is emitted.
 
-- `font_path`
-- `family`
-- `style`
-- `exit_code`
-- `stderr`
-- `ranges_count`
-- `blocks_count`
-- `scripts_count`
-- `languages_count`
-- `infer_level`
-- `fields_detected`
+---
 
-Purpose:
+## 8. RAW Category Guardrails
 
-- consistent diagnostics
-- future structured logging mode
-- robust test assertions based on keys rather than wording
+The `raw` category may produce large outputs.
 
-## 7. Performance constraints
+To prevent uncontrolled log volume:
 
-TRACE MUST be near-zero overhead when disabled:
+```bash
+FONTSHOW_TRACE_RAW_MAXLEN=4096
+```
 
-- SHOULD avoid building large strings or large `extra` payloads unless TRACE is enabled
-- SHOULD avoid expensive dumps (`pprint`, large blob formatting) unless explicitly gated
-- SHOULD avoid decoding/normalization work solely for logging
+Behavior:
 
-## 8. Test contract
+- Raw blobs exceeding limit are truncated
+- Additional metadata added:
 
-Tests MAY assert:
+```text
+raw_truncated: true
+raw_len: <original_length>
+```
 
-- log level (DEBUG vs TRACE)
-- caller module and/or function name, subject to Section 4
-- presence of structured keys in `extra`
+---
 
-Tests MUST NOT assert:
+## 9. Caller Identity Rule
 
-- exact message strings (wording and punctuation)
-- formatting details
-- ordering of unrelated log messages
+TRACE must report the **first semantic execution owner**, not logging helpers.
 
-## 9. Future extensions (non-binding)
+Allowed:
 
-Potential extensions enabled by this architecture:
+- functional helpers representing real execution boundary
+  e.g. `_run_fc_query`
 
-- structured JSON log output mode
-- selective trace channels (e.g., `FONTSHOW_TRACE=fc,charset,inference`)
-- log sampling / throttling for large inventories
-- persistent diagnostic artifacts for offline inspection
+Not allowed:
 
-These are explicitly out of scope for this decision.
+- logging wrappers or infrastructure functions
 
-## 10. Consequences
+---
 
-- TRACE semantics are stabilized around execution boundaries, not wrapper internals.
-- Functional helper refactors remain traceable without invalidating observability intent.
-- Tests can validate observability without becoming brittle.
-- The codebase is prepared for future structured logging improvements.
+## 10. Performance Contract
+
+When TRACE is **disabled**:
+
+- overhead MUST be negligible
+- no expensive computation for TRACE-only values
+- no large payload allocation
+
+When TRACE is **enabled**:
+
+- timing uses lightweight `perf_counter`
+- hot loops MUST gate or aggregate TRACE
+- TRACE MUST NOT change program behavior
+
+---
+
+## 11. DEBUG Decommission
+
+DEBUG is no longer the primary observability channel.
+
+- TRACE is the canonical structured observability layer
+- DEBUG may remain for temporary developer-only probes
+- No new structured diagnostics should be added to DEBUG
+
+---
+
+## 12. Stability Guarantees
+
+This TRACE architecture:
+
+- does NOT change CLI behavior
+- does NOT affect exit codes
+- does NOT emit TRACE unless explicitly enabled
+- preserves existing DEBUG / INFO / WARN semantics
+- has negligible overhead when disabled
+- does not affect determinism or ordering
+
+---
+
+## 13. Observability Coverage Goals
+
+TRACE SHOULD cover:
+
+- execution lifecycle (`flow`)
+- external calls (`io`)
+- cache behavior (`cache`)
+- inference evidence (`infer`)
+- validation rules (`validate`)
+- timing metrics (`perf`)
+- formatting and generation (`raw`, `latex`)
+
+Coverage MUST remain stable across releases.
+
+---
+
+## 14. Future Extensions (Non-binding)
+
+Potential evolutions:
+
+- selective TRACE exporters (file, JSONL, analysis tools)
+- category-specific rate limiting
+- per-module TRACE filters
+- structured inference trace viewer
+- performance tracing mode
+
+These are outside current scope.
+
+---
+
+## 15. Summary
+
+TRACE is now:
+
+- structured
+- category-selective
+- inference-aware
+- human-renderable
+- stable and deterministic
+- suitable for deep observability without affecting runtime behavior
+
+---

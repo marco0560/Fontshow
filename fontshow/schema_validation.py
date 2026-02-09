@@ -16,6 +16,8 @@ from pathlib import Path
 
 from jsonschema import ValidationError, validate
 
+from fontshow.logging_utils import log, log_trace_cat
+
 SUPPORTED_SCHEMA_VERSIONS = {"1.0", "1.1"}
 
 
@@ -36,8 +38,27 @@ def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> Non
         If schema version is unsupported or validation fails.
     """
 
+    log_trace_cat(
+        log,
+        "validate",
+        "schema validation started",
+        extra={
+            "schema_version": schema_version,
+        },
+    )
+
     if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
         msg = f"Unsupported inventory schema version: {schema_version}"
+        log_trace_cat(
+            log,
+            "validate",
+            "schema validation failed",
+            extra={
+                "schema_version": schema_version,
+                "ruke": "schema_version_supported",
+                "error": msg,
+            },
+        )
         raise ValueError(msg)
 
     schema_path = (
@@ -49,6 +70,16 @@ def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> Non
 
     if not schema_path.exists():
         msg = f"Schema file not found: {schema_path}"
+        log_trace_cat(
+            log,
+            "validate",
+            "schema validation failed",
+            extra={
+                "schema_version": schema_version,
+                "rule": "schema_file_exists",
+                "error": msg,
+            },
+        )
         raise ValueError(msg)
 
     with schema_path.open(encoding="utf-8") as f:
@@ -56,8 +87,26 @@ def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> Non
 
     try:
         validate(instance=data, schema=schema)
+        log_trace_cat(
+            log,
+            "validate",
+            "schema validation completed",
+            extra={
+                "schema_version": schema_version,
+            },
+        )
     except ValidationError as exc:
         msg = f"Inventory schema validation failed: {exc.message}"
+        log_trace_cat(
+            log,
+            "validate",
+            "schema validation failed",
+            extra={
+                "schema_version": schema_version,
+                "rule": "jsonschema",
+                "error": exc.message,
+            },
+        )
         raise ValueError(msg) from exc
 
 
@@ -77,7 +126,26 @@ def validate_inventory_schema(data: dict) -> list[dict]:
 
     schema_version = data.get("metadata", {}).get("schema_version")
 
+    log_trace_cat(
+        log,
+        "validate",
+        "schema warning evaluation started",
+        extra={
+            "schema_version": schema_version,
+        },
+    )
+
     if schema_version is None:
+        log_trace_cat(
+            log,
+            "validate",
+            "schema warning returned",
+            extra={
+                "code": "schema_version_deprecated",
+                "severity": "warning",
+                "schema_version": "1.0",
+            },
+        )
         return [
             {
                 "severity": "warning",
@@ -88,6 +156,16 @@ def validate_inventory_schema(data: dict) -> list[dict]:
         ]
 
     if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
+        log_trace_cat(
+            log,
+            "validate",
+            "schema warning returned",
+            extra={
+                "code": "schema_version_unknown",
+                "severity": "error",
+                "schema_version": schema_version,
+            },
+        )
         return [
             {
                 "severity": "error",
@@ -103,6 +181,16 @@ def validate_inventory_schema(data: dict) -> list[dict]:
             schema_version=schema_version,
         )
     except ValueError as exc:
+        log_trace_cat(
+            log,
+            "validate",
+            "schema warning returned",
+            extra={
+                "code": "invalid_schema",
+                "severity": "error",
+                "schema_version": schema_version,
+            },
+        )
         return [
             {
                 "severity": "error",
@@ -112,4 +200,13 @@ def validate_inventory_schema(data: dict) -> list[dict]:
             }
         ]
 
+    log_trace_cat(
+        log,
+        "validate",
+        "schema warning evaluation completed",
+        extra={
+            "schema_version": schema_version,
+            "warnings_count": len(warnings),
+        },
+    )
     return warnings

@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from fontshow.logging_utils import log, log_trace_cat
+
 Confidence = str  # "low" | "medium" | "high"
 
 # Minimum fraction of a Unicode block that must be covered
@@ -156,6 +158,16 @@ def infer_languages(
         A mapping of language tags to inference evidence.
     """
 
+    log_trace_cat(
+        log,
+        "infer",
+        "language inference started",
+        extra={
+            "policy": policy,
+            "unicode_blocks_count": len(coverage.get("unicode_blocks", {}) or {}),
+        },
+    )
+
     unicode_blocks: dict[str, int] = coverage.get("unicode_blocks", {}) or {}
 
     inferred: dict[str, dict[str, Any]] = {}
@@ -173,6 +185,19 @@ def infer_languages(
                 block_sizes=UNICODE_BLOCK_SIZES,
             )
             if ratio < LANGUAGE_BLOCK_COVERAGE_THRESHOLD:
+                log_trace_cat(
+                    log,
+                    "infer",
+                    "language candidate rejected",
+                    extra={
+                        "lang": lang,
+                        "block": block,
+                        "ratio": ratio,
+                        "threshold": LANGUAGE_BLOCK_COVERAGE_THRESHOLD,
+                        "covered": unicode_blocks.get(block, 0),
+                        "size": UNICODE_BLOCK_SIZES.get(block, 0),
+                    },
+                )
                 failed = True
                 break
 
@@ -188,9 +213,34 @@ def infer_languages(
         else:
             confidence = "medium"
 
+        log_trace_cat(
+            log,
+            "infer",
+            "language candidate accepted",
+            extra={
+                "lang": lang,
+                "confidence": confidence,
+                "evidence_count": len(evidence),
+                "required_blocks": sorted(required),
+                "optional_hits": optional_hits,
+                "evidence": evidence,
+            },
+        )
+
         inferred[lang] = {
             "confidence": confidence,
             "evidence": evidence,
         }
+
+    log_trace_cat(
+        log,
+        "infer",
+        "language inference completed",
+        extra={
+            "policy": policy,
+            "languages_inferred": len(inferred),
+            "profiles_total": len(LANGUAGE_PROFILES),
+        },
+    )
 
     return inferred
