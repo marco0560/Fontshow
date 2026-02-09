@@ -1,3 +1,9 @@
+## [0.37.0](https://github.com/marco0560/Fontshow/compare/v0.36.8...v0.37.0) (2026-02-09)
+
+### Features
+
+* **core:** complete TRACE architecture, audit and policy consolidation ([c1e70e2](https://github.com/marco0560/Fontshow/commit/c1e70e2fd057aad254c8551156695938ae12eaf6))
+
 ## [0.36.8](https://github.com/marco0560/Fontshow/compare/v0.36.7...v0.36.8) (2026-02-08)
 
 ### Bug Fixes
