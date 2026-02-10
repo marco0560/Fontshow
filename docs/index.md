@@ -55,6 +55,7 @@ memory for maintainers.
 - [Codex evaluation](engineering/codex-evaluation-04-02-2026.md)
 - [Exceptions policy](engineering/exception_policy.md)
 - [Release system](engineering/release-system.md)
+- [TRACE logging guide](engineering/TRACE-logging-developper-guide.md)
 
 ## Project planning and governance
 
