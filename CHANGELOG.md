@@ -1,3 +1,9 @@
+## [0.37.1](https://github.com/marco0560/Fontshow/compare/v0.37.0...v0.37.1) (2026-02-10)
+
+### Bug Fixes
+
+* **core:** logging format, warn routing, deterministic NFSS id ([f1332c3](https://github.com/marco0560/Fontshow/commit/f1332c378cf9efadd05b1814ca85aac4963b8b35))
+
 ## [0.37.0](https://github.com/marco0560/Fontshow/compare/v0.36.8...v0.37.0) (2026-02-09)
 
 ### Features
