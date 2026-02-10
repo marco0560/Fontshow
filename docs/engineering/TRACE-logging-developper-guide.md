@@ -72,6 +72,16 @@ Use TRACE when you need to record:
 - Formatting steps
 - Output shaping
 
+### Overall
+
+Use TRACE for:
+
+- execution observability
+- inference reasoning
+- performance measurement
+- cache behavior
+- validation diagnostics
+
 ---
 
 ## 3. When NOT to Use TRACE
@@ -410,3 +420,128 @@ TRACE is:
 - Observational only
 
 It enables **deep introspection without altering runtime behavior**.
+
+## 14. Determinism Guarantee
+
+Fontshow TRACE infrastructure is strictly observational and must never alter functional output. The following guarantees hold.
+
+### Stable FS Identifier
+
+NFSS temporary family identifiers (`FS…`) are deterministic and stable.
+
+- Derived from intrinsic font identity
+- Independent from execution timing
+- Independent from TRACE activation
+- Independent from font enumeration order
+- Stable across runs on the same system
+
+This guarantees reproducible catalog generation.
+
+---
+
+### TRACE Does Not Affect Output
+
+TRACE logging is strictly side-effect free.
+
+- No data mutation
+- No ordering changes
+- No pipeline behavior changes
+- No conditional logic driven by TRACE
+
+Enabling or disabling TRACE must never modify produced artifacts.
+
+---
+
+### Reproducible Catalog
+
+Given identical:
+
+- Font inventory
+- Environment
+- Configuration
+
+Fontshow produces byte-identical catalog output regardless of:
+
+- TRACE enabled / disabled
+- TRACE category selection
+- TRACE verbosity level
+
+This property is continuously verified during development.
+
+---
+
+### Timestamp Exclusion
+
+Catalog determinism excludes:
+
+- generation timestamps
+- runtime metadata
+
+These fields are allowed to differ and do not constitute nondeterminism.
+
+---
+
+## 15. TRACE Troubleshooting
+
+### No TRACE Visible
+
+Check:
+
+- `FONTSHOW_LOG_LEVEL=TRACE`
+- `FONTSHOW_TRACE=<category|all>`
+- TRACE not disabled by CLI quiet mode
+
+Example:
+
+```bash
+FONTSHOW_LOG_LEVEL=TRACE FONTSHOW_TRACE=all fontshow create-catalog -v
+```
+
+---
+
+### Silent TRACE (Expected Events Missing)
+
+Most common cause: category mismatch.
+
+Verify category is enabled:
+
+```bash
+FONTSHOW_TRACE=flow,infer,validate
+```
+
+Also ensure:
+
+- TRACE level active
+- Correct environment propagation
+- No local TRACE gating in hot loops
+
+---
+
+### TRACE Output Too Large
+
+Reduce categories:
+
+```bash
+FONTSHOW_TRACE=flow
+```
+
+or disable performance-heavy categories:
+
+```bash
+FONTSHOW_TRACE=flow,validate
+```
+
+Avoid `all` unless debugging.
+
+---
+
+### Determinism Diff Detected
+
+If catalog output differs between runs:
+
+1. Verify FS identifier stability
+2. Ensure no remaining `hash()` usage in catalog generation
+3. Confirm deterministic ordering of font lists
+4. Ignore timestamps (expected difference)
+
+If FS identifiers differ, investigate identity normalization and grouping stability.

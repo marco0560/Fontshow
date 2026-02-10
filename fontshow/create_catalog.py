@@ -453,16 +453,6 @@ def nfss_family_id(font: dict) -> str:
     ttc_index = identity.get("ttc_index", 0)
 
     key = f"{file_path}#{ttc_index}"
-    log_trace_cat(
-        log,
-        "flow",
-        "nfss id key",
-        extra={
-            "file": file_path,
-            "ttc_index": ttc_index,
-            "key": key,
-        },
-    )
     digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
     return "FS" + digest[:10]
 
