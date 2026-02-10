@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any
 
 from fontshow import __version__
-from fontshow.cli_utils import add_common_arguments, log_err, log_info, log_ok
+from fontshow.cli_utils import add_common_arguments, log_err, log_info, log_ok, log_warn
 from fontshow.logging_utils import log, log_trace_cat
 
 try:
@@ -1579,14 +1579,7 @@ def run_dump_fonts(args) -> int:
                 "Not a TrueType or OpenType font" in (face.get("error") or "")
             ):
                 skipped_non_opentype += 1
-                log.warning(
-                    "skipping non-opentype font",
-                    extra={
-                        "font_path": str(font_path),
-                        "ttc_index": face.get("ttc_index"),
-                        "fonttools_error": face.get("error"),
-                    },
-                )
+                log_warn(f"skipping non-opentype font: {font_path}")
                 continue
 
             try:

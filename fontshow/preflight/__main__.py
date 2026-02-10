@@ -66,14 +66,14 @@ def _run_preflight_cli(
         for line in rendered_lines:
             # Severity prefix is already embedded in the rendered line
             if line.startswith("[OK"):
-                log_ok(line[5:])
+                log_ok(line[7:])
             elif line.startswith("[INFO"):
                 log_info(line[7:])
             elif line.startswith("[WARN"):
                 log_warn(line[7:])
             else:
                 # Includes [ERR ] and any unexpected severity
-                log_err(line[6:])
+                log_err(line[7:])
 
         if exit_code == 0:
             log_ok("Preflight passed.")

@@ -36,6 +36,7 @@ sensitive and used directly by the renderer.
 """
 
 import argparse
+import hashlib
 import json
 import platform
 import re
@@ -440,12 +441,30 @@ def get_unique_filename(base_name: str, extension: str) -> str:
 
 
 def nfss_family_id(font: dict) -> str:
-    """Return a short NFSS-safe identifier for a font (used as temporary family).
+    """Return a deterministic NFSS-safe identifier for a font (used as temporary family).
 
-    This produces a stable short id prefixed with 'FS' used in `fontspec`
-    calls when a normalized family name is required.
+    Uses a stable SHA-256 digest of:
+        <identity.file>#<ttc_index>
+
+    Ensures deterministic output across runs and TRACE modes.
     """
-    return "FS" + str(abs(hash(font.get("identity", {}).get("file", ""))) % 10**8)
+    identity = font.get("identity", {}) or {}
+    file_path = identity.get("file", "")
+    ttc_index = identity.get("ttc_index", 0)
+
+    key = f"{file_path}#{ttc_index}"
+    log_trace_cat(
+        log,
+        "flow",
+        "nfss id key",
+        extra={
+            "file": file_path,
+            "ttc_index": ttc_index,
+            "key": key,
+        },
+    )
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
+    return "FS" + digest[:10]
 
 
 def fontspec_options(font: dict) -> str:
@@ -774,7 +793,7 @@ def render_sample_code(font: dict, fam: str) -> str:
     txt = render_sample_text(font)
     ps = primary_script(font)
 
-    nfss_id = "FS" + str(abs(hash(fam)) % 10**8)
+    nfss_id = nfss_family_id(font)
 
     # RTL: unchanged (TestNonLatin already isolates fonts)
     if ps in RTL_SCRIPTS:
