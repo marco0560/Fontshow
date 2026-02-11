@@ -1,3 +1,10 @@
+## [0.37.2](https://github.com/marco0560/Fontshow/compare/v0.37.1...v0.37.2) (2026-02-11)
+
+### Bug Fixes
+
+* **cli:** centralize quiet/verbose and remove legacy guards ([c018bae](https://github.com/marco0560/Fontshow/commit/c018baed520def5d0ed0a214255b60926308eac0))
+* **cli:** restore raw TRACE message + finalize centralized CLI mode ([c1cf5e7](https://github.com/marco0560/Fontshow/commit/c1cf5e78dee0866b50a6784e4efd5bc11e117bd8))
+
 ## [0.37.1](https://github.com/marco0560/Fontshow/compare/v0.37.0...v0.37.1) (2026-02-10)
 
 ### Bug Fixes
