@@ -26,7 +26,6 @@ from typing import Any
 
 from fontshow import __version__
 from fontshow.cli_utils import (
-    _VERBOSE,
     add_common_arguments,
     log_err,
     log_info,
@@ -1684,8 +1683,7 @@ def run_parse_font_inventory(
         },
     )
 
-    if _VERBOSE:
-        _emit_verbose_warnings(enriched)
+    _emit_verbose_warnings(enriched)
 
     log_ok(f"Inventory written to {args.output}" if args.verbose else "Done.")
     log_trace_cat(

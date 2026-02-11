@@ -394,7 +394,9 @@ def log_trace_cat(
         )
     else:
         # JSON TRACE must be recognizable even with a plain StreamHandler
-        # (no formatter). Emit a single JSON line as the message payload.
+        # (no formatter). Emit structured payload via `extra`, while keeping
+        # the raw message in LogRecord.message (required by tests and caller
+        # attribution checks).
         import json  # local import: keep module-level imports unchanged
 
         payload: dict[str, object] = {
@@ -407,9 +409,15 @@ def log_trace_cat(
                 continue
             payload[k] = v
 
+        extra["_trace_json"] = json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+
         logger.log(
             TRACE_LEVEL_NUM,
-            json.dumps(payload, ensure_ascii=False, sort_keys=True),
+            message,  # ← raw message preserved
             extra=extra,
             stacklevel=_stacklevel_public,
             **kwargs,
