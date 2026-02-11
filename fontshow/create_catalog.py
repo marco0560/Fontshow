@@ -48,7 +48,14 @@ from datetime import datetime
 from pathlib import Path
 
 from fontshow import __version__
-from fontshow.cli_utils import add_common_arguments, log_err, log_info, log_ok, log_warn
+from fontshow.cli_utils import (
+    add_common_arguments,
+    log_err,
+    log_info,
+    log_ok,
+    log_warn,
+    set_cli_mode,
+)
 from fontshow.logging_utils import log, log_trace_cat
 
 # Platform-specific imports (deferred)
@@ -549,8 +556,7 @@ def as_font_desc_list(fonts: list, *, legacy_mode: bool = False) -> list[dict]:
             out.append(f)
         else:
             if legacy_mode:
-                if not _QUIET:
-                    log_info(f"found font '{f}'")
+                log_info(f"found font '{f}'")
             else:
                 log_warn(
                     f"unexpected font entry type {type(f)} "
@@ -840,7 +846,7 @@ def get_installed_fonts_windows():
     The function reads the Windows registry and normalizes names via
     `clean_font_name`. Excluded names from `EXCLUDED_FONTS` are filtered out.
     """
-    log.info("Sistema: Windows. Scansione registro...")
+    log_info("Sistema: Windows. Scansione registro...")
     font_list = set()
     registry_paths = [
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
@@ -923,7 +929,7 @@ def get_installed_fonts_linux() -> list[str]:
 
     Excluded families listed in `EXCLUDED_FONTS` are filtered out.
     """
-    log.info("Sistema: Linux. Uso 'fc-list' per l'estrazione dei font...")
+    log_info("Sistema: Linux. Uso 'fc-list' per l'estrazione dei font...")
 
     try:
         # Executes fc-list and captures the output
@@ -1092,8 +1098,7 @@ def generate_test_output(
             f.write(f"Base names: {', '.join(item['base_names'])}\n")
             f.write("\n")
 
-    if not _QUIET:
-        log_ok(f"Test file generated: {test_filename}")
+    log_ok(f"Test file generated: {test_filename}")
 
 
 def generate_latex(font_list: list[dict]) -> str:
@@ -1116,7 +1121,7 @@ def generate_latex(font_list: list[dict]) -> str:
 
     font_list = unique_fonts
 
-    log.info(f"Generating LaTeX file for {len(font_list)} fonts...")
+    log_info(f"Generating LaTeX file for {len(font_list)} fonts...")
 
     latex_code = LATEX_INITIAL_CODE
 
@@ -1128,7 +1133,7 @@ def generate_latex(font_list: list[dict]) -> str:
         sample_code = render_sample_code(font, fam)
 
         if idx % 500 == 0 or idx == total:
-            log.info(f"  ... processed {idx}/{total}")
+            log_info(f"  ... processed {idx}/{total}")
 
         block = NORMAL_BLOCK.format(
             safe_name=safe_name,
@@ -1405,15 +1410,13 @@ def _load_inventory(inv_path: Path, strict: bool) -> tuple[int, list]:
                     log_err(w.get("message", "semantic validation error"))
             return 1, []
 
-        # Ruff TRY300 intentionally ignored: logging must not control return
-        if not _QUIET:
-            log_ok(f"Inventory loaded: {inv_path} ({len(fonts)} fonts)")
-
-        return 0, fonts  # noqa: TRY300
+        log_ok(f"Inventory loaded: {inv_path} ({len(fonts)} fonts)")
 
     except (OSError, json.JSONDecodeError, TypeError) as e:
         log_err(f"failed to load inventory: {e}")
         return 1, []
+    else:
+        return 0, fonts
 
 
 def _load_system_fonts() -> tuple[int, list]:
@@ -1531,18 +1534,16 @@ def _write_latex_output(output_filename: str, latex_content: str) -> None:
     """
     Write generated LaTeX catalog to disk and emit user messages.
     """
-    if not _QUIET:
-        log_info(f"Writing file {output_filename}...")
+    log_info(f"Writing file {output_filename}...")
 
     with Path(output_filename).open("w", encoding="utf-8") as f:
         f.write(latex_content)
 
-    if not _QUIET:
-        log_ok("Done! LaTeX file generated successfully.")
-        log_ok("Ready for compilation.")
-        log_ok(
-            f"  Execute: lualatex -interaction=nonstopmode {output_filename} | texlogsieve (twice)"
-        )
+    log_ok("Done! LaTeX file generated successfully.")
+    log_ok("Ready for compilation.")
+    log_ok(
+        f"  Execute: lualatex -interaction=nonstopmode {output_filename} | texlogsieve (twice)"
+    )
 
 
 def run_create_catalog(args) -> int:
@@ -1659,8 +1660,7 @@ def main(args) -> int:
     Handles user-facing output and delegates execution to the core.
     """
 
-    global _QUIET
-    _QUIET = bool(getattr(args, "quiet", False))
+    set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
 
     try:
         exit_code = _run_create_catalog(args)
@@ -1679,10 +1679,7 @@ def main(args) -> int:
         return 2
 
     if exit_code == 0:
-        if args.verbose:
-            log_ok("catalog created successfully")
-        elif not _QUIET:
-            log_ok("Done.")
+        log_ok("Done", verbose="catalog created successfully")
 
     log_trace_cat(
         log,

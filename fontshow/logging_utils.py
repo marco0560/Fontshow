@@ -9,11 +9,6 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
 
-# NOTE:
-# We intentionally do NOT attach handlers or formatters here.
-# Formatting and output policy is responsibility of the caller
-# (CLI, tests, or embedding application).
-
 # -----------------------------
 # TRACE level (custom)
 # -----------------------------
@@ -65,9 +60,15 @@ def _configure_root_logger() -> logging.Logger | None:
 
     # IMPORTANT:
     # - allow propagation so pytest caplog can capture logs
-    # - do NOT attach handlers here
     logger.setLevel(level)
     logger.propagate = True
+
+    # Install a default handler only if none exists.
+    # This makes CLI logging (including TRACE) visible while preserving
+    # pytest caplog and allowing external override.
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        logger.addHandler(handler)
 
     return logger
 
@@ -375,28 +376,16 @@ def log_trace_cat(
         extra["raw"] = raw_val
         extra.update(meta)
 
-    # NOTE:
-    # We intentionally report TRACE events as coming from the public caller
-    # (e.g. dump_fonts.fc_query_extract), not from logging_utils internals.
-    # Stack shape (typical):
-    #   _run_fc_query -> log_trace_cat -> _LogFacade.log -> stdlib logger.log
-    # stacklevel=3 points at fc_query_extract.
-    # TRACE CALLER CONTRACT
-    # ---------------------
-    # TRACE must report the *functional emitter* (the function performing
-    # the traced operation), not:
-    #   - logging_utils internals
-    #   - higher public wrappers
-    #
-    # Typical stack:
-    #   fc_query_extract -> _run_fc_query -> log_trace_cat -> _LogFacade.log -> stdlib
-    #
     # stacklevel=3 points to the functional emitter (_run_fc_query).
     # This is intentional and part of the TRACE design contract.
     _stacklevel_public = 3
 
     if _trace_format() == "human":
-        message = _format_trace_human(message, extra)
+        # Human TRACE is rendered as a readable, self-contained line.
+        # _format_trace_human() already appends:
+        #   -> "[<category>]"
+        #   - "k=v" pairs for all extra fields (except trace_category)
+        message = "[TRACE] " + _format_trace_human(message, extra)
         logger.log(
             TRACE_LEVEL_NUM,
             message,
@@ -404,9 +393,23 @@ def log_trace_cat(
             **kwargs,
         )
     else:
+        # JSON TRACE must be recognizable even with a plain StreamHandler
+        # (no formatter). Emit a single JSON line as the message payload.
+        import json  # local import: keep module-level imports unchanged
+
+        payload: dict[str, object] = {
+            "level": "TRACE",
+            "category": category,
+            "message": message,
+        }
+        for k, v in extra.items():
+            if k == "trace_category":
+                continue
+            payload[k] = v
+
         logger.log(
             TRACE_LEVEL_NUM,
-            message,
+            json.dumps(payload, ensure_ascii=False, sort_keys=True),
             extra=extra,
             stacklevel=_stacklevel_public,
             **kwargs,

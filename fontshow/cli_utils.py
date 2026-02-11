@@ -9,21 +9,117 @@ from fontshow import __version__
 from fontshow.schema_validation import validate_inventory_schema
 from fontshow.semantic_validation import validate_language_codes
 
+# ------------------------------------------------------------
+# Centralized CLI presentation state
+# ------------------------------------------------------------
 
-def log_ok(msg: str) -> None:
-    print(f"[OK  ] {msg}")
-
-
-def log_info(msg: str) -> None:
-    print(f"[INFO] {msg}")
-
-
-def log_warn(msg: str) -> None:
-    print(f"[WARN] {msg}", file=sys.stderr)
+_QUIET: bool = False
+_VERBOSE: bool = False
 
 
-def log_err(msg: str) -> None:
-    print(f"[ERR ] {msg}", file=sys.stderr)
+def set_cli_mode(quiet: bool, verbose: bool) -> None:
+    """
+    Set global CLI presentation mode.
+
+    quiet   → suppress info/ok
+    verbose → enable verbose variants
+
+    quiet overrides verbose.
+    """
+    global _QUIET, _VERBOSE
+    _QUIET = bool(quiet)
+    _VERBOSE = bool(verbose) and not _QUIET
+
+
+# ------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------
+
+
+def _format_extra(extra: dict | None) -> str:
+    """
+    Deterministically format extra key/value pairs for CLI output.
+
+    Output format:
+        | key=value | key=value
+
+    Keys sorted for determinism.
+    Values stringified via str().
+    """
+    if not extra:
+        return ""
+
+    parts = []
+    for k in sorted(extra):
+        parts.append(f"{k}={extra[k]}")
+    return " | " + " | ".join(parts)
+
+
+def _select_message(default: str, verbose: str | None) -> str:
+    """
+    Select message according to CLI mode.
+    """
+    if _VERBOSE and verbose:
+        return verbose
+    return default
+
+
+# ------------------------------------------------------------
+# CLI presentation API
+# ------------------------------------------------------------
+
+
+def log_info(
+    default: str, verbose: str | None = None, *, extra: dict | None = None
+) -> None:
+    """
+    Emit CLI INFO message.
+
+    Behavior:
+    - suppressed in quiet mode
+    - verbose message used when verbose mode active
+    - deterministic formatting of extra
+    """
+    if _QUIET:
+        return
+
+    message = _select_message(default, verbose)
+    message += _format_extra(extra)
+
+    print(f"[INFO] {message}")
+
+
+def log_ok(
+    default: str, verbose: str | None = None, *, extra: dict | None = None
+) -> None:
+    """
+    Emit CLI OK message.
+
+    Same behavior as log_info.
+    """
+    if _QUIET:
+        return
+
+    message = _select_message(default, verbose)
+    message += _format_extra(extra)
+
+    print(f"[OK  ] {message}")
+
+
+def log_warn(message: str) -> None:
+    """
+    Emit CLI WARNING message (always shown).
+    """
+
+    print(f"[WARN] {message}", file=sys.stderr)
+
+
+def log_err(message: str) -> None:
+    """
+    Emit CLI ERROR message (always shown).
+    """
+
+    print(f"[ERR ] {message}", file=sys.stderr)
 
 
 def _log_by_severity(severity: str, message: str) -> None:
@@ -115,7 +211,7 @@ def cli_validate_inventory() -> int:
     semantic_warnings = validate_language_codes(data)
     warnings = data.get("warnings", [])
 
-    if not args.quiet:
+    if not _QUIET:
         for w in semantic_warnings:
             _log_by_severity(
                 w["severity"], f"{w['code']} ({w['font']}): {w['message']}"
@@ -124,6 +220,5 @@ def cli_validate_inventory() -> int:
         for w in warnings:
             _log_by_severity(w["severity"], f"{w['code']}: {w['message']}")
 
-    if not args.quiet:
-        log_ok("Schema validation passed.")
+    log_ok("Schema validation passed.")
     return 0

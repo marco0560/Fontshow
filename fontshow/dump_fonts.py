@@ -32,7 +32,14 @@ from pathlib import Path
 from typing import Any
 
 from fontshow import __version__
-from fontshow.cli_utils import add_common_arguments, log_err, log_info, log_ok, log_warn
+from fontshow.cli_utils import (
+    add_common_arguments,
+    log_err,
+    log_info,
+    log_ok,
+    log_warn,
+    set_cli_mode,
+)
 from fontshow.logging_utils import log, log_trace_cat
 
 try:
@@ -1513,7 +1520,7 @@ def run_dump_fonts(args) -> int:
         "fonts": [],
     }
 
-    log.info(
+    log_info(
         "font inventory generation started",
         extra={
             "output_path": str(args.output),
@@ -1613,7 +1620,7 @@ def run_dump_fonts(args) -> int:
         encoding="utf-8",
     )
 
-    log.info(
+    log_info(
         "font inventory generation completed",
         extra={
             "total_fonts": len(inventory.get("fonts", [])),
@@ -1632,12 +1639,14 @@ def run_dump_fonts(args) -> int:
         },
     )
 
-    if args.verbose:
-        log_info(
+    log_info(
+        f"Processed {total_faces} - {skipped_non_opentype} skipped",
+        verbose=(
             f"Processed {total_faces} font faces — "
             f"{skipped_non_opentype} skipped (non-OpenType), "
-            f"{len(inventory.get('fonts', []))} kept"
-        )
+            f"{len(inventory.get('fonts', []))} kept",
+        ),
+    )
 
     return 0
 
@@ -1667,6 +1676,9 @@ def main(args) -> int:
 
     Handles user-facing output and delegates execution to the core.
     """
+
+    set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
+
     try:
         exit_code = _run_dump_fonts(args)
     except TypeError:
@@ -1675,10 +1687,10 @@ def main(args) -> int:
         exit_code = 0
 
     if exit_code == 0:
-        if args.verbose:
-            log_ok(f"wrote inventory to {args.output}")
-        elif not args.quiet:
-            log_ok("dump-fonts completed successfully")
+        log_ok(
+            "dump-fonts completed successfully",
+            verbose=f"wrote inventory to {args.output}",
+        )
     else:
         log_err(f"dump-fonts failed with exit code {exit_code}")
 

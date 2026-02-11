@@ -25,7 +25,15 @@ from pathlib import Path
 from typing import Any
 
 from fontshow import __version__
-from fontshow.cli_utils import add_common_arguments, log_err, log_info, log_ok, log_warn
+from fontshow.cli_utils import (
+    _VERBOSE,
+    add_common_arguments,
+    log_err,
+    log_info,
+    log_ok,
+    log_warn,
+    set_cli_mode,
+)
 from fontshow.dump_fonts import UNICODE_BLOCKS
 from fontshow.infer_languages import infer_languages
 from fontshow.json_format import dumps_pretty
@@ -1676,11 +1684,10 @@ def run_parse_font_inventory(
         },
     )
 
-    if args.verbose:
+    if _VERBOSE:
         _emit_verbose_warnings(enriched)
 
-    if not args.quiet:
-        log_ok(f"Inventory written to {args.output}" if args.verbose else "Done.")
+    log_ok(f"Inventory written to {args.output}" if args.verbose else "Done.")
     log_trace_cat(
         log,
         "flow",
@@ -1718,6 +1725,9 @@ def main(args) -> int:
     Public CLI entrypoint (kept stable).
     Thin wrapper around the injectable runner.
     """
+
+    set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
+
     from time import perf_counter
 
     t0 = perf_counter()
