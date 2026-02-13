@@ -1,3 +1,9 @@
+## [0.38.3](https://github.com/marco0560/Fontshow/compare/v0.38.2...v0.38.3) (2026-02-13)
+
+### Bug Fixes
+
+* **docs:** enable mermaid rendering via superfences ([5789a46](https://github.com/marco0560/Fontshow/commit/5789a469258385b67940ba05c5786f12223aa071))
+
 ## [0.38.2](https://github.com/marco0560/Fontshow/compare/v0.38.1...v0.38.2) (2026-02-13)
 
 ### Bug Fixes
