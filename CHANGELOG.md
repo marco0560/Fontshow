@@ -1,3 +1,9 @@
+## [0.38.2](https://github.com/marco0560/Fontshow/compare/v0.38.1...v0.38.2) (2026-02-13)
+
+### Bug Fixes
+
+* **docs:** enable mermaid via CDN for MkDocs Material ([719ee18](https://github.com/marco0560/Fontshow/commit/719ee180d9b62c636be7581906698ea08e555a87))
+
 ## [0.38.1](https://github.com/marco0560/Fontshow/compare/v0.38.0...v0.38.1) (2026-02-13)
 
 ### Bug Fixes
