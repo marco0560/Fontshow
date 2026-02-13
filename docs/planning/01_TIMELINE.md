@@ -75,7 +75,7 @@ All phases end with an explicit decision checkpoint before proceeding.
 
 ## Phase 2 — Testing strategy & coverage alignment
 
-### Weeks 5–6: Feb 10 – Feb 23
+### Weeks 5–11: Feb 10 – Mar 15
 
 ### Objectives Phase 2
 
@@ -101,7 +101,7 @@ All phases end with an explicit decision checkpoint before proceeding.
 
 ## Phase 3 — LaTeX & create_catalog robustness
 
-### Weeks 7–9: Feb 24 – Mar 16
+### Weeks 12-15: Mar 16 – Apr 12
 
 ### Objectives Phase 3
 
@@ -112,6 +112,24 @@ All phases end with an explicit decision checkpoint before proceeding.
 - Isolate failures caused by individual fonts.
 - Improve error reporting and recovery paths.
 - Document reproducibility and troubleshooting practices.
+
+### Phase 3 — Extended Hardening Scope (Post-C5)
+
+The LaTeX and catalog robustness phase has been extended to include a deterministic hardening layer aimed at eliminating environment-dependent rendering failures and preparing a stable baseline before any discovery backend transition.
+
+This extended scope includes:
+
+- A deterministic specimen strategy that prevents subset-empty failures during catalog generation.
+- A path-first font loading strategy to reduce `.fontspec` name-resolution fragility, with safe fallback where necessary.
+- A LuaLaTeX loadability validation step and persistence of the result in the inventory, together with runtime metadata describing the environment under which loadability was verified.
+- A runtime fingerprint mechanism allowing the system to detect when persisted loadability is no longer valid and fall back to runtime validation.
+- Deterministic diagnostic extraction of:
+  - all discovered fonts,
+  - LuaLaTeX-loadable fonts,
+  - and their reproducible difference.
+- Establishment of a stabilization baseline in which catalog generation cannot abort due to subset-empty or loadability-related failures.
+
+This baseline is a prerequisite for any future work on alternative discovery backends (e.g. Qt-based discovery).
 
 ### Non-goals Phase 3
 
@@ -126,7 +144,7 @@ All phases end with an explicit decision checkpoint before proceeding.
 
 ## Phase 4 — CLI UX & exit code contracts
 
-### Weeks 10–11: Mar 17 – Mar 30
+### Weeks 16-17: Apr 13 – Apr 26
 
 ### Objectives Phase 4
 
@@ -151,7 +169,7 @@ All phases end with an explicit decision checkpoint before proceeding.
 
 ## Phase 5 — Charset-aware enrichment (feature evolution)
 
-### Weeks 12–15: Mar 31 – Apr 27
+### Weeks 18-19: Apr 27 - May 10
 
 ### Objectives Phase 5
 
@@ -176,7 +194,7 @@ All phases end with an explicit decision checkpoint before proceeding.
 
 ## Phase 6 — Governance & contributor experience
 
-### Weeks 16–17: Apr 28 – May 11
+### Weeks 20-21: May 11 - May 24
 
 ### Objectives Phase 6
 
@@ -200,7 +218,7 @@ All phases end with an explicit decision checkpoint before proceeding.
 
 ## Phase 7 — v2.x.y design spike (non-binding)
 
-### Weeks 18–19: May 12 – May 25
+### Weeks 22-23: May 25 – Jun 7
 
 ### Objectives Phase 7
 

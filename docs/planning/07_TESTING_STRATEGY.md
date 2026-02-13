@@ -149,6 +149,61 @@ Historical versions of this document must remain accessible.
 
 ---
 
+## Determinism and Environment-Dependent Validation
+
+As the project evolves toward a hardened and reproducible core, the testing strategy distinguishes between deterministic behavior and environment-dependent validation.
+
+### Deterministic Behavior
+
+For a given:
+
+- system configuration,
+- font set,
+- LuaLaTeX runtime,
+- and inventory input,
+
+the system must produce reproducible results. Tests should ensure that:
+
+- inventory generation is deterministic,
+- catalog generation is reproducible,
+- persisted loadability decisions remain stable when the runtime fingerprint matches,
+- no unexpected variation occurs across repeated runs in the same environment.
+
+These tests focus on stability and repeatability rather than functional correctness alone.
+
+### Environment-Dependent Validation
+
+Certain behaviors depend on the runtime environment, particularly LuaLaTeX font loadability. These validations:
+
+- confirm whether fonts discovered by the system are actually loadable by the rendering engine,
+- may vary across environments,
+- are not purely deterministic across different systems.
+
+Testing strategy must therefore:
+
+- clearly separate deterministic tests from environment-dependent validation,
+- allow environment-dependent checks to be executed when the required runtime is available,
+- avoid treating environment variability as a functional failure of the system.
+
+### Catalog Robustness Guarantees
+
+Testing must verify that catalog generation:
+
+- does not abort due to subset-empty conditions,
+- does not abort due to fragile name-based font loading,
+- behaves deterministically when loadability persistence is valid,
+- safely falls back to runtime validation when persisted loadability becomes invalid.
+
+### Role in Stabilization
+
+These validations support the stabilization baseline by ensuring:
+
+- rendering failures are eliminated,
+- loadability persistence remains trustworthy,
+- behavior is reproducible in a stable environment.
+
+They form part of the criteria used to determine readiness for subsequent architectural transitions.
+
 ## Status
 
 This testing strategy is **active** and mandatory for all new

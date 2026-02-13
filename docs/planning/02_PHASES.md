@@ -89,6 +89,51 @@ Ensure deterministic and meaningful testing across environments.
 - Isolation of environment-dependent tests
 - CI-safe defaults
 
+## Hardening and Stabilization-Oriented Work
+
+The project includes a phase focused on strengthening determinism, robustness, and maintainability without altering the procedural architecture or introducing new features.
+
+This phase is characterized by:
+
+- elimination of known rendering and loading failure modes,
+- deterministic LuaLaTeX loadability validation and persistence,
+- strengthening of reproducibility guarantees,
+- preparation of a stable baseline before any discovery backend transition (e.g. Qt).
+
+### Allowed Work in this Phase
+
+The following categories of work are explicitly allowed:
+
+- Refactoring aimed at **clearer separation of existing layers** (discovery, resolution, rendering) without changing behavior.
+- Robustness improvements in the rendering pipeline to prevent catalog aborts (subset-empty, fragile loading, environment-dependent failures).
+- Introduction of deterministic mechanisms such as loadability persistence and runtime fingerprinting.
+- Improvements in diagnostics and reproducibility (e.g. deterministic extraction of discovery vs loadable fonts).
+- Code quality hardening that improves maintainability and prevents hidden bugs, including:
+  - progressive static analysis hardening,
+  - gradual typing where it clarifies contracts,
+  - documentation and docstring audits where they improve understanding of invariants and behavior.
+
+### Explicit Non-Goals
+
+The following are **not** goals of this phase:
+
+- Architectural paradigm changes (the project remains procedural).
+- Introduction of GUI or user-facing feature expansion.
+- Performance optimization unrelated to robustness or determinism.
+- Opportunistic or large-scale refactors not directly supporting stabilization goals.
+- Introduction of new discovery backends (e.g. Qt) before the stabilization baseline is reached.
+
+### Stabilization Gate
+
+Completion of this phase is defined by achieving a deterministic and reproducible baseline in which:
+
+- catalog generation cannot abort due to subset-empty or loadability-related failures,
+- loadability persistence is validated against runtime fingerprint,
+- behavior is reproducible for identical environments,
+- no known unresolved rendering failure classes remain.
+
+Only after this gate is satisfied can work on alternative discovery backends proceed.
+
 ### Out of scope Phase 2
 
 - New testing frameworks

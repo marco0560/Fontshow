@@ -131,6 +131,59 @@ Environment-dependent failure tests MUST be isolated.
 
 ---
 
+## Rendering Robustness and Loadability Guarantees
+
+As part of the pipeline hardening effort, the rendering stage must be resilient to environment-dependent variability and font-specific limitations.
+
+### Catalog Non-Abort Requirement
+
+Catalog generation must not abort due to:
+
+- subset-empty conditions caused by specimen text not matching available glyphs,
+- fragile name-based font loading or shape resolution failures,
+- environment-dependent font loadability differences.
+
+The rendering pipeline must guarantee safe and deterministic behavior even when individual fonts cannot be rendered under the current runtime.
+
+### Loadability Persistence
+
+The system persists LuaLaTeX loadability decisions in the inventory together with runtime metadata. This persistence serves two purposes:
+
+- avoid repeated expensive probing,
+- ensure deterministic behavior when the runtime environment has not changed.
+
+Loadability information is considered valid only when the runtime fingerprint matches the environment under which it was computed.
+
+When a mismatch is detected, the system must fall back to runtime validation without causing pipeline failure.
+
+### Runtime Fingerprint as Robustness Mechanism
+
+The runtime fingerprint provides a stable indicator of the LuaLaTeX environment relevant to font loading. It allows the system to:
+
+- detect when persisted loadability may no longer be valid,
+- preserve determinism within a stable environment,
+- avoid silent inconsistencies between inventory and rendering behavior.
+
+### Deterministic Diagnostics
+
+The pipeline must support reproducible diagnostics that distinguish between:
+
+- fonts discovered by the system,
+- fonts loadable by the rendering engine,
+- and their deterministic difference.
+
+These diagnostics improve observability and help identify environment-dependent rendering limitations without compromising pipeline stability.
+
+### Role in Stabilization
+
+These guarantees contribute to the stabilization baseline by ensuring that:
+
+- rendering failures are contained and non-fatal,
+- environment-dependent variability does not cause non-deterministic behavior,
+- loadability persistence remains a reliable component of the pipeline.
+
+---
+
 ## Status
 
 This pipeline robustness contract is **active** and governs

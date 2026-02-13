@@ -36,10 +36,10 @@ In case of conflicts or ambiguity, the planning document set
 
 ---
 
-### 2. [PLANNING_TIMELINE](01_TIMELINE.md)
+### 2. [PHASES](02_PHASES.md)
 
-**Function:** Internal planning reference aligned with the roadmap.
-**Content:** Phase-by-phase timeline with dates, scope boundaries, buffers, and review gates.
+**Function:** Define the planning phase taxonomy and what work is allowed in each phase.
+**Content:** Phase definitions, objectives, non-goals, and scope boundaries (conceptual, non-temporal).
 
 ---
 
@@ -85,6 +85,13 @@ In case of conflicts or ambiguity, the planning document set
 
 ---
 
+### 9. [HARDENING_AND_LOADABILITY_BASELINE](09_HARDENING_AND_LOADABILITY_BASELINE.md)
+
+**Function:** Define the current hardening phase and the pre-Qt stabilization baseline.
+**Content:** Refactoring boundaries, robustness fixes (specimen/loading), LuaLaTeX loadability persistence with runtime fingerprint, deterministic diagnostics (discovery vs loadable), and the “Qt only after baseline” gate.
+
+---
+
 ### 10. [PIPELINE_ROBUSTNESS](10_PIPELINE_ROBUSTNESS.md)
 
 **Function:** Capture resilience expectations for LaTeX and catalog generation.
@@ -109,4 +116,5 @@ In case of conflicts or ambiguity, the planning document set
 - Documents 1–4 form the **core planning spine**.
 - Documents 5–6 are **execution-facing** and may evolve more rapidly.
 - Documents 7–10 are **contract documents**: changes must be explicit and justified.
+- Document 9 is a contract-style planning bridge between stabilization (8) and pipeline robustness (10), and must be kept consistent with the Timeline (1).
 - Document 12 is **non-binding by design** and must not leak into implementation work without approval.
