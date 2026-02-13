@@ -1,3 +1,9 @@
+## [0.38.1](https://github.com/marco0560/Fontshow/compare/v0.38.0...v0.38.1) (2026-02-13)
+
+### Bug Fixes
+
+* **docs:** ensure mermaid diagrams visualization in docs ([4f70e40](https://github.com/marco0560/Fontshow/commit/4f70e406960db3ee260408f3da9d7216163f6f3b))
+
 ## [0.38.0](https://github.com/marco0560/Fontshow/compare/v0.37.2...v0.38.0) (2026-02-13)
 
 ### Features
