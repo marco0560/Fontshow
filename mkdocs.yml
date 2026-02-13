@@ -24,8 +24,12 @@ markdown_extensions:
       permalink: true
   - tables
   - footnotes
-  - pymdownx.superfences
   - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_div_format
 
 extra_javascript:
   - https://unpkg.com/mermaid@10/dist/mermaid.min.js
