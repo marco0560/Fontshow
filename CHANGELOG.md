@@ -1,3 +1,9 @@
+## [0.38.0](https://github.com/marco0560/Fontshow/compare/v0.37.2...v0.38.0) (2026-02-13)
+
+### Features
+
+* **planning:** introduce hardening baseline, loadability and robustness planning ([05f622f](https://github.com/marco0560/Fontshow/commit/05f622fc847ea7f4841cdb21abada7d2a07cb473))
+
 ## [0.37.2](https://github.com/marco0560/Fontshow/compare/v0.37.1...v0.37.2) (2026-02-11)
 
 ### Bug Fixes
