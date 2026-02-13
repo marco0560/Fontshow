@@ -23,8 +23,13 @@ markdown_extensions:
   - toc:
       permalink: true
   - tables
-  - fenced_code
   - footnotes
+  - pymdownx.superfences
+  - pymdownx.highlight
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+  - js/mermaid-init.js
 
 plugins:
   - search
