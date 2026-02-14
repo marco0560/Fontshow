@@ -1,6 +1,7 @@
 import argparse
 import json
 import sys
+from argparse import _ActionsContainer
 from pathlib import Path
 
 from jsonschema.exceptions import ValidationError
@@ -143,7 +144,7 @@ def add_version_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def add_verbose_argument(parser: argparse.ArgumentParser) -> None:
+def add_verbose_argument(parser: _ActionsContainer) -> None:
     parser.add_argument(
         "-v",
         "--verbose",
@@ -152,7 +153,7 @@ def add_verbose_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def add_quiet_argument(parser: argparse.ArgumentParser) -> None:
+def add_quiet_argument(parser: _ActionsContainer) -> None:
     parser.add_argument(
         "-q",
         "--quiet",

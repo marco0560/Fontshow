@@ -46,6 +46,7 @@ import sys
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from fontshow import __version__
 from fontshow.cli_utils import (
@@ -98,6 +99,9 @@ SCRIPT_BADGE_MAP = {
     "korean": "KOR",
     "emoji": "EMOJI",
 }
+
+EXCLUDED_FONTS: set[str]
+DEFAULT_TEST_FONTS: set[str]
 
 if IS_WINDOWS:
     EXCLUDED_FONTS = {
@@ -209,7 +213,7 @@ def escape_latex(text: str) -> str:
 #   Changes here must avoid altering indentation or line breaks unless
 #   explicitly intended.
 #
-LATEX_INITIAL_CODE = (
+LATEX_INITIAL_CODE: str = (
     r"""% !TeX TS-program = lualatex
 % !TeX spellcheck = it_IT
 % !TeX encoding = UTF-8
@@ -359,15 +363,15 @@ I font problematici noti sono stati esclusi preventivamente. La compilazione è 
 \section{Catalogo Dettagliato}"""
 )
 # -------------------------------------------
-SAMPLE_1 = r"""\textbf{Test Latino (Lipsum):}
+SAMPLE_1: str = r"""\textbf{Test Latino (Lipsum):}
     {\mdseries\upshape\fontspec{"""
 # --------------------------------------------
-SAMPLE_2 = r"""}
+SAMPLE_2: str = r"""}
     \Li
     }"""
 # --------------------------------------------
 
-NORMAL_BLOCK = """\\subsection{{{safe_name}}}
+NORMAL_BLOCK: str = """\\subsection{{{safe_name}}}
 
 {badges}
 
@@ -388,7 +392,7 @@ NORMAL_BLOCK = """\\subsection{{{safe_name}}}
 \\vspace{{1em}}
 """
 # --------------------------------------------
-LATEX_END_CODE_1 = r"""\newpage
+LATEX_END_CODE_1: str = r"""\newpage
 
 % Chiusura file degli indici
 \immediate\closeout\fileWorking
@@ -408,7 +412,7 @@ LATEX_END_CODE_1 = r"""\newpage
 \midrule
 Font Analizzati (Post-Filtro) & """
 # --------------------------------------------
-LATEX_END_CODE_2 = r""" \\
+LATEX_END_CODE_2: str = r""" \\
 \textcolor{successcolor}{\textbf{Font Funzionanti}} & \textbf{\arabic{cntWorking}} \\
 \textcolor{errorcolor}{\textbf{Font Problematici}} & \textbf{\arabic{cntBroken}} \\
 \textcolor{othercolor}{\textbf{Font Esclusi}} & \textbf{\arabic{cntExcluded}} \\
@@ -483,7 +487,7 @@ def group_fonts_by_family(fonts: list[dict]) -> list[dict]:
     Keeps the first encountered font for each family (usually Regular or
     `ttc_index` 0). Preserves order of first occurrence.
     """
-    families = OrderedDict()
+    families: OrderedDict[str, Any] = OrderedDict()
     for font in fonts:
         fam = font_family(font)
         families.setdefault(fam, []).append(font)
@@ -1123,7 +1127,7 @@ def generate_latex(font_list: list[dict]) -> str:
 
     log_info(f"Generating LaTeX file for {len(font_list)} fonts...")
 
-    latex_code = LATEX_INITIAL_CODE
+    latex_code: str = LATEX_INITIAL_CODE
 
     total = len(font_list)
     for idx, font in enumerate(font_list, start=1):
@@ -1135,7 +1139,7 @@ def generate_latex(font_list: list[dict]) -> str:
         if idx % 500 == 0 or idx == total:
             log_info(f"  ... processed {idx}/{total}")
 
-        block = NORMAL_BLOCK.format(
+        block: str = NORMAL_BLOCK.format(
             safe_name=safe_name,
             font=fam,
             badges=badges,
@@ -1144,9 +1148,9 @@ def generate_latex(font_list: list[dict]) -> str:
         latex_code += "\n" + block
 
     latex_code += "\n\n"
-    for font in sorted(list(EXCLUDED_FONTS)):
-        block = r"\LogExcluded{" + font + "}\n"
-        latex_code += block
+    for excluded_font in sorted(list(EXCLUDED_FONTS)):
+        excluded_block: str = r"\LogExcluded{" + excluded_font + "}\n"
+        latex_code += excluded_block
 
     # Closing document and printing indices
     latex_code += LATEX_END_CODE_1 + str(total) + LATEX_END_CODE_2

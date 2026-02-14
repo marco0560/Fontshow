@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Fontshow raw inventory generation.
 
@@ -29,7 +28,7 @@ import sys
 from datetime import UTC, datetime
 from hashlib import sha1
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fontshow import __version__
 from fontshow.cli_utils import (
@@ -42,33 +41,38 @@ from fontshow.cli_utils import (
 )
 from fontshow.logging_utils import log, log_trace_cat
 
-try:
-    # fontTools does not provide type stubs/py.typed; tell mypy to ignore
-    # the import here to avoid "missing library stubs" errors.
-    from fontTools.ttLib import TTCollection, TTFont, TTLibError  # type: ignore[import]
+if TYPE_CHECKING:
+    # Real types for static typing only
+    from fontTools.ttLib import TTCollection, TTFont, TTLibError
 
     FONTTOOLS_AVAILABLE = True
-except ImportError:
-    # At runtime, when fontTools isn't available, provide safe fallbacks
-    # to avoid NameError while preserving current behavior (feature disabled).
-    FONTTOOLS_AVAILABLE = False
+else:
+    try:
+        from fontTools.ttLib import TTCollection, TTFont, TTLibError
 
-    class TTLibError(Exception):
-        """Fallback error type when fontTools is not installed."""
+        FONTTOOLS_AVAILABLE = True
+    except ImportError:
+        FONTTOOLS_AVAILABLE = False
 
-    class TTFont:
-        """Runtime placeholder to avoid NameError when fontTools is missing."""
+        class TTLibError(Exception):
+            """Fallback error type when fontTools is not installed."""
 
-        def __init__(self, *_args, **_kwargs) -> None:
-            msg = "fontTools is not installed"
-            raise TTLibError(msg)
+            _MSG = "fontTools is not installed"
 
-    class TTCollection:
-        """Runtime placeholder to avoid NameError when fontTools is missing."""
+            def __init__(self) -> None:
+                super().__init__(self._MSG)
 
-        def __init__(self, *_args, **_kwargs) -> None:
-            msg = "fontTools is not installed"
-            raise TTLibError(msg)
+        class TTFont:
+            """Runtime placeholder to avoid NameError when fontTools is missing."""
+
+            def __init__(self, *_args, **_kwargs) -> None:
+                raise TTLibError
+
+        class TTCollection:
+            """Runtime placeholder to avoid NameError when fontTools is missing."""
+
+            def __init__(self, *_args, **_kwargs) -> None:
+                raise TTLibError
 
 
 """
@@ -713,7 +717,7 @@ def extract_name_table(tt: TTFont) -> dict[str, list[str]]:
     if "name" not in tt:
         return out
     name_table = tt["name"]
-    for rec in name_table.names:  # type: ignore[attr-defined]
+    for rec in name_table.names:
         try:
             s = rec.toUnicode()
         except (UnicodeError, ValueError, TypeError):
@@ -827,9 +831,9 @@ def extract_unicode_coverage(tt: TTFont, limit: int = 200_000) -> dict[str, Any]
         return {}
     cmap = tt["cmap"]
     cps: set[int] = set()
-    for sub in cmap.tables:  # type: ignore[attr-defined]
+    for sub in cmap.tables:
         try:
-            cm = sub.cmap  # type: ignore[attr-defined]
+            cm = sub.cmap
         except (AttributeError, TypeError):
             continue
         for cp in cm:
@@ -850,10 +854,10 @@ def extract_opentype_features(tt: TTFont) -> list[str]:
             continue
         tbl = tt[tag]
         try:
-            fl = tbl.table.FeatureList  # type: ignore[attr-defined]
+            fl = tbl.table.FeatureList
             if not fl:
                 continue
-            for rec in fl.FeatureRecord:  # type: ignore[attr-defined]
+            for rec in fl.FeatureRecord:
                 feats.add(rec.FeatureTag)
         except (AttributeError, TypeError, IndexError):
             continue
@@ -943,11 +947,11 @@ def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
         codepoints: set[int] = set()
         if "cmap" in tt:
             cmap = tt["cmap"]
-            for sub in cmap.tables:  # type: ignore[attr-defined]
+            for sub in cmap.tables:
                 if not sub.isUnicode():
                     continue
                 # sub.cmap is {codepoint:int -> glyphName:str}
-                for cp in sub.cmap:  # type: ignore[attr-defined]
+                for cp in sub.cmap:
                     codepoints.add(int(cp))
                     # Guard rail: avoid pathological fonts exploding memory
                     if len(codepoints) >= 200_000:
@@ -1061,9 +1065,9 @@ def fonttools_extract_all(  # noqa: C901
         )
 
         try:
-            tt = TTFont(path, lazy=True, recalcBBoxes=False, recalcTimestamp=False)  # type: ignore[misc]
+            tt = TTFont(path, lazy=True, recalcBBoxes=False, recalcTimestamp=False)
             out = _fonttools_extract_from_tt(
-                path=path, container=container, tt=tt, ttc_index=None
+                _path=path, container=container, tt=tt, ttc_index=None
             )
         except (OSError, ValueError, TTLibError) as e:
             out["ok"] = False
@@ -1152,7 +1156,7 @@ def fonttools_extract_all(  # noqa: C901
         t0_face = perf_counter()
         try:
             out = _fonttools_extract_from_tt(
-                path=path, container="TTC", tt=tt, ttc_index=idx
+                _path=path, container="TTC", tt=tt, ttc_index=idx
             )
             out["ttc_count"] = ttc_count
         except (OSError, ValueError, TTLibError) as e:
@@ -1644,7 +1648,7 @@ def run_dump_fonts(args) -> int:
         verbose=(
             f"Processed {total_faces} font faces — "
             f"{skipped_non_opentype} skipped (non-OpenType), "
-            f"{len(inventory.get('fonts', []))} kept",
+            f"{len(inventory.get('fonts', []))} kept"
         ),
     )
 

@@ -13,11 +13,18 @@ Semantic validation is distinct from both schema validation and inference logic.
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, TypedDict
 
 import pycountry
 
 from fontshow.logging_utils import log, log_trace_cat
+
+
+class NormalizeLanguagesResult(TypedDict):
+    normalized: list[str]
+    deprecated: list[dict[str, Any]]
+    dropped: list[dict[str, Any]]
+
 
 # NOTE:
 # pycountry is not a full mirror of the IANA language subtag registry.
@@ -70,7 +77,7 @@ def normalize_languages(
     raw_languages: list[str],
     *,
     strict_bcp47: bool = False,
-) -> dict[str, list[dict[str, Any]]]:
+) -> NormalizeLanguagesResult:
     """
     Normalize raw language tags into ISO-compatible primary language codes.
 
@@ -162,7 +169,11 @@ def normalize_languages(
         normalized.append(mapped)
         seen.add(mapped)
 
-    return {"normalized": normalized, "deprecated": deprecated, "dropped": dropped}
+    return {
+        "normalized": normalized,
+        "deprecated": deprecated,
+        "dropped": dropped,
+    }
 
 
 def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:

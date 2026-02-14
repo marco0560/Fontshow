@@ -856,7 +856,7 @@ def _debug_dump_inference(
     font_scripts = set(inferred_scripts)
 
     log_info("\n[DEBUG] Font inference diagnostics")
-    log_info("  font identity:", identity.get("family"), identity.get("style"))
+    log_info(f"  font identity: {identity.get('family')}, {identity.get('style')}")
 
     log_info("  unicode blocks:")
     for block, count in coverage.get("unicode_blocks", {}).items():
