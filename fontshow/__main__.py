@@ -3,6 +3,7 @@
 import argparse
 import sys
 from importlib.metadata import PackageNotFoundError, version
+from typing import Any
 
 import fontshow.create_catalog
 import fontshow.dump_fonts
@@ -12,69 +13,43 @@ from fontshow.cli_utils import add_common_arguments
 from fontshow.logging_utils import log, log_trace_cat
 
 
-def dispatch_command(args):
+def dispatch_command(args: argparse.Namespace) -> int:
     log_trace_cat(
         log,
         "flow",
         "cli dispatch started",
-        extra={
-            "command": getattr(args, "command", None),
-        },
+        extra={"cmd": getattr(args, "command", None)},
     )
-    try:
-        # args.func is set by the subparser via set_defaults(func=...)
-        log_trace_cat(
-            log,
-            "flow",
-            "cli command resolved",
-            extra={
-                "command": getattr(args, "command", None),
-                "handler": getattr(getattr(args, "func", None), "__name__", None),
-            },
-        )
-        result = args.func(args)
 
-        exit_code = int(result) if result is not None else 0
+    try:
+        result: Any = args.func(args)
+        exit_code: int = int(result) if result is not None else 0
+
         log_trace_cat(
             log,
             "flow",
             "cli dispatch completed",
-            extra={
-                "command": getattr(args, "command", None),
-                "exit_code": exit_code,
-            },
+            extra={"exit_code": exit_code},
         )
-
-        # Normalize return value to exit code
 
     except SystemExit as e:
         exit_code = int(e.code) if e.code is not None else 0
+
         log_trace_cat(
             log,
             "flow",
             "cli dispatch completed",
-            extra={
-                "command": getattr(args, "command", None),
-                "exit_code": exit_code,
-                "system_exit": True,
-            },
+            extra={"exit_code": exit_code},
         )
 
     except Exception:  # noqa: BLE001
-        # (Top-level crash barrier: convert unexpected failure → exit code 2)
         log_trace_cat(
             log,
             "flow",
-            "cli dispatch completed",
-            extra={
-                "command": getattr(args, "command", None),
-                "exit_code": 2,
-                "exception": True,
-            },
+            "cli dispatch crashed",
+            extra={},
         )
         exit_code = 2
-    finally:
-        pass
 
     return exit_code
 

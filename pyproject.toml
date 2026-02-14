@@ -243,14 +243,12 @@ known-first-party = ["fontshow"]
 combine-as-imports = true
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 warn_unused_configs = true
 ignore_missing_imports = true
-strict_optional = false
-check_untyped_defs = false
+check_untyped_defs = true
 disallow_untyped_defs = false
-no_implicit_optional = false
-warn_return_any = false
+warn_return_any = true
 warn_unused_ignores = true
 show_error_codes = true
 

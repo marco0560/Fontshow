@@ -1488,14 +1488,20 @@ def _collect_language_warnings(
     lang_dropped: list[str] = []
     other_warnings: list[tuple[str, str, str]] = []
 
-    for warning in font.get("warnings", []):
+    raw_warnings = font.get("warnings")
+    warnings_list: list[dict[str, Any]] = (
+        raw_warnings if isinstance(raw_warnings, list) else []
+    )
+
+    for warning in warnings_list:
         if not isinstance(warning, dict):
             continue
 
         severity = warning.get("severity", "warning")
         code = warning.get("code", "unknown_warning")
         message = warning.get("message", "")
-        extra = warning.get("extra") if isinstance(warning.get("extra"), dict) else {}
+        extra_raw = warning.get("extra")
+        extra: dict[str, Any] = extra_raw if isinstance(extra_raw, dict) else {}
 
         def _extract_lang(msg: str) -> str:
             if not msg:

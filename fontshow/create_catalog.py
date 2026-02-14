@@ -679,8 +679,13 @@ def choose_sample_text(font: dict) -> str | None:
     2. Inferred language-based sample text (fallback).
     """
 
-    inference = font.get("inference", {})
-    inferred_languages = inference.get("languages") or []
+    inference_raw = font.get("inference")
+    inference: dict[str, object] = (
+        inference_raw if isinstance(inference_raw, dict) else {}
+    )
+
+    langs_raw = inference.get("languages")
+    inferred_languages: list[str] = langs_raw if isinstance(langs_raw, list) else []
 
     # --- 1. Embedded sample text (if present and compatible) ---
     embedded = font.get("sample_text")
@@ -690,12 +695,18 @@ def choose_sample_text(font: dict) -> str | None:
         and embedded.get("lang") == inferred_languages[0]
         and embedded.get("text")
     ):
-        return embedded["text"]
+        text = embedded.get("text")
+        if isinstance(text, str):
+            return text
+        return None
 
     # --- 2. Inferred language fallback ---
     lang = inferred_languages[0] if inferred_languages else None
     if lang and lang in SAMPLE_TEXTS:
-        return SAMPLE_TEXTS[lang]
+        sample = SAMPLE_TEXTS.get(lang)
+        if isinstance(sample, str):
+            return sample
+        return None
 
     return None
 
@@ -844,32 +855,33 @@ def clean_font_name(name: str) -> str:
     return re.sub(variants, "", clean_name, flags=re.IGNORECASE).strip()
 
 
-def get_installed_fonts_windows():
+def get_installed_fonts_windows() -> list[str]:
     """Return a sorted list of installed font family names on Windows.
 
     The function reads the Windows registry and normalizes names via
     `clean_font_name`. Excluded names from `EXCLUDED_FONTS` are filtered out.
     """
     log_info("Sistema: Windows. Scansione registro...")
-    font_list = set()
+    font_list: set[str] = set()
     registry_paths = [
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
         r"SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Fonts",
     ]
 
-    for path in registry_paths:
-        try:
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
-                for i in range(winreg.QueryInfoKey(key)[1]):
-                    name, value, _ = winreg.EnumValue(key, i)
+    if winreg is not None:
+        for path in registry_paths:
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
+                    for i in range(winreg.QueryInfoKey(key)[1]):
+                        name, value, _ = winreg.EnumValue(key, i)
 
-                    if re.search(r"\.(ttf|otf|ttc|fon)$", value, re.IGNORECASE):
-                        base_name = clean_font_name(name)
-                        if base_name and base_name not in EXCLUDED_FONTS:
-                            font_list.add(base_name)
+                        if re.search(r"\.(ttf|otf|ttc|fon)$", value, re.IGNORECASE):
+                            base_name = clean_font_name(name)
+                            if base_name and base_name not in EXCLUDED_FONTS:
+                                font_list.add(base_name)
 
-        except FileNotFoundError:
-            continue
+            except FileNotFoundError:
+                continue
 
     return sorted(list(font_list))
 
@@ -880,30 +892,31 @@ def get_font_details_windows():
     The returned list contains small dicts with `raw_line`, `extracted_names`
     and `base_names` useful for debugging parsing logic.
     """
-    details = []
-    registry_paths = [
+    details: list[dict[str, object]] = []
+    registry_paths_user = [
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
         r"SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Fonts",
     ]
 
-    for path in registry_paths:
-        try:
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
-                for i in range(winreg.QueryInfoKey(key)[1]):
-                    name, value, _ = winreg.EnumValue(key, i)
+    if winreg is not None:
+        for path in registry_paths_user:
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
+                    for i in range(winreg.QueryInfoKey(key)[1]):
+                        name, value, _ = winreg.EnumValue(key, i)
 
-                    if re.search(r"\.(ttf|otf|ttc|fon)$", value, re.IGNORECASE):
-                        base_name = clean_font_name(name)
-                        details.append(
-                            {
-                                "raw_line": name,
-                                "extracted_names": [name],
-                                "base_names": [base_name],
-                            }
-                        )
+                        if re.search(r"\.(ttf|otf|ttc|fon)$", value, re.IGNORECASE):
+                            base_name = clean_font_name(name)
+                            details.append(
+                                {
+                                    "raw_line": name,
+                                    "extracted_names": [name],
+                                    "base_names": [base_name],
+                                }
+                            )
 
-        except FileNotFoundError:
-            continue
+            except FileNotFoundError:
+                continue
 
     return details
 
