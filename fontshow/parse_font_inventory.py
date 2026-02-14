@@ -22,7 +22,7 @@ import logging
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from fontshow import __version__
 from fontshow.cli_utils import (
@@ -39,6 +39,7 @@ from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.schema_validation import validate_inventory_schema
 from fontshow.semantic_validation import normalize_languages
+from fontshow.types import FontRef, WarningInfo
 
 # ============================================================
 # Set up logger
@@ -1474,7 +1475,7 @@ def _validate_fonts_container(data: dict[str, Any]) -> list[Any] | None:
 
 
 def _collect_language_warnings(
-    font: dict[str, Any],
+    font: FontRef,
 ) -> tuple[list[str], list[str], list[str], list[tuple[str, str, str]]]:
     """
     Aggregate warnings for grouped CLI display.
@@ -1489,7 +1490,7 @@ def _collect_language_warnings(
     other_warnings: list[tuple[str, str, str]] = []
 
     raw_warnings = font.get("warnings")
-    warnings_list: list[dict[str, Any]] = (
+    warnings_list: list[WarningInfo] = (
         raw_warnings if isinstance(raw_warnings, list) else []
     )
 
@@ -1557,7 +1558,7 @@ def _emit_verbose_warnings(enriched: dict[str, Any]) -> None:
 
         ident = _format_font_identity(font, idx)
 
-        norm, dups, dropped, other = _collect_language_warnings(font)
+        norm, dups, dropped, other = _collect_language_warnings(cast("FontRef", font))
 
         if norm:
             log_info(f"{ident} normalized_languages: {', '.join(sorted(set(norm)))}")
