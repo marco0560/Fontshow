@@ -25,7 +25,7 @@ def test_case_normalization():
 def test_deprecated_language_mapping():
     result = normalize_languages(["mo"])
     assert result["normalized"] == ["ro"]
-    assert result["deprecated"] == [{"raw": "mo", "from": "mo", "to": "ro"}]
+    assert result["deprecated"] == [{"raw": "mo", "from_": "mo", "to": "ro"}]
     assert result["dropped"] == []
 
 

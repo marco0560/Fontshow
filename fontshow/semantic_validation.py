@@ -13,18 +13,16 @@ Semantic validation is distinct from both schema validation and inference logic.
 from __future__ import annotations
 
 import re
-from typing import Any, TypedDict
+from typing import Any
 
 import pycountry
 
 from fontshow.logging_utils import log, log_trace_cat
-
-
-class NormalizeLanguagesResult(TypedDict):
-    normalized: list[str]
-    deprecated: list[dict[str, Any]]
-    dropped: list[dict[str, Any]]
-
+from fontshow.types import (
+    DeprecatedLanguageInfo,
+    DroppedLanguageInfo,
+    NormalizeLanguagesResult,
+)
 
 # NOTE:
 # pycountry is not a full mirror of the IANA language subtag registry.
@@ -110,8 +108,8 @@ def normalize_languages(
     """
 
     normalized: list[str] = []
-    deprecated: list[dict[str, Any]] = []
-    dropped: list[dict[str, Any]] = []
+    deprecated: list[DeprecatedLanguageInfo] = []
+    dropped: list[DroppedLanguageInfo] = []
     seen: set[str] = set()
 
     for raw in raw_languages:
@@ -139,7 +137,7 @@ def normalize_languages(
         # Map deprecated codes if known.
         mapped = _DEPRECATED_LANGUAGE_MAP.get(base, base)
         if mapped != base:
-            deprecated.append({"raw": original, "from": base, "to": mapped})
+            deprecated.append({"raw": original, "from_": base, "to": mapped})
 
         # Validate.
         if not _is_known_language(mapped):
@@ -169,11 +167,11 @@ def normalize_languages(
         normalized.append(mapped)
         seen.add(mapped)
 
-    return {
-        "normalized": normalized,
-        "deprecated": deprecated,
-        "dropped": dropped,
-    }
+    return NormalizeLanguagesResult(
+        normalized=normalized,
+        deprecated=deprecated,
+        dropped=dropped,
+    )
 
 
 def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
@@ -194,26 +192,29 @@ def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
         extra={},
     )
 
-    fonts = inventory.get("fonts", [])
+    raw_fonts = inventory.get("fonts")
+    fonts: list[dict[str, Any]] = raw_fonts if isinstance(raw_fonts, list) else []
 
     for idx, font in enumerate(fonts):
+        if not isinstance(font, dict):
+            continue
+
         font_name = font.get("name") or font.get("id") or f"font[{idx}]"
 
         codes: set[str] = set()
 
-        # Declared languages
-        codes.update(font.get("coverage", {}).get("languages", []) or [])
+        coverage = font.get("coverage")
+        if isinstance(coverage, dict):
+            codes.update(coverage.get("languages", []) or [])
 
-        # Inferred languages
-        codes.update(font.get("inference", {}).get("languages", []) or [])
+        inference = font.get("inference")
+        if isinstance(inference, dict):
+            codes.update(inference.get("languages", []) or [])
 
         for code in sorted(codes):
             if code == "unknown":
                 continue
 
-            # Only validate normalized language codes.
-            # Raw language tags are stored in coverage["languages_raw"]
-            # and must not be validated here.
             if not _is_known_language(code):
                 log_trace_cat(
                     log,

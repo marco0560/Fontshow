@@ -44,6 +44,7 @@ import shutil
 import subprocess
 import sys
 from collections import OrderedDict
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
@@ -547,7 +548,9 @@ def load_font_inventory(path: Path) -> list[dict]:
     return fonts
 
 
-def as_font_desc_list(fonts: list, *, legacy_mode: bool = False) -> list[dict]:
+def as_font_desc_list(
+    fonts: Sequence[object], *, legacy_mode: bool = False
+) -> list[dict[str, object]]:
     """
     Normalize input fonts into a list of descriptors.
 
@@ -555,10 +558,10 @@ def as_font_desc_list(fonts: list, *, legacy_mode: bool = False) -> list[dict]:
     If `fonts` is a list of strings (legacy mode), each item becomes:
         {"identity": {"family": "<name>"}, "classification": {}, "inference": {}}
     """
-    out: list[dict] = []
+    out: list[dict[str, object]] = []
     for f in fonts:
         if isinstance(f, dict):
-            out.append(f)
+            out.append(cast("dict[str, object]", f))
         else:
             if legacy_mode:
                 log_info(f"found font '{f}'")
@@ -650,15 +653,15 @@ def _diagnose_coverage_mismatch(
         )
 
 
-def font_family(font: dict) -> str:
+def font_family(font: dict[str, object]) -> str:
     """Best-effort family name for LaTeX rendering and sorting."""
     ident = font.get("identity", {}) if isinstance(font, dict) else {}
-    return (
-        ident.get("family")
-        or ident.get("postscript_name")
-        or ident.get("fullname")
-        or "Unknown Font"
-    )
+    if not isinstance(ident, dict):
+        return "Unknown Font"
+
+    fam = ident.get("family") or ident.get("postscript_name") or ident.get("fullname")
+
+    return fam if isinstance(fam, str) and fam else "Unknown Font"
 
 
 def choose_sample_language(font: dict) -> str | None:
@@ -743,7 +746,7 @@ def language_label(font: dict) -> str:
     return lang.upper() if lang else "N/A"
 
 
-def render_badges(font: dict) -> str:
+def render_badges(font: dict[str, object]) -> str:
     """
     Render informational badges for a font.
 
@@ -755,7 +758,7 @@ def render_badges(font: dict) -> str:
     languages = language_label(font)
     ftype = font_type_label(font)
 
-    parts = []
+    parts: list[str] = []
     if scripts:
         parts.append(f"SCRIPTS: {scripts}")
     if languages:

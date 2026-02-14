@@ -1,4 +1,11 @@
-from typing import Any, NotRequired, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
+
+Confidence = Literal["high", "medium"]
+
+
+class LanguageInferenceInfo(TypedDict):
+    confidence: "Confidence"
+    evidence: list[str]
 
 
 class InferenceInfo(TypedDict, total=False):
@@ -27,3 +34,21 @@ class FontRef(TypedDict):
     inference: NotRequired[InferenceInfo]
     warnings: NotRequired[list[WarningInfo]]
     sample_text: NotRequired[SampleTextInfo]
+
+
+class DeprecatedLanguageInfo(TypedDict):
+    raw: str
+    from_: str
+    to: str
+
+
+class DroppedLanguageInfo(TypedDict, total=False):
+    raw: str
+    reason: str
+    normalized: str
+
+
+class NormalizeLanguagesResult(TypedDict):
+    normalized: list[str]
+    deprecated: list[DeprecatedLanguageInfo]
+    dropped: list[DroppedLanguageInfo]

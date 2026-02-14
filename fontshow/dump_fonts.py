@@ -471,7 +471,7 @@ def _run_fc_query(path: Path) -> str:
             },
         )
 
-    raw = proc.stdout if proc.stdout else ""
+    raw: str = proc.stdout if proc.stdout else ""
     log_trace_cat(
         log,
         "io",

@@ -252,6 +252,11 @@ warn_return_any = true
 warn_unused_ignores = true
 show_error_codes = true
 
+exclude = [
+    '^tests/',
+    '^scripts/test_',
+]
+
 # -------------------------------------------------
 # Ruff formatter
 # -------------------------------------------------

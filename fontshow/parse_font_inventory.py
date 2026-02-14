@@ -39,7 +39,12 @@ from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.schema_validation import validate_inventory_schema
 from fontshow.semantic_validation import normalize_languages
-from fontshow.types import FontRef, WarningInfo
+from fontshow.types import (
+    DeprecatedLanguageInfo,
+    FontRef,
+    LanguageInferenceInfo,
+    WarningInfo,
+)
 
 # ============================================================
 # Set up logger
@@ -481,7 +486,7 @@ def validate_font_entry(entry: dict, *, index: int) -> list[str]:
 
 
 def validate_inventory(
-    data: dict,
+    data: dict[str, Any],
     *,
     verbose: bool = False,
     quiet: bool = False,
@@ -547,10 +552,12 @@ def validate_inventory(
             severity="warning",
         )
 
-    fonts = data.get("fonts")
-    if not isinstance(fonts, list):
+    raw_fonts = data.get("fonts")
+    if not isinstance(raw_fonts, list):
         log_err("'fonts' field missing or not a list")
         return 1
+
+    fonts: list[dict[str, Any]] = [f for f in raw_fonts if isinstance(f, dict)]
 
     for idx, font in enumerate(fonts):
         # ---------- Fatal entry validation ----------
@@ -837,7 +844,7 @@ def infer_scripts(  # noqa: C901, PLR0912
 def _debug_dump_inference(
     font: dict[str, Any],
     coverage: dict[str, Any],
-    inferred_languages_map: dict[str, dict[str, Any]],
+    inferred_languages_map: dict[str, "LanguageInferenceInfo"],
     inferred_languages: list[str],
 ) -> None:
     """
@@ -960,11 +967,12 @@ def _process_language_metadata(
 
     # --- deprecated
     for item in result.get("deprecated", []):
+        item = cast("DeprecatedLanguageInfo", item)
         font.setdefault("warnings", []).append(
             {
                 "code": "language_deprecated",
                 "message": (
-                    f"Deprecated language '{item['from']}' "
+                    f"Deprecated language '{item['from_']}' "
                     f"from '{item['raw']}' -> '{item['to']}'"
                 ),
                 "severity": "info",
@@ -974,9 +982,9 @@ def _process_language_metadata(
         )
 
     # --- dropped / normalized / duplicate
-    for item in result["dropped"]:
-        raw = item["raw"]
-        reason = item["reason"]
+    for dropped_item in result["dropped"]:
+        raw: str = dropped_item["raw"]
+        reason: str = dropped_item["reason"]
 
         if reason == "variant_stripped":
             base = _language_base_tag(raw)
@@ -993,7 +1001,11 @@ def _process_language_metadata(
             continue
 
         if reason == "duplicate_normalized":
-            base = item.get("normalized") or _language_base_tag(raw)
+            base = (
+                cast("str", dropped_item.get("normalized"))
+                if dropped_item.get("normalized")
+                else _language_base_tag(raw)
+            )
             font.setdefault("warnings", []).append(
                 {
                     "code": "language_duplicate",

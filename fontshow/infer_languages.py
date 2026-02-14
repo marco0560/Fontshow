@@ -14,8 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 from fontshow.logging_utils import log, log_trace_cat
-
-Confidence = str  # "low" | "medium" | "high"
+from fontshow.types import Confidence, LanguageInferenceInfo
 
 # Minimum fraction of a Unicode block that must be covered
 # to infer a language from that block.
@@ -139,7 +138,7 @@ def _block_coverage_ratio(
 def infer_languages(
     coverage: dict[str, Any],
     policy: str = "permissive",
-) -> dict[str, dict[str, Any]]:
+) -> dict[str, LanguageInferenceInfo]:
     """
     Infer candidate languages from Unicode coverage metadata.
 
@@ -170,7 +169,7 @@ def infer_languages(
 
     unicode_blocks: dict[str, int] = coverage.get("unicode_blocks", {}) or {}
 
-    inferred: dict[str, dict[str, Any]] = {}
+    inferred: dict[str, LanguageInferenceInfo] = {}
 
     for lang, profile in LANGUAGE_PROFILES.items():
         required = set(profile["required_blocks"])
@@ -207,11 +206,10 @@ def infer_languages(
         evidence = sorted(required & unicode_blocks.keys())
         optional_hits = sorted(optional & unicode_blocks.keys())
 
+        confidence: Confidence = "medium"
         if optional_hits:
-            confidence: Confidence = "high"
+            confidence = "high"
             evidence.extend(optional_hits)
-        else:
-            confidence = "medium"
 
         log_trace_cat(
             log,
@@ -227,10 +225,10 @@ def infer_languages(
             },
         )
 
-        inferred[lang] = {
-            "confidence": confidence,
-            "evidence": evidence,
-        }
+        inferred[lang] = LanguageInferenceInfo(
+            confidence=confidence,
+            evidence=evidence,
+        )
 
     log_trace_cat(
         log,
