@@ -1,3 +1,12 @@
+## [0.38.4](https://github.com/marco0560/Fontshow/compare/v0.38.3...v0.38.4) (2026-02-14)
+
+### Bug Fixes
+
+* **core:** fix mypy errors and enforce logging call signature ([62e2f2f](https://github.com/marco0560/Fontshow/commit/62e2f2ff607c44f97fb5d0f0c78b0d8150f67c63))
+* **core:** Phase T3 - add typing to critical paths without behavior change ([fb7f9d2](https://github.com/marco0560/Fontshow/commit/fb7f9d2037f8342cbf3193677cb38d730e6da00a))
+* **core:** reach full green mypy on production code ([af71c49](https://github.com/marco0560/Fontshow/commit/af71c4938da210cfd6b6e2516e597705869ca6c1))
+* **core:** reach full-project mypy clean state ([5ab35dd](https://github.com/marco0560/Fontshow/commit/5ab35dd6a462f600bd32e1971f68a4b0bd8edb6b))
+
 ## [0.38.3](https://github.com/marco0560/Fontshow/compare/v0.38.2...v0.38.3) (2026-02-13)
 
 ### Bug Fixes
