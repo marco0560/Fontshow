@@ -59,14 +59,14 @@ except ImportError:
     class TTFont:
         """Runtime placeholder to avoid NameError when fontTools is missing."""
 
-        def __init__(self, *args, **kwargs) -> None:
+        def __init__(self, *_args, **_kwargs) -> None:
             msg = "fontTools is not installed"
             raise TTLibError(msg)
 
     class TTCollection:
         """Runtime placeholder to avoid NameError when fontTools is missing."""
 
-        def __init__(self, *args, **kwargs) -> None:
+        def __init__(self, *_args, **_kwargs) -> None:
             msg = "fontTools is not installed"
             raise TTLibError(msg)
 
@@ -865,7 +865,7 @@ def extract_opentype_features(tt: TTFont) -> list[str]:
 
 def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
     *,
-    path: Path,
+    _path: Path,
     container: str,
     tt: TTFont,
     ttc_index: int | None,

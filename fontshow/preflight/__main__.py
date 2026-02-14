@@ -37,6 +37,7 @@ def _run_preflight_cli(
     This function is intentionally side-effect free (no sys.exit)
     so it can be tested easily and supports dependency injection.
     """
+    _ = args  # Placeholder for potential future use
     log_trace_cat(
         log,
         "flow",

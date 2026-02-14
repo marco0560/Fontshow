@@ -426,6 +426,7 @@ def validate_font_entry(entry: dict, *, index: int) -> list[str]:
     - This function does not modify the entry.
     - Inference results are not required to be present.
     """
+    _ = index  # for potential future use in error messages
     errors: list[str] = []
 
     if not isinstance(entry, dict):

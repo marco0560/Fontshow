@@ -137,6 +137,7 @@ select = [
     "SIM",    # simplification rules revealing hidden logic issues
     "ICN",    # import alias / shadowing correctness
     "TCH",    # typing boundary correctness helpers
+    "PIE",    # potential import cycles (can reveal hidden import issues)
 
     # ------------------------------------------------------------
     # Phase 7 — Engineering strictness (NEW)
@@ -197,7 +198,6 @@ ignore = [
     # ------------------------------------------------------------
     "FURB",
     "PERF",
-    "ARG",
 
     # ------------------------------------------------------------
     # Bugbear rules intentionally ignored
@@ -218,10 +218,12 @@ unfixable = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = [
+"tests/**/*.py" = [
     "S101",  # asserts allowed in tests
     "S108",  # temp files allowed
     "S607",  # CLI tests intentionally invoke entrypoints via PATH (portable & venv-safe)
+    "ARG",   # test functions often have unused arguments for fixtures or parameterization
+    "PLR",   # test functions often have more branches than normal code (e.g. subtests, parameterization)
 ]
 "tests/test_charset_decoding.py" = [
     "B017", # So only truly generic-failure tests allow broad Exception
