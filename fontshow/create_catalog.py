@@ -46,7 +46,7 @@ import sys
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from fontshow import __version__
 from fontshow.cli_utils import (
@@ -58,6 +58,7 @@ from fontshow.cli_utils import (
     set_cli_mode,
 )
 from fontshow.logging_utils import log, log_trace_cat
+from fontshow.types import FontRef, InferenceInfo
 
 # Platform-specific imports (deferred)
 if sys.platform == "win32":
@@ -669,7 +670,7 @@ def choose_sample_language(font: dict) -> str | None:
     return str(cov_langs[0]) if cov_langs else None
 
 
-def choose_sample_text(font: dict) -> str | None:
+def choose_sample_text(font: FontRef) -> str | None:
     """
     Choose a sample text for rendering.
 
@@ -680,9 +681,7 @@ def choose_sample_text(font: dict) -> str | None:
     """
 
     inference_raw = font.get("inference")
-    inference: dict[str, object] = (
-        inference_raw if isinstance(inference_raw, dict) else {}
-    )
+    inference: InferenceInfo = inference_raw if isinstance(inference_raw, dict) else {}
 
     langs_raw = inference.get("languages")
     inferred_languages: list[str] = langs_raw if isinstance(langs_raw, list) else []
@@ -779,7 +778,7 @@ def render_sample_text(font: dict) -> str | None:
         return "😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇"
     if cls.get("is_decorative"):
         return fam
-    return choose_sample_text(font)
+    return choose_sample_text(cast("FontRef", font))
 
 
 def render_sample_code(font: dict, fam: str) -> str:
