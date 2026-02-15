@@ -1,4 +1,5 @@
 from fontshow.parse_font_inventory import parse_inventory
+from fontshow.types import Severity
 
 
 def test_parse_inventory_basic_latin_only():
@@ -101,6 +102,6 @@ def test_missing_declared_languages_emits_info_warning():
     warnings = result["fonts"][0].get("warnings", [])
 
     assert any(
-        w["code"] == "missing_declared_languages" and w["severity"] == "info"
+        w["code"] == "missing_declared_languages" and w["severity"] == Severity.INFO
         for w in warnings
     )

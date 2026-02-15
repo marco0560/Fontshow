@@ -15,9 +15,11 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
+from enum import Enum
 from typing import Any
 
 from fontshow.logging_utils import log, log_trace_cat
+from fontshow.types import Severity
 
 
 def _is_short_numeric_list(value: Any, *, max_len: int) -> bool:
@@ -54,6 +56,14 @@ def dumps_pretty(
     )
 
     def write(v: Any, level: int) -> str:
+        # --- Severity normalization (NEW) ---
+        if isinstance(v, Severity):
+            return json.dumps(v.to_json(), ensure_ascii=ensure_ascii)
+
+        # --- Enum normalization (NEW) ---
+        if isinstance(v, Enum):
+            return json.dumps(v.name.lower(), ensure_ascii=ensure_ascii)
+
         if v is None or isinstance(v, str | int | float | bool):
             return json.dumps(v, ensure_ascii=ensure_ascii)
 

@@ -17,6 +17,7 @@ from pathlib import Path
 from jsonschema import ValidationError, validate
 
 from fontshow.logging_utils import log, log_trace_cat
+from fontshow.types import Severity
 
 SUPPORTED_SCHEMA_VERSIONS = {"1.0", "1.1"}
 
@@ -142,13 +143,13 @@ def validate_inventory_schema(data: dict) -> list[dict]:
             "schema warning returned",
             extra={
                 "code": "schema_version_deprecated",
-                "severity": "warning",
+                "severity": Severity.WARN,
                 "schema_version": "1.0",
             },
         )
         return [
             {
-                "severity": "warning",
+                "severity": Severity.WARN,
                 "code": "schema_version_deprecated",
                 "message": "Missing metadata.schema_version; assuming legacy schema 1.0",
                 "schema_version": "1.0",
@@ -162,13 +163,13 @@ def validate_inventory_schema(data: dict) -> list[dict]:
             "schema warning returned",
             extra={
                 "code": "schema_version_unknown",
-                "severity": "error",
+                "severity": Severity.ERROR,
                 "schema_version": schema_version,
             },
         )
         return [
             {
-                "severity": "error",
+                "severity": Severity.ERROR,
                 "code": "schema_version_unknown",
                 "message": f"Unknown schema version: {schema_version}",
                 "schema_version": schema_version,
@@ -187,13 +188,13 @@ def validate_inventory_schema(data: dict) -> list[dict]:
             "schema warning returned",
             extra={
                 "code": "invalid_schema",
-                "severity": "error",
+                "severity": Severity.ERROR,
                 "schema_version": schema_version,
             },
         )
         return [
             {
-                "severity": "error",
+                "severity": Severity.ERROR,
                 "code": "invalid_schema",
                 "message": str(exc),
                 "schema_version": schema_version,

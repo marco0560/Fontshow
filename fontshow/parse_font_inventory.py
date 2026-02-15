@@ -42,6 +42,7 @@ from fontshow.semantic_validation import normalize_languages
 from fontshow.types import (
     FontRef,
     LanguageInferenceInfo,
+    Severity,
     WarningInfo,
 )
 
@@ -326,7 +327,7 @@ def add_structured_warning(
     *,
     code: str,
     message: str,
-    severity: str = "warning",
+    severity: Severity = Severity.WARN,
 ) -> None:
     """
     Attach a structured warning to an inventory node.
@@ -489,14 +490,14 @@ def validate_inventory(
             data,
             code="missing_schema_version",
             message="Inventory has no schema_version",
-            severity="warning",
+            severity=Severity.WARN,
         )
     elif schema_version != "1.0":
         add_structured_warning(
             data,
             code="unknown_schema_version",
             message=f"Unknown schema_version '{schema_version}'",
-            severity="warning",
+            severity=Severity.WARN,
         )
 
     raw_fonts = data.get("fonts")
@@ -528,7 +529,7 @@ def validate_inventory(
                 font,
                 code="missing_family",
                 message="Font entry has no family or base_names",
-                severity="warning",
+                severity=Severity.WARN,
             )
 
     if verbose:
@@ -850,9 +851,9 @@ def _apply_schema_validation(data: dict[str, Any]) -> None:
     )
 
     if schema_warnings:
-        severity_counts: dict[str, int] = {}
+        severity_counts: dict[Severity, int] = {}
         for w in schema_warnings:
-            sev = w.get("severity", "unknown")
+            sev = w.get("severity", Severity.WARN)
             severity_counts[sev] = severity_counts.get(sev, 0) + 1
 
         logger.debug(
@@ -904,7 +905,7 @@ def _process_language_metadata(
                     f"Deprecated language '{item['from_']}' "
                     f"from '{item['raw']}' -> '{item['to']}'"
                 ),
-                "severity": "info",
+                "severity": Severity.INFO,
                 "source": "language_normalization",
                 "extra": item,
             }
@@ -922,7 +923,7 @@ def _process_language_metadata(
                     {
                         "code": "language_normalized",
                         "message": f"Normalized language '{raw}' -> '{base}'",
-                        "severity": "info",
+                        "severity": Severity.INFO,
                         "source": "language_normalization",
                         "extra": {"raw": raw, "normalized": base},
                     }
@@ -939,7 +940,7 @@ def _process_language_metadata(
                 {
                     "code": "language_duplicate",
                     "message": f"Duplicate language '{raw}' (base '{base}')",
-                    "severity": "info",
+                    "severity": Severity.INFO,
                     "source": "language_normalization",
                     "extra": {"raw": raw, "normalized": base},
                 }
@@ -950,7 +951,7 @@ def _process_language_metadata(
             {
                 "code": "language_dropped",
                 "message": f"Dropped language '{raw}'",
-                "severity": "warning",
+                "severity": Severity.WARN,
                 "source": "language_normalization",
                 "extra": {"raw": raw, "reason": reason},
             }
@@ -988,7 +989,7 @@ def _process_charset(
                     {
                         "code": "charset_decode_failed",
                         "message": "Fontconfig charset bitmap decoding failed",
-                        "severity": "warning",
+                        "severity": Severity.WARN,
                         "source": "fontconfig_charset",
                         "extra": {
                             "font_path": font_path,
@@ -1115,7 +1116,7 @@ def _infer_and_attach_metadata(
                 "No declared languages available from FontConfig; "
                 "inference.languages will be derived solely from Unicode data"
             ),
-            severity="info",
+            severity=Severity.INFO,
         )
 
     inferred_scripts = list(infer_scripts(coverage, level) or [])
@@ -1382,7 +1383,7 @@ def _soft_schema_guard(data: dict[str, Any]) -> None:
             data,
             code="missing_schema_version",
             message="Inventory has no schema_version",
-            severity="warning",
+            severity=Severity.WARN,
         )
         metadata["schema_version"] = "1.0"
         return
@@ -1392,7 +1393,7 @@ def _soft_schema_guard(data: dict[str, Any]) -> None:
             data,
             code="unsupported_schema_version",
             message=f"Unsupported schema_version '{schema_version}'",
-            severity="warning",
+            severity=Severity.WARN,
         )
 
 
@@ -1436,9 +1437,16 @@ def _collect_language_warnings(
     )
 
     for warning in warnings_list:
-        severity = warning.get("severity", "warning")
-        code = warning.get("code", "unknown_warning")
-        message = warning.get("message", "")
+        severity_raw = warning.get("severity", Severity.WARN)
+        severity: str = (
+            severity_raw.name.lower()
+            if isinstance(severity_raw, Severity)
+            else str(severity_raw)
+        )
+
+        code = str(warning.get("code", "unknown_warning"))
+        message = str(warning.get("message", ""))
+
         extra_raw = warning.get("extra")
         extra: dict[str, Any] = extra_raw if isinstance(extra_raw, dict) else {}
 
@@ -1451,8 +1459,11 @@ def _collect_language_warnings(
         if code == "language_normalized":
             raw = extra.get("raw") or _extract_lang(message)
             norm = extra.get("normalized")
-            if raw and norm:
-                lang_norm_pairs.append(f"{raw} -> {norm}")
+            if isinstance(norm, str):
+                if raw:
+                    lang_norm_pairs.append(f"{raw} -> {norm}")
+                else:
+                    lang_norm_pairs.append(norm)
             elif raw:
                 lang_norm_pairs.append(raw)
             continue

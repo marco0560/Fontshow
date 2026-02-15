@@ -22,6 +22,7 @@ from fontshow.types import (
     DeprecatedLanguageInfo,
     DroppedLanguageInfo,
     NormalizeLanguagesResult,
+    Severity,
 )
 
 # NOTE:
@@ -221,7 +222,7 @@ def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
                     "validate",
                     "semantic rule triggered",
                     extra={
-                        "severity": "warning",
+                        "severity": Severity.WARN,
                         "code": "invalid_language_code",
                         "font": font_name,
                         "language": code,
@@ -231,7 +232,7 @@ def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
                 )
                 warnings.append(
                     {
-                        "severity": "warning",
+                        "severity": Severity.WARN,
                         "code": "invalid_language_code",
                         "font": font_name,
                         "language": code,
@@ -270,8 +271,8 @@ def enforce_semantic_validation(
         return True, warnings
 
     for w in warnings:
-        sev = (w.get("severity") or "").lower()
-        if sev in ("warn", "warning", "error"):
+        sev = w.get("severity")
+        if sev in (Severity.WARN, Severity.ERROR):
             log_trace_cat(
                 log,
                 "validate",

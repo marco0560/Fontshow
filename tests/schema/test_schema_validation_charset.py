@@ -1,4 +1,5 @@
 from fontshow.schema_validation import validate_inventory_schema
+from fontshow.types import Severity
 
 
 def test_schema_validation_with_charset_enrichment():
@@ -30,7 +31,7 @@ def test_schema_validation_with_charset_enrichment():
     warnings = validate_inventory_schema(inventory)
 
     # Schema validation must succeed without errors or critical warnings
-    assert all(w["severity"] in {"info", "warning"} for w in warnings)
+    assert all(w["severity"] in {Severity.INFO, Severity.WARN} for w in warnings)
 
 
 def test_schema_validation_no_spurious_warnings():

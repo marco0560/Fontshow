@@ -4,6 +4,7 @@ from fontshow.schema_validation import (
     _validate_inventory_schema_strict,
     validate_inventory_schema,
 )
+from fontshow.types import Severity
 
 
 def test_raw_inventory_without_metadata_emits_deprecation_warning():
@@ -54,7 +55,7 @@ def test_legacy_schema_emits_deprecation_warning():
 
     assert len(warnings) == 1
     assert warnings[0]["code"] == "schema_version_deprecated"
-    assert warnings[0]["severity"] == "warning"
+    assert warnings[0]["severity"] == Severity.WARN
 
 
 def test_invalid_schema_raises_validation_error():

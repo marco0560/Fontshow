@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from typing import Any, Literal, NotRequired, TypedDict
 
 Confidence = Literal["high", "medium"]
@@ -14,8 +15,32 @@ class InferenceInfo(TypedDict, total=False):
     confidence: float | None
 
 
+class Severity(Enum):
+    INFO = auto()
+    OK = auto()
+    WARN = auto()
+    ERROR = auto()
+
+    def to_json(self) -> str:
+        return self.name.lower()
+
+    @classmethod
+    def from_str(cls, value: str) -> "Severity":
+        v = value.lower()
+        if v == "info":
+            return cls.INFO
+        if v == "ok":
+            return cls.OK
+        if v in {"warn", "warning"}:
+            return cls.WARN
+        if v == "error":
+            return cls.ERROR
+        error_msg = f"Invalid severity: {value!r}"
+        raise ValueError(error_msg)
+
+
 class WarningInfo(TypedDict, total=False):
-    severity: str
+    severity: Severity
     code: str
     message: str
     extra: dict[str, Any]
