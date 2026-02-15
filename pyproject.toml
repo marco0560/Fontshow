@@ -260,6 +260,10 @@ exclude = [
     '^scripts/test_',
 ]
 
+[tool.vulture]
+paths = ["fontshow"]
+exclude = ["vulture_whitelist.py"]
+
 # -------------------------------------------------
 # Ruff formatter
 # -------------------------------------------------

@@ -43,3 +43,11 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      # ------------------------------------------------------------------
+      # Static typing (Fontshow)
+      # ------------------------------------------------------------------
+      - id: mypy
+        name: mypy (fontshow)
+        entry: mypy fontshow
+        language: system
+        pass_filenames: false
