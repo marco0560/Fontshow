@@ -40,7 +40,6 @@ from fontshow.logging_utils import log, log_trace_cat
 from fontshow.schema_validation import validate_inventory_schema
 from fontshow.semantic_validation import normalize_languages
 from fontshow.types import (
-    DeprecatedLanguageInfo,
     FontRef,
     LanguageInferenceInfo,
     WarningInfo,
@@ -694,12 +693,6 @@ def _get_font_path_for_diagnostics(font: dict) -> str | None:
     return None
 
 
-def _extract_lang_from_message(msg: str) -> str:
-    # Supports: "Dropped language 'wen'" (and similar)
-    m = re.search(r"'([^']+)'", msg or "")
-    return m.group(1) if m else ""
-
-
 # ============================================================
 # Inference helpers
 # ============================================================
@@ -967,7 +960,6 @@ def _process_language_metadata(
 
     # --- deprecated
     for item in result.get("deprecated", []):
-        item = cast("DeprecatedLanguageInfo", item)
         font.setdefault("warnings", []).append(
             {
                 "code": "language_deprecated",
