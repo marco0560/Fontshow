@@ -71,7 +71,6 @@ if sys.platform == "win32":
     # modulo specifico Windows
     IS_WINDOWS = True
     IS_LINUX = False
-    WINDOWS_MODULE = winreg
 elif sys.platform.startswith("linux"):
     IS_LINUX = True
     IS_WINDOWS = False
@@ -89,18 +88,6 @@ _QUIET = False
 ACCEPTED_SCHEMA_VERSIONS = {"1.0", "1.1"}
 TEST_FONTS: set[str] = set()
 DEFAULT_INVENTORY = "font_inventory_enriched.json"
-SCRIPT_BADGE_MAP = {
-    "latin": "LAT",
-    "greek": "GRK",
-    "cyrillic": "CYR",
-    "arabic": "ARB",
-    "hebrew": "HEB",
-    "devanagari": "DEV",
-    "han": "HAN",
-    "japanese": "JPN",
-    "korean": "KOR",
-    "emoji": "EMOJI",
-}
 
 EXCLUDED_FONTS: set[str]
 DEFAULT_TEST_FONTS: set[str]
