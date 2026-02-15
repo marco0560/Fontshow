@@ -608,51 +608,6 @@ def _normalize_inventory_paths(inventory: dict) -> None:
             identity["file"] = font["path"]
 
 
-def _diagnose_coverage_mismatch(
-    font_name: str,
-    declared: set[str],
-    detected: set[str],
-) -> None:
-    """
-    Emit diagnostic logs for mismatches between declared and detected coverage.
-
-    This function is diagnostic-only and must not affect execution.
-    """
-
-    if not declared and not detected:
-        return
-
-    if declared and not detected:
-        log_warn(
-            f'Coverage mismatch for font "{font_name}":\n'
-            f"  Declared: {sorted(declared)}\n"
-            f"  Detected:  []"
-        )
-        return
-
-    if detected and not declared:
-        log_info(
-            f'Undeclared coverage for font "{font_name}":\n'
-            f"  Detected: {sorted(detected)}"
-        )
-        return
-
-    missing = declared - detected
-    extra = detected - declared
-
-    if missing:
-        log_warn(
-            f'Coverage mismatch for font "{font_name}":\n'
-            f"  Declared: {sorted(declared)}\n"
-            f"  Detected:  {sorted(detected)}"
-        )
-    elif extra:
-        log_info(
-            f'Undeclared coverage for font "{font_name}":\n'
-            f"  Detected: {sorted(detected)}"
-        )
-
-
 def font_family(font: dict[str, object]) -> str:
     """Best-effort family name for LaTeX rendering and sorting."""
     ident = font.get("identity", {}) if isinstance(font, dict) else {}
