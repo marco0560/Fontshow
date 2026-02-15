@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.preflight.checks import environment, font_discovery, latex
-from fontshow.preflight.model import CheckResult, PreflightResult
+from fontshow.preflight.model import CheckResult, PreflightResult, Severity
 from fontshow.preflight.registry import get_registered_checks
 
 if TYPE_CHECKING:
@@ -110,6 +110,16 @@ def run_preflight(
         )
 
     for check_cls in active_checks:
+        if not getattr(check_cls, "executable", True):
+            results.append(
+                CheckResult(
+                    check_id=check_cls.check_id,
+                    severity=Severity.INFO,
+                    skipped=True,
+                    message="Check skipped (executable=False)",
+                )
+            )
+            continue
         log_trace_cat(
             log,
             "flow",
