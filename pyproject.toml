@@ -253,6 +253,7 @@ warn_unused_ignores = true
 show_error_codes = true
 no_implicit_optional = true
 warn_redundant_casts = true
+warn_unreachable = true
 
 exclude = [
     '^tests/',

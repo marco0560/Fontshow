@@ -193,7 +193,7 @@ def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
     )
 
     raw_fonts = inventory.get("fonts")
-    fonts: list[dict[str, Any]] = raw_fonts if isinstance(raw_fonts, list) else []
+    fonts = raw_fonts if isinstance(raw_fonts, list) else []
 
     for idx, font in enumerate(fonts):
         if not isinstance(font, dict):

@@ -14,8 +14,9 @@ def register_check(check_cls: type[BaseCheck]) -> None:
     The class must be a subclass of BaseCheck.
     Registration order is preserved.
     """
+    # The type check is performed at runtime to ensure that only valid check classes are registered.
     if not issubclass(check_cls, BaseCheck):
-        msg = f"Cannot register {check_cls!r}: not a subclass of BaseCheck"
+        msg = f"Cannot register {check_cls!r}: not a subclass of BaseCheck"  # type: ignore[unreachable]
         raise TypeError(msg)
 
     if check_cls not in _CHECK_REGISTRY:

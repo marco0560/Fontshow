@@ -357,7 +357,7 @@ def add_structured_warning(
     )
 
 
-def validate_font_entry(entry: dict, *, index: int) -> list[str]:
+def validate_font_entry(entry: Any, *, index: int) -> list[str]:
     """
     Validate the structural integrity of a single font entry.
 
@@ -399,21 +399,18 @@ def validate_font_entry(entry: dict, *, index: int) -> list[str]:
 
     # If base_names is present, identity is optional
     if not base_names:
-        if not isinstance(identity, dict):
-            errors.append("missing required field: identity (expected object)")
-        else:
-            if not identity.get("file"):
-                errors.append(
-                    "missing required field: identity.file (expected non-empty string)"
-                )
-            if not identity.get("family"):
-                errors.append(
-                    "missing required field: identity.family (expected non-empty string)"
-                )
-            if not identity.get("style"):
-                errors.append(
-                    "missing required field: identity.style (expected non-empty string)"
-                )
+        if not identity.get("file"):
+            errors.append(
+                "missing required field: identity.file (expected non-empty string)"
+            )
+        if not identity.get("family"):
+            errors.append(
+                "missing required field: identity.family (expected non-empty string)"
+            )
+        if not identity.get("style"):
+            errors.append(
+                "missing required field: identity.style (expected non-empty string)"
+            )
 
     # --- sample_text validation (optional) ---
     if "sample_text" in entry:
@@ -436,7 +433,7 @@ def validate_font_entry(entry: dict, *, index: int) -> list[str]:
 
 
 def validate_inventory(
-    data: dict[str, Any],
+    data: Any,
     *,
     verbose: bool = False,
     quiet: bool = False,
@@ -521,17 +518,6 @@ def validate_inventory(
             for err in entry_errors:
                 log_err(f"  - {err}")
 
-        # ---------- Non-fatal consistency warnings ----------
-        if not isinstance(font, dict):
-            warnings += 1
-            add_structured_warning(
-                font,
-                code="missing_family",
-                message="Font entry has no family or base_names",
-                severity="warning",
-            )
-            continue
-
         identity = font.get("identity", {})
         family = identity.get("family")
         base_names = font.get("base_names")
@@ -596,7 +582,7 @@ def _format_font_identity(font: dict, index: int) -> str:
     return label
 
 
-def _language_base_tag(raw: str) -> str:
+def _language_base_tag(raw: Any) -> str:
     """
     Extract a conservative base language tag used by our normalization rules.
 
@@ -1450,9 +1436,6 @@ def _collect_language_warnings(
     )
 
     for warning in warnings_list:
-        if not isinstance(warning, dict):
-            continue
-
         severity = warning.get("severity", "warning")
         code = warning.get("code", "unknown_warning")
         message = warning.get("message", "")
