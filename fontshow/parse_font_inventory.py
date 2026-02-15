@@ -50,31 +50,6 @@ from fontshow.types import (
 # ============================================================
 logger = logging.getLogger("fontshow")
 
-# ============================================================
-# Inference thresholds
-# ============================================================
-
-#: Mapping of inference level → numeric thresholds.
-#:
-#: Structure::
-#:
-#:     {
-#:         "<level>": {
-#:             "script_min_cp": int,  # minimum code points to consider a script
-#:         }
-#:     }
-#:
-INFERENCE_THRESHOLDS: dict[str, dict[str, int]] = {
-    "conservative": {
-        "script_min_cp": 10,
-    },
-    "medium": {
-        "script_min_cp": 5,
-    },
-    "aggressive": {
-        "script_min_cp": 1,
-    },
-}
 
 # ============================================================
 # Unicode → script ranges
@@ -106,30 +81,6 @@ UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
     "VIET": [(0x1EA0, 0x1EFF)],  # Vietnamese extensions
     "COPT": [(0x2C80, 0x2CFF)],  # Coptic
     "ETHI": [(0x1200, 0x137F)],  # Ethiopic (incl. Tigrinya)
-}
-
-# ============================================================
-# Script → language candidates
-# ============================================================
-
-#: Mapping of inferred script identifiers to plausible language codes.
-#:
-#: Values are **examples**, not a guarantee of full language support.
-#:
-SCRIPT_TO_LANGUAGES: dict[str, list[str]] = {
-    "LATN": ["en", "fr", "de", "it", "es", "pt", "nl", "sv", "no", "da", "fi", "vi"],
-    "GREK": ["el"],
-    "CYRL": ["ru", "uk", "bg", "sr", "mk"],
-    "ARAB": ["ar"],
-    "HEBR": ["he"],
-    "DEVA": ["hi", "ne"],
-    "HANI": ["zh"],
-    "HANG": ["ko"],
-    "JPAN": ["ja"],
-    "THAI": ["th"],
-    "ARMN": ["hy"],
-    "COPT": ["cop"],
-    "ETHI": ["ti"],
 }
 
 #: Mapping of primary language codes to their primary script.
