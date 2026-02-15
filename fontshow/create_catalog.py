@@ -437,11 +437,6 @@ LATEX_END_CODE_2: str = r""" \\
 # --------------------------------------------
 
 
-def script_badges(font: dict) -> list[str]:
-    scripts = font.get("inference", {}).get("scripts", [])
-    return [SCRIPT_BADGE_MAP[s] for s in scripts if s in SCRIPT_BADGE_MAP]
-
-
 def get_unique_filename(base_name: str, extension: str) -> str:
     """Genera un nome file unico aggiungendo un contatore a tre cifre (000-999)."""
     for i in range(1000):
@@ -468,19 +463,6 @@ def nfss_family_id(font: dict) -> str:
     key = f"{file_path}#{ttc_index}"
     digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
     return "FS" + digest[:10]
-
-
-def fontspec_options(font: dict) -> str:
-    """
-    Build fontspec options string.
-
-    Uses TTC index if present, e.g.:
-      Index=3
-    """
-    ttc_index = font.get("identity", {}).get("ttc_index")
-    if ttc_index is not None:
-        return f"Index={ttc_index}"
-    return ""
 
 
 def group_fonts_by_family(fonts: list[dict]) -> list[dict]:
