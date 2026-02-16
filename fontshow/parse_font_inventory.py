@@ -35,6 +35,7 @@ from fontshow.cli_utils import (
 )
 from fontshow.dump_fonts import UNICODE_BLOCKS
 from fontshow.infer_languages import infer_languages
+from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.schema_validation import validate_inventory_schema
@@ -340,8 +341,8 @@ def add_structured_warning(
         Machine-readable warning code.
     message : str
         Human-readable warning message.
-    severity : str, optional
-        Severity level (default: ``"warning"``).
+    severity : Severity, optional
+        Severity level (default: ``"Severity.WARN"``).
 
     Notes
     -----
@@ -1437,12 +1438,7 @@ def _collect_language_warnings(
     )
 
     for warning in warnings_list:
-        severity_raw = warning.get("severity", Severity.WARN)
-        severity: str = (
-            severity_raw.name.lower()
-            if isinstance(severity_raw, Severity)
-            else str(severity_raw)
-        )
+        severity = warning.get("severity", Severity.WARN)
 
         code = str(warning.get("code", "unknown_warning"))
         message = str(warning.get("message", ""))
@@ -1483,8 +1479,8 @@ def _collect_language_warnings(
         if code in {"normalized_languages", "duplicate_languages", "dropped_languages"}:
             continue
 
-        if severity in ("warning", "error"):
-            other_warnings.append((severity, code, message))
+        if severity in (Severity.WARN, Severity.ERROR):
+            other_warnings.append((severity.name.lower(), code, message))
 
     return lang_norm_pairs, lang_dups, lang_dropped, other_warnings
 
@@ -1570,6 +1566,7 @@ def run_parse_font_inventory(
     logger.debug("inference level enabled", extra={"infer_level": args.infer_level})
 
     data: dict[str, Any] = json.loads(read_text_fn(input_path))
+    normalize_loaded_enums(data)
     log_trace_cat(
         log,
         "io",

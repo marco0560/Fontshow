@@ -45,7 +45,6 @@ import subprocess
 import sys
 from collections import OrderedDict
 from collections.abc import Sequence
-from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
@@ -59,6 +58,7 @@ from fontshow.cli_utils import (
     log_warn,
     set_cli_mode,
 )
+from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.semantic_validation import enforce_semantic_validation
 from fontshow.types import FontRef, InferenceInfo, Severity
@@ -1330,16 +1330,7 @@ def _load_inventory(inv_path: Path, strict: bool) -> tuple[int, list]:
                 },
             )
 
-        # Normalize severity from JSON (string → Severity)
-        inv_warnings = inventory.get("warnings")
-        if isinstance(inv_warnings, list):
-            for w in inv_warnings:
-                if isinstance(w, dict):
-                    sev = w.get("severity")
-                    if isinstance(sev, str):
-                        with suppress(ValueError):
-                            w["severity"] = Severity.from_str(sev)
-
+        normalize_loaded_enums(inventory)
         _normalize_inventory_paths(inventory)
         fonts = inventory.get("fonts", [])
 
@@ -1360,12 +1351,7 @@ def _load_inventory(inv_path: Path, strict: bool) -> tuple[int, list]:
 
         if not ok:
             for w in semantic_warnings:
-                sev_raw = w.get("severity", Severity.INFO)
-                sev = (
-                    sev_raw
-                    if isinstance(sev_raw, Severity)
-                    else Severity.from_str(str(sev_raw))
-                )
+                sev = w.get("severity", Severity.INFO)
                 if sev in (Severity.ERROR, Severity.WARN):
                     log_err(w.get("message", "semantic validation error"))
             return 1, []

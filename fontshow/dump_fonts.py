@@ -39,6 +39,7 @@ from fontshow.cli_utils import (
     log_warn,
     set_cli_mode,
 )
+from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
 
 if TYPE_CHECKING:
@@ -1081,7 +1082,9 @@ def fonttools_extract_all(  # noqa: C901
                 },
             )
 
-        cache_file.write_text(json.dumps(out, indent=2), encoding="utf-8")
+        cache_file.write_text(
+            dumps_pretty(out, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
 
         duration_ms = int((perf_counter() - t0_total) * 1000)
         log_trace_cat(
@@ -1121,7 +1124,7 @@ def fonttools_extract_all(  # noqa: C901
         )
         key = font_cache_key(path, None)
         (cache_dir / f"{key}.json").write_text(
-            json.dumps(out, indent=2), encoding="utf-8"
+            dumps_pretty(out, indent=2, ensure_ascii=False), encoding="utf-8"
         )
         return [out]
 
@@ -1179,7 +1182,9 @@ def fonttools_extract_all(  # noqa: C901
             },
         )
 
-        cache_file.write_text(json.dumps(out, indent=2), encoding="utf-8")
+        cache_file.write_text(
+            dumps_pretty(out, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         results.append(out)
 
     duration_ms = int((perf_counter() - t0_total) * 1000)
@@ -1619,7 +1624,7 @@ def run_dump_fonts(args) -> int:
                 )
 
     args.output.write_text(
-        json.dumps(inventory, indent=2, ensure_ascii=False),
+        dumps_pretty(inventory, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
 

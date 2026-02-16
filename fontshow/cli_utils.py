@@ -7,6 +7,7 @@ from pathlib import Path
 from jsonschema.exceptions import ValidationError
 
 from fontshow import __version__
+from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.schema_validation import validate_inventory_schema
 from fontshow.semantic_validation import validate_language_codes
 from fontshow.types import Severity
@@ -124,7 +125,7 @@ def log_err(message: str) -> None:
     print(f"[ERR ] {message}", file=sys.stderr)
 
 
-def _log_by_severity(severity: Severity | str | None, message: str) -> None:
+def _log_by_severity(severity: Severity | None, message: str) -> None:
     """
     Route a log message according to severity.
 
@@ -136,16 +137,8 @@ def _log_by_severity(severity: Severity | str | None, message: str) -> None:
     CLI output remains string-based.
     """
 
-    # --- Normalize severity to enum ---
-    if isinstance(severity, Severity):
-        sev_enum = severity
-    elif isinstance(severity, str):
-        try:
-            sev_enum = Severity.from_str(severity)
-        except ValueError:
-            sev_enum = Severity.INFO
-    else:
-        sev_enum = Severity.INFO
+    # --- Normalize severity to enum (Enum-only contract) ---
+    sev_enum = severity if isinstance(severity, Severity) else Severity.INFO
 
     # --- Route log ---
     if sev_enum is Severity.WARN:
@@ -221,6 +214,7 @@ def cli_validate_inventory() -> int:
     try:
         raw = inventory_path.read_text(encoding="utf-8")
         data = json.loads(raw)
+        normalize_loaded_enums(data)
     except json.JSONDecodeError as e:
         log_err(f"invalid JSON file: {e}")
         return 1
