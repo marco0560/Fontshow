@@ -36,3 +36,4 @@ created before the adoption of the formal decision record system.
 - [0016 — Language Normalization and Validation Strategy](0016-language-normalization-validation-strategy.md)
 - [0017 — Ruff Linting Policy and Staged Adoption](0017-ruff-linting-policy-staged-adoption.md)
 - [0018 — TRACE Logging Architecture & Semantics](0018-trace-logging-architecture-semantics.md)
+- [0019 — Enum / JSON Boundary Invariant](0019-enum-json-boundary-invariant.md)
