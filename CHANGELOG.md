@@ -1,3 +1,10 @@
+## [0.38.5](https://github.com/marco0560/Fontshow/compare/v0.38.4...v0.38.5) (2026-02-16)
+
+### Bug Fixes
+
+* **core:** eliminate unreachable code and align typing with defensive validation ([6f880ce](https://github.com/marco0560/Fontshow/commit/6f880cedabc4be06dcf0ad97dfe0c8d28d574272))
+* **validation:** honor BaseCheck.executable flag to allow runtime disabling of checks ([b731dd7](https://github.com/marco0560/Fontshow/commit/b731dd7a9ec74a3d51f08562e80a18d09d4a13c5))
+
 ## [0.38.4](https://github.com/marco0560/Fontshow/compare/v0.38.3...v0.38.4) (2026-02-14)
 
 ### Bug Fixes
