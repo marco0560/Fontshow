@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "font_inventory-1.2.schema.json",
+  "title": "Fontshow Inventory Schema v1.2",
+  "type": "object",
+  "required": [
+    "metadata",
+    "fonts"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "input_inventory_tool",
+        "input_inventory_tool_version",
+        "inference_level",
+        "fonttools",
+        "run_environment"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.2"
+        },
+        "input_inventory_tool": { "type": "string", "minLength": 1 },
+        "input_inventory_tool_version": { "type": "string", "minLength": 1 },
+        "inference_level": { "type": "string", "minLength": 1 },
+
+        "fonttools": {
+          "type": "object",
+          "required": [
+            "available",
+            "fontconfig_charset_included",
+            "version"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "available": { "type": "boolean" },
+            "fontconfig_charset_included": { "type": "boolean" },
+            "version": { "type": "string", "minLength": 1 }
+          }
+        },
+
+        "run_environment": {
+          "type": "object",
+          "description": "Minimal system identification for reproducibility and diagnostics.",
+          "required": [
+            "os",
+            "os_release",
+            "kernel",
+            "machine",
+            "python_version",
+            "hostname",
+            "execution_context"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "os": { "type": "string", "minLength": 1 },
+            "os_release": { "type": "string", "minLength": 1 },
+            "kernel": { "type": "string", "minLength": 1 },
+            "machine": { "type": "string", "minLength": 1 },
+            "python_version": { "type": "string", "minLength": 1 },
+            "hostname": { "type": "string", "minLength": 1 },
+            "execution_context": {
+              "type": "string",
+              "enum": ["native", "wsl", "container", "other"]
+            }
+          }
+        }
+      }
+    },
+
+    "fonts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/font_entry"
+      }
+    }
+  },
+
+  "$defs": {
+
+    "font_entry": {
+      "type": "object",
+      "additionalProperties": false,
+
+      "required": [
+        "path",
+        "family",
+        "subfamily",
+        "typographic_subfamily",
+        "full_name",
+        "postscript_name",
+        "version_string",
+        "unique_font_id",
+        "units_per_em",
+        "ascent",
+        "descent",
+        "weight_class",
+        "width_class",
+        "italic_angle",
+        "is_fixed_pitch",
+        "glyph_count",
+        "coverage",
+        "inference",
+        "charset",
+        "sample_text",
+        "specimen_text",
+        "specimen_strategy",
+        "specimen_glyph_count"
+      ],
+
+      "properties": {
+
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Canonical font file path. Multiple faces in the same file share this path."
+        },
+
+        "family": { "type": "string", "minLength": 1 },
+        "subfamily": { "type": "string", "minLength": 1 },
+        "typographic_subfamily": { "type": ["string", "null"] },
+        "full_name": { "type": "string", "minLength": 1 },
+        "postscript_name": { "type": "string", "minLength": 1 },
+        "version_string": { "type": "string", "minLength": 1 },
+        "unique_font_id": { "type": "string", "minLength": 1 },
+
+        "units_per_em": { "type": "integer", "minimum": 1 },
+        "ascent": { "type": "integer" },
+        "descent": { "type": "integer" },
+        "weight_class": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "width_class": { "type": "integer", "minimum": 1, "maximum": 9 },
+        "italic_angle": { "type": "number" },
+        "is_fixed_pitch": { "type": "boolean" },
+        "glyph_count": { "type": "integer", "minimum": 1 },
+
+        "coverage": { "type": "object", "additionalProperties": true },
+        "inference": { "type": "object", "additionalProperties": true },
+        "charset": { "type": "object", "additionalProperties": true },
+
+        "sample_text": {
+          "type": "object",
+          "required": ["source", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "source": { "type": "string", "const": "font" },
+            "text": { "type": "string" }
+          }
+        },
+
+        "specimen_text": { "type": "string", "minLength": 1 },
+        "specimen_strategy": { "type": "string", "enum": ["internal", "script", "cmap"] },
+        "specimen_glyph_count": { "type": "integer", "minimum": 1 },
+        "specimen_rejection_reason": { "type": ["string", "null"] },
+
+        "warnings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/warning" }
+        }
+      }
+    },
+
+    "warning": {
+      "type": "object",
+      "required": [
+        "code",
+        "message",
+        "severity"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "severity": {
+          "type": "string",
+          "enum": ["info", "warning", "error"]
+        }
+      }
+    }
+
+  }
+}

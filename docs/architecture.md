@@ -422,14 +422,6 @@ Each inventory declares a `schema_version` in its metadata. Downstream
 stages must remain tolerant to missing or unknown fields and must not
 assume the presence of optional metadata.
 
-Schema validation is intentionally *soft*: unknown schema versions or missing
-fields may trigger warnings but must not abort execution. This allows older
-inventories to remain usable and supports incremental schema evolution.
-
-This design allows the inventory format to evolve without breaking
-existing pipelines and supports reproducibility across different
-execution environments.
-
 ## Non-goals and future extensions
 
 Fontshow explicitly does not aim to:

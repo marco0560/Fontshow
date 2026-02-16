@@ -37,3 +37,4 @@ created before the adoption of the formal decision record system.
 - [0017 — Ruff Linting Policy and Staged Adoption](0017-ruff-linting-policy-staged-adoption.md)
 - [0018 — TRACE Logging Architecture & Semantics](0018-trace-logging-architecture-semantics.md)
 - [0019 — Enum / JSON Boundary Invariant](0019-enum-json-boundary-invariant.md)
+- [0020 — Schema v1.2 Unification and Deprecation of Previous Versions](0020-schema-v1-2-unification-deprecation-previous-versions.md)
