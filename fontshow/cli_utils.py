@@ -9,6 +9,7 @@ from jsonschema.exceptions import ValidationError
 from fontshow import __version__
 from fontshow.schema_validation import validate_inventory_schema
 from fontshow.semantic_validation import validate_language_codes
+from fontshow.types import Severity
 
 # ------------------------------------------------------------
 # Centralized CLI presentation state
@@ -123,13 +124,35 @@ def log_err(message: str) -> None:
     print(f"[ERR ] {message}", file=sys.stderr)
 
 
-def _log_by_severity(severity: str, message: str) -> None:
-    sev = (severity or "").strip().lower()
-    if sev in {"warn", "warning"}:
+def _log_by_severity(severity: Severity | str | None, message: str) -> None:
+    """
+    Route a log message according to severity.
+
+    Accepts:
+        - Severity enum (preferred)
+        - legacy string ("warning", "error", ...)
+        - None → treated as INFO
+
+    CLI output remains string-based.
+    """
+
+    # --- Normalize severity to enum ---
+    if isinstance(severity, Severity):
+        sev_enum = severity
+    elif isinstance(severity, str):
+        try:
+            sev_enum = Severity.from_str(severity)
+        except ValueError:
+            sev_enum = Severity.INFO
+    else:
+        sev_enum = Severity.INFO
+
+    # --- Route log ---
+    if sev_enum is Severity.WARN:
         log_warn(message)
-    elif sev in {"err", "error"}:
+    elif sev_enum is Severity.ERROR:
         log_err(message)
-    elif sev in {"ok", "success"}:
+    elif sev_enum is Severity.OK:
         log_ok(message)
     else:
         log_info(message)

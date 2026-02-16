@@ -1360,7 +1360,12 @@ def _load_inventory(inv_path: Path, strict: bool) -> tuple[int, list]:
 
         if not ok:
             for w in semantic_warnings:
-                sev = w.get("severity")
+                sev_raw = w.get("severity", Severity.INFO)
+                sev = (
+                    sev_raw
+                    if isinstance(sev_raw, Severity)
+                    else Severity.from_str(str(sev_raw))
+                )
                 if sev in (Severity.ERROR, Severity.WARN):
                     log_err(w.get("message", "semantic validation error"))
             return 1, []

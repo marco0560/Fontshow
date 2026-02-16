@@ -56,33 +56,39 @@ def dumps_pretty(
     )
 
     def write(v: Any, level: int) -> str:
-        # --- Severity normalization (NEW) ---
+        # --- Severity normalization (canonical) ---
         if isinstance(v, Severity):
             return json.dumps(v.to_json(), ensure_ascii=ensure_ascii)
 
-        # --- Enum normalization (NEW) ---
+        # --- Generic Enum normalization (safe fallback) ---
         if isinstance(v, Enum):
             return json.dumps(v.name.lower(), ensure_ascii=ensure_ascii)
 
+        # --- Primitive types ---
         if v is None or isinstance(v, str | int | float | bool):
             return json.dumps(v, ensure_ascii=ensure_ascii)
 
+        # --- Mapping (dict-like) ---
         if isinstance(v, Mapping):
             items = list(v.items())
             if sort_keys:
                 items.sort(key=lambda kv: str(kv[0]))
             if not items:
                 return "{}"
+
             pad = " " * (indent * level)
             pad_in = " " * (indent * (level + 1))
             out = ["{\n"]
+
             for i, (k, val) in enumerate(items):
                 key_s = json.dumps(str(k), ensure_ascii=ensure_ascii)
                 out.append(f"{pad_in}{key_s}: {write(val, level + 1)}")
                 out.append(",\n" if i < len(items) - 1 else "\n")
+
             out.append(f"{pad}}}")
             return "".join(out)
 
+        # --- Sequence (list-like, excluding bytes) ---
         if isinstance(v, Sequence) and not isinstance(v, bytes | bytearray):
             if _is_short_numeric_list(v, max_len=compact_numeric_lists_max_len):
                 log_trace_cat(
@@ -103,15 +109,19 @@ def dumps_pretty(
             seq = list(v)
             if not seq:
                 return "[]"
+
             pad = " " * (indent * level)
             pad_in = " " * (indent * (level + 1))
             out = ["[\n"]
+
             for i, item in enumerate(seq):
                 out.append(f"{pad_in}{write(item, level + 1)}")
                 out.append(",\n" if i < len(seq) - 1 else "\n")
+
             out.append(f"{pad}]")
             return "".join(out)
 
+        # --- Fallback ---
         return json.dumps(v, ensure_ascii=ensure_ascii)
 
     out = write(value, 0) + "\n"
