@@ -48,6 +48,7 @@ repos:
       # ------------------------------------------------------------------
       - id: mypy
         name: mypy (fontshow)
-        entry: mypy fontshow
-        language: system
+        entry: python -m mypy fontshow
+        language: python
+        additional_dependencies: [mypy==1.11.2]
         pass_filenames: false
