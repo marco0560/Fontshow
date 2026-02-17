@@ -21,8 +21,11 @@ import json
 import logging
 import re
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any, cast
+
+from fontTools.ttLib import TTFont, TTLibError
 
 from fontshow import __version__
 from fontshow.cli_utils import (
@@ -630,6 +633,237 @@ def _get_font_path_for_diagnostics(font: dict) -> str | None:
             return identity.get("file")
 
     return None
+
+
+# ============================================================
+# Specimen Engine — Deterministic (Issue #54)
+# ============================================================
+
+MIN_SAMPLE_GLYPHS = 20
+CMAP_FALLBACK_GLYPHS = 50
+
+SCRIPT_SAMPLES: dict[str, str] = {
+    "Latin": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    "Greek": "Καλημέρα σας. Αυτό είναι ένα σύντομο δείγμα ελληνικού κειμένου.",
+    "Cyrillic": "Пример текста на кириллице для проверки отображения шрифта.",
+    "Arabic": "مرحبا بكم. هذا نص عربي قصير لاختبار عرض الخط بشكل صحيح.",
+    "Hebrew": "שלום לכם. זהו טקסט עברי קצר לבדיקת הצגת הגופן.",
+    "Thai": "สวัสดีครับ นี่เป็นข้อความภาษาไทยสั้น ๆ สำหรับทดสอบแบบอักษร",
+    "Devanagari": "नमस्ते। यह देवनागरी लिपि का एक छोटा नमूना पाठ है।",
+    "Hangul": "안녕하세요. 이것은 한글 글꼴 표시를 위한 짧은 예시 문장입니다.",
+    "CJK": "漢字仮名交じり文の例。中文字符測試。日本語テスト。한국어 테스트。",
+}
+
+
+def _specimen_is_variation_selector(cp: int) -> bool:
+    return (0xFE00 <= cp <= 0xFE0F) or (0xE0100 <= cp <= 0xE01EF)
+
+
+def _specimen_is_control_like(cp: int) -> bool:
+    return unicodedata.category(chr(cp)) in {"Cc", "Cf", "Cs", "Co", "Cn"}
+
+
+def _specimen_is_mark(cp: int) -> bool:
+    return unicodedata.category(chr(cp)) in {"Mn", "Mc"}
+
+
+def _specimen_skip(cp: int) -> bool:
+    return (
+        _specimen_is_control_like(cp)
+        or _specimen_is_variation_selector(cp)
+        or _specimen_is_mark(cp)
+    )
+
+
+def _specimen_preference(cp: int) -> int:
+    import unicodedata
+
+    cat = unicodedata.category(chr(cp))
+    if cat.startswith("L"):
+        return 0
+    if cat == "Nd":
+        return 1
+    return 2
+
+
+def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
+    out: list[str] = []
+    glyphs = 0
+    prev_base = False
+
+    for ch in text:
+        cp = ord(ch)
+
+        if (
+            cp not in cps
+            or _specimen_is_control_like(cp)
+            or _specimen_is_variation_selector(cp)
+        ):
+            prev_base = False
+            continue
+
+        if _specimen_is_mark(cp):
+            if not prev_base:
+                continue
+            out.append(ch)
+            continue
+
+        out.append(ch)
+        glyphs += 1
+        prev_base = True
+
+    return "".join(out), glyphs
+
+
+def _specimen_collect_cmap(path: str | None, ttc_index: int | None) -> set[int]:
+    if not isinstance(path, str) or not path:
+        return set()
+    try:
+        tt = TTFont(
+            path,
+            fontNumber=ttc_index if isinstance(ttc_index, int) else 0,
+            lazy=True,
+            recalcBBoxes=False,
+            recalcTimestamp=False,
+        )
+    except (OSError, ValueError, TTLibError):
+        return set()
+
+    cps: set[int] = set()
+    if "cmap" not in tt:
+        return cps
+    for sub in tt["cmap"].tables:
+        if not sub.isUnicode():
+            continue
+        for cp in sub.cmap:
+            cps.add(int(cp))
+            if len(cps) >= 200_000:
+                return cps
+    return cps
+
+
+def _specimen_from_internal(
+    font: dict[str, Any],
+    cps: set[int],
+) -> tuple[str | None, str | None]:
+    sample_block = font.get("sample_text")
+    if not isinstance(sample_block, dict):
+        return None, None
+
+    raw = sample_block.get("text")
+    if not isinstance(raw, str) or not raw.strip():
+        return None, None
+
+    filtered, g = _specimen_filter_text(raw.strip(), cps)
+    if g >= MIN_SAMPLE_GLYPHS and filtered:
+        return filtered, "internal"
+    return None, "internal_sample_invalid"
+
+
+def _specimen_from_script(
+    coverage: dict[str, Any],
+    cps: set[int],
+) -> tuple[str | None, str | None]:
+    blocks = coverage.get("unicode_blocks_from_charset") or coverage.get(
+        "unicode_blocks", {}
+    )
+
+    script = None
+    if isinstance(blocks, dict) and blocks:
+        script = max(blocks, key=lambda k: int(blocks.get(k, 0)))
+        for k in SCRIPT_SAMPLES:
+            if k.lower() in str(script).lower():
+                script = k
+                break
+    if script is None:
+        script = "Latin"
+
+    sample = SCRIPT_SAMPLES.get(script)
+    if not isinstance(sample, str):
+        return None, None
+
+    filtered, g = _specimen_filter_text(sample, cps)
+    if g >= MIN_SAMPLE_GLYPHS and filtered:
+        return filtered, "script"
+    return None, None
+
+
+def _specimen_from_cmap(
+    font: dict[str, Any],
+    cps: set[int],
+) -> tuple[str, str]:
+    ordered = sorted(cps, key=_specimen_preference)
+    chosen: list[int] = []
+
+    for cp in ordered:
+        if _specimen_skip(cp):
+            continue
+        chosen.append(cp)
+        if len(chosen) >= CMAP_FALLBACK_GLYPHS:
+            break
+
+    add_structured_warning(
+        font,
+        code="specimen_cmap_fallback",
+        message="Specimen generated via cmap fallback",
+        severity=Severity.INFO,
+    )
+
+    return "".join(chr(cp) for cp in chosen), "cmap"
+
+
+def _specimen_generate_for_font(
+    font: dict[str, Any],
+    coverage: dict[str, Any],
+    font_path: str | None,
+) -> None:
+    """
+    Deterministic specimen generator (3-level fallback).
+
+    Writes:
+        specimen_text
+        specimen_strategy
+        specimen_glyph_count
+        specimen_rejection_reason
+    """
+    identity = font.get("identity", {})
+    ttc_index = identity.get("ttc_index")
+
+    cps = _specimen_collect_cmap(font_path, ttc_index)
+
+    specimen_text: str | None = None
+    strategy: str | None = None
+    rejection: str | None = None
+
+    # Level 1
+    specimen_text, strategy = _specimen_from_internal(font, cps)
+    if specimen_text is None:
+        _, rejection = _specimen_from_internal(font, cps)
+
+    # Level 2
+    if specimen_text is None:
+        specimen_text, strategy = _specimen_from_script(coverage, cps)
+
+    # Level 3
+    if specimen_text is None and cps:
+        specimen_text, strategy = _specimen_from_cmap(font, cps)
+        rejection = rejection or "fallback_to_cmap"
+
+    if not specimen_text:
+        specimen_text = " "
+        strategy = "cmap"
+        rejection = rejection or "no_printable_glyphs"
+
+    filtered, g = (
+        _specimen_filter_text(specimen_text, cps)
+        if cps
+        else (specimen_text, len(specimen_text))
+    )
+
+    font["specimen_text"] = filtered
+    font["specimen_strategy"] = strategy or "cmap"
+    font["specimen_rejection_reason"] = rejection
+    font["specimen_glyph_count"] = int(g)
 
 
 # ============================================================
@@ -1276,8 +1510,10 @@ def parse_inventory(
             font_path=font_path,
         )
 
+        _specimen_generate_for_font(font, coverage, font_path)
+
     metadata = data.setdefault("metadata", {})
-    metadata["schema_version"] = "1.1"
+    metadata["schema_version"] = "1.2"
     metadata["inference_level"] = level
     metadata.setdefault("input_inventory_tool", "parse_font_inventory")
     metadata.setdefault("input_inventory_tool_version", __version__)

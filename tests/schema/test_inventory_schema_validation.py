@@ -6,7 +6,7 @@ from fontshow.schema_validation import (
 )
 
 
-def make_inventory(schema_version="1.0", with_fonts=True):
+def make_inventory(schema_version="1.2", with_fonts=True):
     data = {
         "metadata": {
             "schema_version": schema_version,
@@ -25,9 +25,10 @@ def make_inventory(schema_version="1.0", with_fonts=True):
 # ----------------------------------------------------------------------
 
 
-def test_strict_validation_ok_v1():
+def test_strict_validation_rejects_v1():
     data = make_inventory("1.0")
-    _validate_inventory_schema_strict(data, schema_version="1.0")
+    with pytest.raises(ValueError):
+        _validate_inventory_schema_strict(data, schema_version="1.0")
 
 
 def test_strict_validation_rejects_unknown_version():
@@ -38,39 +39,63 @@ def test_strict_validation_rejects_unknown_version():
 
 
 def test_strict_validation_missing_schema_file(monkeypatch):
-    data = make_inventory("1.0")
+    data = make_inventory("1.2")
 
     def fake_exists(self):
         return False
 
-    monkeypatch.setattr(
-        "pathlib.Path.exists",
-        fake_exists,
-    )
+    monkeypatch.setattr("pathlib.Path.exists", fake_exists)
 
     with pytest.raises(ValueError, match="Schema file not found"):
-        _validate_inventory_schema_strict(data, schema_version="1.0")
+        _validate_inventory_schema_strict(data, schema_version="1.2")
 
 
 def test_strict_validation_schema_error():
-    # Missing "fonts"
+    # Missing required metadata fields AND fonts
     data = {
         "metadata": {
-            "schema_version": "1.0",
+            "schema_version": "1.2",
         }
     }
 
     with pytest.raises(ValueError, match="Inventory schema validation failed"):
-        _validate_inventory_schema_strict(data, schema_version="1.0")
+        _validate_inventory_schema_strict(data, schema_version="1.2")
 
 
 # ----------------------------------------------------------------------
-# Public API tests (backward compatibility)
+# Public API tests
 # ----------------------------------------------------------------------
+
+
+def _valid_metadata_block():
+    return {
+        "schema_version": "1.2",
+        "input_inventory_tool": "test",
+        "input_inventory_tool_version": "0",
+        "inference_level": "none",
+        "fonttools": {
+            "available": True,
+            "fontconfig_charset_included": True,
+            "version": "0",
+        },
+        "run_environment": {
+            "os": "test",
+            "os_release": "test",
+            "kernel": "test",
+            "machine": "test",
+            "python_version": "test",
+            "hostname": "test",
+            "execution_context": "native",
+        },
+    }
 
 
 def test_public_validation_ok_returns_no_warnings():
-    data = make_inventory("1.0")
+    data = {
+        "metadata": _valid_metadata_block(),
+        "fonts": [],
+    }
+
     warnings = validate_inventory_schema(data)
 
     assert warnings == []
@@ -78,9 +103,7 @@ def test_public_validation_ok_returns_no_warnings():
 
 def test_public_validation_returns_warning_on_invalid_schema():
     data = {
-        "metadata": {
-            "schema_version": "1.0",
-        }
+        "metadata": _valid_metadata_block(),
         # missing fonts
     }
 

@@ -15,6 +15,37 @@ class InferenceInfo(TypedDict, total=False):
     confidence: float | None
 
 
+class ExecutionContext(Enum):
+    """
+    Execution environment classification.
+
+    JSON representation follows ADR-0019:
+    - lowercase stable string tokens
+    """
+
+    NATIVE = auto()
+    WSL = auto()
+    CONTAINER = auto()
+    OTHER = auto()
+
+    def to_json(self) -> str:
+        return self.name.lower()
+
+    @classmethod
+    def from_str(cls, value: str) -> "ExecutionContext":
+        v = value.lower()
+        if v == "native":
+            return cls.NATIVE
+        if v == "wsl":
+            return cls.WSL
+        if v == "container":
+            return cls.CONTAINER
+        if v == "other":
+            return cls.OTHER
+        error_msg = f"Invalid execution_context: {value!r}"
+        raise ValueError(error_msg)
+
+
 class Severity(Enum):
     INFO = auto()
     OK = auto()

@@ -6,6 +6,41 @@ from fontshow.schema_validation import (
 )
 from fontshow.types import Severity
 
+# ---------------------------------------------------------------------------
+# Helper — minimal valid v1.2 inventory (must satisfy schema requirements)
+# ---------------------------------------------------------------------------
+
+
+def _valid_v12_inventory():
+    return {
+        "metadata": {
+            "schema_version": "1.2",
+            "input_inventory_tool": "test",
+            "input_inventory_tool_version": "0",
+            "inference_level": "none",
+            "fonttools": {
+                "available": True,
+                "version": "0",
+                "fontconfig_charset_included": False,
+            },
+            "run_environment": {
+                "os": "test",
+                "os_release": "test",
+                "kernel": "test",
+                "machine": "test",
+                "python_version": "test",
+                "hostname": "test",
+                "execution_context": "native",
+            },
+        },
+        "fonts": [],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Public validator behaviour
+# ---------------------------------------------------------------------------
+
 
 def test_raw_inventory_without_metadata_emits_deprecation_warning():
     data = {"fonts": []}
@@ -14,13 +49,11 @@ def test_raw_inventory_without_metadata_emits_deprecation_warning():
 
     assert len(warnings) == 1
     assert warnings[0]["code"] == "schema_version_deprecated"
+    assert warnings[0]["severity"] == Severity.WARN
 
 
-def test_enriched_inventory_schema_1_1_is_valid():
-    data = {
-        "metadata": {"schema_version": "1.1"},
-        "fonts": [{"coverage": {"unicode_blocks": {"Basic Latin": 95}}}],
-    }
+def test_valid_v1_2_inventory_is_ok():
+    data = _valid_v12_inventory()
 
     warnings = validate_inventory_schema(data)
 
@@ -34,35 +67,42 @@ def test_unknown_schema_version_emits_warning():
 
     assert len(warnings) == 1
     assert warnings[0]["code"] == "schema_version_unknown"
+    assert warnings[0]["severity"] == Severity.ERROR
 
 
-def test_invalid_inventory_structure_raises():
-    data = {
-        "metadata": {"schema_version": "1.1"}
-        # missing "fonts"
-    }
-
-    with pytest.raises(ValueError, match="Inventory schema validation failed"):
-        _validate_inventory_schema_strict(data, schema_version="1.1")
-
-
-def test_legacy_schema_emits_deprecation_warning():
-    data = {
-        "fonts": [],
-    }
+def test_legacy_schema_is_reported_as_unknown():
+    # Current validator behavior: legacy versions are not treated as "deprecated",
+    # they are treated as "unknown" schema versions.
+    data = {"metadata": {"schema_version": "1.0"}, "fonts": []}
 
     warnings = validate_inventory_schema(data)
 
     assert len(warnings) == 1
-    assert warnings[0]["code"] == "schema_version_deprecated"
-    assert warnings[0]["severity"] == Severity.WARN
+    assert warnings[0]["code"] == "schema_version_unknown"
+    assert warnings[0]["severity"] == Severity.ERROR
 
 
-def test_invalid_schema_raises_validation_error():
+# ---------------------------------------------------------------------------
+# Strict validator behaviour
+# ---------------------------------------------------------------------------
+
+
+def test_invalid_inventory_structure_raises():
     data = {
-        "metadata": {"schema_version": "1.1"}
+        "metadata": {"schema_version": "1.2"}
         # missing "fonts"
     }
 
     with pytest.raises(ValueError, match="Inventory schema validation failed"):
-        _validate_inventory_schema_strict(data, schema_version="1.1")
+        _validate_inventory_schema_strict(data, schema_version="1.2")
+
+
+def test_invalid_schema_raises_validation_error():
+    data = {
+        "metadata": {"schema_version": "1.2"},
+        "fonts": [],
+        # missing required metadata fields
+    }
+
+    with pytest.raises(ValueError, match="Inventory schema validation failed"):
+        _validate_inventory_schema_strict(data, schema_version="1.2")

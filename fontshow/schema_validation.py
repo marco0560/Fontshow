@@ -19,7 +19,7 @@ from jsonschema import ValidationError, validate
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.types import Severity
 
-SUPPORTED_SCHEMA_VERSIONS = {"1.0", "1.1"}
+SUPPORTED_SCHEMA_VERSIONS = {"1.2"}
 
 
 def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> None:
@@ -63,10 +63,7 @@ def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> Non
         raise ValueError(msg)
 
     schema_path = (
-        Path(__file__).parent.parent
-        / "docs"
-        / "schema"
-        / f"inventory-{schema_version}.schema.json"
+        Path(__file__).parent.parent / "docs" / "schema" / "font_inventory.schema.json"
     )
 
     if not schema_path.exists():

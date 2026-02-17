@@ -41,6 +41,7 @@ from fontshow.cli_utils import (
 )
 from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
+from fontshow.types import ExecutionContext, Severity, WarningInfo
 
 if TYPE_CHECKING:
     # Real types for static typing only
@@ -131,6 +132,7 @@ NAME_ID_FAMILY = 1
 NAME_ID_SUBFAMILY = 2
 NAME_ID_FULLNAME = 4
 NAME_ID_POSTSCRIPT = 6
+NAME_ID_VERSION = 5
 NAME_ID_LICENSE = 13
 NAME_ID_LICENSE_URL = 14
 NAME_ID_SAMPLE_TEXT = 19
@@ -178,21 +180,24 @@ def collect_environment_metadata() -> dict:
     def is_container():
         return Path("/.dockerenv").exists() or Path("/run/.containerenv").exists()
 
-    exec_type = "native"
+    exec_type = ExecutionContext.NATIVE
     if is_wsl():
-        exec_type = "wsl"
+        exec_type = ExecutionContext.WSL
     elif is_container():
-        exec_type = "container"
+        exec_type = ExecutionContext.CONTAINER
+    else:
+        exec_type = ExecutionContext.NATIVE
 
     return {
         "hostname": socket.gethostname(),
         "username": getpass.getuser(),
         "os": platform.system(),
+        "os_release": platform.version(),
         "kernel": platform.release(),
+        "machine": platform.machine(),
+        "python_version": platform.python_version(),
         "platform": platform.platform(),
-        "execution_context": {
-            "type": exec_type,
-        },
+        "execution_context": exec_type.to_json(),
     }
 
 
@@ -980,6 +985,37 @@ def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
     except (ValueError, TypeError, AttributeError):
         data["opentype_features"] = []
 
+    # -------------------------------
+    # Core technical metrics (schema v1.2)
+    # -------------------------------
+    try:
+        head = tt["head"]
+        data["units_per_em"] = int(head.unitsPerEm)
+    except (KeyError, AttributeError, TypeError, ValueError):
+        data["units_per_em"] = None
+
+    try:
+        hhea = tt["hhea"]
+        data["ascent"] = int(hhea.ascent)
+        data["descent"] = int(hhea.descent)
+    except (KeyError, AttributeError, TypeError, ValueError):
+        data["ascent"] = None
+        data["descent"] = None
+
+    try:
+        post = tt["post"]
+        data["italic_angle"] = float(post.italicAngle)
+        data["is_fixed_pitch"] = bool(post.isFixedPitch)
+    except (KeyError, AttributeError, TypeError, ValueError):
+        data["italic_angle"] = 0.0
+        data["is_fixed_pitch"] = False
+
+    try:
+        maxp = tt["maxp"]
+        data["glyph_count"] = int(maxp.numGlyphs)
+    except (KeyError, AttributeError, TypeError, ValueError):
+        data["glyph_count"] = None
+
     return data
 
 
@@ -1411,25 +1447,116 @@ def build_font_descriptor(
 
     ttc_index = fonttools.get("ttc_index")
 
+    # -------------------------------
+    # Structural / extraction warnings (schema v1.2)
+    # -------------------------------
+    warnings: list[WarningInfo] = []
+
+    if not family:
+        warnings.append(
+            {
+                "code": "missing_family",
+                "message": "Font has no family name",
+                "severity": Severity.WARN,
+            }
+        )
+
+    if not style:
+        warnings.append(
+            {
+                "code": "missing_subfamily",
+                "message": "Font has no subfamily/style name",
+                "severity": Severity.WARN,
+            }
+        )
+
+    unicode_block = coverage.get("unicode")
+    unicode_count = (
+        unicode_block.get("count") if isinstance(unicode_block, dict) else None
+    )
+    if not unicode_count:
+        warnings.append(
+            {
+                "code": "no_unicode_coverage",
+                "message": "Font reports no Unicode coverage",
+                "severity": Severity.WARN,
+            }
+        )
+
+    if fonttools.get("glyph_count") in (None, 0):
+        warnings.append(
+            {
+                "code": "missing_glyph_count",
+                "message": "Glyph count unavailable",
+                "severity": Severity.WARN,
+            }
+        )
+
+    if typography.get("weight_class") is None:
+        warnings.append(
+            {
+                "code": "missing_weight_class",
+                "message": "OS/2 weight_class missing",
+                "severity": Severity.INFO,
+            }
+        )
+
+    if typography.get("width_class") is None:
+        warnings.append(
+            {
+                "code": "missing_width_class",
+                "message": "OS/2 width_class missing",
+                "severity": Severity.INFO,
+            }
+        )
+
+    if not fonttools.get("ok", True):
+        warnings.append(
+            {
+                "code": "fonttools_degraded",
+                "message": fonttools.get("error", "fontTools extraction degraded"),
+                "severity": Severity.WARN,
+            }
+        )
+
     return {
+        # --- Schema v1.2 canonical path ---
+        "path": str(font_path),
+        # --- Deterministic identity ---
+        "family": family,
+        "subfamily": style,
+        "typographic_subfamily": style,
+        "full_name": fullname,
+        "postscript_name": postscript,
+        "version_string": (_best_name(names, NAME_ID_VERSION) if names else None),
+        "unique_font_id": make_font_id(str(font_path), ttc_index),
+        # --- Technical core metrics ---
+        "units_per_em": fonttools.get("units_per_em"),
+        "ascent": fonttools.get("ascent"),
+        "descent": fonttools.get("descent"),
+        "weight_class": typography.get("weight_class"),
+        "width_class": typography.get("width_class"),
+        "italic_angle": fonttools.get("italic_angle"),
+        "is_fixed_pitch": fonttools.get("is_fixed_pitch"),
+        "glyph_count": fonttools.get("glyph_count"),
+        # --- Existing blocks preserved ---
+        "coverage": coverage,
+        "inference": {},
+        "charset": {"fc_charset": coverage.get("charset")},
+        "sample_text": sample_text,
+        # --- Legacy information preserved for diagnostics ---
         "identity": {
             "file": str(font_path),
             "ttc_index": ttc_index,
-            "family": family,
-            "style": style,
             "id": make_font_id(str(font_path), ttc_index),
-            "fullname": fullname,
-            "postscript_name": postscript,
         },
         "platform": {"name": platform_name},
         "format": format_block,
-        "coverage": coverage,
         "typography": typography,
         "classification": classification,
         "license": {"text": license_text, "url": license_url},
         "vendor": vendor,
         "embedding_rights": embedding_rights,
-        "sample_text": sample_text,
         "source": {
             "fonttools": {
                 "ok": bool(fonttools.get("ok", False)),
@@ -1517,13 +1644,23 @@ def run_dump_fonts(args) -> int:
 
     inventory: dict[str, Any] = {
         "metadata": {
-            "schema_version": "1.0",
+            "schema_version": "1.2",
             "generated_at": utc_now_iso(),
-            "tool": "dump_fonts",
-            "tool_version": __version__,
-            "environment": collect_environment_metadata(),
-            "fontconfig_charset_included": bool(args.include_fc_charset and IS_LINUX),
-            "fonttools_available": FONTTOOLS_AVAILABLE,
+            "input_inventory_tool": "dump_fonts",
+            "input_inventory_tool_version": __version__,
+            "inference_level": "none",
+            "fonttools": {
+                "available": bool(FONTTOOLS_AVAILABLE),
+                "fontconfig_charset_included": bool(
+                    args.include_fc_charset and IS_LINUX
+                ),
+                "version": (
+                    __import__("fontTools").__version__
+                    if FONTTOOLS_AVAILABLE
+                    else "unavailable"
+                ),
+            },
+            "run_environment": collect_environment_metadata(),
         },
         "fonts": [],
     }
