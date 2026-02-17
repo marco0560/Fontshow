@@ -1,18 +1,23 @@
 # tests/cli/test_cli_quiet_verbose.py
 """Tests for fontshow CLI --quiet and --verbose flags."""
 
+import os
 import subprocess
 import sys
+import tempfile
 
 
 def run_cli(args):
     """Helper to run fontshow CLI and capture output."""
     cmd = [sys.executable, "-m", "fontshow"] + args
-    return subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-    )
+    with tempfile.TemporaryDirectory() as tmp:
+        return subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=tmp,
+            env={**os.environ, "FONTSHOW_DISABLE_DEFAULT_INVENTORY": "1"},
+        )
 
 
 def test_cli_default_output():

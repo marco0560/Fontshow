@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 from pathlib import Path
 from types import SimpleNamespace
@@ -86,6 +87,8 @@ def test_parse_inventory_after_dump(tmp_path):
         ],
         capture_output=True,
         text=True,
+        cwd=tmp_path,
+        env={**os.environ, "FONTSHOW_DISABLE_DEFAULT_INVENTORY": "1"},
     )
 
     assert dump.returncode == 0
@@ -99,6 +102,8 @@ def test_parse_inventory_after_dump(tmp_path):
         ],
         capture_output=True,
         text=True,
+        cwd=tmp_path,
+        env={**os.environ, "FONTSHOW_DISABLE_DEFAULT_INVENTORY": "1"},
     )
 
     assert parse.returncode == 0
