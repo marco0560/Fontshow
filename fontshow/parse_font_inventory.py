@@ -746,46 +746,95 @@ def _specimen_from_internal(
     font: dict[str, Any],
     cps: set[int],
 ) -> tuple[str | None, str | None]:
-    sample_block = font.get("sample_text")
-    if not isinstance(sample_block, dict):
-        return None, None
+    """
+    Level 1 — Use internal sample text if present and usable.
+    """
 
-    raw = sample_block.get("text")
-    if not isinstance(raw, str) or not raw.strip():
-        return None, None
+    text = font.get("sample_text")
 
-    filtered, g = _specimen_filter_text(raw.strip(), cps)
-    if g >= MIN_SAMPLE_GLYPHS and filtered:
-        return filtered, "internal"
-    return None, "internal_sample_invalid"
+    if not isinstance(text, str) or not text.strip():
+        return None, "no_internal_sample"
+
+    filtered, glyphs = _specimen_filter_text(text, cps)
+
+    if glyphs == 0:
+        return None, "internal_sample_no_supported_glyphs"
+
+    if glyphs < MIN_SAMPLE_GLYPHS:
+        return None, "internal_sample_too_short"
+
+    return filtered, "internal"
 
 
 def _specimen_from_script(
     coverage: dict[str, Any],
     cps: set[int],
 ) -> tuple[str | None, str | None]:
-    blocks = coverage.get("unicode_blocks_from_charset") or coverage.get(
-        "unicode_blocks", {}
-    )
+    """
+    Level 2 — Use script-derived fallback sample.
 
-    script = None
-    if isinstance(blocks, dict) and blocks:
-        script = max(blocks, key=lambda k: int(blocks.get(k, 0)))
+    Deterministic selection:
+    1) Use dominant script by coverage ratio if available
+    2) Otherwise fallback to first declared script
+    """
+
+    scripts = coverage.get("scripts")
+
+    if not isinstance(scripts, list) or not scripts:
+        return None, "no_scripts"
+
+    # --- Select dominant script by coverage if available ---
+    script: str | None = None
+    script_cov = coverage.get("script_coverage_from_charset")
+
+    if isinstance(script_cov, dict) and script_cov:
+        try:
+            script = max(script_cov.items(), key=lambda kv: kv[1])[0]
+        except (TypeError, ValueError):
+            script = None
+
+    # --- Fallback to declared order ---
+    if not script:
+        script_raw = scripts[0]
+        if not isinstance(script_raw, str):
+            return None, "no_scripts"
+        script = script_raw.strip()
+        if not script:
+            return None, "no_scripts"
+
+    # --- Bridge coverage script → SCRIPT_SAMPLES key deterministically ---
+    key = script
+    if key not in SCRIPT_SAMPLES:
+        key_norm = script.lower()
         for k in SCRIPT_SAMPLES:
-            if k.lower() in str(script).lower():
-                script = k
+            if k.lower() == key_norm:
+                key = k
                 break
-    if script is None:
-        script = "Latin"
+        else:
+            return None, "no_script_sample"
 
-    sample = SCRIPT_SAMPLES.get(script)
-    if not isinstance(sample, str):
-        return None, None
+    text = SCRIPT_SAMPLES.get(key)
 
-    filtered, g = _specimen_filter_text(sample, cps)
-    if g >= MIN_SAMPLE_GLYPHS and filtered:
-        return filtered, "script"
-    return None, None
+    if not isinstance(text, str) or not text.strip():
+        return None, "no_script_sample"
+
+    filtered, glyphs = _specimen_filter_text(text, cps)
+
+    if glyphs == 0:
+        return None, "script_sample_no_supported_glyphs"
+
+    # Reject weak script sample when density too low vs cmap
+    if cps:
+        try:
+            density = glyphs / max(len(cps), 1)
+        except (TypeError, ZeroDivisionError):
+            density = 0.0
+
+        # empirical safe floor — prevents misleading tiny samples
+        if density < 0.01:
+            return None, "script_sample_too_sparse"
+
+    return filtered, "script"
 
 
 def _specimen_from_cmap(
@@ -834,20 +883,27 @@ def _specimen_generate_for_font(
     specimen_text: str | None = None
     strategy: str | None = None
     rejection: str | None = None
+    fallback_depth = 0
 
     # Level 1
     specimen_text, strategy = _specimen_from_internal(font, cps)
     if specimen_text is None:
-        _, rejection = _specimen_from_internal(font, cps)
+        rejection = strategy
+        strategy = None
+        fallback_depth = 1
 
     # Level 2
     if specimen_text is None:
         specimen_text, strategy = _specimen_from_script(coverage, cps)
+        if specimen_text is not None:
+            fallback_depth = 2
 
     # Level 3
     if specimen_text is None and cps:
         specimen_text, strategy = _specimen_from_cmap(font, cps)
         rejection = rejection or "fallback_to_cmap"
+        if specimen_text is not None:
+            fallback_depth = 3
 
     if not specimen_text:
         specimen_text = " "
@@ -860,10 +916,46 @@ def _specimen_generate_for_font(
         else (specimen_text, len(specimen_text))
     )
 
+    # --- FINAL SAFETY GUARD ---
+    if not filtered or g == 0:
+        filtered = " "
+        g = 1
+        rejection = rejection or "no_printable_glyphs"
+        strategy = strategy or "cmap"
+
+    # HARDEN-E — ensure visible printable output (no whitespace-only specimen)
+    if not filtered.strip():
+        replacement = None
+        if cps:
+            for cp in sorted(cps):
+                ch = chr(cp)
+                if ch.strip():
+                    replacement = ch
+                    break
+
+        if replacement is None:
+            replacement = "?"
+
+        filtered = replacement
+        g = 1
+        rejection = rejection or "no_visible_glyphs"
+
     font["specimen_text"] = filtered
     font["specimen_strategy"] = strategy or "cmap"
     font["specimen_rejection_reason"] = rejection
     font["specimen_glyph_count"] = int(g)
+
+    log_trace_cat(
+        log,
+        "specimen",
+        "specimen generated",
+        extra={
+            "strategy": font["specimen_strategy"],
+            "glyph_count": font["specimen_glyph_count"],
+            "fallback_depth": fallback_depth,
+            "rejection": font["specimen_rejection_reason"],
+        },
+    )
 
 
 # ============================================================
