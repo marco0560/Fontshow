@@ -25,21 +25,23 @@ def test_cli_default_output():
 
 
 def test_cli_quiet_suppresses_stdout():
-    """--quiet must suppress stdout but not errors."""
+    """--quiet must suppress stdout ; missing inventory must still fail."""
     result = run_cli(["create-catalog", "--quiet"])
 
-    assert result.returncode == 0
+    # create-catalog now requires a valid v1.2 inventory
+    assert result.returncode != 0
     assert result.stdout.strip() == ""
     # warnings may be emitted on stderr
 
 
 def test_cli_verbose_enables_output():
-    """--verbose should produce stdout output."""
+    """--verbose should produce stdout output when execution succeeds."""
     result = run_cli(["create-catalog", "--verbose"])
 
-    assert result.returncode == 0
-    assert result.stdout.strip() != ""
-    # warnings may be emitted on stderr
+    # Without inventory the command must fail
+    assert result.returncode != 0
+    # verbose does not suppress errors
+    assert result.stderr.strip() != ""
 
 
 def test_cli_quiet_and_verbose_quiet_wins():
@@ -52,9 +54,9 @@ def test_cli_quiet_and_verbose_quiet_wins():
 
 
 def test_cli_inventory_fallback_does_not_crash():
-    """Errors must always go to stderr, even with --quiet."""
+    """Missing inventory must fail with non-zero exit and no stdout."""
     result = run_cli(["create-catalog", "--inventory", "nonexistent_file.json"])
 
-    assert result.returncode == 0
-    assert result.stdout.strip() != ""
-    # stderr may contain warnings
+    assert result.returncode != 0
+    assert result.stdout.strip() == ""
+    assert result.stderr.strip() != ""

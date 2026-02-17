@@ -49,6 +49,7 @@ from fontshow.types import (
     Severity,
     WarningInfo,
 )
+from fontshow.warnings import add_structured_warning
 
 # ============================================================
 # Set up logger
@@ -324,42 +325,6 @@ def normalize_charset_ranges(ranges: list[list[int]]) -> dict[str, Any]:
         "ranges": merged,
         "codepoints_count": codepoints_count,
     }
-
-
-def add_structured_warning(
-    target: dict,
-    *,
-    code: str,
-    message: str,
-    severity: Severity = Severity.WARN,
-) -> None:
-    """
-    Attach a structured warning to an inventory node.
-
-    Parameters
-    ----------
-    target : dict
-        Inventory root or font entry.
-    code : str
-        Machine-readable warning code.
-    message : str
-        Human-readable warning message.
-    severity : Severity, optional
-        Severity level (default: ``"Severity.WARN"``).
-
-    Notes
-    -----
-    - Warnings are appended to the ``warnings`` list of the target.
-    - The target dictionary is modified in place.
-    """
-    warnings = target.setdefault("warnings", [])
-    warnings.append(
-        {
-            "code": code,
-            "message": message,
-            "severity": severity,
-        }
-    )
 
 
 def validate_font_entry(entry: Any, *, index: int) -> list[str]:

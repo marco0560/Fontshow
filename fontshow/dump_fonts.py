@@ -16,12 +16,10 @@ and serialized but not interpreted at this stage.
 from __future__ import annotations
 
 import argparse
-import getpass
 import hashlib
 import json
 import os
 import platform
-import socket
 import struct
 import subprocess
 import sys
@@ -41,7 +39,8 @@ from fontshow.cli_utils import (
 )
 from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
-from fontshow.types import ExecutionContext, Severity, WarningInfo
+from fontshow.platform_metadata import collect_platform_metadata
+from fontshow.types import Severity, WarningInfo
 
 if TYPE_CHECKING:
     # Real types for static typing only
@@ -168,37 +167,6 @@ def make_font_id(path: str, ttc_index: int | None) -> str:
     """
     key = f"{path}|{ttc_index if ttc_index is not None else 'single'}"
     return sha1(key.encode("utf-8")).hexdigest()[:12]
-
-
-def collect_environment_metadata() -> dict:
-    def is_wsl():
-        proc_version = Path("/proc/version")
-        return "WSL_DISTRO_NAME" in os.environ or (
-            proc_version.exists() and "microsoft" in proc_version.read_text().lower()
-        )
-
-    def is_container():
-        return Path("/.dockerenv").exists() or Path("/run/.containerenv").exists()
-
-    exec_type = ExecutionContext.NATIVE
-    if is_wsl():
-        exec_type = ExecutionContext.WSL
-    elif is_container():
-        exec_type = ExecutionContext.CONTAINER
-    else:
-        exec_type = ExecutionContext.NATIVE
-
-    return {
-        "hostname": socket.gethostname(),
-        "username": getpass.getuser(),
-        "os": platform.system(),
-        "os_release": platform.version(),
-        "kernel": platform.release(),
-        "machine": platform.machine(),
-        "python_version": platform.python_version(),
-        "platform": platform.platform(),
-        "execution_context": exec_type.to_json(),
-    }
 
 
 # -----------------------
@@ -1660,7 +1628,7 @@ def run_dump_fonts(args) -> int:
                     else "unavailable"
                 ),
             },
-            "run_environment": collect_environment_metadata(),
+            "run_environment": collect_platform_metadata(),
         },
         "fonts": [],
     }

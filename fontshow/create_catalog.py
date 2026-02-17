@@ -17,7 +17,7 @@ Design principles
 This file intentionally mixes:
 - inventory glue logic,
 - rendering helpers,
-- platform-specific fallbacks,
+- platform-specific handling,
 - CLI orchestration.
 
 The architecture is procedural by design and mirrors the historical evolution
@@ -29,7 +29,7 @@ This module contains utilities for loading the JSON inventory, inferring
 rendering choices and producing the final LaTeX source used by the main
 `create_catalog` workflow. Key entrypoints:
 - `generate_latex(font_list)` — produce full LaTeX document
-- `get_installed_fonts()` — fallback discovery for legacy mode
+- `get_installed_fonts()` — used only for TEST_FONTS listing (no catalog fallback)
 
 Keep changes minimal: the LaTeX templates in the module are whitespace-
 sensitive and used directly by the renderer.
@@ -60,8 +60,10 @@ from fontshow.cli_utils import (
 )
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.logging_utils import log, log_trace_cat
+from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.semantic_validation import enforce_semantic_validation
 from fontshow.types import FontRef, InferenceInfo, Severity
+from fontshow.warnings import add_structured_warning
 
 # Platform-specific imports (deferred)
 if sys.platform == "win32":
@@ -500,16 +502,55 @@ def load_font_inventory(path: Path) -> list[dict]:
     """
     data = json.loads(Path(path).read_text(encoding="utf-8"))
 
-    # --- Soft schema validation ---
+    # --- Strict schema validation ---
     metadata = data.get("metadata", {}) or {}
     schema_version = metadata.get("schema_version")
 
     if schema_version is None:
-        log_warn("inventory missing 'schema_version'; assuming legacy format")
-    elif schema_version not in ACCEPTED_SCHEMA_VERSIONS:
-        log_warn(
-            f"inventory schema_version '{schema_version}' not explicitly supported"
+        msg = "Inventory missing required 'schema_version'"
+        raise RuntimeError(msg)
+
+    if schema_version not in ACCEPTED_SCHEMA_VERSIONS:
+        msg = f"Unsupported inventory schema_version: {schema_version}"
+        raise RuntimeError(msg)
+
+    def _verify_platform_compatibility(inventory: dict, *, strict: bool) -> None:
+        inv_meta = inventory.get("metadata", {}).get("run_environment", {})
+        runtime = collect_platform_metadata()
+
+        def _norm(v: object) -> str:
+            return str(v).strip().lower()
+
+        mismatches: list[str] = []
+
+        for key in ("os", "machine"):
+            if _norm(inv_meta.get(key)) != _norm(runtime.get(key)):
+                mismatches.append(key)
+
+        inv_ctx = inv_meta.get("execution_context", {}).get("type")
+        run_ctx = runtime.get("execution_context", {}).get("type")
+
+        if _norm(inv_ctx) != _norm(run_ctx):
+            mismatches.append("execution_context")
+
+        if not mismatches:
+            return
+
+        msg = f"Inventory platform mismatch: {', '.join(mismatches)}"
+
+        if strict:
+            raise RuntimeError(msg)
+
+        add_structured_warning(
+            inventory,
+            code="platform_mismatch",
+            message=msg,
+            severity=Severity.WARN,
         )
+
+    # Only check if metadata contains run_environment (v1.2 inventories)
+    if "run_environment" in data.get("metadata", {}):
+        _verify_platform_compatibility(data, strict=True)
 
     fonts = data.get("fonts", [])
 
@@ -1116,7 +1157,7 @@ def font_matches_test_set(font_name: str, test_fonts: set[str]) -> bool:
 #
 # This section contains:
 # - platform-specific helpers (Linux / Windows),
-# - optional legacy fallbacks,
+# - deterministic inventory-only operation,
 # - LaTeX escaping utilities,
 # - the CLI entry point (main).
 #
@@ -1296,7 +1337,7 @@ def _resolve_inventory_path(args) -> Path | None:
     Priority:
     1. --inventory explicit path
     2. DEFAULT_INVENTORY if exists
-    3. None → fallback to system font mode
+    3. None → error (inventori requierd)
     """
     if args.inventory:
         return Path(args.inventory)
@@ -1363,23 +1404,6 @@ def _load_inventory(inv_path: Path, strict: bool) -> tuple[int, list]:
         return 1, []
     else:
         return 0, fonts
-
-
-def _load_system_fonts() -> tuple[int, list]:
-    """
-    Fallback: detect system fonts when inventory is unavailable.
-
-    Returns:
-        (exit_code, fonts)
-    """
-    fonts = get_installed_fonts()
-
-    if not fonts:
-        log_err("No fonts to catalog or system error.")
-        return 1, []
-
-    log_warn("Inventory not found, fallback to legacy detection...")
-    return 0, fonts
 
 
 # ------------------------------------------------------------------
@@ -1533,14 +1557,15 @@ def run_create_catalog(args) -> int:
     # --------------------------------------------------------------
     inv_path = _resolve_inventory_path(args)
 
-    if inv_path and inv_path.exists():
-        rc, fonts = _load_inventory(inv_path, bool(args.strict_semantic))
-        if rc != 0:
-            return 1
-    else:
-        rc, fonts = _load_system_fonts()
-        if rc != 0:
-            return 1
+    if not inv_path or not inv_path.exists():
+        log_err(
+            "Font inventory not found. Catalog generation requires a valid v1.2 inventory."
+        )
+        return 1  # MUST fail deterministically even in --quiet mode
+
+    rc, fonts = _load_inventory(inv_path, bool(args.strict_semantic))
+    if rc != 0:
+        return 1
 
     # --------------------------------------------------------------
     # CONSISTENCY DIAGNOSTICS (inventory mode only)
@@ -1626,6 +1651,9 @@ def main(args) -> int:
 
     if exit_code == 0:
         log_ok("Done", verbose="catalog created successfully")
+    else:
+        # Do not mask failure - CLI nust propagate real exit code even in --quiet mode
+        log_err(f"create-catalog failed with exit code {exit_code}")
 
     log_trace_cat(
         log,
