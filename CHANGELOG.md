@@ -1,3 +1,15 @@
+## [0.38.6](https://github.com/marco0560/Fontshow/compare/v0.38.5...v0.38.6) (2026-02-18)
+
+### Bug Fixes
+
+* **cli:** restore deterministic failure when inventory missing ([7e2f545](https://github.com/marco0560/Fontshow/commit/7e2f54593e88536f622ade6834b33ad8357feb5a))
+* Isolate tests from current environment ([0bcc50e](https://github.com/marco0560/Fontshow/commit/0bcc50e0ce4c8321783b8ac06b813e338c909f82))
+* **parser:** harden final safety guard to guarantee visible printable specimen ([7438692](https://github.com/marco0560/Fontshow/commit/74386926867c655009d0a01f3b23172e52f506ce))
+
+### Performance Improvements
+
+* **dump:** finalize fc-query batching performance work ([99e18e2](https://github.com/marco0560/Fontshow/commit/99e18e227096f2b2c50cdc4fd07c8e4b6bc3cdea)), closes [#54](https://github.com/marco0560/Fontshow/issues/54)
+
 ## [0.38.5](https://github.com/marco0560/Fontshow/compare/v0.38.4...v0.38.5) (2026-02-16)
 
 ### Bug Fixes
