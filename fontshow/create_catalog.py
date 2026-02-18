@@ -64,7 +64,6 @@ from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.semantic_validation import enforce_semantic_validation
 from fontshow.types import FontRef, InferenceInfo, Severity
-from fontshow.warnings import add_structured_warning
 
 # Platform-specific imports (deferred)
 if sys.platform == "win32":
@@ -490,64 +489,17 @@ def group_fonts_by_family(fonts: list[dict]) -> list[dict]:
 
 def load_font_inventory(path: Path) -> list[dict]:
     """
-    Load inventory JSON with strict schema and platform validation.
+    Load inventory JSON using the same validation logic as the strict pipeline.
+
+    This wrapper preserves the exception-based contract expected by library
+    callers while delegating validation to `_load_inventory()`.
     """
+    rc, fonts = _load_inventory(path, require_platform=False)
 
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
-
-    # --- Strict schema validation ---
-    metadata = data.get("metadata", {}) or {}
-    schema_version = metadata.get("schema_version")
-
-    if schema_version is None:
-        msg = "Inventory missing required 'schema_version'"
+    if rc != 0:
+        msg = "Invalid or incompatible inventory"
         raise RuntimeError(msg)
 
-    if schema_version not in ACCEPTED_SCHEMA_VERSIONS:
-        msg = f"Unsupported inventory schema_version: {schema_version}"
-        raise TypeError(msg)
-
-    inv_env = metadata.get("run_environment")
-
-    def _verify_platform_compatibility(inventory: dict) -> None:
-        inv_meta = inventory.get("metadata", {}).get("run_environment", {})
-        runtime = collect_platform_metadata()
-
-        def _norm(v: object) -> str:
-            return str(v).strip().lower()
-
-        mismatches: list[str] = []
-
-        for key in ("os", "machine"):
-            if _norm(inv_meta.get(key)) != _norm(runtime.get(key)):
-                mismatches.append(key)
-
-        inv_ctx = inv_meta.get("execution_context", {}).get("type")
-        run_ctx = runtime.get("execution_context", {}).get("type")
-
-        if _norm(inv_ctx) != _norm(run_ctx):
-            mismatches.append("execution_context")
-
-        if not mismatches:
-            return
-
-        msg = f"Inventory platform mismatch: {', '.join(mismatches)}"
-        add_structured_warning(
-            inventory,
-            code="platform_mismatch",
-            message=msg,
-            severity=Severity.ERROR,
-        )
-        raise RuntimeError(msg)
-
-    if isinstance(inv_env, dict):
-        _verify_platform_compatibility(data)
-
-    fonts = data.get("fonts", [])
-
-    if not isinstance(fonts, list):
-        msg = "Invalid inventory JSON: expected key 'fonts' to be a list."
-        raise TypeError(msg)
     return fonts
 
 
@@ -1352,7 +1304,32 @@ def _inventory_platform_mismatch(inv_env: dict, runtime: dict) -> list[str]:
     return mismatches
 
 
-def _load_inventory(inv_path: Path) -> tuple[int, list]:
+def _enforce_platform(inv_env: dict) -> tuple[bool, list[str]]:
+    runtime = collect_platform_metadata()
+    mismatches = _inventory_platform_mismatch(inv_env, runtime)
+    return (not mismatches), mismatches
+
+
+def _validate_fonts_structure(inventory: dict) -> tuple[bool, list]:
+    if "fonts" not in inventory:
+        return False, []
+
+    fonts = inventory.get("fonts")
+    if not isinstance(fonts, list):
+        return False, []
+
+    if not fonts:
+        return False, []
+
+    if any(not isinstance(f, dict) for f in fonts):
+        return False, []
+
+    return True, fonts
+
+
+def _load_inventory(
+    inv_path: Path, *, require_platform: bool = True
+) -> tuple[int, list]:
     """
     Load and strictly validate inventory file.
 
@@ -1389,16 +1366,15 @@ def _load_inventory(inv_path: Path) -> tuple[int, list]:
             return 1, []
 
         inv_env = metadata.get("run_environment")
-        if not isinstance(inv_env, dict):
+        if require_platform and not isinstance(inv_env, dict):
             log_err("Inventory missing required metadata.run_environment (schema v1.2)")
             return 1, []
 
-        runtime = collect_platform_metadata()
-        mismatches = _inventory_platform_mismatch(inv_env, runtime)
-
-        if mismatches:
-            log_err(f"Inventory platform mismatch: {', '.join(mismatches)}")
-            return 1, []
+        if require_platform and isinstance(inv_env, dict):
+            ok, mismatches = _enforce_platform(inv_env)
+            if not ok:
+                log_err(f"Inventory platform mismatch: {', '.join(mismatches)}")
+                return 1, []
 
         log_trace_cat(
             log,
@@ -1412,19 +1388,9 @@ def _load_inventory(inv_path: Path) -> tuple[int, list]:
 
         normalize_loaded_enums(inventory)
 
-        if "fonts" not in inventory:
-            log_err("Invalid inventory JSON: missing required key 'fonts'.")
-            return 1, []
-
-        fonts = inventory.get("fonts")
-        if not isinstance(fonts, list):
-            log_err("Invalid inventory JSON: expected key 'fonts' to be a list.")
-            return 1, []
-
-        if any(not isinstance(f, dict) for f in fonts):
-            log_err(
-                "Invalid inventory JSON: expected all entries in 'fonts' to be objects."
-            )
+        ok_fonts, fonts = _validate_fonts_structure(inventory)
+        if not ok_fonts:
+            log_err("Invalid inventory JSON: malformed or empty 'fonts' section.")
             return 1, []
 
         _normalize_inventory_paths(inventory)
@@ -1634,6 +1600,15 @@ def run_create_catalog(args) -> int:
     # FONT FILTERING / OUTPUT PREPARATION
     # --------------------------------------------------------------
     fonts = _filter_and_prepare_fonts(fonts, args, TEST_FONTS)
+
+    # Invariant guard: rendering requires normalized font descriptors.
+    if not isinstance(fonts, list) or any(not isinstance(f, dict) for f in fonts):
+        log_err("Internal error: invalid font descriptor list after filtering.")
+        return 1
+
+    if any(not isinstance(f.get("name"), str) or not f.get("name") for f in fonts):
+        log_err("Internal error: invalid font descriptor(s) after filtering.")
+        return 1
 
     latex_content = generate_latex(fonts)
 
