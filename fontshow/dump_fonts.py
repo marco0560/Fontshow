@@ -43,15 +43,23 @@ from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.types import Severity, WarningInfo
 
 if TYPE_CHECKING:
-    # Real types for static typing only
+    # Types only — no runtime side effects
+    from fontTools.misc import timeTools
     from fontTools.ttLib import TTCollection, TTFont, TTLibError
 
     FONTTOOLS_AVAILABLE = True
+
 else:
     try:
+        from fontTools.misc import timeTools
         from fontTools.ttLib import TTCollection, TTFont, TTLibError
 
         FONTTOOLS_AVAILABLE = True
+
+        # Silence fontTools timestamp sanity warnings (if supported)
+        if hasattr(timeTools, "TIMESTAMP_WARNINGS"):
+            timeTools.TIMESTAMP_WARNINGS = False
+
     except ImportError:
         FONTTOOLS_AVAILABLE = False
 
@@ -324,7 +332,10 @@ def extract_sample_text(font_path: str) -> list[str] | None:
         list[str] | None
     """
     try:
-        tt = TTFont(font_path)
+        # Silence TTFont info logs, which can be noisy on malformed fonts
+        # and are not relevant for sample text extraction. We want to preserve
+        # any errors, however.
+        tt = TTFont(font_path, lazy=True)
     except (OSError, ValueError, TTLibError):
         return None
 
@@ -469,6 +480,123 @@ def _run_fc_query(path: Path) -> str:
     return raw
 
 
+def _split_fc_query_blocks(
+    raw: str, default_paths: list[Path]
+) -> dict[Path, list[str]]:
+    """
+    Split `fc-query` output into per-font blocks keyed by `file:` line.
+
+    If fc-query does not emit `file:` lines, fall back to a single block for the
+    first (and only) requested path.
+    """
+    lines = [line.lstrip() for line in raw.splitlines()]
+
+    blocks: dict[Path, list[str]] = {}
+    current: Path | None = None
+
+    for line in lines:
+        if line.startswith("file:"):
+            payload = line[len("file:") :].strip().strip('"')
+            try:
+                current = Path(payload)
+            except (OSError, ValueError):
+                current = None
+            if current is not None and current not in blocks:
+                blocks[current] = []
+            continue
+
+        if current is not None:
+            blocks[current].append(line)
+
+    if not blocks and default_paths:
+        blocks[default_paths[0]] = lines
+
+    return blocks
+
+
+def _chunk_paths_for_fc_query(paths: list[Path]) -> list[list[Path]]:
+    """Chunk paths for a safe `fc-query` argv size (avoid ARG_MAX / E2BIG)."""
+    # Conservative byte budget for argv payload (paths + separators), excluding env.
+    max_bytes = 200_000
+
+    chunks: list[list[Path]] = []
+    current: list[Path] = []
+    current_bytes = 0
+
+    for p in paths:
+        s = str(p)
+        # +1 for space / separator
+        cost = len(s.encode("utf-8")) + 1
+        if current and (current_bytes + cost) > max_bytes:
+            chunks.append(current)
+            current = []
+            current_bytes = 0
+        current.append(p)
+        current_bytes += cost
+
+    if current:
+        chunks.append(current)
+
+    return chunks
+
+
+def _run_fc_query_many(paths: list[Path]) -> dict[Path, str]:
+    """
+    Execute `fc-query` over many font files using chunked invocations.
+
+    Returns a mapping {font_path: raw_output_block}.
+    """
+    out: dict[Path, str] = {}
+
+    if not paths:
+        return out
+
+    from time import perf_counter
+
+    for chunk in _chunk_paths_for_fc_query(paths):
+        log_trace_cat(
+            log,
+            "io",
+            "fc-query chunk start",
+            extra={
+                "cmd": "fc-query",
+                "paths_count": len(chunk),
+            },
+        )
+
+        t0 = perf_counter()
+        proc = run_command(["fc-query", *[str(p) for p in chunk]])
+        duration_ms = int((perf_counter() - t0) * 1000)
+
+        log_trace_cat(
+            log,
+            "perf",
+            "fc-query chunk timing",
+            extra={
+                "duration_ms": duration_ms,
+                "exit_code": proc.returncode,
+                "paths_count": len(chunk),
+            },
+        )
+
+        if proc.returncode != 0:
+            log.warning(
+                "fc-query execution failed",
+                extra={
+                    "exit_code": proc.returncode,
+                },
+            )
+
+        raw = proc.stdout if proc.stdout else ""
+        blocks = _split_fc_query_blocks(raw, default_paths=chunk)
+
+        for p in chunk:
+            block_lines = blocks.get(p, [])
+            out[p] = "\n".join(block_lines)
+
+    return out
+
+
 # ------------------------------------------------------------------
 # fc-query line parsing (languages, scripts, flags)
 # ------------------------------------------------------------------
@@ -588,19 +716,10 @@ def _extract_fc_query_charset(
 # ------------------------------------------------------------------
 
 
-def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any]:
-    """
-    Extract a limited subset of FontConfig-derived metadata.
-
-    Refactored design:
-    - Execution layer: `_run_fc_query`
-    - Core parsing: `_parse_fc_query_core_fields`
-    - Charset extraction: `_extract_fc_query_charset`
-
-    Behavior identical to original implementation.
-    """
-
-    raw = _run_fc_query(path)
+def _parse_fc_query_output(
+    path: Path, raw: str, include_charset: bool
+) -> dict[str, Any]:
+    """Parse fc-query raw output into a normalized Fontshow dict."""
     log_trace_cat(
         log,
         "io",
@@ -644,6 +763,40 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
         "color": core["color"],
         "variable": core["variable"],
     }
+
+
+def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any]:
+    """
+    Extract a limited subset of FontConfig-derived metadata.
+
+    Refactored design:
+    - Execution layer: `_run_fc_query`
+    - Core parsing: `_parse_fc_query_core_fields`
+    - Charset extraction: `_extract_fc_query_charset`
+
+    Behavior identical to original implementation.
+    """
+
+    raw = _run_fc_query(path)
+    return _parse_fc_query_output(path, raw, include_charset)
+
+
+def fc_query_extract_many(
+    paths: list[Path],
+    *,
+    include_charset: bool = False,
+) -> dict[Path, dict[str, Any]]:
+    """
+    Extract FontConfig-derived metadata for many font files using chunked fc-query.
+
+    Returned mapping keys are the original `Path` objects from `paths`.
+    """
+    raw_map = _run_fc_query_many(paths)
+    out: dict[Path, dict[str, Any]] = {}
+    for p in paths:
+        raw = raw_map.get(p, "")
+        out[p] = _parse_fc_query_output(p, raw, include_charset)
+    return out
 
 
 def _best_name(names: dict[str, list[str]], name_id: int) -> str | None:
@@ -1656,24 +1809,27 @@ def run_dump_fonts(args) -> int:
     total_faces = 0
     skipped_non_opentype = 0
 
+    fontconfig_by_path: dict[Path, dict[str, Any]] = {}
+    if IS_LINUX:
+        try:
+            fontconfig_by_path = fc_query_extract_many(
+                font_files,
+                include_charset=args.include_fc_charset,
+            )
+        except (OSError, subprocess.SubprocessError, ValueError) as exc:
+            log.warning(
+                "fontconfig batch enrichment failed",
+                extra={
+                    "error_type": type(exc).__name__,
+                    "error_reason": str(exc),
+                },
+            )
+            fontconfig_by_path = {}
+
     for font_path in font_files:
         fontconfig: dict[str, Any] | None = None
         if IS_LINUX:
-            try:
-                fontconfig = fc_query_extract(
-                    font_path,
-                    include_charset=args.include_fc_charset,
-                )
-            except (OSError, subprocess.SubprocessError, ValueError) as exc:
-                log.warning(
-                    "fontconfig enrichment failed",
-                    extra={
-                        "font_path": str(font_path),
-                        "error_type": type(exc).__name__,
-                        "error_reason": str(exc),
-                    },
-                )
-                fontconfig = None
+            fontconfig = fontconfig_by_path.get(font_path)
 
         try:
             faces = fonttools_extract_all(
