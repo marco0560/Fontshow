@@ -4,9 +4,9 @@ import json
 from fontshow.create_catalog import build_parser, run_create_catalog
 
 
-def test_strict_semantic_fails(tmp_path):
+def test_semantic_validaion_fails(tmp_path):
     inv = {
-        "metadata": {"schema_version": "1.1"},
+        "metadata": {"schema_version": "1.2"},
         "fonts": [
             {
                 "name": "BrokenFont",
@@ -26,7 +26,6 @@ def test_strict_semantic_fails(tmp_path):
         [
             "--inventory",
             str(p),
-            "--strict-semantic",
             "--quiet",
         ]
     )
@@ -35,9 +34,9 @@ def test_strict_semantic_fails(tmp_path):
     assert rc == 1
 
 
-def test_strict_semantic_fails_on_non_language_issue(tmp_path):
+def test_semantic_validation_fails_on_non_language_issue(tmp_path):
     inv = {
-        "metadata": {"schema_version": "1.1"},
+        "metadata": {"schema_version": "1.2"},
         "fonts": [
             {
                 "name": "SomeFont",
@@ -64,7 +63,6 @@ def test_strict_semantic_fails_on_non_language_issue(tmp_path):
         [
             "--inventory",
             str(p),
-            "--strict-semantic",
             "--quiet",
         ]
     )

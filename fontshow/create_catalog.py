@@ -11,7 +11,8 @@ Design principles
 -----------------
 - **Pure rendering stage**: this module never inspects font binaries.
 - **Inventory-driven**: all semantic information comes from the JSON inventory.
-- **Conservative defaults**: missing or partial metadata is handled gracefully.
+- **Strict invariants**: a valid schema v1.2 inventory with complete platform
+  metadata is required; invalid or incompatible inventories are rejected.
 - **LaTeX-first**: output is optimized for XeLaTeX/LuaLaTeX workflows.
 
 This file intentionally mixes:
@@ -89,7 +90,8 @@ else:
 # --- Configuration ---
 DATE_STR = datetime.now().strftime("%Y%m%d")
 _QUIET = False
-ACCEPTED_SCHEMA_VERSIONS = {"1.0", "1.1"}
+REQUIRED_SCHEMA_VERSION = "1.2"
+ACCEPTED_SCHEMA_VERSIONS = {REQUIRED_SCHEMA_VERSION}
 TEST_FONTS: set[str] = set()
 DEFAULT_INVENTORY = "font_inventory_enriched.json"
 
@@ -488,18 +490,9 @@ def group_fonts_by_family(fonts: list[dict]) -> list[dict]:
 
 def load_font_inventory(path: Path) -> list[dict]:
     """
-    Load a Fontshow inventory JSON file.
-
-    Expected structure:
-        { "fonts": [ { ...font descriptor... }, ... ], "metadata": { ... } }
-
-    Returns:
-        List of font descriptor dicts.
-
-    Notes:
-        - This function does not touch font files.
-        - It is safe to call on both Linux and Windows.
+    Load inventory JSON with strict schema and platform validation.
     """
+
     data = json.loads(Path(path).read_text(encoding="utf-8"))
 
     # --- Strict schema validation ---
@@ -512,9 +505,11 @@ def load_font_inventory(path: Path) -> list[dict]:
 
     if schema_version not in ACCEPTED_SCHEMA_VERSIONS:
         msg = f"Unsupported inventory schema_version: {schema_version}"
-        raise RuntimeError(msg)
+        raise TypeError(msg)
 
-    def _verify_platform_compatibility(inventory: dict, *, strict: bool) -> None:
+    inv_env = metadata.get("run_environment")
+
+    def _verify_platform_compatibility(inventory: dict) -> None:
         inv_meta = inventory.get("metadata", {}).get("run_environment", {})
         runtime = collect_platform_metadata()
 
@@ -537,20 +532,16 @@ def load_font_inventory(path: Path) -> list[dict]:
             return
 
         msg = f"Inventory platform mismatch: {', '.join(mismatches)}"
-
-        if strict:
-            raise RuntimeError(msg)
-
         add_structured_warning(
             inventory,
             code="platform_mismatch",
             message=msg,
-            severity=Severity.WARN,
+            severity=Severity.ERROR,
         )
+        raise RuntimeError(msg)
 
-    # Only check if metadata contains run_environment (v1.2 inventories)
-    if "run_environment" in data.get("metadata", {}):
-        _verify_platform_compatibility(data, strict=True)
+    if isinstance(inv_env, dict):
+        _verify_platform_compatibility(data)
 
     fonts = data.get("fonts", [])
 
@@ -564,11 +555,10 @@ def as_font_desc_list(
     fonts: Sequence[object], *, legacy_mode: bool = False
 ) -> list[dict[str, object]]:
     """
-    Normalize input fonts into a list of descriptors.
+    Normalize font descriptor list.
 
-    If `fonts` is already a list of dicts, it is returned as-is.
-    If `fonts` is a list of strings (legacy mode), each item becomes:
-        {"identity": {"family": "<name>"}, "classification": {}, "inference": {}}
+    When legacy_mode is enabled, non-dict entries may be coerced into a minimal
+    descriptor form for compatibility with older internal data paths.
     """
     out: list[dict[str, object]] = []
     for f in fonts:
@@ -1163,8 +1153,8 @@ def font_matches_test_set(font_name: str, test_fonts: set[str]) -> bool:
 #
 # Design notes:
 # - Platform detection is best-effort and defensive.
-# - Failures in discovery or rendering should degrade gracefully,
-#   producing partial output rather than aborting the whole run.
+# - Failures in discovery or rendering provoke rejection of the specific
+#   font but do not abort the whole process,
 # - The CLI is intentionally thin: orchestration only, no business logic.
 #
 def build_parser(parser: argparse.ArgumentParser) -> None:
@@ -1208,12 +1198,6 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         type=str,
         default=DEFAULT_INVENTORY,
         help="Path to font inventory JSON file to be used.",
-    )
-    parser.add_argument(
-        "-s",
-        "--strict-semantic",
-        action="store_true",
-        help="Fail catalog generation if semantic validation reports issues.",
     )
     parser.add_argument(
         "-n",
@@ -1337,7 +1321,7 @@ def _resolve_inventory_path(args) -> Path | None:
     Priority:
     1. --inventory explicit path
     2. DEFAULT_INVENTORY if exists
-    3. None → error (inventori requierd)
+    3. None → error (inventory required)
     """
     if args.inventory:
         return Path(args.inventory)
@@ -1349,35 +1333,105 @@ def _resolve_inventory_path(args) -> Path | None:
     return None
 
 
-def _load_inventory(inv_path: Path, strict: bool) -> tuple[int, list]:
+def _inventory_platform_mismatch(inv_env: dict, runtime: dict) -> list[str]:
+    def _norm(v: object) -> str:
+        return str(v).strip().lower()
+
+    mismatches: list[str] = []
+
+    for key in ("os", "machine"):
+        if _norm(inv_env.get(key)) != _norm(runtime.get(key)):
+            mismatches.append(key)
+
+    inv_ctx = inv_env.get("execution_context", {}).get("type")
+    run_ctx = runtime.get("execution_context", {}).get("type")
+
+    if _norm(inv_ctx) != _norm(run_ctx):
+        mismatches.append("execution_context")
+
+    return mismatches
+
+
+def _load_inventory(inv_path: Path) -> tuple[int, list]:
     """
-    Load and validate inventory file.
+    Load and strictly validate inventory file.
+
+    Validation rejects invalid schema, missing required metadata, and
+    platform-incompatible inventories.
 
     Returns:
         (exit_code, fonts)
         exit_code == 0 → success
-        exit_code == 1 → error already logged
+        exit_code == 1 → validation or load error (already logged)
+
+    Notes:
+        Validation is always strict; non-strict operation is not supported.
     """
     try:
         with inv_path.open(encoding="utf-8") as f:
             inventory = json.load(f)
-            log_trace_cat(
-                log,
-                "flow",
-                "inventory JSON loaded",
-                extra={
-                    "fonts_count": len(inventory.get("fonts", [])),
-                    "path": str(inv_path),
-                },
+
+        if not isinstance(inventory, dict):
+            log_err("Invalid inventory JSON: expected top-level object.")
+            return 1, []
+
+        metadata = inventory.get("metadata", {}) or {}
+        if not isinstance(metadata, dict):
+            log_err("Invalid inventory JSON: expected 'metadata' to be an object.")
+            return 1, []
+
+        schema_version = metadata.get("schema_version")
+        if schema_version != REQUIRED_SCHEMA_VERSION:
+            log_err(
+                f"Unsupported inventory schema_version: {schema_version!r} "
+                f"(required {REQUIRED_SCHEMA_VERSION})"
             )
+            return 1, []
+
+        inv_env = metadata.get("run_environment")
+        if not isinstance(inv_env, dict):
+            log_err("Inventory missing required metadata.run_environment (schema v1.2)")
+            return 1, []
+
+        runtime = collect_platform_metadata()
+        mismatches = _inventory_platform_mismatch(inv_env, runtime)
+
+        if mismatches:
+            log_err(f"Inventory platform mismatch: {', '.join(mismatches)}")
+            return 1, []
+
+        log_trace_cat(
+            log,
+            "flow",
+            "inventory JSON loaded",
+            extra={
+                "fonts_count": len(inventory.get("fonts", [])),
+                "path": str(inv_path),
+            },
+        )
 
         normalize_loaded_enums(inventory)
+
+        if "fonts" not in inventory:
+            log_err("Invalid inventory JSON: missing required key 'fonts'.")
+            return 1, []
+
+        fonts = inventory.get("fonts")
+        if not isinstance(fonts, list):
+            log_err("Invalid inventory JSON: expected key 'fonts' to be a list.")
+            return 1, []
+
+        if any(not isinstance(f, dict) for f in fonts):
+            log_err(
+                "Invalid inventory JSON: expected all entries in 'fonts' to be objects."
+            )
+            return 1, []
+
         _normalize_inventory_paths(inventory)
-        fonts = inventory.get("fonts", [])
 
         ok, semantic_warnings = enforce_semantic_validation(
             inventory,
-            strict=strict,
+            strict=True,
         )
         log_trace_cat(
             log,
@@ -1386,7 +1440,6 @@ def _load_inventory(inv_path: Path, strict: bool) -> tuple[int, list]:
             extra={
                 "ok": ok,
                 "warnings": len(semantic_warnings),
-                "strict": strict,
             },
         )
 
@@ -1397,9 +1450,13 @@ def _load_inventory(inv_path: Path, strict: bool) -> tuple[int, list]:
                     log_err(w.get("message", "semantic validation error"))
             return 1, []
 
+        if not fonts:
+            log_err("Inventory contains no fonts.")
+            return 1, []
+
         log_ok(f"Inventory loaded: {inv_path} ({len(fonts)} fonts)")
 
-    except (OSError, json.JSONDecodeError, TypeError) as e:
+    except (OSError, json.JSONDecodeError, TypeError, ValueError) as e:
         log_err(f"failed to load inventory: {e}")
         return 1, []
     else:
@@ -1461,7 +1518,7 @@ def _run_inventory_diagnostics(fonts: list) -> None:
 
 def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
     """
-    Apply TEST_FONTS filtering, slicing, normalization, and grouping.
+    Filter and prepare fonts for catalog generation using normalized descriptors.
     """
     log_trace_cat(
         log,
@@ -1475,7 +1532,7 @@ def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
     if test_fonts:
         fonts = [
             f
-            for f in as_font_desc_list(fonts, legacy_mode=True)
+            for f in as_font_desc_list(fonts, legacy_mode=False)
             if any(sub.lower() in font_family(f).lower() for sub in test_fonts)
         ]
 
@@ -1483,7 +1540,7 @@ def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
         fonts = fonts[: args.number] if args.number > 0 else fonts[args.number :]
 
     fonts = sorted(
-        as_font_desc_list(fonts, legacy_mode=not bool(args.inventory)),
+        as_font_desc_list(fonts, legacy_mode=False),
         key=font_family,
     )
 
@@ -1563,7 +1620,7 @@ def run_create_catalog(args) -> int:
         )
         return 1  # MUST fail deterministically even in --quiet mode
 
-    rc, fonts = _load_inventory(inv_path, bool(args.strict_semantic))
+    rc, fonts = _load_inventory(inv_path)
     if rc != 0:
         return 1
 
@@ -1583,7 +1640,12 @@ def run_create_catalog(args) -> int:
     # --------------------------------------------------------------
     # WRITE OUTPUT
     # --------------------------------------------------------------
-    _write_latex_output(output_filename, latex_content)
+    try:
+        _write_latex_output(output_filename, latex_content)
+    except OSError as exc:
+        log_err(f"Failed to write output file: {exc}")
+        return 1
+
     log_trace_cat(
         log,
         "io",

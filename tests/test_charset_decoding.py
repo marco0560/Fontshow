@@ -19,7 +19,7 @@ def _write_inventory(tmp_path: Path, content: bytes | str) -> Path:
 
 def test_utf8_inventory_ok(tmp_path):
     data = {
-        "metadata": {"schema_version": "1.1"},
+        "metadata": {"schema_version": "1.2"},
         "fonts": [
             {"name": "Café Sans", "coverage": {"languages": ["fr"]}},
         ],
@@ -34,7 +34,7 @@ def test_utf8_inventory_ok(tmp_path):
 
 def test_non_latin_characters_ok(tmp_path):
     data = {
-        "metadata": {"schema_version": "1.1"},
+        "metadata": {"schema_version": "1.2"},
         "fonts": [
             {"name": "東京ゴシック", "coverage": {"languages": ["ja"]}},
         ],
@@ -56,7 +56,7 @@ def test_invalid_utf8_bytes_fail(tmp_path):
 
 def test_mixed_invalid_unicode_fails(tmp_path):
     data = {
-        "metadata": {"schema_version": "1.1"},
+        "metadata": {"schema_version": "1.2"},
         "fonts": [
             {"name": "Bad\udc00Name", "coverage": {"languages": ["en"]}},
         ],
@@ -71,7 +71,7 @@ def test_mixed_invalid_unicode_fails(tmp_path):
 
 def test_empty_string_fields_ok(tmp_path):
     data = {
-        "metadata": {"schema_version": "1.1"},
+        "metadata": {"schema_version": "1.2"},
         "fonts": [
             {"name": "", "coverage": {"languages": []}},
         ],
