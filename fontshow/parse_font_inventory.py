@@ -37,6 +37,7 @@ from fontshow.cli_utils import (
     set_cli_mode,
 )
 from fontshow.dump_fonts import UNICODE_BLOCKS
+from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.infer_languages import infer_languages
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.json_format import dumps_pretty
@@ -1570,7 +1571,7 @@ def parse_inventory(
         _specimen_generate_for_font(font, coverage, font_path)
 
     metadata = data.setdefault("metadata", {})
-    metadata["schema_version"] = "1.2"
+    metadata["schema_version"] = SCHEMA_VERSION
     metadata["inference_level"] = level
     metadata.setdefault("input_inventory_tool", "parse_font_inventory")
     metadata.setdefault("input_inventory_tool_version", __version__)

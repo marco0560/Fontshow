@@ -16,10 +16,11 @@ from pathlib import Path
 
 from jsonschema import ValidationError, validate
 
+from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.types import Severity
 
-SUPPORTED_SCHEMA_VERSIONS = {"1.2"}
+SUPPORTED_SCHEMA_VERSIONS = {SCHEMA_VERSION}
 
 
 def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> None:

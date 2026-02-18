@@ -59,6 +59,7 @@ from fontshow.cli_utils import (
     log_warn,
     set_cli_mode,
 )
+from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
@@ -88,9 +89,6 @@ else:
 
 # --- Configuration ---
 DATE_STR = datetime.now().strftime("%Y%m%d")
-_QUIET = False
-REQUIRED_SCHEMA_VERSION = "1.2"
-ACCEPTED_SCHEMA_VERSIONS = {REQUIRED_SCHEMA_VERSION}
 TEST_FONTS: set[str] = set()
 DEFAULT_INVENTORY = "font_inventory_enriched.json"
 
@@ -503,36 +501,19 @@ def load_font_inventory(path: Path) -> list[dict]:
     return fonts
 
 
-def as_font_desc_list(
-    fonts: Sequence[object], *, legacy_mode: bool = False
-) -> list[dict[str, object]]:
+def as_font_desc_list(fonts: Sequence[object]) -> list[dict[str, object]]:
     """
     Normalize font descriptor list.
 
-    When legacy_mode is enabled, non-dict entries may be coerced into a minimal
-    descriptor form for compatibility with older internal data paths.
+    This function expects a list of font descriptor objects. Legacy coercion is
+    not supported.
     """
     out: list[dict[str, object]] = []
     for f in fonts:
-        if isinstance(f, dict):
-            out.append(cast("dict[str, object]", f))
-        else:
-            if legacy_mode:
-                log_info(f"found font '{f}'")
-            else:
-                log_warn(
-                    f"unexpected font entry type {type(f)} "
-                    f"for font '{f}', coercing to string"
-                )
-
-            out.append(
-                {
-                    "identity": {"family": str(f)},
-                    "classification": {},
-                    "inference": {},
-                    "coverage": {},
-                }
-            )
+        if not isinstance(f, dict):
+            msg = f"Unexpected font entry type {type(f)} for font '{f}'"
+            raise TypeError(msg)
+        out.append(cast("dict[str, object]", f))
     return out
 
 
@@ -1034,8 +1015,8 @@ def generate_test_output(
 def generate_latex(font_list: list[dict]) -> str:
     """Generate the full LaTeX document for the provided font descriptors.
 
-    The input may be a list of descriptors (as produced by
-    `parse_font_inventory.py`) or a legacy list of strings (family names).
+    The input must be a list of descriptor objects (as produced by
+    `parse_font_inventory.py`).
     """
 
     font_list = as_font_desc_list(font_list)
@@ -1358,10 +1339,10 @@ def _load_inventory(
             return 1, []
 
         schema_version = metadata.get("schema_version")
-        if schema_version != REQUIRED_SCHEMA_VERSION:
+        if schema_version != SCHEMA_VERSION:
             log_err(
                 f"Unsupported inventory schema_version: {schema_version!r} "
-                f"(required {REQUIRED_SCHEMA_VERSION})"
+                f"(required {SCHEMA_VERSION})"
             )
             return 1, []
 
@@ -1414,10 +1395,6 @@ def _load_inventory(
                 sev = w.get("severity", Severity.INFO)
                 if sev in (Severity.ERROR, Severity.WARN):
                     log_err(w.get("message", "semantic validation error"))
-            return 1, []
-
-        if not fonts:
-            log_err("Inventory contains no fonts.")
             return 1, []
 
         log_ok(f"Inventory loaded: {inv_path} ({len(fonts)} fonts)")
@@ -1498,7 +1475,7 @@ def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
     if test_fonts:
         fonts = [
             f
-            for f in as_font_desc_list(fonts, legacy_mode=False)
+            for f in as_font_desc_list(fonts)
             if any(sub.lower() in font_family(f).lower() for sub in test_fonts)
         ]
 
@@ -1506,7 +1483,7 @@ def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
         fonts = fonts[: args.number] if args.number > 0 else fonts[args.number :]
 
     fonts = sorted(
-        as_font_desc_list(fonts, legacy_mode=False),
+        as_font_desc_list(fonts),
         key=font_family,
     )
 
@@ -1593,7 +1570,7 @@ def run_create_catalog(args) -> int:
     # --------------------------------------------------------------
     # CONSISTENCY DIAGNOSTICS (inventory mode only)
     # --------------------------------------------------------------
-    if not _QUIET and inv_path and inv_path.exists():
+    if inv_path and inv_path.exists():
         _run_inventory_diagnostics(fonts)
 
     # --------------------------------------------------------------
