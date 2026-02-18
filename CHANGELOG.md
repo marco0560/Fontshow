@@ -1,3 +1,9 @@
+## [0.38.7](https://github.com/marco0560/Fontshow/compare/v0.38.6...v0.38.7) (2026-02-18)
+
+### Bug Fixes
+
+* **ci:** make fonttools a dependency of fontshow ([ed76c08](https://github.com/marco0560/Fontshow/commit/ed76c08146851dba03eb95fb98e226126d41b732))
+
 ## [0.38.6](https://github.com/marco0560/Fontshow/compare/v0.38.5...v0.38.6) (2026-02-18)
 
 ### Bug Fixes
