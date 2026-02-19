@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Fontshow – parse_font_inventory.py
 =================================
@@ -133,20 +132,30 @@ def decode_fc_charset_bitmap(raw: str) -> list[list[int]]:
     """
     Decode a FontConfig charset bitmap into Unicode codepoint ranges.
 
-    The input is the raw multiline bitmap produced by fc-query, e.g.:
-
-        0000: 00000000 ffffffff ffffffff 7fffffff ...
-        0001: ffffffff ...
-
-    Each line encodes 256 codepoints:
-    - block index * 256
-    - 8 words of 32 bits
-    - bits are interpreted MSB → LSB
+    Parameters
+    ----------
+    raw : str
+        Raw multiline charset bitmap produced by fc-query.
 
     Returns
     -------
     list[list[int]]
         Sorted, merged [start, end] Unicode ranges (inclusive).
+
+    Notes
+    -----
+    The input is the raw multiline bitmap produced by fc-query, e.g.:
+
+    0000: 00000000 ffffffff ffffffff 7fffffff ...
+    0001: ffffffff ...
+
+    - Each input line encodes 256 codepoints:
+        block_index * 256
+        8 words of 32 bits
+        bits interpreted MSB → LSB
+    - Invalid lines or malformed words are skipped safely.
+    - Output ranges are deduplicated, sorted, and merged.
+    - Pure function: does not mutate external state.
     """
     codepoints: list[int] = []
 
@@ -205,12 +214,19 @@ def unicode_blocks_from_charset_ranges(
     Parameters
     ----------
     ranges : list[list[int]]
-        Normalized [start, end] codepoint ranges (inclusive).
+        Normalized [start, end] Unicode codepoint ranges (inclusive).
 
     Returns
     -------
     dict[str, int]
         Mapping of Unicode block name to covered codepoint count.
+
+    Notes
+    -----
+    - Coverage is computed by intersecting each input range with
+      known Unicode block boundaries.
+    - Counts are inclusive and accumulated across overlapping ranges.
+    - Pure function: does not mutate input.
     """
     blocks: dict[str, int] = {}
 
@@ -237,7 +253,7 @@ def script_coverage_from_unicode_blocks(
     unicode_blocks : dict[str, int]
         Mapping of Unicode block name to covered codepoint count.
     script_ranges : dict[str, list[tuple[int, int]]]
-        Mapping of script tag to list of Unicode codepoint ranges.
+        Mapping of script tag to Unicode codepoint ranges.
     total_codepoints : int
         Total number of codepoints covered by the charset.
 
@@ -245,6 +261,13 @@ def script_coverage_from_unicode_blocks(
     -------
     dict[str, float]
         Mapping of script tag to coverage ratio (0.0–1.0).
+
+    Notes
+    -----
+    - Coverage is computed by intersecting Unicode blocks with script ranges.
+    - Scripts with zero coverage are omitted from the result.
+    - Returns empty mapping when no valid coverage is available.
+    - Pure function: does not mutate inputs.
     """
     if not unicode_blocks or total_codepoints <= 0:
         return {}
@@ -282,25 +305,27 @@ def normalize_charset_ranges(ranges: list[list[int]]) -> dict[str, Any]:
     """
     Normalize a list of Unicode codepoint ranges.
 
-    The normalization:
-    - sorts ranges by start codepoint,
-    - merges overlapping or adjacent ranges,
-    - computes the total number of covered codepoints (inclusive).
-
-    The function is pure and idempotent.
-
     Parameters
     ----------
     ranges : list[list[int]]
-        A list of [start, end] codepoint ranges (inclusive).
+        List of [start, end] Unicode codepoint ranges (inclusive).
 
     Returns
     -------
     dict[str, Any]
         {
-            "ranges": list[list[int]],
-            "codepoints_count": int,
+            "ranges": list[list[int]]
+                Normalized, sorted, and merged ranges.
+            "codepoints_count": int
+                Total number of covered Unicode codepoints (inclusive).
         }
+
+    Notes
+    -----
+    - Ranges are sorted by start codepoint before normalization.
+    - Overlapping and adjacent ranges are merged.
+    - Result is deterministic and idempotent.
+    - Pure function: does not mutate inputs.
     """
     if not ranges:
         return {"ranges": [], "codepoints_count": 0}
@@ -332,26 +357,25 @@ def validate_font_entry(entry: Any, *, index: int) -> list[str]:
     """
     Validate the structural integrity of a single font entry.
 
-    This function performs schema-level validation of a font entry
-    independently of any inference logic.
-
     Parameters
     ----------
-    entry : dict
-        Font entry object to validate.
+    entry : Any
+        Font entry object expected to be a dictionary.
     index : int
-        Index of the font entry in the inventory (for diagnostics only).
+        Position of the entry within the inventory (diagnostic only).
 
     Returns
     -------
     list[str]
-        A list of human-readable error messages.
-        An empty list indicates a valid entry.
+        List of validation error messages.
+        Empty list indicates a structurally valid entry.
 
     Notes
     -----
-    - This function does not modify the entry.
-    - Inference results are not required to be present.
+    - Validation is schema-level only (no inference required).
+    - Function is read-only and does not mutate the entry.
+    - Identity fields may be omitted when base_names is present.
+    - Optional sample_text field is validated if present.
     """
     _ = index  # for potential future use in error messages
     errors: list[str] = []
@@ -410,38 +434,43 @@ def validate_inventory(
     quiet: bool = False,
 ) -> int:
     """
-    Validate a Fontshow font inventory.
+    Validate a Fontshow font inventory structure.
 
-    This function performs two distinct classes of checks:
+     Parameters
+     ----------
+     data : Any
+         Parsed inventory JSON object.
+     verbose : bool, optional
+         Emit detailed validation diagnostics.
+     quiet : bool, optional
+         Suppress non-error output.
 
-    1. Fatal validation errors:
-       These indicate that one or more font entries are structurally or
-       semantically invalid according to the current data model.
-       Fatal errors are reported as ERROR and cause the validation to fail
-       (non-zero return value).
+     Returns
+     -------
+     int
+         Number of font entries with fatal validation errors.
+         Zero indicates a valid inventory.
 
-    2. Non-fatal consistency warnings:
-       These highlight incomplete or suspicious entries that may still be
-       usable, but are worth reporting to the user.
-       Warnings do not cause validation failure.
+     Notes
+     -----
+     - Performs both fatal validation and non-fatal consistency checks.
+     - Validation is exhaustive: all entries are inspected in one pass.
+     - Function never raises and does not mutate inference results.
+     - Structured warnings may be injected into the inventory.
 
-    Validation is best-effort and exhaustive:
-    all font entries are inspected and all issues are reported in a single run.
+     This function performs two distinct classes of checks:
 
-    This function does not raise exceptions and does not modify the inventory.
-    It is intended to be used by the '--validate-inventory' CLI option, where
-    the caller decides how to handle the returned error count and exit status.
+     1. Fatal validation errors:
+        These indicate that one or more font entries are structurally or
+        semantically invalid according to the current data model.
+        Fatal errors are reported as ERROR and cause the validation to fail
+        (non-zero return value).
 
-    Args:
-        data: Parsed inventory JSON object.
-
-    Returns:
-        The number of font entries with fatal validation errors.
-
-    Notes:
-    - This function is validation-only and never mutates inference results.
+     2. Non-fatal consistency warnings:
+        These highlight incomplete or suspicious entries that may still be
+        usable, but are worth reporting to the user.
+        Warnings do not cause validation failure.
     """
-
     fatal_errors = 0
     warnings = 0
 
@@ -525,11 +554,26 @@ def validate_inventory(
 
 def _format_font_identity(font: dict, index: int) -> str:
     """
-    Return a human-readable identifier for a font entry,
-    compatible with schema 1.0 and 1.1.
+    Build a human-readable identifier for a font entry.
 
-    Format:
-        font[<index>] <filename>:<face_index>
+    Parameters
+    ----------
+    font : dict
+        Font entry object.
+    index : int
+        Index of the font entry in the inventory.
+
+    Returns
+    -------
+    str
+        Human-readable identifier in the form:
+        "font[<index>] <filename>[:<face_index>]".
+
+    Notes
+    -----
+    - Compatible with schema 1.0 and 1.1 layouts.
+    - Intended for diagnostics and CLI output only.
+    - Does not modify the font entry.
     """
     label = f"font[{index}]"
 
@@ -555,12 +599,26 @@ def _format_font_identity(font: dict, index: int) -> str:
 
 def _language_base_tag(raw: Any) -> str:
     """
-    Extract a conservative base language tag used by our normalization rules.
+    Extract a conservative base language tag for normalization.
 
+    Parameters
+    ----------
+    raw : Any
+        Raw language tag value (expected to be a string; other types yield "").
+
+    Returns
+    -------
+    str
+        Lowercased base language tag with:
+        - any parenthesized suffix stripped,
+        - any region/script/variant portion stripped (split on "-" or "_").
+
+    Notes
+    -----
     Examples:
-        "yuw(s)"  -> "yuw"
-        "az-az"   -> "az"
-        "pt_BR"   -> "pt"
+    - "yuw(s)" -> "yuw"
+    - "az-az"  -> "az"
+    - "pt_BR"  -> "pt"
     """
     if not isinstance(raw, str):
         return ""
@@ -582,13 +640,25 @@ def _language_base_tag(raw: Any) -> str:
 
 def _get_font_path_for_diagnostics(font: dict) -> str | None:
     """
-    Return the best-available path for diagnostics purposes only.
+    Return the best-available font file path for diagnostics.
 
-    Preference order:
-    1. font["path"]            (schema >= 1.1)
-    2. font["identity"]["file"] (schema 1.0)
+    Parameters
+    ----------
+    font : dict
+        Font entry dictionary from the inventory.
 
-    This function MUST NOT mutate data.
+    Returns
+    -------
+    str | None
+        Resolved path string according to preference order:
+        1. font["path"] (schema >= 1.1)
+        2. font["identity"]["file"] (schema 1.0)
+        Returns None if no usable path is found.
+
+    Notes
+    -----
+    - This function is read-only and MUST NOT mutate the input.
+    - Used exclusively for human-readable diagnostics.
     """
     if isinstance(font, dict):
         if font.get("path"):

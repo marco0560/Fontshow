@@ -152,10 +152,37 @@ IS_WINDOWS = sys.platform.startswith("win")
 
 
 def utc_now_iso() -> str:
+    """
+    Return the current UTC timestamp in ISO-8601 format (seconds precision).
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    str
+        Current UTC time formatted as an ISO-8601 string without microseconds.
+    """
     return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
 def run_command(argv: list[str]) -> subprocess.CompletedProcess[str]:
+    """
+    Execute a subprocess command and capture combined stdout/stderr.
+
+    Parameters
+    ----------
+    argv : list[str]
+        Argument vector to pass to subprocess.
+
+    Returns
+    -------
+    subprocess.CompletedProcess[str]
+        Completed process object with stdout captured as text and
+        stderr redirected to stdout. The process is not checked for
+        non-zero exit status.
+    """
     return subprocess.run(
         argv,
         text=True,
@@ -169,9 +196,21 @@ def make_font_id(path: str, ttc_index: int | None) -> str:
     """
     Build a stable, reproducible identifier for a font face.
 
-    The identifier is derived solely from the font file path and the
-    TTC face index (if any). It is intended for comparison, caching,
-    and debugging purposes.
+    Parameters
+    ----------
+    path : str
+        Filesystem path to the font file.
+    ttc_index : int | None
+        Face index for TrueType Collections, or None for single-face fonts.
+
+    Returns
+    -------
+    str
+        Short hexadecimal identifier derived from path and TTC index.
+
+    Notes
+    -----
+    Intended for comparison, caching, and debugging purposes.
     """
     key = f"{path}|{ttc_index if ttc_index is not None else 'single'}"
     return sha1(key.encode("utf-8")).hexdigest()[:12]
@@ -183,6 +222,23 @@ def make_font_id(path: str, ttc_index: int | None) -> str:
 
 
 def get_installed_font_files() -> list[Path]:
+    """
+    Dispatch font file discovery according to the current platform.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[pathlib.Path]
+        List of discovered font file paths for the current platform.
+
+    Raises
+    ------
+    RuntimeError
+        If the current platform is unsupported.
+    """
     if IS_LINUX:
         return get_installed_font_files_linux()
     if IS_WINDOWS:
@@ -192,7 +248,23 @@ def get_installed_font_files() -> list[Path]:
 
 
 def get_installed_font_files_linux() -> list[Path]:
-    """Linux font discovery using FontConfig (fc-list)."""
+    """
+    Discover installed font files on Linux using FontConfig (`fc-list`).
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[pathlib.Path]
+        Sorted list of unique existing font file paths discovered via `fc-list`.
+
+    Raises
+    ------
+    RuntimeError
+        If `fc-list` execution fails.
+    """
     from time import perf_counter
 
     t0 = perf_counter()
@@ -224,10 +296,22 @@ def get_installed_font_files_linux() -> list[Path]:
 
 
 def _windows_font_dirs() -> list[Path]:
-    r"""Known Windows font directories (system + user).
+    """
+    Return known Windows font directories (system and user scopes).
 
-    Note: Windows supports per-user font installs under:
-      %LOCALAPPDATA%\Microsoft\Windows\Fonts
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[pathlib.Path]
+        Existing directories that may contain installed fonts.
+
+    Notes
+    -----
+    Windows supports per-user font installs under:
+    %LOCALAPPDATA%\\Microsoft\\Windows\\Fonts
     """
     dirs: list[Path] = []
     windir = os.environ.get("WINDIR") or os.environ.get("SYSTEMROOT")
@@ -244,6 +328,23 @@ def _windows_font_dirs() -> list[Path]:
 
 
 def get_installed_font_files_windows() -> list[Path]:
+    """
+    Discover installed font files on Windows by scanning known font directories.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[pathlib.Path]
+        Sorted list of unique font file paths with recognized extensions.
+
+    Notes
+    -----
+    Recognized extensions include: .ttf, .otf, .ttc, .otc, .woff, .woff2.
+    Permission errors during directory traversal are ignored.
+    """
     exts = {".ttf", ".otf", ".ttc", ".otc", ".woff", ".woff2"}
     found: set[Path] = set()
     for d in _windows_font_dirs():
@@ -263,9 +364,19 @@ def get_installed_font_files_windows() -> list[Path]:
 
 
 def detect_font_container(path: Path) -> str:
-    """Detect font container by header and extension.
+    """
+    Detect font container format using file header and extension.
 
-    Returns: "TTF", "OTF", "TTC", "WOFF", "WOFF2", or "UNKNOWN"
+    Parameters
+    ----------
+    path : pathlib.Path
+        Path to the font file.
+
+    Returns
+    -------
+    str
+        Detected container type: "TTF", "OTF", "TTC", "WOFF", "WOFF2",
+        or "UNKNOWN" if not recognized.
     """
     ext = path.suffix.lower()
     try:
@@ -295,23 +406,30 @@ def detect_font_container(path: Path) -> str:
 
 
 def font_cache_key(path: Path, ttc_index: int | None = None) -> str:
-    """Return a stable cache key for a font *face*.
+    """
+    Return a stable cache key for a font face.
 
-    The cache key uniquely identifies a *specific font face* by combining:
-    - the absolute file path,
+    Parameters
+    ----------
+    path : pathlib.Path
+        Path to the font file.
+    ttc_index : int | None, optional
+        Face index for TrueType Collections (None for single-face fonts).
+
+    Returns
+    -------
+    str
+        SHA-256 hexadecimal digest suitable for use as a cache filename.
+
+    Notes
+    -----
+    The key combines:
+    - absolute file path,
     - file modification time (nanoseconds),
     - file size,
     - optional TTC face index.
 
-    This guarantees that cache entries are invalidated whenever the font file
-    changes on disk, while still allowing efficient reuse across runs.
-
-    Args:
-        path: Path to the font file.
-        ttc_index: Face index for TrueType Collections (``None`` for single-face fonts).
-
-    Returns:
-        A SHA-256 hexadecimal digest suitable for use as a filename.
+    Ensures cache invalidation when the font file changes.
     """
     st = path.stat()
     idx = "" if ttc_index is None else f"|ttc:{ttc_index}"
@@ -326,10 +444,23 @@ def font_cache_key(path: Path, ttc_index: int | None = None) -> str:
 
 def extract_sample_text(font_path: str) -> list[str] | None:
     """
-    Extract embedded sample text from the font, if present.
+    Extract embedded sample text from a font file.
 
-    Returns:
-        list[str] | None
+    Parameters
+    ----------
+    font_path : str
+        Filesystem path to the font file.
+
+    Returns
+    -------
+    list[str] | None
+        List of unique embedded sample text strings if present,
+        otherwise None.
+
+    Notes
+    -----
+    Extraction is best-effort and silently ignores malformed
+    or partially corrupted name table entries.
     """
     try:
         # Silence TTFont info logs, which can be noisy on malformed fonts
@@ -375,11 +506,19 @@ def _parse_fc_charset_ranges(raw: str) -> list[str]:
     """
     Extract compact Unicode ranges from a FontConfig charset block.
 
-    Example input:
-        charset: 0000-007F 0100-017F
+    Parameters
+    ----------
+    raw : str
+        Raw fc-query output containing a charset block.
 
-    Returns:
-        A list of Unicode ranges as strings, e.g. ["0000-007F", "0100-017F"].
+    Returns
+    -------
+    list[str]
+        List of Unicode ranges as strings (e.g. ["0000-007F", "0100-017F"]).
+
+    Notes
+    -----
+    Only lines starting with "charset:" are considered.
     """
     ranges: list[str] = []
     for line in raw.splitlines():
@@ -398,9 +537,23 @@ def _parse_fc_charset_ranges(raw: str) -> list[str]:
 
 def _run_fc_query(path: Path) -> str:
     """
-    Execute `fc-query` and return raw stdout (empty string if none).
+    Execute `fc-query` for a single font file and return raw output.
 
-    Logging and error semantics identical to original implementation.
+    Parameters
+    ----------
+    path : pathlib.Path
+        Path to the font file.
+
+    Returns
+    -------
+    str
+        Raw stdout produced by `fc-query`. Returns an empty string
+        if no output is available.
+
+    Notes
+    -----
+    Logging and error semantics are preserved. Non-zero exit codes
+    are logged but do not raise exceptions.
     """
     log.debug(
         "fc-query invocation prepared",
@@ -484,10 +637,24 @@ def _split_fc_query_blocks(
     raw: str, default_paths: list[Path]
 ) -> dict[Path, list[str]]:
     """
-    Split `fc-query` output into per-font blocks keyed by `file:` line.
+    Split `fc-query` output into per-font blocks keyed by `file:` lines.
 
-    If fc-query does not emit `file:` lines, fall back to a single block for the
-    first (and only) requested path.
+    Parameters
+    ----------
+    raw : str
+        Raw stdout produced by `fc-query`.
+    default_paths : list[pathlib.Path]
+        Fallback font paths used when no `file:` markers are present.
+
+    Returns
+    -------
+    dict[pathlib.Path, list[str]]
+        Mapping from font path to the corresponding block of normalized lines.
+
+    Notes
+    -----
+    If `fc-query` does not emit `file:` markers, a single block is assigned
+    to the first path in `default_paths`.
     """
     lines = [line.lstrip() for line in raw.splitlines()]
 
@@ -515,7 +682,23 @@ def _split_fc_query_blocks(
 
 
 def _chunk_paths_for_fc_query(paths: list[Path]) -> list[list[Path]]:
-    """Chunk paths for a safe `fc-query` argv size (avoid ARG_MAX / E2BIG)."""
+    """
+    Split font paths into chunks to keep `fc-query` argv size within safe limits.
+
+    Parameters
+    ----------
+    paths : list[pathlib.Path]
+        List of font file paths.
+
+    Returns
+    -------
+    list[list[pathlib.Path]]
+        List of path chunks suitable for safe `fc-query` invocation.
+
+    Notes
+    -----
+    Uses a conservative byte budget to avoid exceeding system ARG_MAX limits.
+    """
     # Conservative byte budget for argv payload (paths + separators), excluding env.
     max_bytes = 200_000
 
@@ -542,9 +725,17 @@ def _chunk_paths_for_fc_query(paths: list[Path]) -> list[list[Path]]:
 
 def _run_fc_query_many(paths: list[Path]) -> dict[Path, str]:
     """
-    Execute `fc-query` over many font files using chunked invocations.
+    Execute `fc-query` over multiple font files using chunked invocations.
 
-    Returns a mapping {font_path: raw_output_block}.
+    Parameters
+    ----------
+    paths : list[pathlib.Path]
+        Font file paths to query.
+
+    Returns
+    -------
+    dict[pathlib.Path, str]
+        Mapping from font path to its corresponding raw `fc-query` output block.
     """
     out: dict[Path, str] = {}
 
@@ -604,10 +795,41 @@ def _run_fc_query_many(paths: list[Path]) -> dict[Path, str]:
 
 def _parse_fc_query_core_fields(path: Path, lines: list[str]) -> dict[str, Any]:
     """
-    Parse languages, scripts, and boolean flags from normalized fc-query lines.
+    Parse core FontConfig fields from normalized `fc-query` lines.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Font file path (used for logging context).
+    lines : list[str]
+        Normalized lines extracted from `fc-query` output.
+
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary containing parsed fields:
+        - languages: list[str]
+        - scripts: list[str]
+        - decorative: bool
+        - color: bool
+        - variable: bool
     """
 
     def _find_line(prefix: str) -> str | None:
+        """
+        Find the first normalized fc-query line with a given prefix.
+
+        Parameters
+        ----------
+        prefix : str
+            Line prefix to match (e.g. "lang:", "color:").
+
+        Returns
+        -------
+        str | None
+            The stripped payload after the prefix for the first matching line,
+            or None if no such line is found.
+        """
         for line in lines:
             if line.startswith(prefix):
                 return line[len(prefix) :].strip()
@@ -668,7 +890,22 @@ def _extract_fc_query_charset(
     include_charset: bool,
 ) -> dict[str, Any] | None:
     """
-    Extract raw charset block and parsed ranges from fc-query output.
+    Extract charset information from normalized `fc-query` output.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Font file path (used for logging context).
+    lines : list[str]
+        Normalized lines extracted from `fc-query` output.
+    include_charset : bool
+        If False, charset extraction is skipped and None is returned.
+
+    Returns
+    -------
+    dict[str, Any] | None
+        Charset dictionary containing raw text and parsed ranges,
+        or None if charset extraction is disabled or unavailable.
     """
 
     if not include_charset:
@@ -719,7 +956,24 @@ def _extract_fc_query_charset(
 def _parse_fc_query_output(
     path: Path, raw: str, include_charset: bool
 ) -> dict[str, Any]:
-    """Parse fc-query raw output into a normalized Fontshow dict."""
+    """
+    Parse raw `fc-query` output into a normalized metadata dictionary.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Font file path (used for logging context).
+    raw : str
+        Raw stdout produced by `fc-query`.
+    include_charset : bool
+        Whether to include parsed charset information.
+
+    Returns
+    -------
+    dict[str, Any]
+        Normalized metadata dictionary containing languages, scripts,
+        charset (optional), and boolean flags.
+    """
     log_trace_cat(
         log,
         "io",
@@ -767,16 +1021,30 @@ def _parse_fc_query_output(
 
 def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any]:
     """
-    Extract a limited subset of FontConfig-derived metadata.
+    Extract FontConfig-derived metadata for a single font file.
 
+    Parameters
+    ----------
+    path : pathlib.Path
+        Font file path.
+    include_charset : bool, optional
+        If True, include parsed charset information.
+
+    Returns
+    -------
+    dict[str, Any]
+        Metadata dictionary containing languages, scripts, charset (optional),
+        and boolean flags derived from FontConfig.
+
+    Notes
+    -----
     Refactored design:
     - Execution layer: `_run_fc_query`
     - Core parsing: `_parse_fc_query_core_fields`
     - Charset extraction: `_extract_fc_query_charset`
 
-    Behavior identical to original implementation.
+    Behavior is identical to the original implementation.
     """
-
     raw = _run_fc_query(path)
     return _parse_fc_query_output(path, raw, include_charset)
 
@@ -787,9 +1055,19 @@ def fc_query_extract_many(
     include_charset: bool = False,
 ) -> dict[Path, dict[str, Any]]:
     """
-    Extract FontConfig-derived metadata for many font files using chunked fc-query.
+    Extract FontConfig-derived metadata for multiple font files.
 
-    Returned mapping keys are the original `Path` objects from `paths`.
+    Parameters
+    ----------
+    paths : list[pathlib.Path]
+        Font file paths to query.
+    include_charset : bool, optional
+        If True, include parsed charset information.
+
+    Returns
+    -------
+    dict[pathlib.Path, dict[str, Any]]
+        Mapping from each font path to its extracted FontConfig metadata.
     """
     raw_map = _run_fc_query_many(paths)
     out: dict[Path, dict[str, Any]] = {}
@@ -800,14 +1078,20 @@ def fc_query_extract_many(
 
 
 def _best_name(names: dict[str, list[str]], name_id: int) -> str | None:
-    """Return the first non-empty value for a given nameID.
+    """
+    Return the first non-empty value for a given nameID.
 
-    Args:
-        names: Mapping of nameID (as string) to a list of candidate strings.
-        name_id: The integer nameID to query.
+    Parameters
+    ----------
+    names : dict[str, list[str]]
+        Mapping of nameID (as string) to a list of candidate strings.
+    name_id : int
+        The integer nameID to query.
 
-    Returns:
-        The first non-empty, stripped string for the given nameID, or ``None``
+    Returns
+    -------
+    str | None
+        First non-empty, stripped string for the given nameID, or None
         if no usable value is found.
     """
     vals = names.get(str(name_id), [])
@@ -818,7 +1102,8 @@ def _best_name(names: dict[str, list[str]], name_id: int) -> str | None:
 
 
 def extract_name_table(tt: TTFont) -> dict[str, list[str]]:
-    """Extract the OpenType/TrueType name table as a JSON-friendly mapping.
+    """
+    Extract the OpenType/TrueType name table as a JSON-friendly mapping.
 
     Data structure:
         The returned dictionary maps ``nameID`` (string) to a list of unique
@@ -832,12 +1117,16 @@ def extract_name_table(tt: TTFont) -> dict[str, list[str]]:
               "4": ["DejaVu Sans Book"]
             }
 
-    Args:
-        tt: An already-open ``TTFont`` instance (single face).
+    Parameters
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
 
-    Returns:
-        A mapping ``{name_id_str: [values...]}``. Returns an empty dict if the
-        font has no ``name`` table.
+    Returns
+    -------
+    dict[str, list[str]]
+        Mapping {name_id_str: [values...]} preserving first-seen order.
+        Returns an empty dict if the font has no name table.
     """
     out: dict[str, list[str]] = {}
     if "name" not in tt:
@@ -863,22 +1152,26 @@ def extract_name_table(tt: TTFont) -> dict[str, list[str]]:
 def extract_os2_table(tt: TTFont) -> dict[str, Any]:
     """Extract a small subset of OS/2 fields, best-effort.
 
-    The OS/2 table is frequently present but can be malformed. This function
-    therefore uses defensive attribute access and returns only a stable subset.
+     The OS/2 table is frequently present but can be malformed. This function
+     therefore uses defensive attribute access and returns only a stable subset.
 
-    Extracted keys (when available):
-    - ``weight_class`` (int)
-    - ``width_class`` (int)
-    - ``embedding_rights`` (int)
-    - ``vendor_id`` (str, normalized to ASCII where possible)
-    - ``version`` (int)
+     Extracted keys (when available):
+     - ``weight_class`` (int)
+     - ``width_class`` (int)
+     - ``embedding_rights`` (int)
+     - ``vendor_id`` (str, normalized to ASCII where possible)
+     - ``version`` (int)
 
-    Args:
-        tt: An already-open ``TTFont`` instance (single face).
+    Parameters
+     ----------
+     tt : TTFont
+         Open TTFont instance representing a single font face.
 
-    Returns:
-        A dictionary with the extracted keys, or an empty dict if no OS/2 table
-        is present.
+     Returns
+     -------
+     dict[str, Any]
+         Dictionary containing extracted OS/2 fields when available,
+         or an empty dict if the OS/2 table is missing or malformed.
     """
     if "OS/2" not in tt:
         return {}
@@ -911,19 +1204,36 @@ def extract_os2_table(tt: TTFont) -> dict[str, Any]:
 
 
 def detect_color_tables(tt: TTFont) -> list[str]:
-    """Return a list of present color-related tables (best-effort)."""
+    """
+    Detect presence of color-related OpenType tables.
+
+    Parameters
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
+
+    Returns
+    -------
+    list[str]
+        List of detected color-related table tags present in the font.
+    """
     candidates = ["COLR", "CPAL", "CBDT", "CBLC", "sbix", "SVG "]
     return [t for t in candidates if t in tt]
 
 
 def compute_unicode_blocks(codepoints: set[int]) -> dict[str, int]:
-    """Count how many code points fall into each configured Unicode block.
+    """
+    Count how many code points fall into each configured Unicode block.
 
-    Args:
-        codepoints: Set of Unicode code points present in the font cmap.
+    Parameters
+    ----------
+    codepoints : set[int]
+        Set of Unicode code points present in the font cmap.
 
-    Returns:
-        Mapping ``{block_name: count}`` containing only blocks with count > 0.
+    Returns
+    -------
+    dict[str, int]
+        Mapping {block_name: count} including only blocks with count > 0.
     """
     blocks: dict[str, int] = {}
 
@@ -936,22 +1246,24 @@ def compute_unicode_blocks(codepoints: set[int]) -> dict[str, int]:
 
 
 def extract_unicode_coverage(tt: TTFont, limit: int = 200_000) -> dict[str, Any]:
-    """Compute a lightweight Unicode coverage summary from cmap.
+    """
+    Compute a lightweight Unicode coverage summary from the cmap table.
 
-    To keep inventories reasonably small, this function does *not* store the full
-    cmap/codepoint list. Instead it stores:
+    Parameters
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
+    limit : int, optional
+        Maximum number of distinct code points to collect before stopping.
 
-    - ``count``: number of distinct code points observed (capped by ``limit``)
-    - ``min``: minimum code point or ``None``
-    - ``max``: maximum code point or ``None``
-
-    Args:
-        tt: An already-open ``TTFont`` instance (single face).
-        limit: Maximum number of distinct code points to collect before stopping.
-
-    Returns:
-        A dictionary with keys ``count``, ``min``, ``max``.
-        If no cmap exists, returns an empty dict.
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary with keys:
+        - "count": number of distinct code points observed,
+        - "min": minimum code point or None,
+        - "max": maximum code point or None.
+        Returns an empty dict if no cmap table exists.
     """
     if "cmap" not in tt:
         return {}
@@ -973,7 +1285,19 @@ def extract_unicode_coverage(tt: TTFont, limit: int = 200_000) -> dict[str, Any]
 
 
 def extract_opentype_features(tt: TTFont) -> list[str]:
-    """Best-effort extraction of GSUB/GPOS feature tags."""
+    """
+    Extract OpenType GSUB/GPOS feature tags (best-effort).
+
+    Parameters
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
+
+    Returns
+    -------
+    list[str]
+        Sorted list of detected OpenType feature tags.
+    """
     feats: set[str] = set()
     for tag in ("GSUB", "GPOS"):
         if tag not in tt:
@@ -1020,14 +1344,21 @@ def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
         - ``color_tables``: list[str] present color-related tables
         - ``opentype_features``: list[str] GSUB/GPOS feature tags
 
-    Args:
-        path: Path to the font file (used only for context/debug).
-        container: Container type string.
-        tt: An open TTFont object for the face.
-        ttc_index: TTC face index, or ``None``.
+    Parameters
+    ----------
+    _path : pathlib.Path
+        Font file path (used for context and logging).
+    container : str
+        Container type string (e.g. TTF, OTF, TTC).
+    tt : TTFont
+        Open TTFont instance for the current face.
+    ttc_index : int | None
+        TTC face index, or None for single-face fonts.
 
-    Returns:
-        A dictionary describing the extracted metadata for a single face.
+    Returns
+    -------
+    dict[str, Any]
+        JSON-serializable dictionary describing extracted metadata for the face.
     """
     data: dict[str, Any] = {"ok": True, "container": container, "ttc_index": ttc_index}
 
@@ -1145,25 +1476,29 @@ def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
 def fonttools_extract_all(  # noqa: C901
     path: Path, cache_dir: Path, use_cache: bool = True
 ) -> list[dict[str, Any]]:
-    """Extract fontTools metadata for one file, returning one entry per face.
-
-    Behavior:
-    - For single-face formats, returns a one-element list.
-    - For TTC files, returns one element per face (with ``ttc_index`` set).
-    - If ``fontTools`` is unavailable, returns a single error block.
-
-    Caching:
-        Per-face JSON blocks are cached in ``cache_dir`` using :func:`font_cache_key`.
-
-    Args:
-        path: Font file path.
-        cache_dir: Directory used for per-face JSON cache files.
-        use_cache: If ``True``, reuse cached JSON blocks where possible.
-
-    Returns:
-        A list of dictionaries, each describing a single face.
     """
+    Extract fontTools metadata for a font file, returning one entry per face.
 
+    Parameters
+    ----------
+    path : pathlib.Path
+        Font file path.
+    cache_dir : pathlib.Path
+        Directory used for per-face JSON cache files.
+    use_cache : bool, optional
+        If True, reuse cached JSON blocks where possible.
+
+    Returns
+    -------
+    list[dict[str, Any]]
+        List of dictionaries, each describing a single font face.
+
+    Notes
+    -----
+    - Single-face formats return a one-element list.
+    - TTC files return one element per face.
+    - If fontTools is unavailable, a single error block is returned.
+    """
     # -------------------------------
     # Guard: fontTools not available
     # -------------------------------
@@ -1366,21 +1701,25 @@ def fonttools_extract_all(  # noqa: C901
 def classify_font(
     format_block: dict[str, Any], unicode_max: int | None
 ) -> dict[str, Any]:
-    """Classify a font using simple, format-based heuristics.
+    """
+    Classify a font using simple, format-based heuristics.
 
     This classification is intentionally coarse and conservative.
     Richer semantic inference (scripts, languages, writing systems)
     is performed downstream by ``parse_font_inventory.py``.
 
-    Args:
-        format_block: Dictionary describing container and format properties
-            (e.g. ``container``, ``font_type``, ``color``, ``decorative``,
-            ``variable``).
-        unicode_max: Maximum Unicode code point supported by the font,
-            or ``None`` if unknown.
+    Parameters
+    ----------
+    format_block : dict[str, Any]
+        Dictionary describing container and format properties
+        (e.g. container, font_type, color, decorative, variable).
+    unicode_max : int | None
+        Maximum Unicode code point supported by the font, or None if unknown.
 
-    Returns:
-        A dictionary with boolean classification flags and format hints.
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary containing boolean classification flags and format hints.
     """
     container = format_block.get("container")
     font_type = format_block.get("font_type")
@@ -1431,16 +1770,21 @@ def build_font_descriptor(
           "source": {...}
         }
 
-    Args:
-        font_path: Path to the font file on disk.
-        platform_name: Normalized platform identifier (e.g. ``"linux"``,
-            ``"windows"``).
-        fonttools: Metadata block produced by ``fonttools_extract_all`` for a
-            single face. May contain error fields.
-        fontconfig: Optional FontConfig-derived metadata (Linux only).
+    Parameters
+    ----------
+    font_path : pathlib.Path
+        Path to the font file on disk.
+    platform_name : str
+        Normalized platform identifier (e.g. "linux", "windows").
+    fonttools : dict[str, Any]
+        Metadata block produced by fonttools_extract_all for a single face.
+    fontconfig : dict[str, Any] | None
+        Optional FontConfig-derived metadata (Linux only).
 
-    Returns:
-        A dictionary representing the canonical font descriptor.
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary representing the canonical font descriptor for the font face.
     """
     names: dict[str, list[str]] = (
         fonttools.get("names", {})
@@ -1696,6 +2040,15 @@ def build_font_descriptor(
 def build_parser(parser: argparse.ArgumentParser) -> None:
     """
     Register dump-fonts CLI arguments on an existing parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Parser instance to configure.
+
+    Returns
+    -------
+    None
     """
     parser.description = (
         "Dump installed fonts into a canonical Fontshow JSON inventory."
@@ -1732,9 +2085,16 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
 
 def register_cli(parser) -> None:
     """
-    Register dump-fonts CLI arguments.
+    Register dump-fonts CLI on a parser.
 
-    This function is used by the top-level fontshow dispatcher.
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Parser instance to configure.
+
+    Returns
+    -------
+    None
     """
     build_parser(parser)
     parser.set_defaults(func=main)
@@ -1742,8 +2102,20 @@ def register_cli(parser) -> None:
 
 def run_dump_fonts(args) -> int:
     """
-    Core implementation for dump-fonts.
+    Execute the dump-fonts pipeline.
 
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code (0 for success, non-zero for failure).
+
+    Notes
+    -----
     This function performs the full dump pipeline and returns an exit code.
     It MUST NOT call sys.exit() and SHOULD NOT print directly.
 
@@ -1922,19 +2294,34 @@ def run_dump_fonts(args) -> int:
 
 def _run_dump_fonts(args) -> int:
     """
-    Indirection layer for CLI testing.
+    Injectable wrapper around the core dump-fonts implementation.
 
-    This function exists so CLI tests can monkeypatch it
-    without touching the core implementation.
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code returned by run_dump_fonts.
     """
     return run_dump_fonts(args)
 
 
 def run(args):
     """
-    Public CLI entrypoint (kept stable).
-    Thin wrapper around the injectable runner.
-    Needed for tests via the top-level dispatcher.
+    Public CLI entrypoint delegating to the main runner.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
     """
     return main(args)
 
@@ -1943,9 +2330,16 @@ def main(args) -> int:
     """
     CLI wrapper for dump-fonts.
 
-    Handles user-facing output and delegates execution to the core.
-    """
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments.
 
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
 
     try:

@@ -1,3 +1,78 @@
+"""
+Fontshow structured logging subsystem.
+
+This module provides the centralized logging infrastructure used across
+Fontshow, including:
+
+- A minimal logging facade (`log`) wrapping the stdlib logger.
+- A custom TRACE level (numeric level 5) below DEBUG.
+- Structured logging with deterministic payload handling.
+- Category-based selective TRACE architecture.
+- Environment-driven configuration.
+
+Logging activation
+------------------
+Logging is **disabled by default**.
+
+To enable logging, set:
+
+    FONTSHOW_LOG_LEVEL = TRACE | DEBUG | INFO | WARNING | ERROR | CRITICAL
+
+If the variable is unset, all logging calls become no-ops.
+
+TRACE subsystem
+--------------
+TRACE is a fine-grained, high-frequency diagnostic channel designed for:
+
+- pipeline tracing
+- performance instrumentation
+- I/O inspection
+- parser and inference diagnostics
+- cache and flow observation
+
+TRACE is controlled by:
+
+    FONTSHOW_TRACE
+        Category selector (comma-separated).
+        Examples:
+            all
+            none
+            io,parse,perf
+            all,-raw
+            infer,-perf
+
+    FONTSHOW_TRACE_FORMAT
+        "json" (default) or "human"
+
+    FONTSHOW_TRACE_RAW_MAXLEN
+        Maximum RAW payload size (default: 4096)
+
+Design invariants
+-----------------
+- Logging must NEVER raise exceptions.
+- Logging must be safe when disabled (no-op).
+- Caller attribution must be preserved (stacklevel handling).
+- Structured data must remain machine-readable.
+- TRACE must be deterministic and filterable by category.
+- Module must be side-effect safe except for logger initialization.
+
+Architecture
+------------
+1. Root logger configured lazily from environment.
+2. Public facade (`log`) wraps stdlib logging.
+3. TRACE category selector filters high-volume events.
+4. RAW payload guard prevents unbounded logs.
+5. Optional human-readable TRACE formatting.
+
+Notes
+-----
+- TRACE level numeric value = 5 (below DEBUG).
+- Logger name: "fontshow".
+- Propagation enabled to support pytest caplog and external handlers.
+- Default StreamHandler installed only if no handlers exist.
+- Structured TRACE JSON payload is stored in LogRecord.extra["_trace_json"].
+"""
+
 from __future__ import annotations
 
 import logging
@@ -18,6 +93,31 @@ logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
 
 
 def _trace(self: logging.Logger, message: str, *args: Any, **kwargs: Any) -> None:
+    """
+    Emit a TRACE-level log record using the stdlib logger.
+
+    Parameters
+    ----------
+    self : logging.Logger
+        Logger instance receiving the TRACE call.
+    message : str
+        Log message.
+    *args : Any
+        Positional arguments passed to the logging formatter.
+    **kwargs : Any
+        Keyword arguments forwarded to Logger._log().
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    - TRACE level is custom (numeric level 5).
+    - Only emits if TRACE level is enabled on the logger.
+    - Installed dynamically as `logging.Logger.trace`.
+    - Low-level helper; not intended for direct external use.
+    """
     if self.isEnabledFor(TRACE_LEVEL_NUM):
         self._log(
             TRACE_LEVEL_NUM,
@@ -40,6 +140,25 @@ _ENV_VAR = "FONTSHOW_LOG_LEVEL"
 
 
 def _get_log_level_from_env() -> int | None:
+    """
+    Resolve logging level from environment variable.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    int | None
+        Numeric logging level derived from `FONTSHOW_LOG_LEVEL`,
+        or None if logging is disabled or variable is unset/invalid.
+
+    Notes
+    -----
+    - Special value "TRACE" maps to custom TRACE level.
+    - Standard logging names (DEBUG, INFO, WARNING, ERROR, CRITICAL) are supported.
+    - If the environment variable is absent, logging is disabled by design.
+    """
     value = os.environ.get(_ENV_VAR)
     if not value:
         return None
@@ -52,6 +171,27 @@ def _get_log_level_from_env() -> int | None:
 
 
 def _configure_root_logger() -> logging.Logger | None:
+    """
+    Configure and return the root Fontshow logger.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    logging.Logger | None
+        Configured logger instance if logging is enabled,
+        otherwise None.
+
+    Notes
+    -----
+    - Logging is enabled only when `FONTSHOW_LOG_LEVEL` is set.
+    - Logger name: "fontshow".
+    - Propagation is enabled so pytest caplog and external handlers can capture logs.
+    - Installs a default StreamHandler only if no handlers exist.
+    - Designed to be idempotent and safe across repeated imports.
+    """
     level = _get_log_level_from_env()
     if level is None:
         return None
@@ -81,8 +221,23 @@ _ROOT_LOGGER = _configure_root_logger()
 # -----------------------------
 def _prepare_extra(extra: Mapping[str, Any] | None) -> dict[str, Any]:
     """
-    Normalize user-provided structured data so it is always available
-    as `record.extra` for formatters.
+    Normalize structured logging payload.
+
+    Parameters
+    ----------
+    extra : Mapping[str, Any] | None
+        User-provided structured logging data.
+
+    Returns
+    -------
+    dict[str, Any]
+        Mapping wrapped under the key `"extra"` suitable for LogRecord.
+
+    Notes
+    -----
+    - Guarantees `record.extra` exists for formatters.
+    - Ensures a shallow copy to avoid mutation of caller data.
+    - Returns empty structure when `extra` is None.
     """
     return {"extra": dict(extra) if extra else {}}
 
@@ -100,21 +255,56 @@ class _LogFacade:
     """
 
     def isEnabledFor(self, level: int) -> bool:
-        """Proxy to underlying stdlib logger."""
+        """
+        Check whether logging is enabled for a given level.
+
+        Parameters
+        ----------
+        level : int
+            Numeric logging level.
+
+        Returns
+        -------
+        bool
+            True if underlying logger exists and level is enabled,
+            otherwise False.
+
+        Notes
+        -----
+        - Safe when logging is disabled (returns False).
+        - Thin proxy to underlying stdlib logger.
+        """
         logger = self._logger()
         return bool(logger and logger.isEnabledFor(level))
 
     def log(self, level: int, msg: str, *args, **kwargs) -> None:
         """
-        Proxy to stdlib logger.log().
+        Emit a log record at arbitrary level.
 
+        Parameters
+        ----------
+        level : int
+            Logging level.
+        msg : str
+            Log message.
+        *args : Any
+            Positional arguments forwarded to the logger.
+        **kwargs : Any
+            Keyword arguments forwarded to the logger.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
         Contract:
-            - MUST never raise
-            - If logging is disabled/uninitialized, MUST be a no-op.
+        - MUST never raise exceptions.
+        - MUST be a no-op if logging is disabled.
 
-        Note on stacklevel:
-            - We accept a `stacklevel` kwarg and increment it by 1 to account
-              for this facade frame.
+        Behavior:
+        - Accepts `stacklevel` and increments it by 1 to preserve caller origin.
+        - Delegates to stdlib `logger.log()`.
         """
         logger = self._logger()
         if logger is None:
@@ -127,6 +317,26 @@ class _LogFacade:
         return _ROOT_LOGGER
 
     def error(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:
+        """
+        Emit an ERROR-level log record.
+
+        Parameters
+        ----------
+        message : str
+            Log message.
+        extra : Mapping[str, Any] | None
+            Structured payload.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        - No-op when logging disabled.
+        - Preserves caller stack frame using stacklevel=2.
+        - Structured data normalized via `_prepare_extra()`.
+        """
         logger = self._logger()
         if logger:
             logger.error(
@@ -136,6 +346,26 @@ class _LogFacade:
             )
 
     def warning(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:
+        """
+        Emit a WARNING-level log record.
+
+        Parameters
+        ----------
+        message : str
+            Log message.
+        extra : Mapping[str, Any] | None
+            Structured payload.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        - No-op when logging disabled.
+        - Preserves caller stack frame using stacklevel=2.
+        - Structured data normalized via `_prepare_extra()`.
+        """
         logger = self._logger()
         if logger:
             logger.warning(
@@ -145,6 +375,26 @@ class _LogFacade:
             )
 
     def info(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:
+        """
+        Emit an INFO-level log record.
+
+        Parameters
+        ----------
+        message : str
+            Log message.
+        extra : Mapping[str, Any] | None
+            Structured payload.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        - No-op when logging disabled.
+        - Preserves caller stack frame using stacklevel=2.
+        - Structured data normalized via `_prepare_extra()`.
+        """
         logger = self._logger()
         if logger:
             logger.info(
@@ -154,6 +404,26 @@ class _LogFacade:
             )
 
     def debug(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:
+        """
+        Emit a DEBUG-level log record.
+
+        Parameters
+        ----------
+        message : str
+            Log message.
+        extra : Mapping[str, Any] | None
+            Structured payload.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        - No-op when logging disabled.
+        - Preserves caller stack frame using stacklevel=2.
+        - Structured data normalized via `_prepare_extra()`.
+        """
         logger = self._logger()
         if logger:
             logger.debug(
@@ -163,6 +433,27 @@ class _LogFacade:
             )
 
     def trace(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:
+        """
+        Emit a TRACE-level log record.
+
+        Parameters
+        ----------
+        message : str
+            Log message.
+        extra : Mapping[str, Any] | None
+            Structured payload.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        - No-op when logging disabled.
+        - Only emits if TRACE level is enabled on the logger.
+        - Preserves caller stack frame using stacklevel=2.
+        - Structured data normalized via `_prepare_extra()`.
+        """
         logger = self._logger()
         if logger and logger.isEnabledFor(TRACE_LEVEL_NUM):
             logger._log(
@@ -204,16 +495,26 @@ TRACE_CATEGORIES: set[str] = {
 @lru_cache(maxsize=1)
 def _parse_trace_selector() -> tuple[set[str] | None, set[str] | None]:
     """
-    Parse FONTSHOW_TRACE selector.
+    Parse TRACE category selector from environment.
 
-    Returns:
-        (include_set | None, exclude_set | None)
+    Parameters
+    ----------
+    None
 
-    Rules:
-        None include_set → treat as "all"
-        Special tokens:
-            all
-            none
+    Returns
+    -------
+    tuple[set[str] | None, set[str] | None]
+        (include_set, exclude_set)
+
+    Notes
+    -----
+    Semantics:
+    - include_set is None → all categories allowed.
+    - Special values:
+        "all"  → enable all categories.
+        "none" → disable all categories.
+    - Tokens starting with '-' indicate exclusion.
+    - Cached for performance.
     """
     raw = os.environ.get("FONTSHOW_TRACE")
     if not raw:
@@ -244,9 +545,23 @@ def _parse_trace_selector() -> tuple[set[str] | None, set[str] | None]:
 
 def trace_enabled(category: str) -> bool:
     """
-    Fast check whether TRACE is enabled for a category.
+    Check whether TRACE is enabled for a category.
 
-    Requires global TRACE level already active.
+    Parameters
+    ----------
+    category : str
+        TRACE category identifier.
+
+    Returns
+    -------
+    bool
+        True if TRACE logging is enabled for the category.
+
+    Notes
+    -----
+    - Requires global TRACE level already active.
+    - Uses selector parsed from `FONTSHOW_TRACE`.
+    - Fast path designed for high-frequency TRACE calls.
     """
     include, exclude = _parse_trace_selector()
 
@@ -270,6 +585,25 @@ def trace_enabled(category: str) -> bool:
 
 @lru_cache(maxsize=1)
 def _raw_max_len() -> int:
+    """
+    Resolve maximum RAW TRACE payload length from environment.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    int
+        Maximum number of characters allowed in RAW payload.
+
+    Notes
+    -----
+    - Controlled by `FONTSHOW_TRACE_RAW_MAXLEN`.
+    - Default: 4096.
+    - Invalid values fall back to default.
+    - Cached for performance.
+    """
     val = os.environ.get("FONTSHOW_TRACE_RAW_MAXLEN")
     if not val:
         return 4096
@@ -281,10 +615,24 @@ def _raw_max_len() -> int:
 
 def _truncate_raw(value: str) -> tuple[str, dict]:
     """
-    Truncate raw TRACE payload if needed.
+    Truncate RAW TRACE payload if exceeding configured limit.
 
-    Returns:
+    Parameters
+    ----------
+    value : str
+        Raw TRACE payload.
+
+    Returns
+    -------
+    tuple[str, dict]
         (possibly_truncated_value, metadata)
+
+    Notes
+    -----
+    - Metadata may include:
+        raw_truncated : bool
+        raw_len : int
+    - When max length is 0, payload is fully suppressed.
     """
     max_len = _raw_max_len()
     if max_len <= 0:
@@ -306,13 +654,48 @@ def _truncate_raw(value: str) -> tuple[str, dict]:
 
 @lru_cache(maxsize=1)
 def _trace_format() -> str:
+    """
+    Resolve TRACE output format from environment.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    str
+        Either "json" or "human".
+
+    Notes
+    -----
+    - Controlled by `FONTSHOW_TRACE_FORMAT`.
+    - Default: "json".
+    - Cached for performance.
+    """
     fmt = os.environ.get("FONTSHOW_TRACE_FORMAT", "json").lower()
     return "human" if fmt == "human" else "json"
 
 
 def _format_trace_human(msg: str, extra: dict | None) -> str:
     """
-    Convert structured TRACE into readable form.
+    Render structured TRACE event into human-readable format.
+
+    Parameters
+    ----------
+    msg : str
+        Base TRACE message.
+    extra : dict | None
+        Structured TRACE payload.
+
+    Returns
+    -------
+    str
+        Human-readable TRACE line.
+
+    Notes
+    -----
+    - Appends category and key=value pairs.
+    - Used only when TRACE format = "human".
     """
     if not extra:
         return msg
@@ -346,16 +729,47 @@ def log_trace_cat(
     **kwargs,
 ) -> None:
     """
-    Emit a TRACE event under a category.
+    Emit a categorized TRACE log event.
 
-    Conditions:
-        - global TRACE level must be active
-        - category must be enabled
+    Parameters
+    ----------
+    logger : logging.Logger
+        Logger instance used for emission.
+    category : str
+        TRACE category identifier.
+    message : str
+        TRACE message.
+    extra : dict | None
+        Structured payload.
+    raw : str | None
+        Optional raw data payload subject to truncation.
+    **kwargs : Any
+        Additional logging parameters.
 
-    Structured field:
-        extra["trace_category"] = category
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    Contract:
+    - Emits only if TRACE level enabled and category allowed.
+    - Must never raise exceptions.
+    - Adds `extra["trace_category"]`.
+
+    Behavior:
+    - RAW payload truncated via `_truncate_raw()`.
+    - Supports two output formats:
+        - JSON structured TRACE (default)
+        - Human-readable TRACE
+    - Maintains caller attribution using stacklevel=3.
+    - JSON TRACE embeds structured payload into `_trace_json`.
+
+    TRACE architecture:
+    - Category-based selective tracing.
+    - Environment-controlled filtering.
+    - Deterministic, machine-readable output.
     """
-
     if not logger.isEnabledFor(TRACE_LEVEL_NUM):
         return
 

@@ -122,9 +122,22 @@ def _block_coverage_ratio(
     block_sizes: dict[str, int],
 ) -> float:
     """
-    Return the coverage ratio for a Unicode block.
+    Compute coverage ratio for a Unicode block.
 
-    If the block size is unknown or zero, return 0.0.
+    Parameters
+    ----------
+    block_name : str
+        Name of the Unicode block.
+    block_coverage : dict[str, int]
+        Mapping of block names to covered codepoint counts.
+    block_sizes : dict[str, int]
+        Mapping of block names to normative block sizes.
+
+    Returns
+    -------
+    float
+        Fraction of the block covered (covered / size).
+        Returns 0.0 if the block size is unknown or zero.
     """
     covered = block_coverage.get(block_name, 0)
     size = block_sizes.get(block_name, 0)
@@ -142,21 +155,28 @@ def infer_languages(
     """
     Infer candidate languages from Unicode coverage metadata.
 
+    Parameters
+    ----------
+    coverage : dict[str, Any]
+        Unicode coverage metadata (e.g. font_entry["coverage"]).
+    policy : str, optional
+        Language inference policy selector.
+
+    Returns
+    -------
+    dict[str, LanguageInferenceInfo]
+        Mapping of language tags to inference evidence.
+
+    Notes
+    -----
     This function operates exclusively on Unicode-derived coverage data
     (e.g. unicode_blocks) and does NOT consume FontConfig charset metadata
     or any external language declarations.
 
-    The returned mapping represents candidate languages along with
-    supporting evidence, not definitive classification.
-
-    Args:
-        coverage: Unicode coverage metadata (e.g. font_entry["coverage"]).
-        policy: Language inference policy selector.
-
-    Returns:
-        A mapping of language tags to inference evidence.
+    The returned mapping represents candidate languages supported by
+    the font, along with supporting evidence, and is not a definitive
+    classification.
     """
-
     log_trace_cat(
         log,
         "infer",

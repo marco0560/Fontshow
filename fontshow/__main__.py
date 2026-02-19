@@ -14,6 +14,26 @@ from fontshow.logging_utils import log, log_trace_cat
 
 
 def dispatch_command(args: argparse.Namespace) -> int:
+    """
+    Dispatch a parsed CLI command.
+
+    The function invokes the command handler stored in `args.func`,
+    captures its return value, and converts it into a deterministic
+    process exit code. TRACE "flow" events are emitted for start,
+    completion, and crash conditions.
+
+    Args:
+        args: Parsed CLI arguments. Must provide a callable `func` attribute
+            that accepts `args` and returns either an integer-like exit code or
+            `None`.
+
+    Returns:
+        Process exit code:
+        - 0 when the handler returns `None` or raises `SystemExit(None)`,
+        - `int(result)` when the handler returns a non-None value,
+        - `int(e.code)` when the handler raises `SystemExit(code)`,
+        - 2 for any other unhandled exception.
+    """
     log_trace_cat(
         log,
         "flow",
@@ -62,8 +82,16 @@ def main() -> int:
     Logging configuration is intentionally NOT performed here.
     Logging is handled centrally via `fontshow.logging_utils`
     and test harnesses (pytest caplog).
-    """
 
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    int
+        Process exit code (0 for success, non-zero for failure).
+    """
     try:
         FONTSHOW_VERSION = version("fontshow")
     except PackageNotFoundError:

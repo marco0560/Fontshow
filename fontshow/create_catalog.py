@@ -1,39 +1,33 @@
 """
-Fontshow – create_catalog.py
-==========================
+Fontshow create-catalog module.
 
-LaTeX catalog generator for Fontshow.
+This module implements the LaTeX catalog generation stage of the Fontshow
+pipeline.
 
-This module consumes the canonical font inventory JSON produced by
-``dump_fonts.py`` and generates a printable LaTeX catalog.
+Responsibilities
+----------------
+- Load and strictly validate a schema v1.2 inventory.
+- Enforce platform compatibility constraints.
+- Perform semantic validation.
+- Transform normalized font descriptors into deterministic LaTeX output.
+- Provide CLI orchestration for the `create-catalog` command.
 
-Design principles
------------------
-- **Pure rendering stage**: this module never inspects font binaries.
-- **Inventory-driven**: all semantic information comes from the JSON inventory.
-- **Strict invariants**: a valid schema v1.2 inventory with complete platform
-  metadata is required; invalid or incompatible inventories are rejected.
-- **LaTeX-first**: output is optimized for XeLaTeX/LuaLaTeX workflows.
+Design constraints
+------------------
+- Pure rendering stage: no font binary inspection.
+- Inventory-driven: all semantic information originates from JSON.
+- Deterministic output: stable ordering and identifiers.
+- LaTeX-first: optimized for LuaLaTeX workflows.
+- Whitespace-sensitive templates: LaTeX blocks must not be modified
+  unintentionally.
 
-This file intentionally mixes:
-- inventory glue logic,
-- rendering helpers,
-- platform-specific handling,
-- CLI orchestration.
+Primary entry points
+--------------------
+- `run_create_catalog(args)`
+- `generate_latex(font_list)`
 
-The architecture is procedural by design and mirrors the historical evolution
-of the project.
-
-Pipeline for creating a LuaLaTeX font catalog from a Fontshow inventory.
-
-This module contains utilities for loading the JSON inventory, inferring
-rendering choices and producing the final LaTeX source used by the main
-`create_catalog` workflow. Key entrypoints:
-- `generate_latex(font_list)` — produce full LaTeX document
-- `get_installed_fonts()` — used only for TEST_FONTS listing (no catalog fallback)
-
-Keep changes minimal: the LaTeX templates in the module are whitespace-
-sensitive and used directly by the renderer.
+All rendering decisions must operate exclusively on normalized font
+descriptors.
 """
 
 import argparse
@@ -168,9 +162,18 @@ SCRIPT_TO_POLYGLOSSIA = {
 
 
 def escape_latex(text: str) -> str:
-    """Escape LaTeX special characters in `text`.
+    """
+    Escape LaTeX special characters in a string.
 
-    Returns a string safe to embed in LaTeX source.
+    Parameters
+    ----------
+    text : str
+        Input string to be escaped for safe inclusion in LaTeX source.
+
+    Returns
+    -------
+    str
+        String with LaTeX special characters escaped.
     """
     replacements = {
         "&": r"\&",
@@ -428,7 +431,28 @@ LATEX_END_CODE_2: str = r""" \\
 
 
 def get_unique_filename(base_name: str, extension: str) -> str:
-    """Genera un nome file unico aggiungendo un contatore a tre cifre (000-999)."""
+    """
+    Generate a unique filename by appending a three-digit counter (000–999).
+
+    Parameters
+    ----------
+    base_name : str
+        Base filename without extension.
+    extension : str
+        File extension without leading dot.
+
+    Returns
+    -------
+    str
+        A filename of the form:
+            <base_name>_<NNN>.<extension>
+        where NNN is the first available counter between 000 and 999.
+
+    Raises
+    ------
+    ValueError
+        If no available filename is found after 1000 attempts.
+    """
     for i in range(1000):
         suffix = f"_{i:03d}"
         filename = f"{base_name}{suffix}.{extension}"
@@ -439,12 +463,23 @@ def get_unique_filename(base_name: str, extension: str) -> str:
 
 
 def nfss_family_id(font: dict) -> str:
-    """Return a deterministic NFSS-safe identifier for a font (used as temporary family).
+    """
+    Return a deterministic NFSS-safe identifier for a font.
 
-    Uses a stable SHA-256 digest of:
+    The identifier is derived from a stable SHA-256 digest of:
         <identity.file>#<ttc_index>
 
-    Ensures deterministic output across runs and TRACE modes.
+    Parameters
+    ----------
+    font : dict
+        Font descriptor dictionary containing at least an `identity`
+        mapping with optional `file` and `ttc_index` fields.
+
+    Returns
+    -------
+    str
+        Deterministic identifier prefixed with "FS" and truncated to
+        10 hexadecimal characters.
     """
     identity = font.get("identity", {}) or {}
     file_path = identity.get("file", "")
@@ -456,10 +491,20 @@ def nfss_family_id(font: dict) -> str:
 
 
 def group_fonts_by_family(fonts: list[dict]) -> list[dict]:
-    """Reduce a list of font entries to one entry per family.
+    """
+    Reduce a list of font entries to one entry per family.
 
-    Keeps the first encountered font for each family (usually Regular or
-    `ttc_index` 0). Preserves order of first occurrence.
+    Parameters
+    ----------
+    fonts : list[dict]
+        List of font descriptor dictionaries.
+
+    Returns
+    -------
+    list[dict]
+        List containing a single representative font for each family.
+        The first encountered font per family is preserved, and the
+        order of first occurrence is maintained.
     """
     families: OrderedDict[str, Any] = OrderedDict()
     for font in fonts:
@@ -487,10 +532,27 @@ def group_fonts_by_family(fonts: list[dict]) -> list[dict]:
 
 def load_font_inventory(path: Path) -> list[dict]:
     """
-    Load inventory JSON using the same validation logic as the strict pipeline.
+    Load and validate a Fontshow inventory file.
 
-    This wrapper preserves the exception-based contract expected by library
-    callers while delegating validation to `_load_inventory()`.
+    Parameters
+    ----------
+    path : pathlib.Path
+        Path to the inventory JSON file.
+
+    Returns
+    -------
+    list[dict]
+        List of normalized font descriptor dictionaries.
+
+    Raises
+    ------
+    RuntimeError
+        If validation fails or the inventory is incompatible.
+
+    Notes
+    -----
+    Delegates strict validation to `_load_inventory()` while preserving
+    the exception-based contract expected by library callers.
     """
     rc, fonts = _load_inventory(path, require_platform=False)
 
@@ -503,10 +565,26 @@ def load_font_inventory(path: Path) -> list[dict]:
 
 def as_font_desc_list(fonts: Sequence[object]) -> list[dict[str, object]]:
     """
-    Normalize font descriptor list.
+    Normalize a sequence of font descriptor objects.
 
-    This function expects a list of font descriptor objects. Legacy coercion is
-    not supported.
+    Parameters
+    ----------
+    fonts : collections.abc.Sequence[object]
+        Sequence expected to contain font descriptor dictionaries.
+
+    Returns
+    -------
+    list[dict[str, object]]
+        List of validated font descriptor dictionaries.
+
+    Raises
+    ------
+    TypeError
+        If any element in `fonts` is not a dictionary.
+
+    Notes
+    -----
+    Legacy coercion of non-dictionary entries is not supported.
     """
     out: list[dict[str, object]] = []
     for f in fonts:
@@ -519,14 +597,25 @@ def as_font_desc_list(fonts: Sequence[object]) -> list[dict[str, object]]:
 
 def _normalize_inventory_paths(inventory: dict) -> None:
     """
-    Normalize inventory font entries so that identity.file is always present
-    when a file path is available.
+    Normalize inventory font entries so that `identity.file` is present when
+    a file path is available.
 
-    This function:
-    - does not modify schema version
-    - does not delete fields
-    - does not emit warnings
-    - is idempotent
+    Parameters
+    ----------
+    inventory : dict
+        Inventory dictionary expected to contain a `fonts` list with font
+        descriptor mappings.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    - Does not modify the schema version.
+    - Does not delete fields.
+    - Does not emit warnings.
+    - Operation is idempotent.
     """
 
     fonts = inventory.get("fonts", [])
@@ -544,7 +633,20 @@ def _normalize_inventory_paths(inventory: dict) -> None:
 
 
 def font_family(font: dict[str, object]) -> str:
-    """Best-effort family name for LaTeX rendering and sorting."""
+    """
+    Return a best-effort font family name for rendering and sorting.
+
+    Parameters
+    ----------
+    font : dict[str, object]
+        Font descriptor dictionary possibly containing an `identity`
+        mapping with `family`, `postscript_name`, or `fullname`.
+
+    Returns
+    -------
+    str
+        Resolved family name if available, otherwise "Unknown Font".
+    """
     ident = font.get("identity", {}) if isinstance(font, dict) else {}
     if not isinstance(ident, dict):
         return "Unknown Font"
@@ -555,6 +657,21 @@ def font_family(font: dict[str, object]) -> str:
 
 
 def choose_sample_language(font: dict) -> str | None:
+    """
+    Choose a representative language code for a font.
+
+    Parameters
+    ----------
+    font : dict
+        Font descriptor dictionary possibly containing `inference`
+        and `coverage` sections with language lists.
+
+    Returns
+    -------
+    str | None
+        First inferred language if available; otherwise the first
+        declared coverage language; otherwise None.
+    """
     inf = font.get("inference", {}) or {}
     langs = inf.get("languages", []) or []
     if langs:
@@ -567,9 +684,22 @@ def choose_sample_text(font: FontRef) -> str | None:
     """
     Choose a sample text for rendering.
 
+    Parameters
+    ----------
+    font : FontRef
+        Font descriptor containing optional embedded sample text and
+        inference metadata.
+
+    Returns
+    -------
+    str | None
+        Selected sample text, or None if no suitable text is available.
+
+    Notes
+    -----
     Priority:
-    1. Embedded sample text extracted from the font itself,
-       but only if its language matches the primary inferred language.
+    1. Embedded sample text extracted from the font, only if its language
+       matches the primary inferred language.
     2. Inferred language-based sample text (fallback).
     """
 
@@ -604,6 +734,23 @@ def choose_sample_text(font: FontRef) -> str | None:
 
 
 def font_type_label(font: dict) -> str:
+    """
+    Classify font type for labeling purposes.
+
+    Parameters
+    ----------
+    font : dict
+        Font descriptor dictionary containing an optional `classification`
+        section.
+
+    Returns
+    -------
+    str
+        One of:
+        - "EMOJI" if the font is classified as emoji
+        - "DECORATIVE" if classified as decorative
+        - "TEXT" otherwise
+    """
     cls = font.get("classification", {}) or {}
     if cls.get("is_emoji"):
         return "EMOJI"
@@ -613,6 +760,21 @@ def font_type_label(font: dict) -> str:
 
 
 def primary_script(font: dict) -> str | None:
+    """
+    Determine the primary script associated with a font.
+
+    Parameters
+    ----------
+    font : dict
+        Font descriptor dictionary possibly containing `inference`
+        and `coverage` sections with script lists.
+
+    Returns
+    -------
+    str | None
+        First inferred script if available; otherwise the first declared
+        coverage script; otherwise None.
+    """
     inf = font.get("inference", {}) or {}
     scripts = inf.get("scripts", []) or []
     if scripts:
@@ -622,6 +784,23 @@ def primary_script(font: dict) -> str | None:
 
 
 def script_label(font: dict, max_scripts: int = 2) -> str:
+    """
+    Build a short uppercase label summarizing font scripts.
+
+    Parameters
+    ----------
+    font : dict
+        Font descriptor dictionary possibly containing `inference`
+        and `coverage` sections with script lists.
+    max_scripts : int, optional
+        Maximum number of scripts to include in the label (default is 2).
+
+    Returns
+    -------
+    str
+        Uppercase comma-separated script label, or "UNKNOWN" if no script
+        information is available.
+    """
     inf = font.get("inference", {}) or {}
     scripts = inf.get("scripts", []) or []
     if not scripts:
@@ -632,6 +811,20 @@ def script_label(font: dict, max_scripts: int = 2) -> str:
 
 
 def language_label(font: dict) -> str:
+    """
+    Build an uppercase language label for a font.
+
+    Parameters
+    ----------
+    font : dict
+        Font descriptor dictionary used to determine a representative
+        language via `choose_sample_language()`.
+
+    Returns
+    -------
+    str
+        Uppercase language code if available, otherwise "N/A".
+    """
     lang = choose_sample_language(font)
     return lang.upper() if lang else "N/A"
 
@@ -640,9 +833,22 @@ def render_badges(font: dict[str, object]) -> str:
     """
     Render informational badges for a font.
 
-    Badges are ASCII-only and typeset in monospace to avoid bidi
-    and script-direction issues. The returned string is valid LaTeX
-    and may be empty.
+    Parameters
+    ----------
+    font : dict[str, object]
+        Font descriptor dictionary used to extract script, language,
+        and type information.
+
+    Returns
+    -------
+    str
+        LaTeX-formatted string containing ASCII-only badges rendered in
+        monospace. May be an empty string if no badge data is available.
+
+    Notes
+    -----
+    Badges are ASCII-only and typeset in monospace to avoid bidi and
+    script-direction issues.
     """
     scripts = script_label(font)
     languages = language_label(font)
@@ -665,6 +871,21 @@ def render_badges(font: dict[str, object]) -> str:
 
 
 def render_sample_text(font: dict) -> str | None:
+    """
+    Produce a sample text string appropriate for the font classification.
+
+    Parameters
+    ----------
+    font : dict
+        Font descriptor dictionary containing optional `classification`
+        and rendering metadata.
+
+    Returns
+    -------
+    str | None
+        Sample text suitable for rendering, or None if no appropriate
+        sample text can be determined.
+    """
     cls = font.get("classification", {}) or {}
     fam = font_family(font)
     if cls.get("is_emoji"):
@@ -676,13 +897,28 @@ def render_sample_text(font: dict) -> str | None:
 
 def render_sample_code(font: dict, fam: str) -> str:
     """
-    Build the LaTeX snippet for the sample.
+    Build the LaTeX snippet used to render the font sample.
 
-    For sample rendering we MUST be conservative:
-    - Never request Bold / Italic / BI shapes.
-    - Never propagate weight/width/style inferred metadata.
-    - For RTL scripts use TestNonLatin (polyglossia + harfbuzz).
-    - For LTR scripts use a minimal, NFSS-safe fontspec call.
+    Parameters
+    ----------
+    font : dict
+        Font descriptor dictionary containing classification and
+        inference metadata.
+    fam : str
+        Font family name used for LaTeX rendering.
+
+    Returns
+    -------
+    str
+        LaTeX code snippet rendering the sample text for the font.
+
+    Notes
+    -----
+    Rendering constraints:
+    - Never request Bold / Italic / BoldItalic shapes.
+    - Do not propagate inferred weight/width/style metadata.
+    - For RTL scripts use `TestNonLatin` (polyglossia + harfbuzz).
+    - For LTR scripts use a minimal, NFSS-safe `fontspec` invocation.
     """
     log_trace_cat(
         log,
@@ -736,10 +972,19 @@ def render_sample_code(font: dict, fam: str) -> str:
 
 
 def clean_font_name(name: str) -> str:
-    """Normalize a raw font name to a family-like base name.
+    """
+    Normalize a raw font name to a base family-like name.
 
-    Removes parenthetical hints like `(TrueType)`, and strips common
-    variant suffixes (Bold, Italic, etc.).
+    Parameters
+    ----------
+    name : str
+        Raw font name as obtained from system sources.
+
+    Returns
+    -------
+    str
+        Normalized base name with parenthetical hints removed and
+        common variant suffixes (e.g., Bold, Italic) stripped.
     """
     clean_name = re.sub(r"\s*\((TrueType|OpenType|True Type|Type 1)\)\s*$", "", name)
 
@@ -748,10 +993,22 @@ def clean_font_name(name: str) -> str:
 
 
 def get_installed_fonts_windows() -> list[str]:
-    """Return a sorted list of installed font family names on Windows.
+    """
+    Return a sorted list of installed font family names on Windows.
 
-    The function reads the Windows registry and normalizes names via
-    `clean_font_name`. Excluded names from `EXCLUDED_FONTS` are filtered out.
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[str]
+        Sorted list of normalized font family names discovered in the
+        Windows registry, excluding entries listed in `EXCLUDED_FONTS`.
+
+    Notes
+    -----
+    Font names are normalized using `clean_font_name()`.
     """
     log_info("Sistema: Windows. Scansione registro...")
     font_list: set[str] = set()
@@ -780,10 +1037,24 @@ def get_installed_fonts_windows() -> list[str]:
 
 
 def get_font_details_windows():
-    """Return diagnostic details for installed Windows fonts (for tests).
+    """
+    Return diagnostic details for installed Windows fonts.
 
-    The returned list contains small dicts with `raw_line`, `extracted_names`
-    and `base_names` useful for debugging parsing logic.
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[dict[str, object]]
+        List of dictionaries containing:
+        - "raw_line": original registry entry name
+        - "extracted_names": list with original name
+        - "base_names": list with normalized base name
+
+    Notes
+    -----
+    Intended for testing and debugging font parsing logic.
     """
     details: list[dict[str, object]] = []
     registry_paths_user = [
@@ -816,10 +1087,20 @@ def get_font_details_windows():
 
 
 def extract_font_family(line):
-    """Extract the family portion from a `fc-list` line.
+    """
+    Extract the family portion from a `fc-list` output line.
 
-    Example input: '/usr/share/fonts/foo.ttf:Family Name:style'
-    Returns the family part (comma-separated families are left intact).
+    Parameters
+    ----------
+    line : str
+        A single line from `fc-list` output in the form:
+        "path:family:style" or "path:family".
+
+    Returns
+    -------
+    str
+        Extracted family string. Comma-separated families are preserved.
+        Returns an empty string if extraction fails.
     """
     parts = line.split(":")
 
@@ -836,9 +1117,22 @@ def extract_font_family(line):
 
 
 def get_installed_fonts_linux() -> list[str]:
-    """Return a sorted list of installed font family names on Linux using `fc-list`.
+    """
+    Return a sorted list of installed font family names on Linux using `fc-list`.
 
-    Excluded families listed in `EXCLUDED_FONTS` are filtered out.
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[str]
+        Sorted list of normalized font family names discovered via
+        `fc-list`, excluding entries listed in `EXCLUDED_FONTS`.
+
+    Notes
+    -----
+    Font discovery relies on the `fc-list` command from fontconfig.
     """
     log_info("Sistema: Linux. Uso 'fc-list' per l'estrazione dei font...")
 
@@ -875,10 +1169,24 @@ def get_installed_fonts_linux() -> list[str]:
 
 
 def get_font_details_linux() -> list[dict]:
-    """Return diagnostic details for installed Linux fonts (for tests).
+    """
+    Return diagnostic details for installed Linux fonts.
 
-    Each item contains `raw_line`, `extracted_names` and `base_names` for
-    easier inspection while tuning parsers.
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[dict]
+        List of dictionaries containing:
+        - "raw_line": original `fc-list` output line
+        - "extracted_names": parsed family names
+        - "base_names": normalized base names
+
+    Notes
+    -----
+    Intended for testing and debugging font parsing logic.
     """
     from time import perf_counter
 
@@ -947,9 +1255,18 @@ def get_font_details_linux() -> list[dict]:
 
 
 def get_installed_fonts() -> list[str]:
-    """Dispatch to platform-specific font discovery.
+    """
+    Dispatch to platform-specific font discovery.
 
-    Returns a sorted list of family names or an empty list on unsupported OS.
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[str]
+        Sorted list of discovered font family names for the current platform,
+        or an empty list if the platform is unsupported.
     """
     if IS_WINDOWS:
         return get_installed_fonts_windows()
@@ -965,11 +1282,21 @@ def generate_test_output(
     limit: int | None = None,
     filter_test: bool = False,
 ) -> None:
-    """Produce a small text file with parsing details for manual inspection.
+    """
+    Produce a small text file with parsing diagnostics for manual inspection.
 
-    Args:
-        limit: if positive, limit first N items; if negative, take last |N|.
-        filter_test: if True, keep only fonts matching `TEST_FONTS` substrings.
+    Parameters
+    ----------
+    limit : int | None, optional
+        If positive, keep the first N items; if negative, keep the last |N|
+        items; if None, no limit is applied.
+    filter_test : bool, optional
+        If True, include only fonts whose names match substrings listed
+        in `TEST_FONTS`.
+
+    Returns
+    -------
+    None
     """
     if IS_LINUX:
         details = get_font_details_linux()
@@ -1013,12 +1340,20 @@ def generate_test_output(
 
 
 def generate_latex(font_list: list[dict]) -> str:
-    """Generate the full LaTeX document for the provided font descriptors.
-
-    The input must be a list of descriptor objects (as produced by
-    `parse_font_inventory.py`).
     """
+    Generate the full LaTeX document for the provided font descriptors.
 
+    Parameters
+    ----------
+    font_list : list[dict]
+        List of normalized font descriptor dictionaries as produced by
+        `parse_font_inventory`.
+
+    Returns
+    -------
+    str
+        Complete LaTeX document as a string.
+    """
     font_list = as_font_desc_list(font_list)
 
     # --- DEDUPLICATION BY FAMILY ---
@@ -1066,9 +1401,20 @@ def generate_latex(font_list: list[dict]) -> str:
 
 def font_matches_test_set(font_name: str, test_fonts: set[str]) -> bool:
     """
-    Return True if the given font name matches TEST_FONTS.
+    Check whether a font name matches the configured test font set.
 
-    Matching is currently case-insensitive and substring-based.
+    Parameters
+    ----------
+    font_name : str
+        Font family name to evaluate.
+    test_fonts : set[str]
+        Set of font name substrings used for matching.
+
+    Returns
+    -------
+    bool
+        True if any element of `test_fonts` is a case-insensitive substring
+        of `font_name`; otherwise False.
     """
     lname = font_name.lower()
     return any(t.lower() in lname for t in test_fonts)
@@ -1092,7 +1438,16 @@ def font_matches_test_set(font_name: str, test_fonts: set[str]) -> bool:
 #
 def build_parser(parser: argparse.ArgumentParser) -> None:
     """
-    Register dump-fonts CLI arguments on an existing parser.
+    Register create-catalog CLI arguments on an existing parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Argument parser to be configured with create-catalog options.
+
+    Returns
+    -------
+    None
     """
     parser.description = "Generate system font catalog in LaTeX"
     parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
@@ -1145,7 +1500,18 @@ def register_cli(parser) -> None:
     """
     Register create-catalog CLI arguments.
 
-    This function is used by the top-level fontshow dispatcher.
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Argument parser to be configured for the create-catalog command.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    Used by the top-level Fontshow dispatcher.
     """
     build_parser(parser)
     parser.set_defaults(func=main)
@@ -1160,10 +1526,21 @@ def _configure_test_fonts(args) -> set[str]:
     """
     Build the effective TEST_FONTS set from CLI arguments.
 
-    Semantics preserved:
-    - "__DEFAULT__" enables DEFAULT_TEST_FONTS
-    - explicit values extend the set
-    - returns the final TEST_FONTS set
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments containing the `test_font` option.
+
+    Returns
+    -------
+    set[str]
+        Final set of font names to be used for test filtering.
+
+    Notes
+    -----
+    Semantics:
+    - "__DEFAULT__" enables DEFAULT_TEST_FONTS.
+    - Explicit values extend the set.
     """
     cli_fonts: set[str] = set()
     use_default = False
@@ -1186,12 +1563,22 @@ def _configure_test_fonts(args) -> set[str]:
 
 def _handle_list_test_fonts(test_fonts: set[str]) -> int:
     """
-    Implements --list-test-fonts behavior.
+    Implement the --list-test-fonts CLI behavior.
 
-    IMPORTANT:
-    - Must ignore --quiet by contract
-    - Lists configured TEST_FONTS and matching installed fonts
-    - Returns exit code (0)
+    Parameters
+    ----------
+    test_fonts : set[str]
+        Effective set of test font names used for filtering.
+
+    Returns
+    -------
+    int
+        Exit code (0 on success).
+
+    Notes
+    -----
+    - Must ignore --quiet by contract.
+    - Lists configured TEST_FONTS and matching installed fonts.
     """
     log_info("TEST_FONTS configuration:")
 
@@ -1226,10 +1613,16 @@ def _prepare_output_filename() -> tuple[int, str | None]:
     """
     Build a unique output filename based on platform and DATE_STR.
 
-    Returns:
-        (exit_code, filename)
-        exit_code == 0 → success
-        exit_code == 1 → error already logged
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    tuple[int, str | None]
+        A pair (exit_code, filename):
+        - exit_code == 0 → success, filename contains the generated name.
+        - exit_code == 1 → error already logged, filename is None.
     """
     base_name = f"fontshow_{platform.system()}_{DATE_STR}"
 
@@ -1249,12 +1642,24 @@ def _prepare_output_filename() -> tuple[int, str | None]:
 
 def _resolve_inventory_path(args) -> Path | None:
     """
-    Resolve the inventory file path following CLI semantics.
+    Resolve the inventory file path according to CLI semantics.
 
-    Priority:
-    1. --inventory explicit path
-    2. DEFAULT_INVENTORY if exists
-    3. None → error (inventory required)
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments containing the `inventory` option.
+
+    Returns
+    -------
+    pathlib.Path | None
+        Resolved inventory path if found, otherwise None.
+
+    Notes
+    -----
+    Resolution priority:
+    1. Explicit --inventory path.
+    2. DEFAULT_INVENTORY if it exists.
+    3. None if no valid inventory can be resolved.
     """
     if args.inventory:
         return Path(args.inventory)
@@ -1267,7 +1672,37 @@ def _resolve_inventory_path(args) -> Path | None:
 
 
 def _inventory_platform_mismatch(inv_env: dict, runtime: dict) -> list[str]:
+    """
+    Compare inventory and runtime platform metadata and report mismatches.
+
+    Parameters
+    ----------
+    inv_env : dict
+        Inventory run-environment metadata.
+    runtime : dict
+        Runtime platform metadata collected from the current system.
+
+    Returns
+    -------
+    list[str]
+        List of metadata keys that differ between inventory and runtime.
+        Empty if no mismatch is detected.
+    """
+
     def _norm(v: object) -> str:
+        """
+        Normalize a value for platform metadata comparison.
+
+        Parameters
+        ----------
+        v : object
+            Value to normalize.
+
+        Returns
+        -------
+        str
+            Lowercased and stripped string representation of the value.
+        """
         return str(v).strip().lower()
 
     mismatches: list[str] = []
@@ -1286,12 +1721,43 @@ def _inventory_platform_mismatch(inv_env: dict, runtime: dict) -> list[str]:
 
 
 def _enforce_platform(inv_env: dict) -> tuple[bool, list[str]]:
+    """
+    Enforce inventory/platform compatibility.
+
+    Parameters
+    ----------
+    inv_env : dict
+        Inventory run-environment metadata.
+
+    Returns
+    -------
+    tuple[bool, list[str]]
+        A pair (ok, mismatches):
+        - ok is True if inventory matches runtime platform.
+        - mismatches contains the differing metadata keys.
+    """
     runtime = collect_platform_metadata()
     mismatches = _inventory_platform_mismatch(inv_env, runtime)
     return (not mismatches), mismatches
 
 
 def _validate_fonts_structure(inventory: dict) -> tuple[bool, list]:
+    """
+    Validate the structure of the `fonts` section in an inventory.
+
+    Parameters
+    ----------
+    inventory : dict
+        Inventory dictionary expected to contain a `fonts` list.
+
+    Returns
+    -------
+    tuple[bool, list]
+        A pair (ok, fonts):
+        - ok is True if the `fonts` section exists, is a non-empty list,
+          and all elements are dictionaries.
+        - fonts is the extracted list (or an empty list on failure).
+    """
     if "fonts" not in inventory:
         return False, []
 
@@ -1312,18 +1778,33 @@ def _load_inventory(
     inv_path: Path, *, require_platform: bool = True
 ) -> tuple[int, list]:
     """
-    Load and strictly validate inventory file.
+    Load and strictly validate an inventory file.
 
-    Validation rejects invalid schema, missing required metadata, and
-    platform-incompatible inventories.
+    Parameters
+    ----------
+    inv_path : pathlib.Path
+        Path to the inventory JSON file.
+    require_platform : bool, optional
+        If True, enforce platform compatibility between inventory metadata
+        and the current runtime environment.
 
-    Returns:
-        (exit_code, fonts)
-        exit_code == 0 → success
-        exit_code == 1 → validation or load error (already logged)
+    Returns
+    -------
+    tuple[int, list]
+        A pair (exit_code, fonts):
+        - exit_code == 0 → success, fonts contains validated descriptors.
+        - exit_code == 1 → validation or load error (already logged), fonts empty.
 
-    Notes:
-        Validation is always strict; non-strict operation is not supported.
+    Notes
+    -----
+    Validation rejects:
+    - Invalid schema version.
+    - Missing required metadata.
+    - Platform-incompatible inventories (when require_platform is True).
+    - Malformed or empty `fonts` section.
+    - Semantic validation failures.
+
+    Validation is always strict; non-strict operation is not supported.
     """
     try:
         with inv_path.open(encoding="utf-8") as f:
@@ -1413,11 +1894,22 @@ def _load_inventory(
 
 def _run_inventory_diagnostics(fonts: list) -> None:
     """
-    Consistency diagnostics for inventory-based execution.
+    Run consistency diagnostics for inventory-based execution.
 
-    Applies only when:
-    - inventory mode active
-    - not quiet
+    Parameters
+    ----------
+    fonts : list
+        List of validated font descriptor dictionaries.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    Applies only when inventory mode is active and CLI is not in quiet mode.
+    Emits informational or warning messages if language coverage is missing
+    for a significant fraction of fonts.
     """
     missing_lang_count = 0
     total_fonts = 0
@@ -1461,7 +1953,21 @@ def _run_inventory_diagnostics(fonts: list) -> None:
 
 def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
     """
-    Filter and prepare fonts for catalog generation using normalized descriptors.
+    Filter and prepare fonts for catalog generation.
+
+    Parameters
+    ----------
+    fonts : list
+        List of font descriptor objects.
+    args : argparse.Namespace
+        Parsed CLI arguments controlling filtering and limiting.
+    test_fonts : set[str]
+        Set of font name substrings used for test filtering.
+
+    Returns
+    -------
+    list
+        List of filtered, sorted, and deduplicated font descriptor dictionaries.
     """
     log_trace_cat(
         log,
@@ -1503,6 +2009,17 @@ def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
 def _write_latex_output(output_filename: str, latex_content: str) -> None:
     """
     Write generated LaTeX catalog to disk and emit user messages.
+
+    Parameters
+    ----------
+    output_filename : str
+        Target filename for the LaTeX document.
+    latex_content : str
+        Full LaTeX document content to be written.
+
+    Returns
+    -------
+    None
     """
     log_info(f"Writing file {output_filename}...")
 
@@ -1518,20 +2035,33 @@ def _write_latex_output(output_filename: str, latex_content: str) -> None:
 
 def run_create_catalog(args) -> int:
     """
-    Core implementation for create-catalog.
+    Execute the create-catalog workflow.
 
-    Refactored structure:
-    - Configure TEST_FONTS
-    - Handle --list-test-fonts early exit
-    - Prepare output filename
-    - Resolve font source (inventory or system)
-    - Run diagnostics (inventory mode only)
-    - Filter + prepare fonts
-    - Generate and write LaTeX output
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments controlling catalog generation.
 
-    Behavior identical to pre-refactor implementation.
+    Returns
+    -------
+    int
+        Process exit code:
+        - 0 on success
+        - non-zero on failure
+
+    Notes
+    -----
+    Workflow:
+    - Configure TEST_FONTS.
+    - Handle --list-test-fonts early exit.
+    - Prepare output filename.
+    - Resolve inventory source.
+    - Run diagnostics (inventory mode only).
+    - Filter and prepare fonts.
+    - Generate and write LaTeX output.
+
+    Behavior is identical to the pre-refactor implementation.
     """
-
     global TEST_FONTS
 
     # --------------------------------------------------------------
@@ -1623,17 +2153,42 @@ def _run_create_catalog(args) -> int:
     """
     Indirection layer for CLI testing.
 
-    This function exists so CLI tests can monkeypatch it
-    without touching the core implementation.
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments forwarded to the core implementation.
+
+    Returns
+    -------
+    int
+        Exit code returned by `run_create_catalog`.
+
+    Notes
+    -----
+    Exists so CLI tests can monkeypatch this function without
+    modifying the core implementation.
     """
     return run_create_catalog(args)
 
 
 def run(args):
     """
-    Public CLI entrypoint (kept stable).
-    Thin wrapper around the injectable runner.
-    Needed for tests via the top-level dispatcher.
+    Public CLI entrypoint for create-catalog.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Exit code returned by `main`.
+
+    Notes
+    -----
+    Thin wrapper around `main` kept stable for compatibility with
+    the top-level dispatcher and tests.
     """
     return main(args)
 
@@ -1642,9 +2197,21 @@ def main(args) -> int:
     """
     CLI entrypoint for create-catalog.
 
-    Handles user-facing output and delegates execution to the core.
-    """
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments controlling catalog execution.
 
+    Returns
+    -------
+    int
+        Process exit code returned by the catalog workflow.
+
+    Notes
+    -----
+    Handles user-facing output and delegates execution to the core
+    implementation. Unexpected exceptions are converted to exit code 2.
+    """
     set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
 
     try:

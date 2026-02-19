@@ -23,6 +23,33 @@ from fontshow.types import Severity
 
 
 def _is_short_numeric_list(value: Any, *, max_len: int) -> bool:
+    """
+    Determine whether a value is a short numeric list eligible for compact formatting.
+
+    Parameters
+    ----------
+    value : Any
+        Candidate value to inspect.
+    max_len : int
+        Maximum allowed list length for compact one-line formatting.
+
+    Returns
+    -------
+    bool
+        True if the value is:
+        - a list,
+        - non-empty,
+        - length ≤ max_len,
+        - composed exclusively of int or float (excluding bool),
+        otherwise False.
+
+    Notes
+    -----
+    - Boolean values are explicitly excluded even though bool is a subclass of int.
+    - Used internally by `dumps_pretty()` to decide whether to collapse
+      numeric arrays onto a single line.
+    - Pure formatting heuristic; does not alter data.
+    """
     if not isinstance(value, list):
         return False
     if len(value) == 0 or len(value) > max_len:
@@ -41,8 +68,47 @@ def dumps_pretty(
     sort_keys: bool = False,
     compact_numeric_lists_max_len: int = 8,
 ) -> str:
-    """Serialize *value* to JSON with stable indentation and compact numeric lists."""
+    """
+    Serialize a Python object to JSON with stable indentation and compact numeric lists.
 
+    Parameters
+    ----------
+    value : Any
+        Python object to serialize.
+    indent : int, default=2
+        Number of spaces per indentation level.
+    ensure_ascii : bool, default=False
+        If True, escape all non-ASCII characters.
+    sort_keys : bool, default=False
+        If True, mapping keys are sorted lexicographically.
+    compact_numeric_lists_max_len : int, default=8
+        Maximum length for numeric lists to be rendered on a single line.
+
+    Returns
+    -------
+    str
+        JSON-formatted string with deterministic layout and trailing newline.
+
+    Notes
+    -----
+    Contract:
+    - Formatting-only function: MUST NOT change data semantics.
+    - Output is deterministic given identical input and parameters.
+    - Always appends a trailing newline.
+
+    Behavior:
+    - Preserves standard JSON indentation style for objects and arrays.
+    - Compacts short numeric lists (e.g., Unicode ranges) onto one line.
+    - Converts `Severity` enums using `Severity.to_json()`.
+    - Converts generic Enum values to lowercase string names.
+    - Supports arbitrary nested structures via recursive rendering.
+    - Logs TRACE diagnostics for formatting lifecycle and compacting decisions.
+
+    Design rationale:
+    - Keeps human-readable structure for large objects.
+    - Avoids vertical bloat for small numeric arrays.
+    - Provides stable output for diff-friendly artifacts.
+    """
     log_trace_cat(
         log,
         "raw",
