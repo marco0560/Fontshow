@@ -1,12 +1,21 @@
 from fontshow.parse_font_inventory import validate_font_entry
-from tests.helpers import minimal_valid_entry
+from tests.helpers import minimal_font_entry_v12
+
+# ============================================================
+# VALID MINIMAL ENTRY
+# ============================================================
 
 
 def test_validate_font_entry_valid_minimal():
-    entry = minimal_valid_entry()
+    entry = minimal_font_entry_v12()
 
     errors = validate_font_entry(entry, index=0)
     assert errors == []
+
+
+# ============================================================
+# NOT A DICT
+# ============================================================
 
 
 def test_validate_font_entry_not_a_dict():
@@ -16,29 +25,57 @@ def test_validate_font_entry_not_a_dict():
     assert errors  # must contain at least one error
 
 
-def test_validate_font_entry_missing_identity_and_base_names():
-    entry = {"identity": {}}
+# ============================================================
+# MISSING REQUIRED FIELDS → FATAL
+# ============================================================
+
+
+def test_validate_font_entry_missing_required_fields():
+    entry = {
+        "path": "/tmp/font.ttf"
+        # missing required structural fields like family/subfamily/etc.
+    }
 
     errors = validate_font_entry(entry, index=0)
-    assert errors  # fatal error expected
+    assert errors  # fatal structural error expected
 
 
-def test_validate_font_entry_missing_identity_but_base_names_present():
-    entry = minimal_valid_entry({"identity": None})
+# ============================================================
+# BASE_NAMES PRESENT → IDENTITY NOT REQUIRED
+# (validator logic)
+# ============================================================
+
+
+def test_validate_font_entry_missing_family_is_fatal():
+    entry = minimal_font_entry_v12()
+    entry.pop("family", None)
+
+    errors = validate_font_entry(entry, index=0)
+    assert errors
+    assert "Missing or invalid 'family'" in errors
+
+
+# ============================================================
+# IDENTITY PRESENT → BASE_NAMES NOT REQUIRED
+# ============================================================
+
+
+def test_validate_font_entry_identity_allows_missing_base_names():
+    entry = minimal_font_entry_v12()
+    entry.pop("base_names", None)
 
     errors = validate_font_entry(entry, index=0)
     assert errors == []
 
 
-def test_validate_font_entry_missing_base_names_but_identity_present():
-    entry = minimal_valid_entry({"base_names": None})
+# ============================================================
+# IDENTITY WRONG TYPE
+# ============================================================
+
+
+def test_validate_font_entry_extra_unknown_field_is_ignored():
+    entry = minimal_font_entry_v12()
+    entry["identity"] = "not a dict"  # unknown field under schema 1.2
 
     errors = validate_font_entry(entry, index=0)
     assert errors == []
-
-
-def test_validate_font_entry_identity_wrong_type():
-    entry = {"identity": "not a dict", "base_names": ["Name"]}
-
-    errors = validate_font_entry(entry, index=0)
-    assert errors  # structural error

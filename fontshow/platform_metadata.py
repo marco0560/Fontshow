@@ -37,20 +37,28 @@ def collect_platform_metadata() -> dict[str, Any]:
     This function is the SINGLE SOURCE OF TRUTH for runtime platform
     metadata across dump → parse → create_catalog.
 
-    Output structure MUST remain schema-compatible.
+    Output structure MUST remain schema-compatible (schema 1.2).
     """
 
     ctx = _detect_execution_context()
 
+    os_name = platform.system() or "unknown"
+    os_release = platform.release() or "unknown"
+    kernel = platform.version() or "unknown"
+    machine = platform.machine() or "unknown"
+    python_version = platform.python_version() or "unknown"
+    hostname = socket.gethostname() or "unknown"
+
     return {
-        "os": platform.system(),
-        "kernel": platform.release(),
+        # ---- Required by schema ----
+        "os": os_name,
+        "os_release": os_release,
+        "kernel": kernel,
+        "machine": machine,
+        "python_version": python_version,
+        "hostname": hostname,
+        "execution_context": ctx.to_json(),  # MUST be string per schema
+        # ---- Allowed additional fields (schema allows additionalProperties) ----
         "platform": platform.platform(),
-        "machine": platform.machine(),
-        "python_version": platform.python_version(),
-        "hostname": socket.gethostname(),
         "username": getpass.getuser(),
-        "execution_context": {
-            "type": ctx.to_json(),
-        },
     }

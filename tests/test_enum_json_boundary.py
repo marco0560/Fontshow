@@ -25,7 +25,7 @@ def test_enum_written_as_string():
 
     warnings = data["warnings"]
     assert isinstance(warnings[0]["severity"], str)
-    assert warnings[0]["severity"] == "warn"
+    assert warnings[0]["severity"] == "warning"
     assert warnings[1]["severity"] == "error"
 
 

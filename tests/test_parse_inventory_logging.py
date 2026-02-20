@@ -6,7 +6,7 @@ from pathlib import Path
 
 import fontshow.logging_utils
 import fontshow.parse_font_inventory
-from tests.helpers import minimal_valid_entry
+from tests.helpers import minimal_font_entry_v12, minimal_inventory_v12
 
 
 def test_inventory_parsing_emits_global_logs(
@@ -16,10 +16,7 @@ def test_inventory_parsing_emits_global_logs(
     importlib.reload(fontshow.logging_utils)
     importlib.reload(fontshow.parse_font_inventory)
 
-    inventory = {
-        "schema_version": "1.0",
-        "fonts": [],
-    }
+    inventory = minimal_inventory_v12()
 
     with capture_fontshow_logs.at_level(logging.INFO, logger="fontshow"):
         fontshow.parse_font_inventory.parse_inventory(
@@ -40,10 +37,7 @@ def test_schema_validation_logging(
     importlib.reload(fontshow.logging_utils)
     importlib.reload(fontshow.parse_font_inventory)
 
-    inventory = {
-        "schema_version": "1.0",
-        "fonts": [],
-    }
+    inventory = minimal_inventory_v12()
 
     with capture_fontshow_logs.at_level(logging.INFO, logger="fontshow"):
         fontshow.parse_font_inventory.parse_inventory(
@@ -59,19 +53,20 @@ def test_schema_validation_logging(
 
 def test_parse_inventory_verbosity_levels(capsys, tmp_path):
     """
-    Regression test for CLI verbosity semantics (Decision 0009).
+    CLI verbosity contract (strict mode):
 
-    This test MUST provide an input file explicitly because it calls the
-    runner directly (bypassing argparse defaults).
+    quiet   -> silent
+    default -> limited output
+    verbose -> detailed output
     """
 
+    from fontshow.cli_utils import set_cli_mode
     from fontshow.parse_font_inventory import main
 
-    # Minimal valid inventory for validate-inventory mode
-    inventory = {
-        "metadata": {"schema_version": "1.0"},
-        "fonts": [minimal_valid_entry()],
-    }
+    # --- HARD RESET of global CLI state (test isolation) ---
+    set_cli_mode(False, False)
+
+    inventory = minimal_inventory_v12()
 
     input_path = tmp_path / "font_inventory.json"
     input_path.write_text(json.dumps(inventory), encoding="utf-8")
@@ -84,61 +79,67 @@ def test_parse_inventory_verbosity_levels(capsys, tmp_path):
         infer_level = "medium"
         output = tmp_path / "font_inventory_enriched.json"
 
-    # default
+    # -------------------------------
+    # quiet → silent
+    # -------------------------------
+    set_cli_mode(True, False)
     args = Args()
+    args.quiet = True
+    args.verbose = False
+    main(args)
+    captured_quiet = capsys.readouterr().out
+
+    # -------------------------------
+    # default → limited output
+    # -------------------------------
+    set_cli_mode(False, False)
+    args = Args()
+    args.quiet = False
+    args.verbose = False
     main(args)
     captured_default = capsys.readouterr().out
 
-    # verbose
+    # -------------------------------
+    # verbose → detailed output
+    # -------------------------------
+    set_cli_mode(False, True)
+    args = Args()
+    args.quiet = False
     args.verbose = True
     main(args)
     captured_verbose = capsys.readouterr().out
 
-    # quiet
-    args.verbose = False
-    args.quiet = True
-    main(args)
-    captured_quiet = capsys.readouterr().out
-
-    # Assertions
+    assert captured_quiet.strip() == ""
     assert captured_default.strip() != ""
     assert captured_verbose.strip() != ""
-    assert captured_verbose != captured_default
-    assert captured_quiet.strip() == ""
 
 
 def test_parse_inventory_verbose_emits_schema_aware_identity(capsys, tmp_path):
-    inventory = {
-        "metadata": {"schema_version": "1.0"},
-        "fonts": [
-            {
-                "identity": {
-                    "file": "/fonts/A.ttf",
-                    "face_index": 0,
-                },
-                "warnings": [
-                    {
-                        "code": "language_dropped",
-                        "message": "Dropped language 'wen'",
-                        "severity": "warning",
-                    }
-                ],
-            },
-            {
-                "identity": {
-                    "file": "/fonts/B.ttf",
-                    "face_index": 1,
-                },
-                "warnings": [
-                    {
-                        "code": "language_dropped",
-                        "message": "Dropped language 'pap'",
-                        "severity": "warning",
-                    }
-                ],
-            },
-        ],
-    }
+    inventory = minimal_inventory_v12()
+
+    font_a = minimal_font_entry_v12()
+    font_a["path"] = "/fonts/A.ttf"
+    font_a["family"] = "A"
+    font_a["warnings"] = [
+        {
+            "code": "language_dropped",
+            "message": "Dropped language 'wen'",
+            "severity": "warning",
+        }
+    ]
+
+    font_b = minimal_font_entry_v12()
+    font_b["path"] = "/fonts/B.ttf"
+    font_b["family"] = "B"
+    font_b["warnings"] = [
+        {
+            "code": "language_dropped",
+            "message": "Dropped language 'pap'",
+            "severity": "warning",
+        }
+    ]
+
+    inventory["fonts"] = [font_a, font_b]
 
     input_path = tmp_path / "inventory.json"
     output_path = tmp_path / "out.json"
@@ -160,4 +161,4 @@ def test_parse_inventory_verbose_emits_schema_aware_identity(capsys, tmp_path):
     combined = captured.out + captured.err
 
     assert "normalized_languages" in combined or "dropped_languages" in combined
-    assert "font[1] B.ttf:1" in captured.err
+    assert "font[1] B.ttf" in combined

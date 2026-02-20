@@ -165,17 +165,34 @@ def stub_dump_fonts(monkeypatch, request):
 
 @pytest.fixture
 def stub_parse_inventory(monkeypatch, request):
+    import copy
+
+    import fontshow.parse_font_inventory as mod
+
     mode = request.param
 
-    def fake_run(_args):
-        if mode == "ok":
-            return 0
-        msg = "parse failed"
-        raise ValueError(msg)
+    def fake_parse_inventory(data, *_args, **_kwargs):
+        if mode == "fail":
+            msg = "parse failed"
+            raise ValueError(msg)
 
-    from fontshow import parse_font_inventory
+        if mode == "boom":
+            msg = "internal error"
+            raise RuntimeError(msg)
 
-    patch_cli_func(monkeypatch, parse_font_inventory, fake_run)
+        # ok
+        return copy.deepcopy(data)
+
+    original_runner = mod.run_parse_font_inventory
+
+    def patched_runner(args, **kwargs):
+        return original_runner(
+            args,
+            parse_inventory_fn=fake_parse_inventory,
+            **kwargs,
+        )
+
+    monkeypatch.setattr(mod, "run_parse_font_inventory", patched_runner)
 
 
 # ---------------------------------------------------------------------------
@@ -199,3 +216,15 @@ def stub_create_catalog(monkeypatch, request):
     from fontshow import create_catalog
 
     monkeypatch.setattr(create_catalog, "main", fake_run)
+
+
+# ---------------------------------------------------------------------------
+# Clean verbosity state between tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _reset_cli_state():
+    from fontshow.cli_utils import set_cli_mode
+
+    set_cli_mode(False, False)

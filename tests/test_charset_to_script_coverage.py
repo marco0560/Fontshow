@@ -25,21 +25,17 @@ def test_parse_inventory_adds_script_coverage_from_charset(enable_fontshow_loggi
 
     importlib.reload(fontshow.parse_font_inventory)
 
-    inventory = {
-        "schema_version": "1.0",
-        "fonts": [
-            {
-                "path": "/fake/font.ttf",
-                "identity": {"family": "Fake", "style": "Regular"},
-                "coverage": {
-                    "charset": {
-                        "source": "fontconfig",
-                        "ranges": [[0x0020, 0x007E]],
-                    }
-                },
-            }
-        ],
+    from tests.helpers import minimal_font_entry_v12, minimal_inventory_v12
+
+    inventory = minimal_inventory_v12()
+    font = minimal_font_entry_v12()
+
+    font["charset"] = {
+        "source": "fontconfig",
+        "ranges": [[0x0020, 0x007E]],
     }
+
+    inventory["fonts"] = [font]
 
     fontshow.parse_font_inventory.parse_inventory(inventory, level="medium")
 

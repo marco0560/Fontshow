@@ -94,7 +94,7 @@ def test_invalid_inventory_structure_raises():
     }
 
     with pytest.raises(ValueError, match="Inventory schema validation failed"):
-        _validate_inventory_schema_strict(data, schema_version="1.2")
+        _validate_inventory_schema_strict(data)
 
 
 def test_invalid_schema_raises_validation_error():
@@ -105,4 +105,4 @@ def test_invalid_schema_raises_validation_error():
     }
 
     with pytest.raises(ValueError, match="Inventory schema validation failed"):
-        _validate_inventory_schema_strict(data, schema_version="1.2")
+        _validate_inventory_schema_strict(data)

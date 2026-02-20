@@ -1711,8 +1711,8 @@ def _inventory_platform_mismatch(inv_env: dict, runtime: dict) -> list[str]:
         if _norm(inv_env.get(key)) != _norm(runtime.get(key)):
             mismatches.append(key)
 
-    inv_ctx = inv_env.get("execution_context", {}).get("type")
-    run_ctx = runtime.get("execution_context", {}).get("type")
+    inv_ctx = inv_env.get("execution_context")
+    run_ctx = runtime.get("execution_context")
 
     if _norm(inv_ctx) != _norm(run_ctx):
         mismatches.append("execution_context")

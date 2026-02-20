@@ -23,6 +23,7 @@ import platform
 import struct
 import subprocess
 import sys
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha1
 from pathlib import Path
@@ -1740,12 +1741,75 @@ def classify_font(
     }
 
 
-def build_font_descriptor(
-    font_path: Path,
-    platform_name: str,
-    fonttools: dict[str, Any],
-    fontconfig: dict[str, Any] | None,
-) -> dict[str, Any]:
+@dataclass(slots=True)
+class FontBuildContext:
+    font_path: Path
+    platform_name: str
+    fonttools: dict[str, Any]
+    fontconfig: dict[str, Any] | None
+
+
+def _normalize_metrics(
+    fonttools,
+    typography,
+    names,
+    identity: tuple[str | None, str | None, str | None, str | None],
+):
+    family, style, fullname, postscript = identity
+
+    family_s = family or "Unknown"
+    style_s = style or "Regular"
+    fullname_s = fullname or f"{family_s} {style_s}"
+    postscript_s = postscript or f"{family_s}-{style_s}".replace(" ", "")
+    version_s = _best_name(names, NAME_ID_VERSION) if names else None
+    version_s = version_s or "unknown"
+
+    units_per_em_i = int(fonttools.get("units_per_em") or 1000)
+    if units_per_em_i < 1:
+        units_per_em_i = 1000
+
+    ascent_i = int(fonttools.get("ascent") or 0)
+    descent_i = int(fonttools.get("descent") or 0)
+
+    weight_i = int(typography.get("weight_class") or 400)
+    weight_i = min(max(weight_i, 1), 1000)
+
+    width_i = int(typography.get("width_class") or 5)
+    width_i = min(max(width_i, 1), 9)
+
+    italic_angle_f = float(fonttools.get("italic_angle") or 0.0)
+    is_fixed_pitch_b = bool(fonttools.get("is_fixed_pitch", False))
+
+    glyph_count_i = max(int(fonttools.get("glyph_count") or 1), 1)
+
+    return (
+        family_s,
+        style_s,
+        fullname_s,
+        postscript_s,
+        version_s,
+        units_per_em_i,
+        ascent_i,
+        descent_i,
+        weight_i,
+        width_i,
+        italic_angle_f,
+        is_fixed_pitch_b,
+        glyph_count_i,
+    )
+
+
+def _compute_specimen(sample_text):
+    specimen_text = sample_text.get("text") if isinstance(sample_text, dict) else ""
+    if not isinstance(specimen_text, str) or not specimen_text.strip():
+        specimen_text = "Aa"
+
+    specimen_glyph_count = max(len(set(specimen_text)), 1)
+
+    return specimen_text, "internal", specimen_glyph_count, None
+
+
+def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
     """Build the canonical per-font descriptor used in the JSON inventory.
 
     This function assembles **all metadata for a single font face** into a
@@ -1787,8 +1851,8 @@ def build_font_descriptor(
         Dictionary representing the canonical font descriptor for the font face.
     """
     names: dict[str, list[str]] = (
-        fonttools.get("names", {})
-        if isinstance(fonttools.get("names", {}), dict)
+        ctx.fonttools.get("names", {})
+        if isinstance(ctx.fonttools.get("names", {}), dict)
         else {}
     )
 
@@ -1803,9 +1867,9 @@ def build_font_descriptor(
     # -------------------------------
     # Embedded sample text (font-level)
     # -------------------------------
-    sample_text = None
+    sample_text = {"source": "font", "text": ""}
     try:
-        samples = extract_sample_text(str(font_path))
+        samples = extract_sample_text(str(ctx.font_path))
         if samples:
             sample_text = {
                 "source": "font",
@@ -1815,7 +1879,7 @@ def build_font_descriptor(
                 "text": samples[0],
             }
     except (OSError, ValueError, UnicodeError):
-        sample_text = None
+        sample_text = {"source": "font", "text": ""}
 
     # -------------------------------
     # FontConfig enrichment (optional)
@@ -1823,34 +1887,15 @@ def build_font_descriptor(
     languages: list[str] = []
     scripts: list[str] = []
     charset: str | None = None
-    decorative = False
-    fc_color = False
-    fc_variable = False
-    if fontconfig:
-        languages = fontconfig.get("languages", []) or []
-        scripts = fontconfig.get("scripts", []) or []
-        charset = fontconfig.get("charset")
-        decorative = bool(fontconfig.get("decorative", False))
-        fc_color = bool(fontconfig.get("color", False))
-        fc_variable = bool(fontconfig.get("variable", False))
-
-    # -------------------------------
-    # Format and container properties
-    # -------------------------------
-    container = fonttools.get("container", detect_font_container(font_path))
-    font_type = fonttools.get("font_type", "Unknown")
-    variable_flags = fonttools.get("variable", {}) or {}
-    variable = bool(
-        variable_flags.get("fvar") or variable_flags.get("STAT") or fc_variable
-    )
-
-    color_tables = fonttools.get("color_tables", []) or []
-    color = bool(fc_color or len(color_tables) > 0)
+    if ctx.fontconfig:
+        languages = ctx.fontconfig.get("languages", []) or []
+        scripts = ctx.fontconfig.get("scripts", []) or []
+        charset = ctx.fontconfig.get("charset")
 
     # -------------------------------
     # Unicode coverage
     # -------------------------------
-    unicode_block = fonttools.get("unicode", {}) or {}
+    unicode_block = ctx.fonttools.get("unicode", {}) or {}
     unicode_max = unicode_block.get("max")
 
     coverage = {
@@ -1860,8 +1905,8 @@ def build_font_descriptor(
             "max": unicode_max,
         },
         "unicode_blocks": (
-            fonttools.get("unicode_blocks", {})
-            if isinstance(fonttools.get("unicode_blocks"), dict)
+            ctx.fonttools.get("unicode_blocks", {})
+            if isinstance(ctx.fonttools.get("unicode_blocks"), dict)
             else {}
         ),
         "scripts": scripts,
@@ -1875,10 +1920,10 @@ def build_font_descriptor(
     typography = {
         "weight_class": None,
         "width_class": None,
-        "opentype_features": fonttools.get("opentype_features", []) or [],
+        "opentype_features": ctx.fonttools.get("opentype_features", []) or [],
     }
 
-    os2 = fonttools.get("os2", {})
+    os2 = ctx.fonttools.get("os2", {})
     if isinstance(os2, dict) and "error" not in os2:
         typography["weight_class"] = os2.get("weight_class")
         typography["width_class"] = os2.get("width_class")
@@ -1886,31 +1931,8 @@ def build_font_descriptor(
     # -------------------------------
     # Format summary and classification
     # -------------------------------
-    format_block = {
-        "container": container,
-        "font_type": font_type,
-        "ttc_index": fonttools.get("ttc_index"),
-        "ttc_count": fonttools.get("ttc_count"),
-        "variable": variable,
-        "color": color,
-        "decorative": decorative,
-    }
 
-    classification = classify_font(format_block, unicode_max)
-
-    # -------------------------------
-    # License and vendor metadata
-    # -------------------------------
-    license_text = _best_name(names, NAME_ID_LICENSE)
-    license_url = _best_name(names, NAME_ID_LICENSE_URL)
-
-    vendor = None
-    embedding_rights = None
-    if isinstance(os2, dict) and "error" not in os2:
-        vendor = os2.get("vendor_id")
-        embedding_rights = os2.get("embedding_rights")
-
-    ttc_index = fonttools.get("ttc_index")
+    ttc_index = ctx.fonttools.get("ttc_index")
 
     # -------------------------------
     # Structural / extraction warnings (schema v1.2)
@@ -1948,7 +1970,7 @@ def build_font_descriptor(
             }
         )
 
-    if fonttools.get("glyph_count") in (None, 0):
+    if ctx.fonttools.get("glyph_count") in (None, 0):
         warnings.append(
             {
                 "code": "missing_glyph_count",
@@ -1975,60 +1997,71 @@ def build_font_descriptor(
             }
         )
 
-    if not fonttools.get("ok", True):
+    if not ctx.fonttools.get("ok", True):
         warnings.append(
             {
                 "code": "fonttools_degraded",
-                "message": fonttools.get("error", "fontTools extraction degraded"),
+                "message": ctx.fonttools.get("error", "fontTools extraction degraded"),
                 "severity": Severity.WARN,
             }
         )
 
+    # -------------------------------
+    # Schema v1.2 required normalizations
+    # -------------------------------
+    (
+        family_s,
+        style_s,
+        fullname_s,
+        postscript_s,
+        version_s,
+        units_per_em_i,
+        ascent_i,
+        descent_i,
+        weight_i,
+        width_i,
+        italic_angle_f,
+        is_fixed_pitch_b,
+        glyph_count_i,
+    ) = _normalize_metrics(
+        ctx.fonttools,
+        typography,
+        names,
+        (family, style, fullname, postscript),
+    )
+
+    (
+        specimen_text,
+        specimen_strategy,
+        specimen_glyph_count,
+        specimen_rejection_reason,
+    ) = _compute_specimen(sample_text)
     return {
-        # --- Schema v1.2 canonical path ---
-        "path": str(font_path),
-        # --- Deterministic identity ---
-        "family": family,
-        "subfamily": style,
-        "typographic_subfamily": style,
-        "full_name": fullname,
-        "postscript_name": postscript,
-        "version_string": (_best_name(names, NAME_ID_VERSION) if names else None),
-        "unique_font_id": make_font_id(str(font_path), ttc_index),
-        # --- Technical core metrics ---
-        "units_per_em": fonttools.get("units_per_em"),
-        "ascent": fonttools.get("ascent"),
-        "descent": fonttools.get("descent"),
-        "weight_class": typography.get("weight_class"),
-        "width_class": typography.get("width_class"),
-        "italic_angle": fonttools.get("italic_angle"),
-        "is_fixed_pitch": fonttools.get("is_fixed_pitch"),
-        "glyph_count": fonttools.get("glyph_count"),
-        # --- Existing blocks preserved ---
+        "path": str(ctx.font_path),
+        "family": family_s,
+        "subfamily": style_s,
+        "typographic_subfamily": style_s,
+        "full_name": fullname_s,
+        "postscript_name": postscript_s,
+        "version_string": version_s,
+        "unique_font_id": make_font_id(str(ctx.font_path), ttc_index),
+        "units_per_em": units_per_em_i,
+        "ascent": ascent_i,
+        "descent": descent_i,
+        "weight_class": weight_i,
+        "width_class": width_i,
+        "italic_angle": italic_angle_f,
+        "is_fixed_pitch": is_fixed_pitch_b,
+        "glyph_count": glyph_count_i,
         "coverage": coverage,
         "inference": {},
         "charset": {"fc_charset": coverage.get("charset")},
         "sample_text": sample_text,
-        # --- Legacy information preserved for diagnostics ---
-        "identity": {
-            "file": str(font_path),
-            "ttc_index": ttc_index,
-            "id": make_font_id(str(font_path), ttc_index),
-        },
-        "platform": {"name": platform_name},
-        "format": format_block,
-        "typography": typography,
-        "classification": classification,
-        "license": {"text": license_text, "url": license_url},
-        "vendor": vendor,
-        "embedding_rights": embedding_rights,
-        "source": {
-            "fonttools": {
-                "ok": bool(fonttools.get("ok", False)),
-                "error": fonttools.get("error"),
-            },
-            "fontconfig": (None if fontconfig is None else {"ok": True}),
-        },
+        "specimen_text": specimen_text,
+        "specimen_strategy": specimen_strategy,
+        "specimen_glyph_count": specimen_glyph_count,
+        "specimen_rejection_reason": specimen_rejection_reason,
+        "warnings": warnings,
     }
 
 
@@ -2130,7 +2163,6 @@ def run_dump_fonts(args) -> int:
     All heavy lifting is delegated to dedicated helpers; this function is
     intentionally linear and side-effect driven (filesystem I/O).
     """
-
     platform_name = platform.system().lower()
     cache_dir = args.cache_dir
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -2138,7 +2170,6 @@ def run_dump_fonts(args) -> int:
     inventory: dict[str, Any] = {
         "metadata": {
             "schema_version": "1.2",
-            "generated_at": utc_now_iso(),
             "input_inventory_tool": "dump_fonts",
             "input_inventory_tool_version": __version__,
             "inference_level": "none",
@@ -2232,10 +2263,12 @@ def run_dump_fonts(args) -> int:
 
             try:
                 desc = build_font_descriptor(
-                    font_path=font_path,
-                    platform_name=platform_name,
-                    fonttools=face,
-                    fontconfig=fontconfig,
+                    FontBuildContext(
+                        font_path=font_path,
+                        platform_name=platform_name,
+                        fonttools=face,
+                        fontconfig=fontconfig,
+                    )
                 )
 
                 # Normalize missing style for single-style fonts

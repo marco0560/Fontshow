@@ -28,14 +28,14 @@ def make_inventory(schema_version="1.2", with_fonts=True):
 def test_strict_validation_rejects_v1():
     data = make_inventory("1.0")
     with pytest.raises(ValueError):
-        _validate_inventory_schema_strict(data, schema_version="1.0")
+        _validate_inventory_schema_strict(data)
 
 
 def test_strict_validation_rejects_unknown_version():
     data = make_inventory("9.9")
 
     with pytest.raises(ValueError, match="Unsupported inventory schema"):
-        _validate_inventory_schema_strict(data, schema_version="9.9")
+        _validate_inventory_schema_strict(data)
 
 
 def test_strict_validation_missing_schema_file(monkeypatch):
@@ -47,7 +47,7 @@ def test_strict_validation_missing_schema_file(monkeypatch):
     monkeypatch.setattr("pathlib.Path.exists", fake_exists)
 
     with pytest.raises(ValueError, match="Schema file not found"):
-        _validate_inventory_schema_strict(data, schema_version="1.2")
+        _validate_inventory_schema_strict(data)
 
 
 def test_strict_validation_schema_error():
@@ -59,7 +59,7 @@ def test_strict_validation_schema_error():
     }
 
     with pytest.raises(ValueError, match="Inventory schema validation failed"):
-        _validate_inventory_schema_strict(data, schema_version="1.2")
+        _validate_inventory_schema_strict(data)
 
 
 # ----------------------------------------------------------------------

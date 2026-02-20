@@ -1,29 +1,94 @@
+from __future__ import annotations
+
 import sys
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from types import SimpleNamespace
+from typing import Any
 
+from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.preflight.model import CheckResult, Severity
 
+# ============================================================
+# Canonical minimal VALID schema-1.2 font entry
+# ============================================================
 
-def minimal_valid_entry(extra: dict | None = None) -> dict:
-    entry = {
-        "path": "/usr/share/fonts/test.ttf",
-        "format": "TrueType",
-        "style": "Regular",
-        "family": "Test Family",
-        "identity": {
-            "file": "/usr/share/fonts/test.ttf",
-            "family": "Test Family",
-            "style": "Regular",
+
+def minimal_font_entry_v12() -> dict[str, Any]:
+    """
+    Canonical minimal VALID font entry for schema 1.2.
+
+    Deterministic and schema-compliant.
+    """
+
+    return {
+        "path": "/fake/font.ttf",
+        "family": "Test",
+        "subfamily": "Regular",
+        "typographic_subfamily": "Regular",
+        "full_name": "Test Regular",
+        "postscript_name": "Test-Regular",
+        "version_string": "1.0",
+        "unique_font_id": "test-regular-1.0",
+        "units_per_em": 1000,
+        "ascent": 800,
+        "descent": -200,
+        "weight_class": 400,
+        "width_class": 5,
+        "italic_angle": 0,
+        "is_fixed_pitch": False,
+        "glyph_count": 1,
+        "coverage": {
+            "unicode_blocks": {},
+            "scripts": [],
+            "languages": [],
         },
-        "base_names": ["Test Family"],
+        "inference": {
+            "level": "medium",
+            "scripts": [],
+            "languages": [],
+            "declared_scripts": [],
+            "declared_languages": [],
+            "unicode_blocks": {},
+        },
+        "charset": {
+            "ranges": [],
+        },
+        "sample_text": {
+            "source": "font",
+            "text": "A",
+        },
+        "specimen_text": "A",
+        "specimen_strategy": "cmap",
+        "specimen_glyph_count": 1,
     }
 
-    if extra:
-        entry.update(extra)
 
-    return entry
+# ============================================================
+# Canonical minimal VALID schema-1.2 inventory
+# ============================================================
+
+
+def minimal_inventory_v12() -> dict[str, Any]:
+    """
+    Canonical minimal VALID inventory for schema 1.2.
+    """
+
+    return {
+        "metadata": {
+            "schema_version": "1.2",
+            "run_environment": collect_platform_metadata(),
+            "input_inventory_tool": "fontshow-test",
+            "input_inventory_tool_version": "0.1",
+            "inference_level": "medium",
+            "fonttools": {
+                "available": True,
+                "fontconfig_charset_included": False,
+                "version": "4.38.0",
+            },
+        },
+        "fonts": [minimal_font_entry_v12()],
+    }
 
 
 # Environment-matrix tests must not depend on host capabilities

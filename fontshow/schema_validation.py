@@ -23,7 +23,7 @@ from fontshow.types import Severity
 SUPPORTED_SCHEMA_VERSIONS = {SCHEMA_VERSION}
 
 
-def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> None:
+def _validate_inventory_schema_strict(data: dict) -> None:
     """
     Perform strict schema validation.
 
@@ -31,14 +31,14 @@ def _validate_inventory_schema_strict(data: dict, *, schema_version: str) -> Non
     ----------
     data : dict
         Inventory data.
-    schema_version : str
-        Schema version to validate against.
 
     Raises
     ------
     ValueError
         If schema version is unsupported or validation fails.
     """
+
+    schema_version = data.get("metadata", {}).get("schema_version")
 
     log_trace_cat(
         log,
@@ -175,10 +175,7 @@ def validate_inventory_schema(data: dict) -> list[dict]:
         ]
 
     try:
-        _validate_inventory_schema_strict(
-            data,
-            schema_version=schema_version,
-        )
+        _validate_inventory_schema_strict(data)
     except ValueError as exc:
         log_trace_cat(
             log,

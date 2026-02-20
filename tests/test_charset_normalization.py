@@ -41,24 +41,19 @@ def test_parse_inventory_adds_normalized_charset(enable_fontshow_logging):
     import importlib
 
     import fontshow.parse_font_inventory
+    from tests.helpers import minimal_font_entry_v12, minimal_inventory_v12
 
     importlib.reload(fontshow.parse_font_inventory)
 
-    inventory = {
-        "schema_version": "1.0",
-        "fonts": [
-            {
-                "path": "/fake/font.ttf",
-                "identity": {"family": "Fake", "style": "Regular"},
-                "coverage": {
-                    "charset": {
-                        "source": "fontconfig",
-                        "ranges": [[1, 3], [4, 5]],
-                    }
-                },
-            }
-        ],
+    inventory = minimal_inventory_v12()
+    font = minimal_font_entry_v12()
+
+    font["charset"] = {
+        "source": "fontconfig",
+        "ranges": [[1, 3], [4, 5]],
     }
+
+    inventory["fonts"] = [font]
 
     fontshow.parse_font_inventory.parse_inventory(inventory, level="medium")
 
@@ -81,22 +76,17 @@ def test_parse_inventory_adds_unicode_blocks_from_charset(enable_fontshow_loggin
 
     importlib.reload(fontshow.parse_font_inventory)
 
-    inventory = {
-        "schema_version": "1.0",
-        "fonts": [
-            {
-                "path": "/fake/font.ttf",
-                "identity": {"family": "Fake", "style": "Regular"},
-                "coverage": {
-                    "charset": {
-                        "source": "fontconfig",
-                        "ranges": [[0x0020, 0x007E]],
-                    }
-                },
-            }
-        ],
+    from tests.helpers import minimal_font_entry_v12, minimal_inventory_v12
+
+    inventory = minimal_inventory_v12()
+    font = minimal_font_entry_v12()
+
+    font["charset"] = {
+        "source": "fontconfig",
+        "ranges": [[0x0020, 0x007E]],
     }
 
+    inventory["fonts"] = [font]
     fontshow.parse_font_inventory.parse_inventory(inventory, level="medium")
 
     cov = inventory["fonts"][0]["coverage"]

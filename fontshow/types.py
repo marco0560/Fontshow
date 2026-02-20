@@ -53,6 +53,12 @@ class Severity(Enum):
     ERROR = auto()
 
     def to_json(self) -> str:
+        if self is Severity.WARN:
+            return "warning"
+        if self is Severity.INFO:
+            return "info"
+        if self is Severity.ERROR:
+            return "error"
         return self.name.lower()
 
     @classmethod

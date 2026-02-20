@@ -41,7 +41,11 @@ from fontshow.infer_languages import infer_languages
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
-from fontshow.schema_validation import validate_inventory_schema
+from fontshow.platform_metadata import collect_platform_metadata
+from fontshow.schema_validation import (
+    _validate_inventory_schema_strict,
+    validate_inventory_schema,
+)
 from fontshow.semantic_validation import normalize_languages
 from fontshow.types import (
     FontRef,
@@ -353,6 +357,72 @@ def normalize_charset_ranges(ranges: list[list[int]]) -> dict[str, Any]:
     }
 
 
+def _validate_str_required(obj: dict, key: str, errors: list[str]) -> None:
+    v = obj.get(key)
+    if not isinstance(v, str) or not v:
+        errors.append(f"Missing or invalid '{key}'")
+
+
+def _validate_int_min(obj: dict, key: str, min_value: int, errors: list[str]) -> None:
+    v = obj.get(key)
+    if not isinstance(v, int) or v < min_value:
+        errors.append(f"Missing or invalid '{key}'")
+
+
+def _validate_int_range(
+    obj: dict, key: str, lo: int, hi: int, errors: list[str]
+) -> None:
+    v = obj.get(key)
+    if not isinstance(v, int) or not (lo <= v <= hi):
+        errors.append(f"Missing or invalid '{key}'")
+
+
+def _validate_obj_required(obj: dict, key: str, errors: list[str]) -> None:
+    v = obj.get(key)
+    if not isinstance(v, dict):
+        errors.append(f"Missing or invalid '{key}'")
+
+
+def _validate_bool_required(obj: dict, key: str, errors: list[str]) -> None:
+    v = obj.get(key)
+    if not isinstance(v, bool):
+        errors.append(f"Missing or invalid '{key}'")
+
+
+def _validate_number_required(obj: dict, key: str, errors: list[str]) -> None:
+    v = obj.get(key)
+    if not isinstance(v, (int, float)):
+        errors.append(f"Missing or invalid '{key}'")
+
+
+def _validate_sample_text(entry: dict, errors: list[str]) -> None:
+    sample_text = entry.get("sample_text")
+    if not isinstance(sample_text, dict):
+        errors.append("Missing or invalid 'sample_text'")
+        return
+
+    if sample_text.get("source") != "font":
+        errors.append("Invalid 'sample_text.source'")
+
+    text = sample_text.get("text")
+    if not isinstance(text, str) or not text:
+        errors.append("Missing or invalid 'sample_text.text'")
+
+
+def _validate_specimen(entry: dict, errors: list[str]) -> None:
+    specimen_text = entry.get("specimen_text")
+    if not isinstance(specimen_text, str) or not specimen_text:
+        errors.append("Missing or invalid 'specimen_text'")
+
+    specimen_strategy = entry.get("specimen_strategy")
+    if specimen_strategy not in ("internal", "script", "cmap"):
+        errors.append("Invalid 'specimen_strategy'")
+
+    specimen_glyph_count = entry.get("specimen_glyph_count")
+    if not isinstance(specimen_glyph_count, int) or specimen_glyph_count < 1:
+        errors.append("Missing or invalid 'specimen_glyph_count'")
+
+
 def validate_font_entry(entry: Any, *, index: int) -> list[str]:
     """
     Validate the structural integrity of a single font entry.
@@ -383,67 +453,49 @@ def validate_font_entry(entry: Any, *, index: int) -> list[str]:
     if not isinstance(entry, dict):
         return ["entry is not an object"]
 
-    identity = entry.get("identity") or {}
-    identity_raw = entry.get("identity")
-    if identity_raw is not None and not isinstance(identity_raw, dict):
-        return ["identity must be an object or null"]
+    # Schema 1.2 — required top-level fields
+    _validate_str_required(entry, "family", errors)
+    _validate_str_required(entry, "subfamily", errors)
+    _validate_str_required(entry, "path", errors)
+    _validate_str_required(entry, "postscript_name", errors)
 
-    identity = identity_raw or {}
+    _validate_sample_text(entry, errors)
 
-    base_names = entry.get("base_names") or []
+    _validate_specimen(entry, errors)
 
-    # If base_names is present, identity is optional
-    if not base_names:
-        if not identity.get("file"):
-            errors.append(
-                "missing required field: identity.file (expected non-empty string)"
-            )
-        if not identity.get("family"):
-            errors.append(
-                "missing required field: identity.family (expected non-empty string)"
-            )
-        if not identity.get("style"):
-            errors.append(
-                "missing required field: identity.style (expected non-empty string)"
-            )
+    _validate_int_min(entry, "glyph_count", 1, errors)
+    _validate_int_range(entry, "weight_class", 1, 1000, errors)
+    _validate_int_range(entry, "width_class", 1, 9, errors)
 
-    # --- sample_text validation (optional) ---
-    if "sample_text" in entry:
-        st = entry["sample_text"]
+    _validate_obj_required(entry, "coverage", errors)
+    _validate_obj_required(entry, "inference", errors)
+    _validate_obj_required(entry, "charset", errors)
 
-        if st is not None:
-            if not isinstance(st, dict):
-                errors.append("sample_text must be an object or null")
-            else:
-                source = st.get("source")
-                text = st.get("text")
+    _validate_str_required(entry, "full_name", errors)
+    _validate_str_required(entry, "version_string", errors)
+    _validate_str_required(entry, "unique_font_id", errors)
 
-                if source != "font":
-                    errors.append("sample_text.source must be 'font'")
+    _validate_int_min(entry, "units_per_em", 1, errors)
 
-                if not isinstance(text, str) or not text.strip():
-                    errors.append("sample_text.text must be a non-empty string")
+    _validate_int_min(entry, "ascent", -(10**18), errors)
+    _validate_int_min(entry, "descent", -(10**18), errors)
+
+    _validate_number_required(entry, "italic_angle", errors)
+    _validate_bool_required(entry, "is_fixed_pitch", errors)
 
     return errors
 
 
 def validate_inventory(
-    data: Any,
-    *,
-    verbose: bool = False,
-    quiet: bool = False,
+    data: dict[str, Any],
 ) -> int:
     """
     Validate a Fontshow font inventory structure.
 
      Parameters
      ----------
-     data : Any
+     data : dict[str, Any]
          Parsed inventory JSON object.
-     verbose : bool, optional
-         Emit detailed validation diagnostics.
-     quiet : bool, optional
-         Suppress non-error output.
 
      Returns
      -------
@@ -474,32 +526,20 @@ def validate_inventory(
     fatal_errors = 0
     warnings = 0
 
-    if not isinstance(data, dict):
-        log_err("Inventory root is not a JSON object")
+    metadata = data.get("metadata")
+    if not isinstance(metadata, dict):
+        log_err("'metadata' field missing or not an object (schema 1.2 required)")
         return 1
 
-    # Ensure inventory-level warnings container exists
-    data.setdefault("warnings", [])
-
-    metadata = data.get("metadata", {})
     schema_version = metadata.get("schema_version")
-
-    if schema_version is None:
-        add_structured_warning(
-            data,
-            code="missing_schema_version",
-            message="Inventory has no schema_version",
-            severity=Severity.WARN,
+    if schema_version != "1.2":
+        log_err(
+            f"Unsupported schema_version '{schema_version}': only '1.2' is accepted"
         )
-    elif schema_version != "1.0":
-        add_structured_warning(
-            data,
-            code="unknown_schema_version",
-            message=f"Unknown schema_version '{schema_version}'",
-            severity=Severity.WARN,
-        )
+        return 1
 
     raw_fonts = data.get("fonts")
+
     if not isinstance(raw_fonts, list):
         log_err("'fonts' field missing or not a list")
         return 1
@@ -517,27 +557,12 @@ def validate_inventory(
             log_err(f"  path: {path}")
             for err in entry_errors:
                 log_err(f"  - {err}")
+    for idx, font in enumerate(fonts):
+        ident = _format_font_identity(font, index=idx)
+        for warning in font.get("warnings", []):
+            log_warn(f"Warning [{ident}]: {warning['code']} - {warning['message']}")
 
-        identity = font.get("identity", {})
-        family = identity.get("family")
-        base_names = font.get("base_names")
-
-        if not family and not base_names:
-            warnings += 1
-            add_structured_warning(
-                font,
-                code="missing_family",
-                message="Font entry has no family or base_names",
-                severity=Severity.WARN,
-            )
-
-    if verbose:
-        for idx, font in enumerate(fonts):
-            ident = _format_font_identity(font, index=idx)
-            for warning in font.get("warnings", []):
-                log_warn(f"Warning [{ident}]: {warning['code']} - {warning['message']}")
-
-    if fatal_errors == 0 and not quiet:
+    if fatal_errors == 0:
         # NOTE:
         # Do NOT replace this with a generic "OK" message.
         # Unlike preflight or dump-fonts, parse-inventory is a
@@ -545,9 +570,16 @@ def validate_inventory(
         # human-readable success message.
         #
         # See: docs/decisions/0009-cli-verbosity-contract.md
-        log_ok("Inventory validation completed (no fatal errors)")
-        if verbose:
-            log_info(f"Validation completed for {len(fonts)} font entries")
+        log_ok(
+            "Inventory validation completed (no fatal errors)",
+            f"Validation completed for {len(fonts)} font entries",
+        )
+    else:
+        log_info(
+            "Inventory validation completed with fatal errors",
+            f"Validation completed for {len(fonts)} font entries"
+            f" with {fatal_errors} fatal errors and {warnings} warnings",
+        )
 
     return fatal_errors
 
@@ -577,21 +609,17 @@ def _format_font_identity(font: dict, index: int) -> str:
     """
     label = f"font[{index}]"
 
-    identity = font.get("identity", {})
     path = _get_font_path_for_diagnostics(font)
-    face_index = identity.get("face_index")
-    family = identity.get("family")
-    style = identity.get("style")
+    family = font.get("family")
+    subfamily = font.get("subfamily")
 
     if path:
         name = Path(path).name
         if family is not None:
-            if style is not None:
-                name += f" ({family} {style})"
+            if subfamily is not None:
+                name += f" ({family} {subfamily})"
             else:
                 name += f" ({family})"
-        if face_index is not None:
-            return f"{label} {name}:{face_index}"
         return f"{label} {name}"
 
     return label
@@ -692,6 +720,25 @@ SCRIPT_SAMPLES: dict[str, str] = {
 
 
 def _specimen_is_variation_selector(cp: int) -> bool:
+    """
+    Check whether a Unicode codepoint is a variation selector.
+
+    Parameters
+    ----------
+    cp : int
+        Unicode codepoint.
+
+    Returns
+    -------
+    bool
+        True if the codepoint is a Unicode variation selector, otherwise False.
+
+    Notes
+    -----
+    - Variation selectors modify glyph appearance and are not counted as
+      standalone printable glyphs in specimen generation.
+    - Covers both standard and supplementary variation selector ranges.
+    """
     return (0xFE00 <= cp <= 0xFE0F) or (0xE0100 <= cp <= 0xE01EF)
 
 
@@ -1331,7 +1378,7 @@ def _process_charset(
 ) -> None:
     """Decode and normalize FontConfig charset metadata."""
 
-    charset = coverage.get("charset")
+    charset = font.get("charset")
 
     if isinstance(charset, dict):
         raw = charset.get("raw")
@@ -1362,7 +1409,7 @@ def _process_charset(
                     }
                 )
 
-    charset = coverage.get("charset")
+    charset = font.get("charset")
     if not isinstance(charset, dict) or not charset.get("ranges"):
         return
 
@@ -1729,40 +1776,6 @@ def _default_write_text(p: Path, s: str) -> None:
 
 
 # ============================================================
-# Helper: schema sanity guard (non-fatal)
-# ============================================================
-
-
-def _soft_schema_guard(data: dict[str, Any]) -> None:
-    """
-    Ensure inventory has a schema_version without failing.
-
-    This preserves legacy behavior and never raises.
-    """
-
-    metadata = data.setdefault("metadata", {})
-    schema_version = metadata.get("schema_version")
-
-    if schema_version is None:
-        add_structured_warning(
-            data,
-            code="missing_schema_version",
-            message="Inventory has no schema_version",
-            severity=Severity.WARN,
-        )
-        metadata["schema_version"] = "1.0"
-        return
-
-    if schema_version != "1.0":
-        add_structured_warning(
-            data,
-            code="unsupported_schema_version",
-            message=f"Unsupported schema_version '{schema_version}'",
-            severity=Severity.WARN,
-        )
-
-
-# ============================================================
 # Helper: validate fonts container
 # ============================================================
 
@@ -1937,12 +1950,31 @@ def run_parse_font_inventory(
         "inventory JSON loaded",
         extra={
             "fonts": len(data.get("fonts", [])),
-            "schema_version": data.get("schema_version"),
+            "schema_version": data.get("metadata", {}).get("schema_version"),
         },
     )
 
-    _soft_schema_guard(data)
+    metadata = data.get("metadata")
+    if not isinstance(metadata, dict):
+        log_err("invalid inventory: missing or invalid 'metadata' object")
+        return 1
 
+    actual_env = metadata.get("run_environment")
+    if not isinstance(actual_env, dict):
+        log_err("invalid inventory: missing or invalid 'metadata.run_environment'")
+        return 1
+
+    expected_env = collect_platform_metadata()
+    if actual_env != expected_env:
+        log_err(
+            "invalid inventory: 'metadata.run_environment' does not match current platform"
+        )
+        return 1
+    try:
+        _validate_inventory_schema_strict(data)
+    except ValueError as exc:
+        log_err(f"schema validation failed: {exc}")
+        return 1
     fonts = _validate_fonts_container(data)
     if fonts is None:
         return 1
@@ -1956,13 +1988,18 @@ def run_parse_font_inventory(
                 "fonts": len(data.get("fonts", [])),
             },
         )
-        return int(
-            validate_inventory_fn(
-                data,
-                verbose=args.verbose,
-                quiet=args.quiet,
+
+        rc = int(validate_inventory_fn(data))
+
+        if rc == 0:
+            log_ok(
+                "Inventory validation completed (no fatal errors)",
+                f"Validation completed for {len(data.get('fonts', []))} font entries",
             )
-        )
+        else:
+            log_info("Inventory validation failed with errors")
+
+        return rc
 
     enriched = parse_inventory_fn(
         data,
@@ -1978,6 +2015,16 @@ def run_parse_font_inventory(
             "schema_version": enriched.get("metadata", {}).get("schema_version"),
         },
     )
+
+    try:
+        # Validate normalized JSON, not Python object
+        normalized_for_validation = json.loads(
+            dumps_pretty(enriched, indent=2, ensure_ascii=False)
+        )
+        _validate_inventory_schema_strict(normalized_for_validation)
+    except ValueError as exc:
+        log_err(f"schema validation failed (output): {exc}")
+        return 1
 
     write_text_fn(
         args.output,
@@ -2003,7 +2050,7 @@ def run_parse_font_inventory(
 
     _emit_verbose_warnings(enriched)
 
-    log_ok(f"Inventory written to {args.output}" if args.verbose else "Done.")
+    log_ok("Done.", f"Inventory written to {args.output}")
     log_trace_cat(
         log,
         "flow",
