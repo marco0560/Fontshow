@@ -487,7 +487,7 @@ def validate_font_entry(entry: Any, *, index: int) -> list[str]:
 
 
 def validate_inventory(
-    data: dict[str, Any],
+    data: object,
 ) -> int:
     """
     Validate a Fontshow font inventory structure.
@@ -526,6 +526,13 @@ def validate_inventory(
     fatal_errors = 0
     warnings = 0
 
+    from collections.abc import Mapping
+
+    if not isinstance(data, Mapping):
+        log_err("Inventory root is not a JSON object")
+        return 1
+
+    data = dict(data)  # defensive copy to allow safe normalization
     metadata = data.get("metadata")
     if not isinstance(metadata, dict):
         log_err("'metadata' field missing or not an object (schema 1.2 required)")
