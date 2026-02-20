@@ -1,3 +1,10 @@
+## [0.38.8](https://github.com/marco0560/Fontshow/compare/v0.38.7...v0.38.8) (2026-02-20)
+
+### Bug Fixes
+
+* **parser:** complete migration to Schema 1.2 (validator, parser, tests) ([251ee5c](https://github.com/marco0560/Fontshow/commit/251ee5ca679a1e5017755736cf800af4a6c67229))
+* **parser:** restore guard with typed boundary to prevent test crash and satisfy mypy ([b4b59cf](https://github.com/marco0560/Fontshow/commit/b4b59cfe89b676db330f209d7ae995c4d47d0806))
+
 ## [0.38.7](https://github.com/marco0560/Fontshow/compare/v0.38.6...v0.38.7) (2026-02-18)
 
 ### Bug Fixes
