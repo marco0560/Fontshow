@@ -639,19 +639,14 @@ def font_family(font: dict[str, object]) -> str:
     Parameters
     ----------
     font : dict[str, object]
-        Font descriptor dictionary possibly containing an `identity`
-        mapping with `family`, `postscript_name`, or `fullname`.
+        Schema 1.2 font descriptor dictionary.
 
     Returns
     -------
     str
         Resolved family name if available, otherwise "Unknown Font".
     """
-    ident = font.get("identity", {}) if isinstance(font, dict) else {}
-    if not isinstance(ident, dict):
-        return "Unknown Font"
-
-    fam = ident.get("family") or ident.get("postscript_name") or ident.get("fullname")
+    fam = font.get("family") or font.get("postscript_name") or font.get("full_name")
 
     return fam if isinstance(fam, str) and fam else "Unknown Font"
 
@@ -1992,6 +1987,17 @@ def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
         as_font_desc_list(fonts),
         key=font_family,
     )
+
+    # Ensure rendering descriptor invariant: every font must have a valid 'name'
+    for f in fonts:
+        if not isinstance(f.get("name"), str) or not f.get("name"):
+            full_name = f.get("full_name")
+            postscript_name = f.get("postscript_name")
+            family = f.get("family") or ""
+            subfamily = f.get("subfamily") or ""
+            derived = full_name or postscript_name or f"{family} {subfamily}".strip()
+            if isinstance(derived, str) and derived:
+                f["name"] = derived
 
     result = group_fonts_by_family(fonts)
     log_trace_cat(

@@ -1303,6 +1303,18 @@ def _process_language_metadata(
 ) -> None:
     """Normalize languages and inject normalization warnings."""
 
+    inference = font.get("inference")
+    if isinstance(inference, dict):
+        if not coverage.get("languages"):
+            inferred_languages = inference.get("languages")
+            if isinstance(inferred_languages, list) and inferred_languages:
+                coverage["languages"] = inferred_languages
+
+        if not coverage.get("scripts"):
+            inferred_scripts = inference.get("scripts")
+            if isinstance(inferred_scripts, list) and inferred_scripts:
+                coverage["scripts"] = inferred_scripts
+
     if "languages_raw" not in coverage:
         coverage["languages_raw"] = list(coverage.get("languages", []) or [])
 
@@ -1677,12 +1689,6 @@ def parse_inventory(
 
         coverage: dict[str, Any] = font.get("coverage", {}) or {}
 
-        _process_language_metadata(
-            font,
-            coverage,
-            strict_bcp47=strict_bcp47,
-        )
-
         _process_charset(font, coverage, font_path)
 
         _infer_and_attach_metadata(
@@ -1690,6 +1696,12 @@ def parse_inventory(
             coverage,
             level=level,
             font_path=font_path,
+        )
+
+        _process_language_metadata(
+            font,
+            coverage,
+            strict_bcp47=strict_bcp47,
         )
 
         _specimen_generate_for_font(font, coverage, font_path)

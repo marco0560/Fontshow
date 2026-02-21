@@ -1,16 +1,22 @@
-# fontshow/__main__.py
-
 import argparse
 import sys
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
-import fontshow.create_catalog
-import fontshow.dump_fonts
-import fontshow.parse_font_inventory
-import fontshow.preflight
+from fontshow.cli_utils import log_err
+
+try:
+    import fontshow.create_catalog
+    import fontshow.dump_fonts
+    import fontshow.parse_font_inventory
+    import fontshow.preflight
+    from fontshow.logging_utils import log, log_trace_cat
+except ModuleNotFoundError as e:
+    missing = e.name or "<unknown>"
+    log_err(f"Required import '{missing}' not available")
+    sys.exit(1)
+
 from fontshow.cli_utils import add_common_arguments
-from fontshow.logging_utils import log, log_trace_cat
 
 
 def dispatch_command(args: argparse.Namespace) -> int:
