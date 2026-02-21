@@ -1,3 +1,9 @@
+## [0.38.9](https://github.com/marco0560/Fontshow/compare/v0.38.8...v0.38.9) (2026-02-21)
+
+### Bug Fixes
+
+* **core:** complete Schema 1.2 alignment and stabilize rendering pipeline ([c6b2f78](https://github.com/marco0560/Fontshow/commit/c6b2f7896a9dae46efa7d52bc50a17e692f28290))
+
 ## [0.38.8](https://github.com/marco0560/Fontshow/compare/v0.38.7...v0.38.8) (2026-02-20)
 
 ### Bug Fixes
