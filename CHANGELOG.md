@@ -1,3 +1,9 @@
+## [0.39.1](https://github.com/marco0560/Fontshow/compare/v0.39.0...v0.39.1) (2026-02-23)
+
+### Bug Fixes
+
+* **catalog:** restored mypy annotations ([c42ea44](https://github.com/marco0560/Fontshow/commit/c42ea4473b1b936b39c9ffe572e76f56296a125e))
+
 ## [0.39.0](https://github.com/marco0560/Fontshow/compare/v0.38.9...v0.39.0) (2026-02-23)
 
 ### Features
