@@ -20,6 +20,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import struct
 import subprocess
 import sys
@@ -2133,6 +2134,65 @@ def register_cli(parser) -> None:
     parser.set_defaults(func=main)
 
 
+def is_non_opentype_face(face: dict) -> bool:
+    """
+    Canonical detection of non-OpenType / bitmap faces.
+
+    Preserves EXACT previous behaviour:
+    only detects faces rejected by fontTools with the
+    specific 'Not a TrueType or OpenType font' error.
+    """
+    if face.get("ok") is False:
+        err = face.get("error") or ""
+        return "Not a TrueType or OpenType font" in err
+    return False
+
+
+def is_structurally_unloadable_face(face: dict) -> bool:
+    """
+    Detect faces that are structurally missing mandatory OpenType tables.
+
+    Deterministic, fontTools-derived check (no LaTeX, no luaotfload-tool).
+    Conservative: only flags faces that claim ok=True but have missing tables.
+    """
+    if face.get("ok") is not True:
+        return False
+
+    tables = face.get("tables")
+    if not isinstance(tables, list):
+        return False
+
+    table_set = set(tables)
+
+    required = {"cmap", "head", "hhea", "hmtx", "maxp", "name", "post"}
+    if not required.issubset(table_set):
+        return True
+
+    # Must have a glyph table: TrueType glyf or CFF/CFF2.
+    return (
+        ("glyf" not in table_set)
+        and ("CFF " not in table_set)
+        and ("CFF2" not in table_set)
+    )
+
+
+_STYLE_LEAK_RE = re.compile(
+    r"\b("
+    r"bold|italic|oblique|light|regular|medium|"
+    r"semibold|extrabold|black|thin|"
+    r"condensed|narrow|extended"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def has_style_leak_in_family(desc: dict) -> bool:
+    fam = desc.get("identity", {}).get("family", "")
+    if not isinstance(fam, str):
+        return False
+    return bool(_STYLE_LEAK_RE.search(fam))
+
+
 def run_dump_fonts(args) -> int:
     """
     Execute the dump-fonts pipeline.
@@ -2211,6 +2271,7 @@ def run_dump_fonts(args) -> int:
     # --- GLOBAL COUNTERS (must not reset per font file) ---
     total_faces = 0
     skipped_non_opentype = 0
+    style_leak_suspected = 0
 
     fontconfig_by_path: dict[Path, dict[str, Any]] = {}
     if IS_LINUX:
@@ -2254,11 +2315,14 @@ def run_dump_fonts(args) -> int:
             total_faces += 1
 
             # Skip non-OpenType / bitmap fonts
-            if (face.get("ok") is False) and (
-                "Not a TrueType or OpenType font" in (face.get("error") or "")
-            ):
+            if is_non_opentype_face(face):
                 skipped_non_opentype += 1
                 log_warn(f"skipping non-opentype font: {font_path}")
+                continue
+
+            # Skip structurally unloadable faces (missing mandatory tables)
+            if is_structurally_unloadable_face(face):
+                log_warn(f"skipping structurally-unloadable font: {font_path}")
                 continue
 
             try:
@@ -2277,6 +2341,8 @@ def run_dump_fonts(args) -> int:
                 ).get("style"):
                     desc["identity"]["style"] = "Regular"
 
+                if has_style_leak_in_family(desc):
+                    style_leak_suspected += 1
                 inventory["fonts"].append(desc)
             except (ValueError, TypeError, KeyError) as e:
                 inventory["fonts"].append(
@@ -2314,10 +2380,12 @@ def run_dump_fonts(args) -> int:
     )
 
     log_info(
-        f"Processed {total_faces} - {skipped_non_opentype} skipped",
+        f"Processed {total_faces} - {skipped_non_opentype} skipped"
+        f"- {style_leak_suspected} style-leak suspected",
         verbose=(
             f"Processed {total_faces} font faces — "
             f"{skipped_non_opentype} skipped (non-OpenType), "
+            f"- {style_leak_suspected} style-leak suspected"
             f"{len(inventory.get('fonts', []))} kept"
         ),
     )

@@ -1030,6 +1030,15 @@ def _specimen_generate_for_font(
         g = 1
         rejection = rejection or "no_visible_glyphs"
 
+    # --- SPECIMEN SEMANTIC VALIDATION ---
+    if cps:
+        invalid = [c for c in filtered if ord(c) not in cps]
+        if invalid:
+            filtered = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+            g = len(filtered)
+            strategy = "validated-fallback"
+            rejection = "specimen_not_in_cmap"
+
     font["specimen_text"] = filtered
     font["specimen_strategy"] = strategy or "cmap"
     font["specimen_rejection_reason"] = rejection

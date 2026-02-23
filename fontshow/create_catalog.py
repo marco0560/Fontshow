@@ -147,6 +147,8 @@ SAMPLE_TEXTS = {
     "ko": "키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다",
     "cop": "Ⲡⲁⲓ ⲙⲉⲧⲁⲛⲟⲓⲁ",
     "ti": "ሰላም እንታይ ከመይ ኢኻ",
+    "ta": "யாதும் ஊரே யாவரும் கேளிர்",
+    "te": "అన్ని మానవజాతులు స్వేచ్ఛగా జన్మించాయి, అందరికీ సమానమైన గౌరవం మరియు హక్కులు ఉన్నాయి",
 }
 
 RTL_SCRIPTS = {"arab", "hebr"}
@@ -176,6 +178,7 @@ def escape_latex(text: str) -> str:
         String with LaTeX special characters escaped.
     """
     replacements = {
+        "\\": r"\textbackslash{}",
         "&": r"\&",
         "%": r"\%",
         "$": r"\$",
@@ -185,6 +188,8 @@ def escape_latex(text: str) -> str:
         "}": r"\}",
         "~": r"\textasciitilde{}",
         "^": r"\textasciicircum{}",
+        "<": r"\textless{}",
+        ">": r"\textgreater{}",
     }
     return "".join(replacements.get(c, c) for c in text)
 
@@ -210,11 +215,14 @@ def escape_latex(text: str) -> str:
 #
 LATEX_INITIAL_CODE: str = (
     r"""% !TeX TS-program = lualatex
-% !TeX spellcheck = it_IT
+% !TeX spellcheck = en_US
 % !TeX encoding = UTF-8
 \documentclass[11pt,a4paper]{article}
 \usepackage{fontspec}
-\usepackage{polyglossia} % Gestione multilingue avanzata
+\ExplSyntaxOn
+\msg_redirect_name:nnn {fontspec} {font-not-found} {warning}
+\ExplSyntaxOff
+\usepackage{polyglossia}
 \usepackage{lipsum}
 \usepackage{xcolor}
 \usepackage{tcolorbox}
@@ -225,8 +233,8 @@ LATEX_INITIAL_CODE: str = (
 \usepackage{multicol}
 \usepackage{pdftexcmds}
 
-\setmainlanguage{italian}
-% Definisci le lingue secondarie necessarie per il test dei font complessi
+\setmainlanguage{english}
+% Secondary languages for testing non-Latin scripts
 \setotherlanguage{latin}
 \setotherlanguage{arabic}
 \setotherlanguage{hebrew}
@@ -237,24 +245,24 @@ LATEX_INITIAL_CODE: str = (
 
 \geometry{margin=2cm}
 
-% --- Macro di utilità ---
+% --- Utility Macros ---
 \makeatletter
 \newcommand{\ifFileNotEmpty}[3]{%
 	\IfFileExists{#1}{%
-		% \pdf@filesize restituisce la dimensione in byte
+		% \pdf@filesize gives size in byte
 		\ifnum\pdf@filesize{#1}>0
-		#2% Se esiste e ha almeno 1 byte
+		#2% if it exists and has at least 1 byte
 		\else
-		#3% Se esiste ma è 0 byte
+		#3% if it exists but is 0 bytes
 		\fi
 	}{%
-		#3% Se il file non esiste proprio
+		#3% if the file doesn't exist at all
 	}%
 }
 \makeatother
 
 % --- Macro per sezioni riepilogative ---
-% #1 nome del file #2 Titolo della sezione
+% #1 filename #2 title of section
 \newcommand{\FileSec}[2]{%
 	\ifFileNotEmpty{#1}{%
 		\section{#2}
@@ -276,23 +284,25 @@ LATEX_INITIAL_CODE: str = (
 \definecolor{othercolor}{HTML}{0d6efd}
 
 % Setup Box
-\tcbuselibrary{skins}
-\newtcolorbox{fontbox}[1]{
-    colback=boxcolor, colframe=titlecolor, boxrule=1pt, arc=3pt,
-    title={\textbf{#1}}, coltitle=white, colbacktitle=titlecolor
-}
-\newtcolorbox{errorbox}[1]{
-    colback=errorcolor!10, colframe=errorcolor!80!black, boxrule=1pt, arc=3pt,
-    title={\textbf{Non Caricato: #1}}, coltitle=white, colbacktitle=errorcolor!80!black
-}
+%\tcbuselibrary{skins}
+%\newtcolorbox{fontbox}[1]{
+%    colback=boxcolor, colframe=titlecolor, boxrule=1pt, arc=3pt,
+%    title={\textbf{#1}}, coltitle=white, colbacktitle=titlecolor
+%}
+\newenvironment{fontbox}[1]{}{}
+%\newtcolorbox{errorbox}[1]{
+%    colback=errorcolor!10, colframe=errorcolor!80!black, boxrule=1pt, arc=3pt,
+%    title={\textbf{Non Caricato: #1}}, coltitle=white, colbacktitle=errorcolor!80!black%
+%}
+\newenvironment{errorbox}[1]{}{}
 
 % --- MACRO PER CARATTERI NON LATINI (FIXED) ---
 % #1: Font Name, #2: Language Tag (polyglossia), #3: Font Options (e.g., Script=Arabic), #4: Sample Text
 \newcommand{\TestNonLatin}[4]{%
-	\par\noindent\textbf{Test in Lingua (\texttt{#2}) con Opzioni: \texttt{[#3]}}
+	\par\noindent\textbf{Test in Lingua (\texttt{#2}) with Options: \texttt{[#3]}}
 
 	\foreignlanguage{#2}{%
-		\fontspec{#1}[#3]%
+		\fontspec[BoldFont={},ItalicFont={},BoldItalicFont={},#3]{#1}%
 		#4\par
 	}%
 	\vspace{0.5em}
@@ -318,17 +328,17 @@ LATEX_INITIAL_CODE: str = (
 % Macro ROBUSTE per registrare i font (evita errori di espansione)
 \protected\def\LogWorking#1{%
     \stepcounter{cntWorking}%
-    \immediate\write\fileWorking{\unexpanded{\item} #1}%
+%    \immediate\write\fileWorking{\string\item\space\detokenize{#1}}%
 }
 
 \protected\def\LogBroken#1{%
     \stepcounter{cntBroken}%
-    \immediate\write\fileBroken{\unexpanded{\item} #1}%
+%    \immediate\write\fileBroken{\string\item\space\detokenize{#1}}%
 }
 
 \protected\def\LogExcluded#1{%
     \stepcounter{cntExcluded}%
-    \immediate\write\fileExcluded{\unexpanded{\item} #1}%
+%    \immediate\write\fileExcluded{\string\item\space\detokenize{#1}}%
 }
 % -----------------------------------
 
@@ -348,22 +358,25 @@ LATEX_INITIAL_CODE: str = (
 \maketitle
 
 \begin{abstract}
-Questo documento cataloga i font installati.
-I font problematici noti sono stati esclusi preventivamente. La compilazione è eseguita con \textbf{LuaLaTeX}.
+This document catalogs the fonts installed on the system.
+Problematic fonts are excluded in advance. The compilation is performed with \textbf{LuaLaTeX}.
 \end{abstract}
 
 \tableofcontents
 \newpage
 
-\section{Catalogo Dettagliato}"""
+\section{Detailed Catalog}
+"""
 )
 # -------------------------------------------
-SAMPLE_1: str = r"""\textbf{Test Latino (Lipsum):}
-    {\mdseries\upshape\fontspec{"""
+SAMPLE_1: str = r"""\textbf{Sample:}
+\begingroup
+\IfFontExistsTF{"""
 # --------------------------------------------
 SAMPLE_2: str = r"""}
-    \Li
-    }"""
+{\tempfont\Li}
+\endgroup
+"""
 # --------------------------------------------
 
 NORMAL_BLOCK: str = """\\subsection{{{safe_name}}}
@@ -380,7 +393,7 @@ NORMAL_BLOCK: str = """\\subsection{{{safe_name}}}
 }}{{
     \\LogBroken{{{safe_name}}}
     \\begin{{errorbox}}{{{safe_name}}}
-        Il font risulta nel sistema ma LuaLaTeX non riesce a caricarlo.
+        Font exists in the system but is not loadable by LuaLaTeX.
     \\end{{errorbox}}
 }}
 
@@ -394,33 +407,33 @@ LATEX_END_CODE_1: str = r"""\newpage
 \immediate\closeout\fileBroken
 \immediate\closeout\fileExcluded
 
-\section{Riepilogo e Statistiche}
+\section{Summary and Statistics}
 
 \begin{tcolorbox}[colback=white, colframe=gray]
 \begin{center}
-\Large\textbf{Statistiche Finali}
+\Large\textbf{Final Statistics}
 \vspace{1em}
 
 \begin{tabular}{lr}
 \toprule
-\textbf{Categoria} & \textbf{Quantità} \\
+\textbf{Category} & \textbf{Quantity} \\
 \midrule
 Font Analizzati (Post-Filtro) & """
 # --------------------------------------------
 LATEX_END_CODE_2: str = r""" \\
-\textcolor{successcolor}{\textbf{Font Funzionanti}} & \textbf{\arabic{cntWorking}} \\
-\textcolor{errorcolor}{\textbf{Font Problematici}} & \textbf{\arabic{cntBroken}} \\
-\textcolor{othercolor}{\textbf{Font Esclusi}} & \textbf{\arabic{cntExcluded}} \\
+\textcolor{successcolor}{\textbf{Working Fonts}} & \textbf{\arabic{cntWorking}} \\
+\textcolor{errorcolor}{\textbf{Broken Fonts}} & \textbf{\arabic{cntBroken}} \\
+\textcolor{othercolor}{\textbf{Excluded Fonts}} & \textbf{\arabic{cntExcluded}} \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{tcolorbox}
 
-\FileSec{\jobname.working}{Indice: Font Funzionanti}
+\FileSec{\jobname.working}{Table of Working Fonts}
 
-\FileSec{\jobname.broken}{Indice: Font Problematici}
+\FileSec{\jobname.broken}{Table of Broken Fonts}
 
-\FileSec{\jobname.excluded}{Indice: Font Esclusi}
+\FileSec{\jobname.excluded}{Table of Excluded Fonts}
 
 \end{document}
 """
@@ -947,7 +960,18 @@ def render_sample_code(font: dict, fam: str) -> str:
         )
 
     if not txt:
-        return SAMPLE_1 + escape_latex(fam) + SAMPLE_2
+        return (
+            r"\textbf{Sample:}"
+            "\n"
+            r"{\mdseries\upshape\fontspec["
+            r"Renderer=Harfbuzz,"
+            f"Family={nfss_id},"
+            r"UprightFont=*,"
+            r"BoldFont={},"
+            r"ItalicFont={},"
+            r"BoldItalicFont={}"
+            r"]{" + escape_latex(fam) + r"}\Li}"
+        )
 
     return (
         r"\textbf{Esempio:}"
@@ -1352,8 +1376,8 @@ def generate_latex(font_list: list[dict]) -> str:
     font_list = as_font_desc_list(font_list)
 
     # --- DEDUPLICATION BY FAMILY ---
-    seen_families = set()
-    unique_fonts = []
+    seen_families: set[str] = set()
+    unique_fonts: list[dict[str, Any]] = []
     for font in font_list:
         fam = font_family(font)
         if fam not in seen_families:
@@ -1367,22 +1391,65 @@ def generate_latex(font_list: list[dict]) -> str:
     latex_code: str = LATEX_INITIAL_CODE
 
     total = len(font_list)
-    for idx, font in enumerate(font_list, start=1):
+    latex_code += "\\section{Font List (Stage 0)}\n"
+    latex_code += "\\begin{itemize}\n"
+
+    typed_font_list: list[dict[str, Any]] = font_list
+    for idx, font in enumerate(typed_font_list, start=1):
         fam = font_family(font)
         safe_name = escape_latex(fam)
-        badges = render_badges(font)
-        sample_code = render_sample_code(font, fam)
 
         if idx % 500 == 0 or idx == total:
             log_info(f"  ... processed {idx}/{total}")
 
-        block: str = NORMAL_BLOCK.format(
-            safe_name=safe_name,
-            font=fam,
-            badges=badges,
-            sample_code=sample_code,
+        specimen = str(font.get("specimen_text", ""))
+        safe_specimen = escape_latex(specimen)
+        inference = cast("dict[str, object]", font.get("inference", {}) or {})
+        coverage = cast("dict[str, object]", font.get("coverage", {}) or {})
+        scripts_raw = inference.get("scripts", [""])
+        if isinstance(scripts_raw, list) and scripts_raw:
+            script0 = str(scripts_raw[0])
+        else:
+            script0 = ""
+        cov_scripts = coverage.get("scripts", [])
+        path = str(font.get("path", "")).lower()
+        fullpath = str(font.get("path", ""))
+        detok_fullpath = "\\detokenize{" + fullpath + "}"
+
+        is_opentype = path.endswith((".ttf", ".otf", ".ttc"))
+
+        render = ""
+        if (
+            script0 == "LATN"
+            and isinstance(cov_scripts, list)
+            and ("LATN" in cov_scripts)
+            and is_opentype
+        ):
+            _dir = fullpath.rsplit("/", 1)[0] + "/"
+            _file = fullpath.rsplit("/", 1)[-1]
+            render = (
+                " {\\begingroup\\fontspec[Renderer=HarfBuzz,Path={"
+                + _dir
+                + "}]{"
+                + _file
+                + "}"
+                + safe_specimen
+                + "\\endgroup}"
+            )
+
+        latex_code += (
+            "\\item "
+            + safe_name
+            + " --- "
+            + "\\IfFileExists{"
+            + detok_fullpath
+            + "}{[OK]\\newline"
+            + render
+            + "}{[MISSING]}"
+            + "\n"
         )
-        latex_code += "\n" + block
+
+    latex_code += "\\end{itemize}\n"
 
     latex_code += "\n\n"
     for excluded_font in sorted(list(EXCLUDED_FONTS)):
