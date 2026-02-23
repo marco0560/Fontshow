@@ -42,7 +42,7 @@ from collections import OrderedDict
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 
 from fontshow import __version__
 from fontshow.cli_utils import (
@@ -58,7 +58,14 @@ from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.semantic_validation import enforce_semantic_validation
-from fontshow.types import FontRef, InferenceInfo, Severity
+from fontshow.types import (
+    CatalogFontEntryV12,
+    CoverageV12,
+    FontRef,
+    InferenceInfo,
+    InferenceV12,
+    Severity,
+)
 
 # Platform-specific imports (deferred)
 if sys.platform == "win32":
@@ -503,7 +510,9 @@ def nfss_family_id(font: dict) -> str:
     return "FS" + digest[:10]
 
 
-def group_fonts_by_family(fonts: list[dict]) -> list[dict]:
+def group_fonts_by_family(
+    fonts: list[CatalogFontEntryV12],
+) -> list[CatalogFontEntryV12]:
     """
     Reduce a list of font entries to one entry per family.
 
@@ -576,7 +585,7 @@ def load_font_inventory(path: Path) -> list[dict]:
     return fonts
 
 
-def as_font_desc_list(fonts: Sequence[object]) -> list[dict[str, object]]:
+def as_font_desc_list(fonts: Sequence[object]) -> list[CatalogFontEntryV12]:
     """
     Normalize a sequence of font descriptor objects.
 
@@ -587,7 +596,7 @@ def as_font_desc_list(fonts: Sequence[object]) -> list[dict[str, object]]:
 
     Returns
     -------
-    list[dict[str, object]]
+    list[CatalogFontEntryV12]
         List of validated font descriptor dictionaries.
 
     Raises
@@ -599,12 +608,12 @@ def as_font_desc_list(fonts: Sequence[object]) -> list[dict[str, object]]:
     -----
     Legacy coercion of non-dictionary entries is not supported.
     """
-    out: list[dict[str, object]] = []
+    out: list[CatalogFontEntryV12] = []
     for f in fonts:
         if not isinstance(f, dict):
             msg = f"Unexpected font entry type {type(f)} for font '{f}'"
             raise TypeError(msg)
-        out.append(cast("dict[str, object]", f))
+        out.append(cast("CatalogFontEntryV12", f))
     return out
 
 
@@ -645,7 +654,7 @@ def _normalize_inventory_paths(inventory: dict) -> None:
             identity["file"] = font["path"]
 
 
-def font_family(font: dict[str, object]) -> str:
+def font_family(font: CatalogFontEntryV12 | dict[str, object]) -> str:
     """
     Return a best-effort font family name for rendering and sorting.
 
@@ -903,6 +912,21 @@ def render_sample_text(font: dict) -> str | None:
     return choose_sample_text(cast("FontRef", font))
 
 
+def _renderer_option_prefix() -> str:
+    """
+    Return the fontspec Renderer option prefix.
+
+    Notes
+    -----
+    - On Windows, omit Renderer=Harfbuzz to improve compatibility with the
+      underlying luaotfload/font loader (deterministic fallback).
+    - On non-Windows platforms, keep HarfBuzz enabled.
+    """
+    if IS_WINDOWS:
+        return ""
+    return "Renderer=Harfbuzz,"
+
+
 def render_sample_code(font: dict, fam: str) -> str:
     """
     Build the LaTeX snippet used to render the font sample.
@@ -941,6 +965,7 @@ def render_sample_code(font: dict, fam: str) -> str:
     ps = primary_script(font)
 
     nfss_id = nfss_family_id(font)
+    renderer_prefix = _renderer_option_prefix()
 
     # RTL: unchanged (TestNonLatin already isolates fonts)
     if ps in RTL_SCRIPTS:
@@ -963,9 +988,7 @@ def render_sample_code(font: dict, fam: str) -> str:
         return (
             r"\textbf{Sample:}"
             "\n"
-            r"{\mdseries\upshape\fontspec["
-            r"Renderer=Harfbuzz,"
-            f"Family={nfss_id},"
+            r"{\mdseries\upshape\fontspec[" + renderer_prefix + f"Family={nfss_id},"
             r"UprightFont=*,"
             r"BoldFont={},"
             r"ItalicFont={},"
@@ -976,9 +999,7 @@ def render_sample_code(font: dict, fam: str) -> str:
     return (
         r"\textbf{Esempio:}"
         "\n"
-        r"{\mdseries\upshape\fontspec["
-        r"Renderer=Harfbuzz,"
-        f"Family={nfss_id},"
+        r"{\mdseries\upshape\fontspec[" + renderer_prefix + f"Family={nfss_id},"
         r"UprightFont=*,"
         r"BoldFont={},"
         r"ItalicFont={},"
@@ -1038,7 +1059,7 @@ def get_installed_fonts_windows() -> list[str]:
 
     # Platform-specific logic: only attempt registry access if winreg is available
     if winreg is not None:
-        for path in registry_paths:  # type: ignore[unreachable]
+        for path in registry_paths:  # type --: ignore[unreachable]
             try:
                 with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
                     for i in range(winreg.QueryInfoKey(key)[1]):
@@ -1055,7 +1076,7 @@ def get_installed_fonts_windows() -> list[str]:
     return sorted(list(font_list))
 
 
-def get_font_details_windows():
+def get_font_details_windows() -> list["_FontDetail"]:
     """
     Return diagnostic details for installed Windows fonts.
 
@@ -1065,7 +1086,7 @@ def get_font_details_windows():
 
     Returns
     -------
-    list[dict[str, object]]
+    list[_FontDetail]
         List of dictionaries containing:
         - "raw_line": original registry entry name
         - "extracted_names": list with original name
@@ -1075,7 +1096,7 @@ def get_font_details_windows():
     -----
     Intended for testing and debugging font parsing logic.
     """
-    details: list[dict[str, object]] = []
+    details: list[_FontDetail] = []
     registry_paths_user = [
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
         r"SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Fonts",
@@ -1083,7 +1104,7 @@ def get_font_details_windows():
 
     # Platform-specific logic: only attempt registry access if winreg is available
     if winreg is not None:
-        for path in registry_paths_user:  # type: ignore[unreachable]
+        for path in registry_paths_user:  # type -- : ignore[unreachable]
             try:
                 with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
                     for i in range(winreg.QueryInfoKey(key)[1]):
@@ -1187,7 +1208,13 @@ def get_installed_fonts_linux() -> list[str]:
         return []
 
 
-def get_font_details_linux() -> list[dict]:
+class _FontDetail(TypedDict):
+    raw_line: str
+    extracted_names: list[str]
+    base_names: list[str]
+
+
+def get_font_details_linux() -> list[_FontDetail]:
     """
     Return diagnostic details for installed Linux fonts.
 
@@ -1197,7 +1224,7 @@ def get_font_details_linux() -> list[dict]:
 
     Returns
     -------
-    list[dict]
+    list[_FontDetail]
         List of dictionaries containing:
         - "raw_line": original `fc-list` output line
         - "extracted_names": parsed family names
@@ -1209,7 +1236,7 @@ def get_font_details_linux() -> list[dict]:
     """
     from time import perf_counter
 
-    details = []
+    details: list[_FontDetail] = []
     try:
         # Executes fc-list and captures the output
         fc_list = shutil.which("fc-list")
@@ -1317,6 +1344,7 @@ def generate_test_output(
     -------
     None
     """
+    details: list[_FontDetail]
     if IS_LINUX:
         details = get_font_details_linux()
     elif IS_WINDOWS:
@@ -1358,7 +1386,29 @@ def generate_test_output(
     log_ok(f"Test file generated: {test_filename}")
 
 
-def generate_latex(font_list: list[dict]) -> str:
+def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
+    """
+    Normalize a font file path for LaTeX/fontspec usage.
+
+    Returns
+    -------
+    tuple[str, str]
+        (dir_with_trailing_slash, filename)
+
+    Notes
+    -----
+    - Uses forward slashes regardless of platform.
+    - Guarantees a non-empty directory (defaults to "./").
+    """
+    norm = fullpath.replace("\\", "/")
+    if "/" in norm:
+        d, f = norm.rsplit("/", 1)
+        d = (d + "/") if d else "./"
+        return d, f
+    return "./", norm
+
+
+def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     """
     Generate the full LaTeX document for the provided font descriptors.
 
@@ -1377,7 +1427,7 @@ def generate_latex(font_list: list[dict]) -> str:
 
     # --- DEDUPLICATION BY FAMILY ---
     seen_families: set[str] = set()
-    unique_fonts: list[dict[str, Any]] = []
+    unique_fonts: list[CatalogFontEntryV12] = []
     for font in font_list:
         fam = font_family(font)
         if fam not in seen_families:
@@ -1394,7 +1444,7 @@ def generate_latex(font_list: list[dict]) -> str:
     latex_code += "\\section{Font List (Stage 0)}\n"
     latex_code += "\\begin{itemize}\n"
 
-    typed_font_list: list[dict[str, Any]] = font_list
+    typed_font_list: list[CatalogFontEntryV12] = font_list
     for idx, font in enumerate(typed_font_list, start=1):
         fam = font_family(font)
         safe_name = escape_latex(fam)
@@ -1404,17 +1454,33 @@ def generate_latex(font_list: list[dict]) -> str:
 
         specimen = str(font.get("specimen_text", ""))
         safe_specimen = escape_latex(specimen)
-        inference = cast("dict[str, object]", font.get("inference", {}) or {})
-        coverage = cast("dict[str, object]", font.get("coverage", {}) or {})
-        scripts_raw = inference.get("scripts", [""])
-        if isinstance(scripts_raw, list) and scripts_raw:
-            script0 = str(scripts_raw[0])
-        else:
-            script0 = ""
-        cov_scripts = coverage.get("scripts", [])
+        inference_raw = font.get("inference", {}) or {}
+        inference = (
+            cast("InferenceV12", inference_raw)
+            if isinstance(inference_raw, dict)
+            else cast("InferenceV12", {})
+        )
+        coverage_raw = font.get("coverage", {}) or {}
+        coverage = (
+            cast("CoverageV12", coverage_raw)
+            if isinstance(coverage_raw, dict)
+            else cast("CoverageV12", {})
+        )
+        scripts_raw_obj = inference.get("scripts")
+        scripts_raw: list[str] = (
+            scripts_raw_obj if isinstance(scripts_raw_obj, list) else []
+        )
+        script0 = str(scripts_raw[0]) if scripts_raw else ""
+
+        cov_scripts_obj = coverage.get("scripts")
+        cov_scripts: list[str] = (
+            cov_scripts_obj if isinstance(cov_scripts_obj, list) else []
+        )
+
         path = str(font.get("path", "")).lower()
         fullpath = str(font.get("path", ""))
-        detok_fullpath = "\\detokenize{" + fullpath + "}"
+        fullpath_norm = fullpath.replace("\\", "/")
+        detok_fullpath = "\\detokenize{" + fullpath_norm + "}"
 
         is_opentype = path.endswith((".ttf", ".otf", ".ttc"))
 
@@ -1425,13 +1491,17 @@ def generate_latex(font_list: list[dict]) -> str:
             and ("LATN" in cov_scripts)
             and is_opentype
         ):
-            _dir = fullpath.rsplit("/", 1)[0] + "/"
-            _file = fullpath.rsplit("/", 1)[-1]
+            _dir, _file = _normalize_path_for_latex(fullpath)
+            detok_dir = "\\detokenize{" + _dir + "}"
+            detok_file = "\\detokenize{" + _file + "}"
+            renderer_prefix = _renderer_option_prefix()
             render = (
-                " {\\begingroup\\fontspec[Renderer=HarfBuzz,Path={"
-                + _dir
-                + "}]{"
-                + _file
+                " {\\begingroup\\fontspec["
+                + renderer_prefix
+                + "Path="
+                + detok_dir
+                + "]{"
+                + detok_file
                 + "}"
                 + safe_specimen
                 + "\\endgroup}"
@@ -2013,7 +2083,9 @@ def _run_inventory_diagnostics(fonts: list) -> None:
 # ------------------------------------------------------------------
 
 
-def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
+def _filter_and_prepare_fonts(
+    fonts: list[CatalogFontEntryV12], args, test_fonts: set[str]
+) -> list[CatalogFontEntryV12]:
     """
     Filter and prepare fonts for catalog generation.
 
@@ -2052,20 +2124,17 @@ def _filter_and_prepare_fonts(fonts: list, args, test_fonts: set[str]) -> list:
 
     fonts = sorted(
         as_font_desc_list(fonts),
-        key=font_family,
+        key=lambda f: font_family(f),
     )
 
-    # Ensure rendering descriptor invariant: every font must have a valid 'name'
+    # Schema v1.2 forbids adding non-schema keys (e.g. 'name').
+    # Rendering code must derive display name dynamically instead of mutating the descriptor.
     for f in fonts:
-        if not isinstance(f.get("name"), str) or not f.get("name"):
-            full_name = f.get("full_name")
-            postscript_name = f.get("postscript_name")
-            family = f.get("family") or ""
-            subfamily = f.get("subfamily") or ""
-            derived = full_name or postscript_name or f"{family} {subfamily}".strip()
-            if isinstance(derived, str) and derived:
-                f["name"] = derived
-
+        _ = (
+            f.get("full_name")
+            or f.get("postscript_name")
+            or f"{(f.get('family') or '')} {(f.get('subfamily') or '')}".strip()
+        )
     result = group_fonts_by_family(fonts)
     log_trace_cat(
         log,
@@ -2184,10 +2253,6 @@ def run_create_catalog(args) -> int:
     # Invariant guard: rendering requires normalized font descriptors.
     if not isinstance(fonts, list) or any(not isinstance(f, dict) for f in fonts):
         log_err("Internal error: invalid font descriptor list after filtering.")
-        return 1
-
-    if any(not isinstance(f.get("name"), str) or not f.get("name") for f in fonts):
-        log_err("Internal error: invalid font descriptor(s) after filtering.")
         return 1
 
     latex_content = generate_latex(fonts)

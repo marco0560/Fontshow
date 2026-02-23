@@ -98,6 +98,26 @@ class FontRef(TypedDict):
     sample_text: NotRequired[SampleTextInfo]
 
 
+class CoverageV12(TypedDict, total=False):
+    scripts: list[str]
+    unicode_blocks: dict[str, int]
+
+
+class InferenceV12(TypedDict, total=False):
+    level: str
+    scripts: list[str]
+    languages: list[str]
+    unicode_blocks: dict[str, int]
+
+
+class CatalogFontEntryV12(TypedDict, total=False):
+    path: str
+    family: str
+    specimen_text: str
+    inference: InferenceV12
+    coverage: CoverageV12
+
+
 class DeprecatedLanguageInfo(TypedDict):
     raw: str
     from_: str
