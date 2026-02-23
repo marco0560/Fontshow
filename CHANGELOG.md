@@ -1,3 +1,9 @@
+## [0.39.0](https://github.com/marco0560/Fontshow/compare/v0.38.9...v0.39.0) (2026-02-23)
+
+### Features
+
+* **catalog:** stabilize guarded OpenType specimen rendering and fix strict typing ([309b1a2](https://github.com/marco0560/Fontshow/commit/309b1a25d612e67c16a87ac6c8253854b85bbbc8))
+
 ## [0.38.9](https://github.com/marco0560/Fontshow/compare/v0.38.8...v0.38.9) (2026-02-21)
 
 ### Bug Fixes
