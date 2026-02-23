@@ -1059,7 +1059,7 @@ def get_installed_fonts_windows() -> list[str]:
 
     # Platform-specific logic: only attempt registry access if winreg is available
     if winreg is not None:
-        for path in registry_paths:  # type --: ignore[unreachable]
+        for path in registry_paths:  # type: ignore[unreachable]
             try:
                 with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
                     for i in range(winreg.QueryInfoKey(key)[1]):
@@ -1104,7 +1104,7 @@ def get_font_details_windows() -> list["_FontDetail"]:
 
     # Platform-specific logic: only attempt registry access if winreg is available
     if winreg is not None:
-        for path in registry_paths_user:  # type -- : ignore[unreachable]
+        for path in registry_paths_user:  # type: ignore[unreachable]
             try:
                 with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
                     for i in range(winreg.QueryInfoKey(key)[1]):
