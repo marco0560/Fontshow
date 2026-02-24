@@ -1,3 +1,9 @@
+## [0.39.2](https://github.com/marco0560/Fontshow/compare/v0.39.1...v0.39.2) (2026-02-24)
+
+### Bug Fixes
+
+* **ci:** remove unused mypy ignores and align mypy python_version ([ca94d63](https://github.com/marco0560/Fontshow/commit/ca94d63354dad20922f2ef21d0056de1a934cb07))
+
 ## [0.39.1](https://github.com/marco0560/Fontshow/compare/v0.39.0...v0.39.1) (2026-02-23)
 
 ### Bug Fixes
