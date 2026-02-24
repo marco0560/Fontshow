@@ -32,6 +32,7 @@ content = "\n\n---\n\n".join(blocks)
 OUTPUT.write_text(
     header + "\n\n" + content + "\n",
     encoding="utf-8",
+    newline="\n",
 )
 
 print(f"Generated {OUTPUT} with {len(blocks)} sections")
