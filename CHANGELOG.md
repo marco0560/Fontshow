@@ -1,3 +1,9 @@
+## [0.39.3](https://github.com/marco0560/Fontshow/compare/v0.39.2...v0.39.3) (2026-02-24)
+
+### Bug Fixes
+
+* **typing:** make winreg import typing-safe and cross-platform deterministic ([a36e5dc](https://github.com/marco0560/Fontshow/commit/a36e5dc728cc35426d91879aa4e77338a3bad6a6))
+
 ## [0.39.2](https://github.com/marco0560/Fontshow/compare/v0.39.1...v0.39.2) (2026-02-24)
 
 ### Bug Fixes
