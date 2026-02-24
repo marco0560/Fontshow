@@ -42,7 +42,7 @@ from collections import OrderedDict
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import TYPE_CHECKING, Any, TypedDict, cast
 
 from fontshow import __version__
 from fontshow.cli_utils import (
@@ -67,11 +67,16 @@ from fontshow.types import (
     Severity,
 )
 
-# Platform-specific imports (deferred)
-if sys.platform == "win32":
-    import winreg
+# Platform-specific imports (deferred, typing-safe)
+if TYPE_CHECKING:
+    import winreg as _winreg  # noqa: F401
+
+    winreg: Any
 else:
-    winreg = None
+    try:
+        import winreg  # type: ignore
+    except ImportError:
+        winreg = None
 
 if sys.platform == "win32":
     # modulo specifico Windows
