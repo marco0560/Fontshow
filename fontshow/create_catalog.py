@@ -1621,7 +1621,12 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         type=int,
         help="Limit the number of processed fonts to the first N (if positive) or the last |N| (if negative)",
     )
-    add_common_arguments(parser)
+    add_common_arguments(
+        parser,
+        include_output=True,
+        output_default=None,
+        output_help="Output LaTeX .tex file (optional; default is an auto-generated unique name)",
+    )
 
 
 def register_cli(parser) -> None:
@@ -2213,9 +2218,14 @@ def run_create_catalog(args) -> int:
     # --------------------------------------------------------------
     # OUTPUT FILE PREPARATION
     # --------------------------------------------------------------
-    rc, output_filename = _prepare_output_filename()
-    if rc != 0 or not output_filename:
-        return 1
+    output_arg = getattr(args, "output", None)
+    if output_arg is not None:
+        output_filename = str(output_arg)
+    else:
+        rc, out_name = _prepare_output_filename()
+        if rc != 0 or out_name is None:
+            return 1
+        output_filename = out_name
 
     if args.test:
         generate_test_output(args.number, bool(TEST_FONTS))

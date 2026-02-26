@@ -133,7 +133,12 @@ def main() -> int:
         "preflight",
         help="Run environment and dependency checks",
     )
-    add_common_arguments(preflight_parser)
+    add_common_arguments(
+        preflight_parser,
+        include_output=True,
+        output_default=None,
+        output_help="Write preflight report to file (in addition to console output)",
+    )
     fontshow.preflight.register_cli(preflight_parser)
 
     # ------------------------------------------------------------------

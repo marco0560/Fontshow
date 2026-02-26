@@ -297,7 +297,13 @@ def add_quiet_argument(parser: _ActionsContainer) -> None:
     )
 
 
-def add_common_arguments(parser: argparse.ArgumentParser) -> None:
+def add_common_arguments(
+    parser: argparse.ArgumentParser,
+    *,
+    include_output: bool = False,
+    output_default: Path | None = None,
+    output_help: str = "Output file",
+) -> None:
     """
     Add CLI arguments common to all Fontshow commands.
 
@@ -305,6 +311,12 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     ----------
     parser : argparse.ArgumentParser
         Argument parser to which common CLI options are added.
+    include_output : bool
+        If True, also add `-o/--output`.
+    output_default : Path | None
+        Default output path used when `include_output` is True.
+    output_help : str
+        Help string for the `-o/--output` argument.
 
     Returns
     -------
@@ -316,7 +328,17 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     - `--version`
     - `--verbose`
     - `--quiet`
+    - `--output` (optional)
     """
+    if include_output:
+        parser.add_argument(
+            "-o",
+            "--output",
+            type=Path,
+            default=output_default,
+            help=output_help,
+        )
+
     add_version_argument(parser)
 
     group = parser.add_mutually_exclusive_group()

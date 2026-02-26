@@ -11,6 +11,7 @@ Allows running preflight checks via:
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
 from fontshow.cli_utils import (
     _VERBOSE,
@@ -62,6 +63,17 @@ def _run_preflight_cli(
         result.results,
         verbose=_VERBOSE,
     )
+
+    output_path = getattr(args, "output", None)
+    if output_path is not None:
+        try:
+            text = "\n".join(rendered_lines)
+            if text:
+                text += "\n"
+            Path(output_path).write_text(text, encoding="utf-8")
+        except OSError as exc:
+            log_err(f"Failed to write preflight report: {exc}")
+            return 1
 
     for line in rendered_lines:
         # Severity prefix is already embedded in the rendered line

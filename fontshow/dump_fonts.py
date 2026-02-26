@@ -2089,13 +2089,6 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
     )
     parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser.add_argument(
-        "-o",
-        "--output",
-        type=Path,
-        default=Path("font_inventory.json"),
-        help="Output JSON file",
-    )
-    parser.add_argument(
         "-c",
         "--cache-dir",
         type=Path,
@@ -2114,7 +2107,12 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="Include Fontconfig-declared Unicode charset information (experimental, best-effort)",
     )
-    add_common_arguments(parser)
+    add_common_arguments(
+        parser,
+        include_output=True,
+        output_default=Path("font_inventory.json"),
+        output_help="Output JSON file",
+    )
 
 
 def register_cli(parser) -> None:
