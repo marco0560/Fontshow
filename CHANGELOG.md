@@ -1,3 +1,9 @@
+## [0.40.0](https://github.com/marco0560/Fontshow/compare/v0.39.3...v0.40.0) (2026-02-26)
+
+### Features
+
+* **cli:** new common `-o` option and enable in create-catalog and preflight ([49cdea2](https://github.com/marco0560/Fontshow/commit/49cdea2698b181a72f0e9e461410c71309aa5158))
+
 ## [0.39.3](https://github.com/marco0560/Fontshow/compare/v0.39.2...v0.39.3) (2026-02-24)
 
 ### Bug Fixes
