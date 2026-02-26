@@ -35,8 +35,6 @@ import hashlib
 import json
 import platform
 import re
-import shutil
-import subprocess
 import sys
 from collections import OrderedDict
 from collections.abc import Sequence
@@ -100,37 +98,36 @@ EXCLUDED_FONTS: set[str]
 DEFAULT_TEST_FONTS: set[str]
 
 if IS_WINDOWS:
-    EXCLUDED_FONTS = {
-        # Fonts to exclude because they cause crashes or have known issues
-        # A classic symbolic font, often problematic in LuaTeX but not installed on this system, is:
-        #    "Hololens MDL2 Assets"
-        "Segoe MDL2 Assets",
-        "Segoe Fluent Icons",
-        "MT Extra",
-        "MS Reference Specialty",
-        "MS Outlook",
-        "Bookshelf Symbol 7",
-        "Webdings",
-        "Wingdings",
-        "Wingdings 2",
-        "Wingdings 3",
-        "Marlett",
-        "Symbol",
-        "Microsoft YaHei",
-        "Noto Sans Arabic",
-        "Noto Sans Hebrew",
-        "Yu Gothic",
-    }
+    EXCLUDED_FONTS = set()
     DEFAULT_TEST_FONTS = {"Times New Roman", "Arial", "Calibri", "Noto Sans"}
 elif IS_LINUX:
-    EXCLUDED_FONTS = {"Noto Emoji", "KacstScreen"}
+    EXCLUDED_FONTS = {
+        "MuseJazz Text",
+        "MnSymbol",
+    }
     DEFAULT_TEST_FONTS = {
         "Times New Roman",
         "Arial",
         "Calibri",
-        "Noto Sans",
-        "KaitiM",
-        "Devanagari",
+        "Noto Sans Buginese",
+        "Noto Sans Buhid",
+        "Noto Sans Yi",
+        "Noto Sans Devanagari Light",
+        "Noto Sans Arabic",
+        "Noto Sans Hebrew",
+        "Noto Sans Thai",
+        "Noto Sans Armenian",
+        "Noto Sans Ethiopic",
+        "Noto Sans Bengali",
+        "Noto Sans Tamil",
+        "Noto Sans Khmer",
+        "Noto Sans Lao",
+        "Noto Sans Myanmar",
+        "Noto Sans Georgian",
+        "Noto Sans Cherokee",
+        "Noto Serif TC",
+        "Noto Serif Hentaigana",
+        "Bandal",
     }
 else:
     EXCLUDED_FONTS = set()
@@ -1035,299 +1032,14 @@ def clean_font_name(name: str) -> str:
     return re.sub(variants, "", clean_name, flags=re.IGNORECASE).strip()
 
 
-def get_installed_fonts_windows() -> list[str]:
-    """
-    Return a sorted list of installed font family names on Windows.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    list[str]
-        Sorted list of normalized font family names discovered in the
-        Windows registry, excluding entries listed in `EXCLUDED_FONTS`.
-
-    Notes
-    -----
-    Font names are normalized using `clean_font_name()`.
-    """
-    log_info("Sistema: Windows. Scansione registro...")
-    font_list: set[str] = set()
-    registry_paths = [
-        r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
-        r"SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Fonts",
-    ]
-
-    # Platform-specific logic: only attempt registry access if winreg is available
-    if winreg is not None:
-        for path in registry_paths:
-            try:
-                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
-                    for i in range(winreg.QueryInfoKey(key)[1]):
-                        name, value, _ = winreg.EnumValue(key, i)
-
-                        if re.search(r"\.(ttf|otf|ttc|fon)$", value, re.IGNORECASE):
-                            base_name = clean_font_name(name)
-                            if base_name and base_name not in EXCLUDED_FONTS:
-                                font_list.add(base_name)
-
-            except FileNotFoundError:
-                continue
-
-    return sorted(list(font_list))
-
-
-def get_font_details_windows() -> list["_FontDetail"]:
-    """
-    Return diagnostic details for installed Windows fonts.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    list[_FontDetail]
-        List of dictionaries containing:
-        - "raw_line": original registry entry name
-        - "extracted_names": list with original name
-        - "base_names": list with normalized base name
-
-    Notes
-    -----
-    Intended for testing and debugging font parsing logic.
-    """
-    details: list[_FontDetail] = []
-    registry_paths_user = [
-        r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
-        r"SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Fonts",
-    ]
-
-    # Platform-specific logic: only attempt registry access if winreg is available
-    if winreg is not None:
-        for path in registry_paths_user:
-            try:
-                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
-                    for i in range(winreg.QueryInfoKey(key)[1]):
-                        name, value, _ = winreg.EnumValue(key, i)
-
-                        if re.search(r"\.(ttf|otf|ttc|fon)$", value, re.IGNORECASE):
-                            base_name = clean_font_name(name)
-                            details.append(
-                                {
-                                    "raw_line": name,
-                                    "extracted_names": [name],
-                                    "base_names": [base_name],
-                                }
-                            )
-
-            except FileNotFoundError:
-                continue
-
-    return details
-
-
-def extract_font_family(line):
-    """
-    Extract the family portion from a `fc-list` output line.
-
-    Parameters
-    ----------
-    line : str
-        A single line from `fc-list` output in the form:
-        "path:family:style" or "path:family".
-
-    Returns
-    -------
-    str
-        Extracted family string. Comma-separated families are preserved.
-        Returns an empty string if extraction fails.
-    """
-    parts = line.split(":")
-
-    if len(parts) < 2:
-        return ""
-
-    if len(parts) == 2:
-        # Format: path:family
-        return parts[1].strip()
-
-    # Format: path:family:style or path:family:other:style
-    # Join all elements except the first and last
-    return ":".join(parts[1:2]).strip()
-
-
-def get_installed_fonts_linux() -> list[str]:
-    """
-    Return a sorted list of installed font family names on Linux using `fc-list`.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    list[str]
-        Sorted list of normalized font family names discovered via
-        `fc-list`, excluding entries listed in `EXCLUDED_FONTS`.
-
-    Notes
-    -----
-    Font discovery relies on the `fc-list` command from fontconfig.
-    """
-    log_info("Sistema: Linux. Uso 'fc-list' per l'estrazione dei font...")
-
-    try:
-        # Executes fc-list and captures the output
-        fc_list = shutil.which("fc-list")
-        if not fc_list:
-            msg = "fc-list not found in PATH"
-            raise RuntimeError(msg)
-
-        result = subprocess.run(
-            [fc_list, ":family"], capture_output=True, text=True, check=True
-        )
-
-        lines = result.stdout.strip().split("\n")
-
-        font_list = set()
-        for line in lines:
-            if ":" in line:
-                family_part = extract_font_family(line)
-                for name in family_part.split(","):
-                    base_name = name.strip()
-                    if base_name and base_name not in EXCLUDED_FONTS:
-                        font_list.add(base_name)
-
-        return sorted(list(font_list))
-
-    except FileNotFoundError:
-        log_err("'fc-list' not found. Make sure fontconfig is installed.")
-        return []
-    except subprocess.CalledProcessError as e:
-        log_err(f"Error running fc-list: {e}")
-        return []
-
-
 class _FontDetail(TypedDict):
     raw_line: str
     extracted_names: list[str]
     base_names: list[str]
 
 
-def get_font_details_linux() -> list[_FontDetail]:
-    """
-    Return diagnostic details for installed Linux fonts.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    list[_FontDetail]
-        List of dictionaries containing:
-        - "raw_line": original `fc-list` output line
-        - "extracted_names": parsed family names
-        - "base_names": normalized base names
-
-    Notes
-    -----
-    Intended for testing and debugging font parsing logic.
-    """
-    from time import perf_counter
-
-    details: list[_FontDetail] = []
-    try:
-        # Executes fc-list and captures the output
-        fc_list = shutil.which("fc-list")
-        if not fc_list:
-            msg = "fc-list not found in PATH"
-            raise RuntimeError(msg)
-        from time import perf_counter
-
-        log_trace_cat(
-            log,
-            "io",
-            "fc-list start",
-            extra={"cmd": fc_list},
-        )
-
-        t0 = perf_counter()
-        result = subprocess.run(
-            [fc_list, ":family"], capture_output=True, text=True, check=True
-        )
-        duration_ms = int((perf_counter() - t0) * 1000)
-        log_trace_cat(
-            log,
-            "perf",
-            "fc-list timing",
-            extra={
-                "cmd": fc_list,
-                "duration_ms": duration_ms,
-                "exit_code": result.returncode,
-            },
-        )
-        lines = result.stdout.strip().split("\n")
-
-        for line in lines:
-            if ":" in line:
-                family_part = extract_font_family(line)
-                extracted_names = [
-                    name.strip() for name in family_part.split(",") if name.strip()
-                ]
-                base_names = [clean_font_name(name) for name in extracted_names]
-                details.append(
-                    {
-                        "raw_line": line,
-                        "extracted_names": extracted_names,
-                        "base_names": base_names,
-                    }
-                )
-
-    except FileNotFoundError:
-        log_err("'fc-list' not found. Make sure fontconfig is installed.")
-    except subprocess.CalledProcessError as e:
-        log_trace_cat(
-            log,
-            "io",
-            "fc-list failed",
-            extra={
-                "cmd": "fc-list",
-                "exit_code": e.returncode,
-            },
-        )
-        log_err(f"Error running fc-list: {e}")
-    return details
-
-
-def get_installed_fonts() -> list[str]:
-    """
-    Dispatch to platform-specific font discovery.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    list[str]
-        Sorted list of discovered font family names for the current platform,
-        or an empty list if the platform is unsupported.
-    """
-    if IS_WINDOWS:
-        return get_installed_fonts_windows()
-
-    if IS_LINUX:
-        return get_installed_fonts_linux()
-
-    log_err(f"System '{sys.platform}' not supported or unrecognized.")
-    return []
-
-
 def generate_test_output(
+    inventory_fonts: list[dict],
     limit: int | None = None,
     filter_test: bool = False,
 ) -> None:
@@ -1347,24 +1059,28 @@ def generate_test_output(
     -------
     None
     """
-    details: list[_FontDetail]
-    if IS_LINUX:
-        details = get_font_details_linux()
-    elif IS_WINDOWS:
-        details = get_font_details_windows()
-    else:
-        log_err(f"System '{sys.platform}' not supported or unrecognized.")
-        return
+    details: list[_FontDetail] = []
+
+    families = {
+        str(font_item.get("family", "")).strip()
+        for font_item in inventory_fonts
+        if font_item.get("family")
+    }
+
+    for family in sorted(families):
+        details.append(
+            {
+                "raw_line": family,
+                "extracted_names": [family],
+                "base_names": [family],
+            }
+        )
 
     if filter_test:
         details = [
             item
             for item in details
-            if any(
-                sub.lower() in name.lower()
-                for name in item["base_names"]
-                for sub in TEST_FONTS
-            )
+            if any(name in TEST_FONTS for name in item["base_names"])
         ]
 
     if limit:
@@ -1381,9 +1097,28 @@ def generate_test_output(
         return
     with Path(test_filename).open("w", encoding="utf-8") as f:
         for item in details:
-            f.write(f"Raw line: {item['raw_line']}\n")
-            f.write(f"Extracted names: {', '.join(item['extracted_names'])}\n")
-            f.write(f"Base names: {', '.join(item['base_names'])}\n")
+            family = item["base_names"][0]
+
+            f.write(f"Raw line: {family}\n")
+            f.write(f"Extracted names: {family}\n")
+            f.write(f"Base names: {family}\n")
+
+            # List all files belonging to this family
+            paths = sorted(
+                str(font_item.get("path", "")).strip()
+                for font_item in inventory_fonts
+                if isinstance(font_item, dict)
+                and str(font_item.get("family", "")).strip() == family
+                and font_item.get("path")
+            )
+
+            if paths:
+                f.write("Files:\n")
+                for p in paths:
+                    f.write(f"  - {p}\n")
+            else:
+                f.write("Files: (none)\n")
+
             f.write("\n")
 
     log_ok(f"Test file generated: {test_filename}")
@@ -1527,27 +1262,6 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     return latex_code
 
 
-def font_matches_test_set(font_name: str, test_fonts: set[str]) -> bool:
-    """
-    Check whether a font name matches the configured test font set.
-
-    Parameters
-    ----------
-    font_name : str
-        Font family name to evaluate.
-    test_fonts : set[str]
-        Set of font name substrings used for matching.
-
-    Returns
-    -------
-    bool
-        True if any element of `test_fonts` is a case-insensitive substring
-        of `font_name`; otherwise False.
-    """
-    lname = font_name.lower()
-    return any(t.lower() in lname for t in test_fonts)
-
-
 # ============================================================
 # Platform integration and CLI orchestration
 # ============================================================
@@ -1676,25 +1390,19 @@ def _configure_test_fonts(args) -> set[str]:
     - Explicit values extend the set.
     """
     cli_fonts: set[str] = set()
-    use_default = False
 
     if args.test_font:
         for value in args.test_font:
-            if value == "__DEFAULT__":
-                use_default = True
-            else:
-                cli_fonts.add(value)
+            cli_fonts.add(value)
 
-    test_fonts = set()
+        # Explicit CLI fonts extend defaults.
+        return set(DEFAULT_TEST_FONTS) | cli_fonts
 
-    if use_default:
-        test_fonts |= DEFAULT_TEST_FONTS
-
-    test_fonts |= cli_fonts
-    return test_fonts
+    # No --test-font provided → use DEFAULT_TEST_FONTS.
+    return set(DEFAULT_TEST_FONTS)
 
 
-def _handle_list_test_fonts(test_fonts: set[str]) -> int:
+def _handle_list_test_fonts(test_fonts: set[str], inventory_fonts: list[dict]) -> int:
     """
     Implement the --list-test-fonts CLI behavior.
 
@@ -1711,7 +1419,7 @@ def _handle_list_test_fonts(test_fonts: set[str]) -> int:
     Notes
     -----
     - Must ignore --quiet by contract.
-    - Lists configured TEST_FONTS and matching installed fonts.
+    - Lists configured TEST_FONTS and matching inventory fonts (JSON is the single source of truth).
     """
     log_info("TEST_FONTS configuration:")
 
@@ -1721,17 +1429,26 @@ def _handle_list_test_fonts(test_fonts: set[str]) -> int:
         for name in sorted(test_fonts):
             log_info(f"  - {name}")
 
-    log_info("Installed fonts matching TEST_FONTS:")
+    log_info("Inventory fonts matching TEST_FONTS (exact):")
 
-    installed_fonts = get_installed_fonts()
-    matched = [
-        fname for fname in installed_fonts if font_matches_test_set(fname, test_fonts)
-    ]
+    inv_families = {
+        str(f.get("family", "")).strip() for f in inventory_fonts if isinstance(f, dict)
+    }
+    matched = [name for name in sorted(test_fonts) if name in inv_families]
 
     if not matched:
         log_info("  (none)")
     else:
-        for name in sorted(matched):
+        for name in matched:
+            log_info(f"  - {name}")
+
+    log_info("Missing TEST_FONTS (not present in inventory):")
+    missing = [name for name in sorted(test_fonts) if name not in inv_families]
+
+    if not missing:
+        log_info("  (none)")
+    else:
+        for name in missing:
             log_info(f"  - {name}")
 
     return 0
@@ -2114,11 +1831,7 @@ def _filter_and_prepare_fonts(
     )
 
     if test_fonts:
-        fonts = [
-            f
-            for f in as_font_desc_list(fonts)
-            if any(sub.lower() in font_family(f).lower() for sub in test_fonts)
-        ]
+        fonts = [f for f in as_font_desc_list(fonts) if font_family(f) in test_fonts]
 
     if args.number:
         fonts = fonts[: args.number] if args.number > 0 else fonts[args.number :]
@@ -2212,9 +1925,6 @@ def run_create_catalog(args) -> int:
     # --------------------------------------------------------------
     TEST_FONTS = _configure_test_fonts(args)
 
-    if args.list_test_fonts:
-        return _handle_list_test_fonts(TEST_FONTS)
-
     # --------------------------------------------------------------
     # OUTPUT FILE PREPARATION
     # --------------------------------------------------------------
@@ -2226,9 +1936,6 @@ def run_create_catalog(args) -> int:
         if rc != 0 or out_name is None:
             return 1
         output_filename = out_name
-
-    if args.test:
-        generate_test_output(args.number, bool(TEST_FONTS))
 
     # --------------------------------------------------------------
     # INVENTORY / FONT SOURCE
@@ -2244,6 +1951,12 @@ def run_create_catalog(args) -> int:
     rc, fonts = _load_inventory(inv_path)
     if rc != 0:
         return 1
+
+    if args.test:
+        generate_test_output(fonts, args.number, bool(TEST_FONTS))
+
+    if args.list_test_fonts:
+        return _handle_list_test_fonts(TEST_FONTS, fonts)
 
     # --------------------------------------------------------------
     # CONSISTENCY DIAGNOSTICS (inventory mode only)
