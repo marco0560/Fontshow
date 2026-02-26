@@ -7,7 +7,7 @@ name = "fontshow"
 dynamic = ["version"]
 description = "Fontshow utilities"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 license = { text = "MIT" }
 authors = [{ name = "Marco Coppola" }]
 dependencies = [
@@ -244,7 +244,7 @@ known-first-party = ["fontshow"]
 combine-as-imports = true
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 warn_unused_configs = true
 ignore_missing_imports = true
 check_untyped_defs = true

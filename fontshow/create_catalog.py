@@ -60,10 +60,8 @@ from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.semantic_validation import enforce_semantic_validation
 from fontshow.types import (
     CatalogFontEntryV12,
-    CoverageV12,
     FontRef,
     InferenceInfo,
-    InferenceV12,
     Severity,
 )
 
@@ -1459,18 +1457,11 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
 
         specimen = str(font.get("specimen_text", ""))
         safe_specimen = escape_latex(specimen)
-        inference_raw = font.get("inference", {}) or {}
-        inference = (
-            cast("InferenceV12", inference_raw)
-            if isinstance(inference_raw, dict)
-            else cast("InferenceV12", {})
-        )
-        coverage_raw = font.get("coverage", {}) or {}
-        coverage = (
-            cast("CoverageV12", coverage_raw)
-            if isinstance(coverage_raw, dict)
-            else cast("CoverageV12", {})
-        )
+        inference_raw = font.get("inference") or {}
+        inference = inference_raw if isinstance(inference_raw, dict) else {}
+
+        coverage_raw = font.get("coverage") or {}
+        coverage = coverage_raw if isinstance(coverage_raw, dict) else {}
         scripts_raw_obj = inference.get("scripts")
         scripts_raw: list[str] = (
             scripts_raw_obj if isinstance(scripts_raw_obj, list) else []

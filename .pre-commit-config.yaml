@@ -50,5 +50,5 @@ repos:
         name: mypy (fontshow)
         entry: python -m mypy fontshow
         language: python
-        additional_dependencies: [mypy==1.11.2]
+        additional_dependencies: [mypy==1.19.1]
         pass_filenames: false
