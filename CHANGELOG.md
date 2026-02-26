@@ -1,3 +1,9 @@
+## [0.40.1](https://github.com/marco0560/Fontshow/compare/v0.40.0...v0.40.1) (2026-02-26)
+
+### Bug Fixes
+
+* **catalog:** enforce exact TEST_FONTS semantics and remove font discovery layer ([ff13ff8](https://github.com/marco0560/Fontshow/commit/ff13ff85ca0143c46bef9499d38c9f774e278707))
+
 ## [0.40.0](https://github.com/marco0560/Fontshow/compare/v0.39.3...v0.40.0) (2026-02-26)
 
 ### Features
