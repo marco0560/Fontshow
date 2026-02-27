@@ -1,3 +1,9 @@
+## [0.40.2](https://github.com/marco0560/Fontshow/compare/v0.40.1...v0.40.2) (2026-02-27)
+
+### Bug Fixes
+
+* **core:** stabilize script pipeline and specimen generation groundwork ([186375e](https://github.com/marco0560/Fontshow/commit/186375e5fcdd84522d1feac63091375abbc7d659))
+
 ## [0.40.1](https://github.com/marco0560/Fontshow/compare/v0.40.0...v0.40.1) (2026-02-26)
 
 ### Bug Fixes
