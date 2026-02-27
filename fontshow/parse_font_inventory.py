@@ -35,9 +35,10 @@ from fontshow.cli_utils import (
     log_warn,
     set_cli_mode,
 )
+from fontshow.common.specimens import choose_language_sample
 from fontshow.dump_fonts import UNICODE_BLOCKS
 from fontshow.global_constants import SCHEMA_VERSION
-from fontshow.infer_languages import infer_languages
+from fontshow.infer_languages import SCRIPT_TO_DISPLAY_LANGUAGE, infer_languages
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
@@ -951,6 +952,42 @@ def _specimen_from_cmap(
     return "".join(chr(cp) for cp in chosen), "cmap"
 
 
+def _specimen_apply_semantic_validation(
+    font: dict[str, Any],
+    filtered: str,
+    g: int,
+    cps: set[int] | None,
+) -> tuple[str, int, str | None]:
+    """
+    Ensure specimen characters belong to the font cmap.
+    Returns possibly modified (filtered, glyph_count, strategy).
+    """
+    if not cps:
+        return filtered, g, None
+
+    invalid = [c for c in filtered if ord(c) not in cps]
+    if not invalid:
+        return filtered, g, None
+
+    inference_raw = font.get("inference") or {}
+    inference = inference_raw if isinstance(inference_raw, dict) else {}
+    langs_raw = inference.get("languages")
+    inferred_languages: list[str] = langs_raw if isinstance(langs_raw, list) else []
+
+    scripts_raw = inference.get("scripts")
+    inferred_scripts: list[str] = scripts_raw if isinstance(scripts_raw, list) else []
+
+    sample = choose_language_sample(inferred_languages, inferred_scripts)
+
+    if isinstance(sample, str) and sample:
+        candidate, cand_g = _specimen_filter_text(sample, cps)
+        if candidate and cand_g > 0:
+            return candidate, int(cand_g), "validated-language-sample"
+
+    fallback = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    return fallback, len(fallback), "validated-fallback"
+
+
 def _specimen_generate_for_font(
     font: dict[str, Any],
     coverage: dict[str, Any],
@@ -1031,13 +1068,18 @@ def _specimen_generate_for_font(
         rejection = rejection or "no_visible_glyphs"
 
     # --- SPECIMEN SEMANTIC VALIDATION ---
-    if cps:
-        invalid = [c for c in filtered if ord(c) not in cps]
-        if invalid:
-            filtered = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-            g = len(filtered)
-            strategy = "validated-fallback"
-            rejection = "specimen_not_in_cmap"
+    new_filtered, new_g, new_strategy = _specimen_apply_semantic_validation(
+        font,
+        filtered,
+        g,
+        cps,
+    )
+
+    if new_strategy is not None:
+        filtered = new_filtered
+        g = new_g
+        strategy = new_strategy
+        rejection = "specimen_not_in_cmap"
 
     font["specimen_text"] = filtered
     font["specimen_strategy"] = strategy or "cmap"
@@ -1061,28 +1103,6 @@ def _specimen_generate_for_font(
 # Inference helpers
 # ============================================================
 
-# Script normalization
-
-#: Normalize human-readable script names to ISO 15924 codes.
-#: This mapping enforces a single canonical representation
-#: across the entire pipeline.
-SCRIPT_NAME_TO_ISO: dict[str, str] = {
-    "latin": "latn",
-    "greek": "grek",
-    "cyrillic": "cyrl",
-    "arabic": "arab",
-    "hebrew": "hebr",
-    "devanagari": "deva",
-    "japanese": "jpan",
-    "korean": "hang",
-    "han": "hani",
-}
-
-# NOTE:
-# Script identifiers emitted by infer_scripts() MUST be ISO 15924 codes.
-# Human-readable names (e.g. "latin", "greek") are considered internal-only
-# and must never appear in the enriched inventory.
-
 
 # TODO(#0): classification rule table will grow;
 # refactor to data-driven mapping when script set expands
@@ -1105,7 +1125,9 @@ def infer_scripts(  # noqa: C901, PLR0912
             ``"conservative"``, ``"medium"`` (default), or ``"aggressive"``.
 
     Returns:
-        A list of inferred script identifiers (lowercase strings).
+        A list of inferred ISO-15924 script codes (lowercase),
+        ordered by decreasing confidence.
+        Examples: "latn", "cyrl", "arab", "taml", "hani".
         Returns ``["unknown"]`` if no reliable inference is possible.
         The value ``"unknown"`` is a sentinel and must not be used
         for downstream language inference.
@@ -1127,44 +1149,117 @@ def infer_scripts(  # noqa: C901, PLR0912
             # medium - default
             return count >= 20 or (count / total) >= 0.05
 
-        scripts_found: set[str] = set()
+        scripts_score: dict[str, int] = {}
 
-        # --- block → script mapping
+        def add_script(name: str, weight: int) -> None:
+            scripts_score[name] = scripts_score.get(name, 0) + weight
+
+        # --- block → script mapping (score-based)
         for block, count in blocks.items():
-            if not significant(count):
+            # Latin needs strict significance (to avoid false multi-script noise),
+            # but non-Latin scripts must be more sensitive: their block counts are
+            # often smaller (or split across Extended/Supplement blocks).
+            if block.startswith("Latin"):
+                if not significant(count):
+                    continue
+            elif level == "conservative":
+                if not (count >= 20 or (count / total) >= 0.05):
+                    continue
+            elif level == "aggressive":
+                if count < 2:
+                    continue
+            elif not (count >= 5 or (count / total) >= 0.01):  # medium - default
                 continue
 
             if block.startswith("Latin"):
-                scripts_found.add("latin")
+                add_script("latn", count)
             elif block == "Greek and Coptic":
-                scripts_found.add("greek")
+                add_script("grek", count)
             elif block == "Cyrillic":
-                scripts_found.add("cyrillic")
+                add_script("cyrl", count)
             elif block == "Arabic":
-                scripts_found.add("arabic")
+                add_script("arab", count)
             elif block == "Hebrew":
-                scripts_found.add("hebrew")
+                add_script("hebr", count)
             elif block == "Devanagari":
-                scripts_found.add("devanagari")
+                add_script("deva", count)
+            elif block == "Bengali":
+                add_script("beng", count)
+            elif block == "Tamil":
+                add_script("taml", count)
+            elif block == "Thai":
+                add_script("thai", count)
+            elif block.startswith("Lao"):
+                add_script("laoo", count)
             elif block in ("Hiragana", "Katakana"):
-                scripts_found.add("japanese")
+                add_script("jpan", count)
             elif block == "Hangul Syllables":
-                scripts_found.add("korean")
+                add_script("hang", count)
+            elif block == "Yi Syllables":
+                add_script("yiii", count)
+            elif block.startswith("Armenian"):
+                add_script("armn", count)
+            elif block.startswith("Georgian"):
+                add_script("geor", count)
+            elif block.startswith("Ethiopic"):
+                add_script("ethi", count)
+            elif block.startswith("Cherokee"):
+                add_script("cher", count)
+            elif block.startswith("Khmer"):
+                add_script("khmr", count)
+            elif block.startswith("Buginese"):
+                add_script("bugi", count)
+            elif block.startswith("Buhid"):
+                add_script("buhd", count)
+            elif block.startswith("Kana"):
+                add_script("jpan", count)
             elif block.startswith("CJK Unified Ideographs"):
-                scripts_found.add("han")
+                add_script("hani", count)
 
-        # --- CJK disambiguation
-        if "han" in scripts_found:
-            if "japanese" in scripts_found:
-                return ["jpan"]
-            if "korean" in scripts_found:
-                return ["hang"]
-            return ["hani"]
+            # --- CJK disambiguation (kept as a single-script outcome)
+            if "hani" in scripts_score:
+                if "jpan" in scripts_score:
+                    return ["jpan"]
+                if "hang" in scripts_score:
+                    return ["hang"]
+                return ["hani"]
 
-        # Normalize to ISO 15924 codes
-        normalized = [SCRIPT_NAME_TO_ISO.get(s, s) for s in scripts_found]
+        normalized_scores: list[tuple[str, int]] = []
+        for name, score in scripts_score.items():
+            iso = name
+            normalized_scores.append((iso, score))
 
-        return sorted(set(normalized)) or ["unknown"]
+        if not normalized_scores:
+            return ["unknown"]
+
+        iso_priority: dict[str, int] = {
+            "latn": 0,
+            "grek": 1,
+            "cyrl": 2,
+            "arab": 3,
+            "hebr": 4,
+            "deva": 5,
+            "beng": 6,
+            "taml": 7,
+            "thai": 8,
+            "laoo": 9,
+            "mymr": 10,
+            "armn": 11,
+            "geor": 12,
+            "ethi": 13,
+            "cher": 14,
+            "khmr": 15,
+            "bugi": 16,
+            "buhd": 17,
+            "yiii": 18,
+            "jpan": 19,
+            "hang": 20,
+            "hani": 21,
+        }
+
+        normalized_scores.sort(key=lambda t: (-t[1], iso_priority.get(t[0], 999), t[0]))
+
+        return [iso for iso, _ in normalized_scores]
 
     # -------------------------------
     # 2. Fallback: unicode.max
@@ -1559,6 +1654,9 @@ def _infer_and_attach_metadata(
 
     inferred_scripts = list(infer_scripts(coverage, level) or [])
 
+    # expose inferred scripts to language inference fallback
+    coverage["_inferred_scripts"] = inferred_scripts
+
     log_trace_cat(
         log,
         "infer",
@@ -1601,10 +1699,30 @@ def _infer_and_attach_metadata(
             lang,
         )
 
+    # -------------------------------------------------
+    # Script-driven primary language selection
+    # -------------------------------------------------
+
+    script_primary_lang = None
+    if inferred_scripts:
+        primary_script = inferred_scripts[0].lower()
+        script_primary_lang = SCRIPT_TO_DISPLAY_LANGUAGE.get(primary_script)
+
+    candidates = list(inferred_languages_map.keys())
+
+    # ensure script language exists
+    if script_primary_lang and script_primary_lang not in candidates:
+        candidates.insert(0, script_primary_lang)
+
     inferred_languages = sorted(
-        inferred_languages_map.keys(),
+        candidates,
         key=_language_sort_key,
     )
+
+    # force canonical script language to front
+    if script_primary_lang and script_primary_lang in inferred_languages:
+        inferred_languages.remove(script_primary_lang)
+        inferred_languages.insert(0, script_primary_lang)
 
     log_trace_cat(
         log,

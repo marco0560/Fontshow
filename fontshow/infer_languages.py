@@ -43,6 +43,12 @@ LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
         "required_blocks": ["Cyrillic"],
         "optional_blocks": ["Cyrillic Supplement"],
     },
+    # Georgian
+    "ka": {
+        "scripts": ["Georgian"],
+        "required_blocks": ["Georgian"],
+        "optional_blocks": ["Georgian Supplement"],
+    },
     # Greek
     "el": {
         "scripts": ["Greek"],
@@ -55,19 +61,99 @@ LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
         "required_blocks": ["Arabic"],
         "optional_blocks": ["Arabic Supplement"],
     },
-    # CJK (permissivo by design)
+    # Cherokee
+    "chr": {
+        "scripts": ["Cherokee"],
+        "required_blocks": ["Cherokee", "Cherokee Supplement"],
+        "optional_blocks": [],
+    },
+    # Ethiopic
+    "am": {
+        "scripts": ["Ethiopic"],
+        "required_blocks": ["Ethiopic"],
+        "optional_blocks": ["Ethiopic Supplement", "Ethiopic Extended"],
+    },
+    # Indic / SE Asia
+    "ta": {
+        "scripts": ["Tamil"],
+        "required_blocks": ["Tamil", "Tamil Supplement"],
+        "optional_blocks": [],
+    },
+    "th": {
+        "scripts": ["Thai"],
+        "required_blocks": ["Thai"],
+        "optional_blocks": [],
+    },
+    "lo": {
+        "scripts": ["Lao"],
+        "required_blocks": ["Lao"],
+        "optional_blocks": [],
+    },
+    "my": {
+        "scripts": ["Myanmar"],
+        "required_blocks": ["Myanmar", "Myanmar Extended-A", "Myanmar Extended-B"],
+        "optional_blocks": [],
+    },
+    # Yi
+    "ii": {
+        "scripts": ["Yi"],
+        "required_blocks": ["Yi Syllables"],
+        "optional_blocks": [],
+    },
+    # CJK (permissive by design)
     "zh": {
         "scripts": ["Han"],
         "required_blocks": ["CJK Unified Ideographs"],
         "optional_blocks": [],
     },
     "ja": {
-        "scripts": ["Han", "Hiragana", "Katakana"],
-        "required_blocks": ["Hiragana", "Katakana"],
-        "optional_blocks": ["CJK Unified Ideographs"],
+        "scripts": ["Hiragana", "Katakana"],
+        "required_blocks": ["Kana Supplement"],
+        "optional_blocks": [
+            "Hiragana",
+            "Katakana",
+            "Kana Extended-A",
+            "CJK Unified Ideographs",
+        ],
     },
 }
 
+
+# ------------------------------------------------------------------
+# Canonical display language per ISO-15924 script
+#
+# Purpose:
+# Fontshow needs a representative language for specimen rendering,
+# not linguistic capability classification.
+#
+# This mapping provides a deterministic fallback when coverage-based
+# inference yields no reliable languages.
+# ------------------------------------------------------------------
+
+SCRIPT_TO_DISPLAY_LANGUAGE: dict[str, str] = {
+    "latn": "en",
+    "grek": "el",
+    "cyrl": "ru",
+    "hebr": "he",
+    "arab": "ar",
+    "deva": "hi",
+    "beng": "bn",
+    "taml": "ta",
+    "thai": "th",
+    "laoo": "lo",
+    "mymr": "my",
+    "armn": "hy",
+    "geor": "ka",
+    "ethi": "ti",
+    "cher": "chr",
+    "khmr": "km",
+    "bugi": "bug",
+    "buhd": "bku",
+    "yiii": "ii",
+    "jpan": "ja",
+    "hang": "ko",
+    "hani": "zh",
+}
 
 # Normative Unicode block sizes (codepoint counts).
 # This table is intentionally static and limited to blocks
@@ -103,6 +189,11 @@ UNICODE_BLOCK_SIZES: dict[str, int] = {
     "Telugu": 128,
     "Kannada": 128,
     "Malayalam": 128,
+    # SE Asia / Yi
+    "Thai": 128,
+    "Lao": 128,
+    "Myanmar": 160,
+    "Yi Syllables": 1168,
     # East Asian (coarse-grained)
     "CJK Unified Ideographs": 20992,
     "CJK Unified Ideographs Extension A": 6592,
@@ -195,35 +286,37 @@ def infer_languages(
         required = set(profile["required_blocks"])
         optional = set(profile.get("optional_blocks", []))
 
-        # All required blocks must be present with sufficient coverage
-        failed = False
+        # ------------------------------------------------------------------
+        # Fontshow v1.2 permissive rule:
+        # A language is accepted if ANY required block reaches threshold.
+        # Real fonts frequently expose partial Unicode coverage.
+        # ------------------------------------------------------------------
+        passed_blocks: list[str] = []
+
         for block in required:
             ratio = _block_coverage_ratio(
                 block_name=block,
                 block_coverage=unicode_blocks,
                 block_sizes=UNICODE_BLOCK_SIZES,
             )
-            if ratio < LANGUAGE_BLOCK_COVERAGE_THRESHOLD:
-                log_trace_cat(
-                    log,
-                    "infer",
-                    "language candidate rejected",
-                    extra={
-                        "lang": lang,
-                        "block": block,
-                        "ratio": ratio,
-                        "threshold": LANGUAGE_BLOCK_COVERAGE_THRESHOLD,
-                        "covered": unicode_blocks.get(block, 0),
-                        "size": UNICODE_BLOCK_SIZES.get(block, 0),
-                    },
-                )
-                failed = True
-                break
 
-        if failed:
+            if ratio >= LANGUAGE_BLOCK_COVERAGE_THRESHOLD:
+                passed_blocks.append(block)
+
+        if not passed_blocks:
+            log_trace_cat(
+                log,
+                "infer",
+                "language candidate rejected",
+                extra={
+                    "lang": lang,
+                    "reason": "no_required_block_passed",
+                    "required_blocks": sorted(required),
+                },
+            )
             continue
 
-        evidence = sorted(required & unicode_blocks.keys())
+        evidence = sorted(set(passed_blocks))
         optional_hits = sorted(optional & unicode_blocks.keys())
 
         confidence: Confidence = "medium"
@@ -260,5 +353,29 @@ def infer_languages(
             "profiles_total": len(LANGUAGE_PROFILES),
         },
     )
+
+    # -------------------------------------------------
+    # Canonical language normalization
+    # -------------------------------------------------
+
+    if inferred:
+        # Canonical Latin fallback rule
+        unicode_blocks = coverage.get("unicode_blocks", {}) or {}
+        blocks_present = set(unicode_blocks.keys())
+
+        if blocks_present == {"Basic Latin"} and "en" in inferred:
+            inferred = {"en": inferred["en"]}
+
+    else:
+        # Script-driven display fallback
+        scripts = coverage.get("_inferred_scripts")
+        if isinstance(scripts, list) and scripts:
+            primary = str(scripts[0]).lower()
+            lang = SCRIPT_TO_DISPLAY_LANGUAGE.get(primary) or ""
+            if lang:
+                inferred[lang] = LanguageInferenceInfo(
+                    confidence="medium",
+                    evidence=["script-default"],
+                )
 
     return inferred

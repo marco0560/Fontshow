@@ -36,6 +36,7 @@ import json
 import platform
 import re
 import sys
+import unicodedata
 from collections import OrderedDict
 from collections.abc import Sequence
 from datetime import datetime
@@ -51,6 +52,7 @@ from fontshow.cli_utils import (
     log_warn,
     set_cli_mode,
 )
+from fontshow.common.specimens import SAMPLE_TEXTS
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.logging_utils import log, log_trace_cat
@@ -133,37 +135,47 @@ else:
     EXCLUDED_FONTS = set()
     DEFAULT_TEST_FONTS = set()
 
-# ============================================================
-# Sample texts (language-aware)
-# ============================================================
-
-SAMPLE_TEXTS = {
-    "en": "The quick brown fox jumps over the lazy dog",
-    "it": "Ma la volpe col suo balzo ha raggiunto il quieto Fido",
-    "fr": "Portez ce vieux whisky au juge blond qui fume",
-    "de": "Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich",
-    "es": "El veloz murciélago hindú comía feliz cardillo y kiwi",
-    "el": "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία",
-    "ru": "Съешь же ещё этих мягких французских булок",
-    "hy": "Վարդագույն աղվեսը ցատկում է ծույլ շան վրայով",
-    "ja": "いろはにほへと ちりぬるを",
-    "vi": "Chữ Việt rất phong phú và đa dạng",
-    "zh": "天地玄黃 宇宙洪荒",
-    "ar": "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ الشَّمْسِ",
-    "he": "דג סקרן שט בים מאוכזב ולפתע מצא לו חברה",
-    "ko": "키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다",
-    "cop": "Ⲡⲁⲓ ⲙⲉⲧⲁⲛⲟⲓⲁ",
-    "ti": "ሰላም እንታይ ከመይ ኢኻ",
-    "ta": "யாதும் ஊரே யாவரும் கேளிர்",
-    "te": "అన్ని మానవజాతులు స్వేచ్ఛగా జన్మించాయి, అందరికీ సమానమైన గౌరవం మరియు హక్కులు ఉన్నాయి",
-}
-
-RTL_SCRIPTS = {"arab", "hebr"}
 
 SCRIPT_TO_POLYGLOSSIA = {
     "arab": ("arabic", "Script=Arabic"),
+    "beng": ("bengali", "Script=Bengali"),
+    "deva": ("hindi", "Script=Devanagari"),
+    "hani": ("chinese", ""),
     "hebr": ("hebrew", "Script=Hebrew"),
+    "hira": ("japanese", ""),
+    "kana": ("japanese", ""),
+    "taml": ("tamil", "Script=Tamil"),
 }
+
+# ------------------------------------------------------------------
+# ISO 15924 → Human-readable script names (display only)
+# ------------------------------------------------------------------
+
+SCRIPT_ISO_TO_HUMAN: dict[str, str] = {
+    "latn": "Latin",
+    "grek": "Greek",
+    "cyrl": "Cyrillic",
+    "arab": "Arabic",
+    "hebr": "Hebrew",
+    "deva": "Devanagari",
+    "beng": "Bengali",
+    "taml": "Tamil",
+    "thai": "Thai",
+    "laoo": "Lao",
+    "mymr": "Myanmar",
+    "armn": "Armenian",
+    "geor": "Georgian",
+    "ethi": "Ethiopic",
+    "cher": "Cherokee",
+    "khmr": "Khmer",
+    "bugi": "Buginese",
+    "buhd": "Buhid",
+    "yiii": "Yi",
+    "jpan": "Japanese",
+    "hang": "Hangul",
+    "hani": "Han",
+}
+
 
 # ============================================================
 # LaTeX escaping utility
@@ -199,6 +211,19 @@ def escape_latex(text: str) -> str:
         ">": r"\textgreater{}",
     }
     return "".join(replacements.get(c, c) for c in text)
+
+
+def _format_script_display(script_iso: str) -> str:
+    """
+    Convert ISO script code to human-readable display form.
+
+    Example:
+        "taml" -> "Tamil (TAML)"
+    """
+    human = SCRIPT_ISO_TO_HUMAN.get(script_iso.lower())
+    if human:
+        return f"{human} ({script_iso.upper()})"
+    return script_iso.upper()
 
 
 # ============================================================
@@ -268,7 +293,7 @@ LATEX_INITIAL_CODE: str = (
 }
 \makeatother
 
-% --- Macro per sezioni riepilogative ---
+% --- Macros for summary sections ---
 % #1 filename #2 title of section
 \newcommand{\FileSec}[2]{%
 	\ifFileNotEmpty{#1}{%
@@ -283,7 +308,7 @@ LATEX_INITIAL_CODE: str = (
 }
 % ---------------------------------------
 
-% Colori
+% Colors
 \definecolor{titlecolor}{HTML}{667eea}
 \definecolor{boxcolor}{HTML}{f0f0f0}
 \definecolor{successcolor}{HTML}{28a745}
@@ -303,20 +328,23 @@ LATEX_INITIAL_CODE: str = (
 %}
 \newenvironment{errorbox}[1]{}{}
 
-% --- MACRO PER CARATTERI NON LATINI (FIXED) ---
+% --- MACRO FOR NON LATIN CHARACTERS (FIXED) ---
 % #1: Font Name, #2: Language Tag (polyglossia), #3: Font Options (e.g., Script=Arabic), #4: Sample Text
 \newcommand{\TestNonLatin}[4]{%
-	\par\noindent\textbf{Test in Lingua (\texttt{#2}) with Options: \texttt{[#3]}}
-
-	\foreignlanguage{#2}{%
-		\fontspec[BoldFont={},ItalicFont={},BoldItalicFont={},#3]{#1}%
-		#4\par
-	}%
-	\vspace{0.5em}
+    % polyglossia requires \<language>font (e.g. \arabicfont). Define it once.
+    \ifcsname #2font\endcsname\else
+        \expandafter\newfontfamily\csname #2font\endcsname[BoldFont={},ItalicFont={},BoldItalicFont={},#3]{#1}%
+    \fi
+    \foreignlanguage{#2}{%
+        \csname #2font\endcsname
+        \sloppy\emergencystretch=2em
+        \parbox{\linewidth}{#4}%
+    }%
+    \vspace{0.5em}
 }
 % --------------------------------------
 
-% --- GESTIONE CONTATORI E INDICI ---
+% --- Counters and Indices ---
 \newcounter{cntWorking}
 \newcounter{cntBroken}
 \newcounter{cntExcluded}
@@ -324,7 +352,7 @@ LATEX_INITIAL_CODE: str = (
 \setcounter{cntBroken}{0}
 \setcounter{cntExcluded}{0}
 
-% Definiamo file di output temporanei per gli indici
+% Temporary output file definition for indices
 \newwrite\fileWorking
 \immediate\openout\fileWorking=\jobname.working
 \newwrite\fileBroken
@@ -332,7 +360,7 @@ LATEX_INITIAL_CODE: str = (
 \newwrite\fileExcluded
 \immediate\openout\fileExcluded=\jobname.excluded
 
-% Macro ROBUSTE per registrare i font (evita errori di espansione)
+% Robust Macro for counting fonts (avoids expansion errors)
 \protected\def\LogWorking#1{%
     \stepcounter{cntWorking}%
 %    \immediate\write\fileWorking{\string\item\space\detokenize{#1}}%
@@ -353,7 +381,7 @@ LATEX_INITIAL_CODE: str = (
 \newcommand{\Li}{\lipsum[1][1-4]}
 
 \title{\Huge\textbf{\color{titlecolor}Catalogo Font di Sistema}}
-\author{Generato da fontshow.create\_catalog """
+\author{Generated with fontshow create-catalog """
     + escape_latex(__version__)
     + r""" \texttt{"""
     + escape_latex(platform.system())
@@ -967,11 +995,23 @@ def render_sample_code(font: dict, fam: str) -> str:
     nfss_id = nfss_family_id(font)
     renderer_prefix = _renderer_option_prefix()
 
-    # RTL: unchanged (TestNonLatin already isolates fonts)
-    if ps in RTL_SCRIPTS:
-        lang, opts = SCRIPT_TO_POLYGLOSSIA.get(ps, ("arabic", "Script=Arabic"))
+    # -------------------------------------------------
+    # Direction-aware rendering (Unicode bidi driven)
+    # -------------------------------------------------
+    # Determine RTL from actual specimen content instead of script heuristics.
+    is_rtl = any(
+        unicodedata.bidirectional(ch) in {"R", "AL", "AN"} for ch in (txt or "")
+    )
+
+    if is_rtl:
+        # Resolve polyglossia mapping from script when available
+        lang, opts = SCRIPT_TO_POLYGLOSSIA.get(ps or "", ("", ""))
+
+        # Ensure specimen exists
         if not txt:
-            txt = SAMPLE_TEXTS.get("ar" if ps == "arab" else "he", "")
+            sample_lang = lang[:2] if lang else "ar"
+            txt = SAMPLE_TEXTS.get(sample_lang, SAMPLE_TEXTS.get("ar", ""))
+
         return (
             r"\TestNonLatin{"
             + escape_latex(fam)
@@ -1191,21 +1231,30 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
             log_info(f"  ... processed {idx}/{total}")
 
         specimen = str(font.get("specimen_text", ""))
-        safe_specimen = escape_latex(specimen)
+
+        # If the specimen has no whitespace and is long, TeX cannot line-break it
+        # even inside \parbox{\linewidth}. Insert safe break opportunities.
+        if (
+            specimen
+            and (not any(ch.isspace() for ch in specimen))
+            and len(specimen) >= 40
+        ):
+            safe_specimen = r"\allowbreak{}".join(escape_latex(ch) for ch in specimen)
+        else:
+            safe_specimen = escape_latex(specimen)
+
         inference_raw = font.get("inference") or {}
         inference = inference_raw if isinstance(inference_raw, dict) else {}
 
-        coverage_raw = font.get("coverage") or {}
-        coverage = coverage_raw if isinstance(coverage_raw, dict) else {}
         scripts_raw_obj = inference.get("scripts")
         scripts_raw: list[str] = (
             scripts_raw_obj if isinstance(scripts_raw_obj, list) else []
         )
         script0 = str(scripts_raw[0]) if scripts_raw else ""
 
-        cov_scripts_obj = coverage.get("scripts")
-        cov_scripts: list[str] = (
-            cov_scripts_obj if isinstance(cov_scripts_obj, list) else []
+        languages_raw_obj = inference.get("languages")
+        inferred_languages: list[str] = (
+            languages_raw_obj if isinstance(languages_raw_obj, list) else []
         )
 
         path = str(font.get("path", "")).lower()
@@ -1215,28 +1264,90 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
 
         is_opentype = path.endswith((".ttf", ".otf", ".ttc"))
 
+        script0_lc = script0.lower()
+
+        scripts_pretty = (
+            ", ".join(_format_script_display(str(s)) for s in scripts_raw)
+            if scripts_raw
+            else "N/A"
+        )
+
+        languages_pretty = (
+            ", ".join(str(lang) for lang in inferred_languages)
+            if inferred_languages
+            else "N/A"
+        )
+
+        options_plain = ""
         render = ""
-        if (
-            script0 == "LATN"
-            and isinstance(cov_scripts, list)
-            and ("LATN" in cov_scripts)
-            and is_opentype
-        ):
+
+        if is_opentype:
             _dir, _file = _normalize_path_for_latex(fullpath)
             detok_dir = "\\detokenize{" + _dir + "}"
             detok_file = "\\detokenize{" + _file + "}"
             renderer_prefix = _renderer_option_prefix()
-            render = (
-                " {\\begingroup\\fontspec["
-                + renderer_prefix
-                + "Path="
-                + detok_dir
-                + "]{"
-                + detok_file
-                + "}"
-                + safe_specimen
-                + "\\endgroup}"
-            )
+
+            options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
+
+            lang, script_opt = SCRIPT_TO_POLYGLOSSIA.get(script0_lc, ("", ""))
+
+            # Build ONE canonical fontspec option string
+            opts = renderer_prefix + "Path=" + detok_dir
+            if script_opt:
+                opts += "," + script_opt
+
+            options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
+            if script_opt:
+                options_plain += "," + script_opt
+
+            # --- specimen rendering (uniform for all scripts) ---
+            if script0_lc == "latn":
+                render = (
+                    " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
+                    + opts
+                    + "]{"
+                    + detok_file
+                    + "}"
+                    + safe_specimen
+                    + "}\\endgroup}"
+                )
+            elif lang:
+                render = (
+                    " {\\begingroup\\sloppy\\emergencystretch=2em\\TestNonLatin{"
+                    + detok_file
+                    + "}{"
+                    + lang
+                    + "}{"
+                    + opts
+                    + "}{"
+                    + safe_specimen
+                    + "}\\endgroup}"
+                )
+            else:
+                # non-latin fallback WITH explicit script
+                render = (
+                    " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
+                    + opts
+                    + "]{"
+                    + detok_file
+                    + "}"
+                    + safe_specimen
+                    + "}\\endgroup}"
+                )
+
+        options_pretty = (
+            "\\detokenize{" + options_plain + "}" if options_plain else "N/A"
+        )
+
+        debug_block = (
+            "{\\footnotesize\\ttfamily SCRIPT: "
+            + escape_latex(scripts_pretty)
+            + "}\\newline"
+            "{\\footnotesize\\ttfamily LANGS : "
+            + escape_latex(languages_pretty)
+            + "}\\newline"
+            "{\\footnotesize\\ttfamily OPTS  : " + options_pretty + "}"
+        )
 
         latex_code += (
             "\\item "
@@ -1245,6 +1356,8 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
             + "\\IfFileExists{"
             + detok_fullpath
             + "}{[OK]\\newline"
+            + debug_block
+            + "\\newline"
             + render
             + "}{[MISSING]}"
             + "\n"
