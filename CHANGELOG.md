@@ -1,3 +1,9 @@
+## [0.41.0](https://github.com/marco0560/Fontshow/compare/v0.40.2...v0.41.0) (2026-02-28)
+
+### Features
+
+* **parser:** introduce tables from authoritative sources ([0d798b5](https://github.com/marco0560/Fontshow/commit/0d798b58730f93579fa04d04e15b1bfcf12980b6))
+
 ## [0.40.2](https://github.com/marco0560/Fontshow/compare/v0.40.1...v0.40.2) (2026-02-27)
 
 ### Bug Fixes
