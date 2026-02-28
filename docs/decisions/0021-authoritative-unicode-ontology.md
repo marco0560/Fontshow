@@ -100,6 +100,31 @@ Implemented in two commits:
 
 Language inference redesign (Step 1) depends on this invariant.
 
-## Related Decisions
+### Script-Gated Language Inference (Follow-up Rule)
 
-* ADR 0018 — Trace Logging Architecture Semantics
+Language inference operates under a script-authoritative model.
+
+Language inference no longer derives languages from Unicode blocks.
+Scripts are mandatory evidence.
+
+When charset-derived script inference produces a non-empty set of scripts,
+candidate languages MUST be restricted to languages whose primary script
+belongs to the inferred script set.
+
+Formally:
+
+```text
+LANGUAGE_PRIMARY_SCRIPT(language) ∈ inferred_scripts
+```
+
+This rule applies only to charset-derived inference.
+
+Symbolic fonts (emoji, icon, or symbol fonts) may produce no inferred
+scripts; in this case the script gate is intentionally disabled and
+legacy permissive behavior is retained.
+
+Canonical Latin fallback is now defined in terms of inferred scripts
+(LATN-only) rather than Unicode block presence.
+
+Future inference sources (e.g., name-based heuristics) may adopt the
+same constraint but require separate evaluation.

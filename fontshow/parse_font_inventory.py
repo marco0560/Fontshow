@@ -41,6 +41,7 @@ from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.infer_languages import SCRIPT_TO_DISPLAY_LANGUAGE, infer_languages
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.json_format import dumps_pretty
+from fontshow.language_tables import LANGUAGE_PRIMARY_SCRIPT
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.schema_validation import (
@@ -61,40 +62,6 @@ from fontshow.warnings import add_structured_warning
 # Set up logger
 # ============================================================
 logger = logging.getLogger("fontshow")
-
-
-#: Mapping of primary language codes to their primary script.
-LANGUAGE_PRIMARY_SCRIPT: dict[str, str] = {
-    "ar": "ARAB",
-    "bg": "CYRL",
-    "cop": "COPT",
-    "da": "LATN",
-    "de": "LATN",
-    "el": "GREK",
-    "en": "LATN",
-    "es": "LATN",
-    "fi": "LATN",
-    "fr": "LATN",
-    "he": "HEBR",
-    "hi": "DEVA",
-    "hy": "ARMN",
-    "it": "LATN",
-    "ja": "JPAN",
-    "ko": "HANG",
-    "mk": "CYRL",
-    "ne": "DEVA",
-    "nl": "LATN",
-    "no": "LATN",
-    "pt": "LATN",
-    "ru": "CYRL",
-    "sr": "CYRL",
-    "sv": "LATN",
-    "th": "THAI",
-    "ti": "ETHI",
-    "uk": "CYRL",
-    "vi": "LATN",
-    "zh": "HANI",
-}
 
 
 # ============================================================
