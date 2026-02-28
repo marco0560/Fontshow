@@ -54,9 +54,7 @@ from fontshow.types import (
     Severity,
     WarningInfo,
 )
-from fontshow.unicode_tables import (
-    UNICODE_SCRIPT_RANGES as GENERATED_UNICODE_SCRIPT_RANGES,
-)
+from fontshow.unicode_tables import UNICODE_SCRIPT_RANGES
 from fontshow.warnings import add_structured_warning
 
 # ============================================================
@@ -64,65 +62,6 @@ from fontshow.warnings import add_structured_warning
 # ============================================================
 logger = logging.getLogger("fontshow")
 
-
-# ============================================================
-# Unicode → script ranges
-# ============================================================
-
-#: Mapping of ISO 15924 script codes to Unicode code point ranges.
-#:
-#: Each value is a list of ``(start, end)`` integer tuples, inclusive.
-# NOTE:
-# All script identifiers MUST be uppercase ISO-15924-like codes
-# (e.g. LATN, HANI, JPAN).
-#:
-#: Example::
-#:
-#:     "LATN": [(0x0041, 0x007A), (0x00C0, 0x024F)]
-#:
-_LEGACY_UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
-    "ARAB": [(0x0600, 0x06FF), (0x0750, 0x077F), (0x08A0, 0x08FF)],
-    "ARMN": [(0x0530, 0x058F)],  # Armenian
-    "COPT": [(0x2C80, 0x2CFF)],  # Coptic
-    "CYRL": [(0x0400, 0x04FF), (0x0500, 0x052F)],
-    "DEVA": [(0x0900, 0x097F)],  # Devanagari
-    "ETHI": [(0x1200, 0x137F)],  # Ethiopic (incl. Tigrinya)
-    "GREK": [(0x0370, 0x03FF), (0x1F00, 0x1FFF)],
-    "HANG": [(0xAC00, 0xD7AF)],  # Hangul Syllables
-    "HANI": [(0x4E00, 0x9FFF)],  # CJK Unified Ideographs
-    "HEBR": [(0x0590, 0x05FF)],  # Hebrew
-    "JPAN": [(0x3040, 0x30FF)],  # Japanese (Hiragana + Katakana)
-    "LATN": [(0x0041, 0x007A), (0x00C0, 0x024F)],
-    "THAI": [(0x0E00, 0x0E7F)],  # Thai
-    "VIET": [(0x1EA0, 0x1EFF)],  # Vietnamese extensions
-}
-
-# ------------------------------------------------------------------
-# Authoritative Unicode script ranges (generated)
-# Step 0.D.3 Phase 2 — compatibility bridge
-# ------------------------------------------------------------------
-
-UNICODE_SCRIPT_RANGES = GENERATED_UNICODE_SCRIPT_RANGES
-
-# Safety check: ensure legacy scripts still exist in authoritative data
-_legacy_scripts_norm = {s.lower() for s in _LEGACY_UNICODE_SCRIPT_RANGES}
-_generated_scripts_norm = set(UNICODE_SCRIPT_RANGES)
-
-# Fontshow semantic aggregates (not Unicode scripts)
-_SEMANTIC_SCRIPT_ALIASES = {
-    "jpan",  # Japanese composite script
-    "viet",  # Vietnamese Latin usage grouping
-}
-
-_missing_scripts = (
-    _legacy_scripts_norm - _generated_scripts_norm - _SEMANTIC_SCRIPT_ALIASES
-)
-
-if _missing_scripts:
-    raise RuntimeError(
-        "Generated Unicode tables missing legacy scripts: "
-        + ", ".join(sorted(_missing_scripts))
-    )
 
 #: Mapping of primary language codes to their primary script.
 LANGUAGE_PRIMARY_SCRIPT: dict[str, str] = {

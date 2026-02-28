@@ -219,6 +219,35 @@ def _format_py_dict_script_ranges(
     return "\n".join(lines)
 
 
+def _format_block_ranges_section(
+    block_ranges: dict[str, tuple[int, int]],
+) -> str:
+    header = """# ------------------------------------------------------------------
+# Unicode block ranges (authoritative ontology)
+#
+# NOTE:
+# This table may not be directly consumed by runtime code.
+# It represents the frozen Unicode ontology used to derive
+# other structures (e.g. UNICODE_BLOCK_SIZES) and is kept
+# intentionally for determinism, auditability, and future
+# inference/diagnostic features.
+# ------------------------------------------------------------------"""
+    return header + "\n" + _format_py_dict_block_ranges(block_ranges)
+
+
+def _format_py_dict_block_sizes(
+    block_ranges: dict[str, tuple[int, int]],
+) -> str:
+    lines: list[str] = []
+    lines.append("UNICODE_BLOCK_SIZES: dict[str, int] = {")
+    for name in sorted(block_ranges.keys()):
+        start, end = block_ranges[name]
+        size = end - start + 1
+        lines.append(f"    {name!r}: {size},")
+    lines.append("}")
+    return "\n".join(lines)
+
+
 def _generate_module_text(
     *,
     unicode_version: str,
@@ -244,7 +273,9 @@ def _generate_module_text(
         "",
         "from __future__ import annotations",
         "",
-        _format_py_dict_block_ranges(block_ranges),
+        _format_block_ranges_section(block_ranges),
+        "",
+        _format_py_dict_block_sizes(block_ranges),
         "",
         _format_py_dict_script_ranges(script_ranges),
         "",

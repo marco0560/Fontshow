@@ -15,9 +15,7 @@ from typing import Any
 
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.types import Confidence, LanguageInferenceInfo
-from fontshow.unicode_tables import (
-    UNICODE_BLOCK_RANGES as GENERATED_UNICODE_BLOCK_RANGES,
-)
+from fontshow.unicode_tables import UNICODE_BLOCK_SIZES
 
 # Minimum fraction of a Unicode block that must be covered
 # to infer a language from that block.
@@ -162,16 +160,6 @@ SCRIPT_TO_DISPLAY_LANGUAGE: dict[str, str] = {
     "taml": "ta",
     "thai": "th",
     "yiii": "ii",
-}
-
-# ------------------------------------------------------------------
-# Unicode block sizes (authoritative, generated)
-# Derived from Unicode UCD Blocks.txt
-# Step 0.D.3 Phase 2 — behavior-preserving replacement
-# ------------------------------------------------------------------
-UNICODE_BLOCK_SIZES: dict[str, int] = {
-    name: (end - start + 1)
-    for name, (start, end) in GENERATED_UNICODE_BLOCK_RANGES.items()
 }
 
 
