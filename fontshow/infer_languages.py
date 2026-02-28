@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from fontshow.language_tables import LANGUAGE_PRIMARY_SCRIPT
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.types import Confidence, LanguageInferenceInfo
 from fontshow.unicode_tables import UNICODE_BLOCK_SIZES
@@ -238,7 +239,32 @@ def infer_languages(
 
     inferred: dict[str, LanguageInferenceInfo] = {}
 
+    # ------------------------------------------------------------------
+    # Script Gate (Step 1 — charset-derived inference only)
+    #
+    # Languages are considered only if their primary script belongs
+    # to the inferred script set.
+    #
+    # Disabled when no scripts are inferred (emoji/symbol fonts).
+    # ------------------------------------------------------------------
+
+    inferred_scripts = coverage.get("_inferred_scripts")
+
+    allowed_languages: set[str] | None = None
+
+    if inferred_scripts:
+        scripts_upper = {s.upper() for s in inferred_scripts}
+
+        allowed_languages = {
+            lang
+            for lang, script in LANGUAGE_PRIMARY_SCRIPT.items()
+            if script in scripts_upper
+        }
+
     for lang, profile in LANGUAGE_PROFILES.items():
+        if allowed_languages is not None and lang not in allowed_languages:
+            continue
+
         required = set(profile["required_blocks"])
         optional = set(profile.get("optional_blocks", []))
 
@@ -310,28 +336,32 @@ def infer_languages(
         },
     )
 
-    # -------------------------------------------------
-    # Canonical language normalization
-    # -------------------------------------------------
+    # ------------------------------------------------------------------
+    # Script-authoritative fallback rules
+    # ------------------------------------------------------------------
+
+    scripts = coverage.get("_inferred_scripts")
 
     if inferred:
-        # Canonical Latin fallback rule
-        unicode_blocks = coverage.get("unicode_blocks", {}) or {}
-        blocks_present = set(unicode_blocks.keys())
+        # Canonical Latin fallback:
+        # if LATN is the only inferred script, collapse to English.
+        if isinstance(scripts, list) and set(scripts) == {"latn"} and "en" in inferred:
+            unicode_blocks = coverage.get("unicode_blocks", {}) or {}
+            blocks_present = set(unicode_blocks.keys())
 
-        if blocks_present == {"Basic Latin"} and "en" in inferred:
-            inferred = {"en": inferred["en"]}
+            # Minimal Latin capability → canonical English fallback
+            if blocks_present == {"Basic Latin"}:
+                inferred = {"en": inferred["en"]}
 
-    else:
-        # Script-driven display fallback
-        scripts = coverage.get("_inferred_scripts")
-        if isinstance(scripts, list) and scripts:
-            primary = str(scripts[0]).lower()
-            lang = SCRIPT_TO_DISPLAY_LANGUAGE.get(primary) or ""
-            if lang:
-                inferred[lang] = LanguageInferenceInfo(
-                    confidence="medium",
-                    evidence=["script-default"],
-                )
+    elif isinstance(scripts, list) and scripts:  # Script-driven display fallback
+        primary = str(scripts[0]).lower()
+        lang = SCRIPT_TO_DISPLAY_LANGUAGE.get(primary) or ""
+        if lang:
+            inferred[lang] = LanguageInferenceInfo(
+                confidence="medium",
+                evidence=["script-default"],
+            )
 
-    return inferred
+    # Deterministic ordering safeguard:
+    # rebuild dictionary ordered by language code.
+    return dict(sorted(inferred.items(), key=lambda kv: kv[0]))

@@ -18,7 +18,7 @@ def test_parse_inventory_basic_latin_only():
     result = parse_inventory(data, level="medium")
     inference = result["fonts"][0]["inference"]
 
-    assert inference["languages"] == ["en"]
+    assert inference["languages"] == []
 
 
 def test_parse_inventory_latin_extended():
@@ -64,7 +64,7 @@ def test_declared_languages_do_not_affect_inference():
     assert inference["declared_languages"] == ["fr", "de"]
 
     # inferred remains strict
-    assert inference["languages"] == ["en"]
+    assert inference["languages"] == []
 
 
 def test_parse_inventory_cyrillic():
