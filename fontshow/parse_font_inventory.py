@@ -1595,6 +1595,13 @@ def _infer_and_attach_metadata(
     # expose inferred scripts to language inference fallback
     coverage["_inferred_scripts"] = inferred_scripts
 
+    # ------------------------------------------------------------------
+    # Canonical script field (Step 2 alignment)
+    # Public, deterministic representation of inferred scripts.
+    # ------------------------------------------------------------------
+    if inferred_scripts:
+        coverage["scripts"] = sorted({s.upper() for s in inferred_scripts})
+
     log_trace_cat(
         log,
         "infer",
