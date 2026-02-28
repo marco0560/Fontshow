@@ -363,7 +363,8 @@ def infer_languages(
                 inferred = {"en": inferred["en"]}
 
     elif isinstance(scripts, list) and scripts:  # Script-driven display fallback
-        primary = str(scripts[0]).lower()
+        # Deterministic primary script selection
+        primary = sorted(str(s).lower() for s in scripts)[0]
         lang = SCRIPT_TO_DISPLAY_LANGUAGE.get(primary) or ""
         if lang:
             inferred[lang] = LanguageInferenceInfo(
