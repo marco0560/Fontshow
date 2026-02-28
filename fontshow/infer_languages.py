@@ -248,7 +248,12 @@ def infer_languages(
     # Disabled when no scripts are inferred (emoji/symbol fonts).
     # ------------------------------------------------------------------
 
-    inferred_scripts = coverage.get("_inferred_scripts")
+    scripts_public = coverage.get("scripts")
+    inferred_scripts = (
+        [str(s).lower() for s in scripts_public]
+        if isinstance(scripts_public, list)
+        else None
+    )
 
     allowed_languages: set[str] | None = None
 
