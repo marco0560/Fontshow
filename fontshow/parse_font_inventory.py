@@ -54,6 +54,9 @@ from fontshow.types import (
     Severity,
     WarningInfo,
 )
+from fontshow.unicode_tables import (
+    UNICODE_SCRIPT_RANGES as GENERATED_UNICODE_SCRIPT_RANGES,
+)
 from fontshow.warnings import add_structured_warning
 
 # ============================================================
@@ -77,54 +80,81 @@ logger = logging.getLogger("fontshow")
 #:
 #:     "LATN": [(0x0041, 0x007A), (0x00C0, 0x024F)]
 #:
-UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
-    "LATN": [(0x0041, 0x007A), (0x00C0, 0x024F)],
-    "GREK": [(0x0370, 0x03FF), (0x1F00, 0x1FFF)],
-    "CYRL": [(0x0400, 0x04FF), (0x0500, 0x052F)],
+_LEGACY_UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
     "ARAB": [(0x0600, 0x06FF), (0x0750, 0x077F), (0x08A0, 0x08FF)],
-    "HEBR": [(0x0590, 0x05FF)],  # Hebrew
-    "DEVA": [(0x0900, 0x097F)],  # Devanagari
-    "HANI": [(0x4E00, 0x9FFF)],  # CJK Unified Ideographs
-    "HANG": [(0xAC00, 0xD7AF)],  # Hangul Syllables
-    "THAI": [(0x0E00, 0x0E7F)],  # Thai
     "ARMN": [(0x0530, 0x058F)],  # Armenian
-    "JPAN": [(0x3040, 0x30FF)],  # Japanese (Hiragana + Katakana)
-    "VIET": [(0x1EA0, 0x1EFF)],  # Vietnamese extensions
     "COPT": [(0x2C80, 0x2CFF)],  # Coptic
+    "CYRL": [(0x0400, 0x04FF), (0x0500, 0x052F)],
+    "DEVA": [(0x0900, 0x097F)],  # Devanagari
     "ETHI": [(0x1200, 0x137F)],  # Ethiopic (incl. Tigrinya)
+    "GREK": [(0x0370, 0x03FF), (0x1F00, 0x1FFF)],
+    "HANG": [(0xAC00, 0xD7AF)],  # Hangul Syllables
+    "HANI": [(0x4E00, 0x9FFF)],  # CJK Unified Ideographs
+    "HEBR": [(0x0590, 0x05FF)],  # Hebrew
+    "JPAN": [(0x3040, 0x30FF)],  # Japanese (Hiragana + Katakana)
+    "LATN": [(0x0041, 0x007A), (0x00C0, 0x024F)],
+    "THAI": [(0x0E00, 0x0E7F)],  # Thai
+    "VIET": [(0x1EA0, 0x1EFF)],  # Vietnamese extensions
 }
+
+# ------------------------------------------------------------------
+# Authoritative Unicode script ranges (generated)
+# Step 0.D.3 Phase 2 — compatibility bridge
+# ------------------------------------------------------------------
+
+UNICODE_SCRIPT_RANGES = GENERATED_UNICODE_SCRIPT_RANGES
+
+# Safety check: ensure legacy scripts still exist in authoritative data
+_legacy_scripts_norm = {s.lower() for s in _LEGACY_UNICODE_SCRIPT_RANGES}
+_generated_scripts_norm = set(UNICODE_SCRIPT_RANGES)
+
+# Fontshow semantic aggregates (not Unicode scripts)
+_SEMANTIC_SCRIPT_ALIASES = {
+    "jpan",  # Japanese composite script
+    "viet",  # Vietnamese Latin usage grouping
+}
+
+_missing_scripts = (
+    _legacy_scripts_norm - _generated_scripts_norm - _SEMANTIC_SCRIPT_ALIASES
+)
+
+if _missing_scripts:
+    raise RuntimeError(
+        "Generated Unicode tables missing legacy scripts: "
+        + ", ".join(sorted(_missing_scripts))
+    )
 
 #: Mapping of primary language codes to their primary script.
 LANGUAGE_PRIMARY_SCRIPT: dict[str, str] = {
-    "en": "LATN",
-    "fr": "LATN",
-    "de": "LATN",
-    "it": "LATN",
-    "es": "LATN",
-    "pt": "LATN",
-    "nl": "LATN",
-    "sv": "LATN",
-    "no": "LATN",
-    "da": "LATN",
-    "fi": "LATN",
-    "vi": "LATN",
-    "el": "GREK",
-    "ru": "CYRL",
-    "uk": "CYRL",
-    "bg": "CYRL",
-    "sr": "CYRL",
-    "mk": "CYRL",
     "ar": "ARAB",
+    "bg": "CYRL",
+    "cop": "COPT",
+    "da": "LATN",
+    "de": "LATN",
+    "el": "GREK",
+    "en": "LATN",
+    "es": "LATN",
+    "fi": "LATN",
+    "fr": "LATN",
     "he": "HEBR",
     "hi": "DEVA",
-    "ne": "DEVA",
-    "zh": "HANI",
+    "hy": "ARMN",
+    "it": "LATN",
     "ja": "JPAN",
     "ko": "HANG",
+    "mk": "CYRL",
+    "ne": "DEVA",
+    "nl": "LATN",
+    "no": "LATN",
+    "pt": "LATN",
+    "ru": "CYRL",
+    "sr": "CYRL",
+    "sv": "LATN",
     "th": "THAI",
-    "hy": "ARMN",
-    "cop": "COPT",
     "ti": "ETHI",
+    "uk": "CYRL",
+    "vi": "LATN",
+    "zh": "HANI",
 }
 
 
@@ -1582,7 +1612,9 @@ def _process_charset(
     )
 
     if script_cov:
-        coverage["script_coverage_from_charset"] = script_cov
+        coverage["script_coverage_from_charset"] = {
+            script.upper(): value for script, value in script_cov.items()
+        }
         log_trace_cat(
             log,
             "infer",

@@ -15,57 +15,20 @@ from typing import Any
 
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.types import Confidence, LanguageInferenceInfo
+from fontshow.unicode_tables import (
+    UNICODE_BLOCK_RANGES as GENERATED_UNICODE_BLOCK_RANGES,
+)
 
 # Minimum fraction of a Unicode block that must be covered
 # to infer a language from that block.
 LANGUAGE_BLOCK_COVERAGE_THRESHOLD = 0.40
 
 LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
-    # Latin
-    "en": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin"],
-        "optional_blocks": ["Latin-1 Supplement"],
-    },
-    "fr": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
-        "optional_blocks": ["Latin Extended-A"],
-    },
-    "de": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
-        "optional_blocks": ["Latin Extended-A"],
-    },
-    # Cyrillic
-    "ru": {
-        "scripts": ["Cyrillic"],
-        "required_blocks": ["Cyrillic"],
-        "optional_blocks": ["Cyrillic Supplement"],
-    },
-    # Georgian
-    "ka": {
-        "scripts": ["Georgian"],
-        "required_blocks": ["Georgian"],
-        "optional_blocks": ["Georgian Supplement"],
-    },
-    # Greek
-    "el": {
-        "scripts": ["Greek"],
-        "required_blocks": ["Greek and Coptic"],
-        "optional_blocks": [],
-    },
     # Arabic
     "ar": {
         "scripts": ["Arabic"],
         "required_blocks": ["Arabic"],
         "optional_blocks": ["Arabic Supplement"],
-    },
-    # Cherokee
-    "chr": {
-        "scripts": ["Cherokee"],
-        "required_blocks": ["Cherokee", "Cherokee Supplement"],
-        "optional_blocks": [],
     },
     # Ethiopic
     "am": {
@@ -73,26 +36,35 @@ LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
         "required_blocks": ["Ethiopic"],
         "optional_blocks": ["Ethiopic Supplement", "Ethiopic Extended"],
     },
-    # Indic / SE Asia
-    "ta": {
-        "scripts": ["Tamil"],
-        "required_blocks": ["Tamil", "Tamil Supplement"],
+    # Cherokee
+    "chr": {
+        "scripts": ["Cherokee"],
+        "required_blocks": ["Cherokee", "Cherokee Supplement"],
         "optional_blocks": [],
     },
-    "th": {
-        "scripts": ["Thai"],
-        "required_blocks": ["Thai"],
+    # German
+    "de": {
+        "scripts": ["Latin"],
+        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
+        "optional_blocks": ["Latin Extended-A"],
+    },
+    # Greek
+    "el": {
+        "scripts": ["Greek"],
+        "required_blocks": ["Greek and Coptic"],
         "optional_blocks": [],
     },
-    "lo": {
-        "scripts": ["Lao"],
-        "required_blocks": ["Lao"],
-        "optional_blocks": [],
+    # English
+    "en": {
+        "scripts": ["Latin"],
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement"],
     },
-    "my": {
-        "scripts": ["Myanmar"],
-        "required_blocks": ["Myanmar", "Myanmar Extended-A", "Myanmar Extended-B"],
-        "optional_blocks": [],
+    # French
+    "fr": {
+        "scripts": ["Latin"],
+        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
+        "optional_blocks": ["Latin Extended-A"],
     },
     # Yi
     "ii": {
@@ -100,12 +72,7 @@ LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
         "required_blocks": ["Yi Syllables"],
         "optional_blocks": [],
     },
-    # CJK (permissive by design)
-    "zh": {
-        "scripts": ["Han"],
-        "required_blocks": ["CJK Unified Ideographs"],
-        "optional_blocks": [],
-    },
+    # Japanese
     "ja": {
         "scripts": ["Hiragana", "Katakana"],
         "required_blocks": ["Kana Supplement"],
@@ -115,6 +82,48 @@ LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
             "Kana Extended-A",
             "CJK Unified Ideographs",
         ],
+    },
+    # Georgian
+    "ka": {
+        "scripts": ["Georgian"],
+        "required_blocks": ["Georgian"],
+        "optional_blocks": ["Georgian Supplement"],
+    },
+    # Lao
+    "lo": {
+        "scripts": ["Lao"],
+        "required_blocks": ["Lao"],
+        "optional_blocks": [],
+    },
+    # Myanmar
+    "my": {
+        "scripts": ["Myanmar"],
+        "required_blocks": ["Myanmar", "Myanmar Extended-A", "Myanmar Extended-B"],
+        "optional_blocks": [],
+    },
+    # Russian
+    "ru": {
+        "scripts": ["Cyrillic"],
+        "required_blocks": ["Cyrillic"],
+        "optional_blocks": ["Cyrillic Supplement"],
+    },
+    # Tamil
+    "ta": {
+        "scripts": ["Tamil"],
+        "required_blocks": ["Tamil", "Tamil Supplement"],
+        "optional_blocks": [],
+    },
+    # Thai
+    "th": {
+        "scripts": ["Thai"],
+        "required_blocks": ["Thai"],
+        "optional_blocks": [],
+    },
+    # Chinese
+    "zh": {
+        "scripts": ["Han"],
+        "required_blocks": ["CJK Unified Ideographs"],
+        "optional_blocks": [],
     },
 }
 
@@ -131,79 +140,38 @@ LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
 # ------------------------------------------------------------------
 
 SCRIPT_TO_DISPLAY_LANGUAGE: dict[str, str] = {
-    "latn": "en",
-    "grek": "el",
-    "cyrl": "ru",
-    "hebr": "he",
     "arab": "ar",
-    "deva": "hi",
-    "beng": "bn",
-    "taml": "ta",
-    "thai": "th",
-    "laoo": "lo",
-    "mymr": "my",
     "armn": "hy",
-    "geor": "ka",
-    "ethi": "ti",
-    "cher": "chr",
-    "khmr": "km",
+    "beng": "bn",
     "bugi": "bug",
     "buhd": "bku",
-    "yiii": "ii",
-    "jpan": "ja",
+    "cher": "chr",
+    "cyrl": "ru",
+    "deva": "hi",
+    "ethi": "ti",
+    "geor": "ka",
+    "grek": "el",
     "hang": "ko",
     "hani": "zh",
+    "hebr": "he",
+    "jpan": "ja",
+    "khmr": "km",
+    "laoo": "lo",
+    "latn": "en",
+    "mymr": "my",
+    "taml": "ta",
+    "thai": "th",
+    "yiii": "ii",
 }
 
-# Normative Unicode block sizes (codepoint counts).
-# This table is intentionally static and limited to blocks
-# referenced by language profiles or commonly encountered.
+# ------------------------------------------------------------------
+# Unicode block sizes (authoritative, generated)
+# Derived from Unicode UCD Blocks.txt
+# Step 0.D.3 Phase 2 — behavior-preserving replacement
+# ------------------------------------------------------------------
 UNICODE_BLOCK_SIZES: dict[str, int] = {
-    # Latin
-    "Basic Latin": 128,
-    "Latin-1 Supplement": 128,
-    "Latin Extended-A": 128,
-    "Latin Extended-B": 208,
-    "Latin Extended Additional": 256,
-    # Greek
-    "Greek and Coptic": 135,
-    "Greek Extended": 256,
-    # Cyrillic
-    "Cyrillic": 256,
-    "Cyrillic Supplement": 48,
-    "Cyrillic Extended-A": 32,
-    "Cyrillic Extended-B": 96,
-    # Hebrew
-    "Hebrew": 112,
-    # Arabic
-    "Arabic": 256,
-    "Arabic Supplement": 48,
-    "Arabic Extended-A": 96,
-    # Indic - partial and common
-    "Devanagari": 128,
-    "Bengali": 128,
-    "Gurmukhi": 128,
-    "Gujarati": 128,
-    "Oriya": 128,
-    "Tamil": 128,
-    "Telugu": 128,
-    "Kannada": 128,
-    "Malayalam": 128,
-    # SE Asia / Yi
-    "Thai": 128,
-    "Lao": 128,
-    "Myanmar": 160,
-    "Yi Syllables": 1168,
-    # East Asian (coarse-grained)
-    "CJK Unified Ideographs": 20992,
-    "CJK Unified Ideographs Extension A": 6592,
-    "Hangul Syllables": 11172,
-    "Hiragana": 96,
-    "Katakana": 96,
-    # Symbols (intentionally included for completeness)
-    "General Punctuation": 112,
-    "Currency Symbols": 48,
-    "Letterlike Symbols": 80,
+    name: (end - start + 1)
+    for name, (start, end) in GENERATED_UNICODE_BLOCK_RANGES.items()
 }
 
 

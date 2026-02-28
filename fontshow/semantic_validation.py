@@ -32,21 +32,21 @@ from fontshow.types import (
 # We keep a *minimal* explicit allowlist for codes we know we want to accept
 # in Fontshow inventories (example: user reported 'yuw' as valid BCP-47).
 _EXTRA_LANGUAGE_ALLOWLIST: set[str] = {
-    "yuw",  # Yau (ISO 639-3) — user validated against IANA BCP-47 registry.
     "ber",  # Berber languages (ISO 639-2 collective); may appear after stripping region.
-    "wen",  # Sorbian languages (ISO 639-2 collective); may appear as "wen".
-    "rif",  # Tarifit (ISO 639-3); user reported.
     "kab",  # Kabyle (ISO 639-3); user reported.
+    "rif",  # Tarifit (ISO 639-3); user reported.
+    "wen",  # Sorbian languages (ISO 639-2 collective); may appear as "wen".
+    "yuw",  # Yau (ISO 639-3) — user validated against IANA BCP-47 registry.
 }
 
 # Minimal deprecated-language mapping.
 # This is intentionally small and explicit to avoid guessing large tables.
 _DEPRECATED_LANGUAGE_MAP: dict[str, str] = {
-    "mo": "ro",  # Moldavian/Moldovan → Romanian (common deprecation path).
-    "iw": "he",  # Hebrew (ISO 639-1) → Hebrew (ISO 639-2)
-    "ji": "yi",  # Yiddish (ISO 639-1) → Yiddish (ISO 639-2)
-    "in": "id",  # Indonesian (ISO 639-1) → Indonesian (ISO 639-2)
-    "sh": "sr",  # Serbo-Croatian (ISO 639-1) → Serbian (ISO 639-2)
+    "in": "id",
+    "iw": "he",
+    "ji": "yi",
+    "mo": "ro",
+    "sh": "sr",
 }
 
 # Heuristic BCP-47-ish structural check (not full ABNF):
