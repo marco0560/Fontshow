@@ -342,14 +342,10 @@ def infer_languages(
 
     scripts: list[str] | None = None
 
-    # Prefer canonical script field (Step 2 alignment)
+    # Canonical script source (Step 3.1)
     scripts_public = coverage.get("scripts")
     if isinstance(scripts_public, list) and scripts_public:
         scripts = [str(s).lower() for s in scripts_public]
-    else:
-        legacy_scripts = coverage.get("_inferred_scripts")
-        if isinstance(legacy_scripts, list) and legacy_scripts:
-            scripts = [str(s).lower() for s in legacy_scripts]
 
     if inferred:
         # Canonical Latin fallback:
