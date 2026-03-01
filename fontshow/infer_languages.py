@@ -13,7 +13,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from fontshow.language_tables import LANGUAGE_PRIMARY_SCRIPT
+from fontshow.language_tables import (
+    LANGUAGE_PRIMARY_SCRIPT,
+    LANGUAGE_PROFILES,
+    SCRIPT_TO_DISPLAY_LANGUAGE,
+)
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.types import Confidence, LanguageInferenceInfo
 from fontshow.unicode_tables import UNICODE_BLOCK_SIZES
@@ -21,147 +25,6 @@ from fontshow.unicode_tables import UNICODE_BLOCK_SIZES
 # Minimum fraction of a Unicode block that must be covered
 # to infer a language from that block.
 LANGUAGE_BLOCK_COVERAGE_THRESHOLD = 0.40
-
-LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
-    # Arabic
-    "ar": {
-        "scripts": ["Arabic"],
-        "required_blocks": ["Arabic"],
-        "optional_blocks": ["Arabic Supplement"],
-    },
-    # Ethiopic
-    "am": {
-        "scripts": ["Ethiopic"],
-        "required_blocks": ["Ethiopic"],
-        "optional_blocks": ["Ethiopic Supplement", "Ethiopic Extended"],
-    },
-    # Cherokee
-    "chr": {
-        "scripts": ["Cherokee"],
-        "required_blocks": ["Cherokee", "Cherokee Supplement"],
-        "optional_blocks": [],
-    },
-    # German
-    "de": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
-        "optional_blocks": ["Latin Extended-A"],
-    },
-    # Greek
-    "el": {
-        "scripts": ["Greek"],
-        "required_blocks": ["Greek and Coptic"],
-        "optional_blocks": [],
-    },
-    # English
-    "en": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin"],
-        "optional_blocks": ["Latin-1 Supplement"],
-    },
-    # French
-    "fr": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
-        "optional_blocks": ["Latin Extended-A"],
-    },
-    # Yi
-    "ii": {
-        "scripts": ["Yi"],
-        "required_blocks": ["Yi Syllables"],
-        "optional_blocks": [],
-    },
-    # Japanese
-    "ja": {
-        "scripts": ["Hiragana", "Katakana"],
-        "required_blocks": ["Kana Supplement"],
-        "optional_blocks": [
-            "Hiragana",
-            "Katakana",
-            "Kana Extended-A",
-            "CJK Unified Ideographs",
-        ],
-    },
-    # Georgian
-    "ka": {
-        "scripts": ["Georgian"],
-        "required_blocks": ["Georgian"],
-        "optional_blocks": ["Georgian Supplement"],
-    },
-    # Lao
-    "lo": {
-        "scripts": ["Lao"],
-        "required_blocks": ["Lao"],
-        "optional_blocks": [],
-    },
-    # Myanmar
-    "my": {
-        "scripts": ["Myanmar"],
-        "required_blocks": ["Myanmar", "Myanmar Extended-A", "Myanmar Extended-B"],
-        "optional_blocks": [],
-    },
-    # Russian
-    "ru": {
-        "scripts": ["Cyrillic"],
-        "required_blocks": ["Cyrillic"],
-        "optional_blocks": ["Cyrillic Supplement"],
-    },
-    # Tamil
-    "ta": {
-        "scripts": ["Tamil"],
-        "required_blocks": ["Tamil", "Tamil Supplement"],
-        "optional_blocks": [],
-    },
-    # Thai
-    "th": {
-        "scripts": ["Thai"],
-        "required_blocks": ["Thai"],
-        "optional_blocks": [],
-    },
-    # Chinese
-    "zh": {
-        "scripts": ["Han"],
-        "required_blocks": ["CJK Unified Ideographs"],
-        "optional_blocks": [],
-    },
-}
-
-
-# ------------------------------------------------------------------
-# Canonical display language per ISO-15924 script
-#
-# Purpose:
-# Fontshow needs a representative language for specimen rendering,
-# not linguistic capability classification.
-#
-# This mapping provides a deterministic fallback when coverage-based
-# inference yields no reliable languages.
-# ------------------------------------------------------------------
-
-SCRIPT_TO_DISPLAY_LANGUAGE: dict[str, str] = {
-    "arab": "ar",
-    "armn": "hy",
-    "beng": "bn",
-    "bugi": "bug",
-    "buhd": "bku",
-    "cher": "chr",
-    "cyrl": "ru",
-    "deva": "hi",
-    "ethi": "ti",
-    "geor": "ka",
-    "grek": "el",
-    "hang": "ko",
-    "hani": "zh",
-    "hebr": "he",
-    "jpan": "ja",
-    "khmr": "km",
-    "laoo": "lo",
-    "latn": "en",
-    "mymr": "my",
-    "taml": "ta",
-    "thai": "th",
-    "yiii": "ii",
-}
 
 
 def _block_coverage_ratio(

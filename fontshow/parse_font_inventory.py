@@ -41,7 +41,7 @@ from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.infer_languages import SCRIPT_TO_DISPLAY_LANGUAGE, infer_languages
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.json_format import dumps_pretty
-from fontshow.language_tables import LANGUAGE_PRIMARY_SCRIPT
+from fontshow.language_tables import LANGUAGE_PRIMARY_SCRIPT, SCRIPT_SAMPLES
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.schema_validation import (
@@ -649,18 +649,6 @@ def _get_font_path_for_diagnostics(font: dict) -> str | None:
 
 MIN_SAMPLE_GLYPHS = 20
 CMAP_FALLBACK_GLYPHS = 50
-
-SCRIPT_SAMPLES: dict[str, str] = {
-    "Latin": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    "Greek": "Καλημέρα σας. Αυτό είναι ένα σύντομο δείγμα ελληνικού κειμένου.",
-    "Cyrillic": "Пример текста на кириллице для проверки отображения шрифта.",
-    "Arabic": "مرحبا بكم. هذا نص عربي قصير لاختبار عرض الخط بشكل صحيح.",
-    "Hebrew": "שלום לכם. זהו טקסט עברי קצר לבדיקת הצגת הגופן.",
-    "Thai": "สวัสดีครับ นี่เป็นข้อความภาษาไทยสั้น ๆ สำหรับทดสอบแบบอักษร",
-    "Devanagari": "नमस्ते। यह देवनागरी लिपि का एक छोटा नमूना पाठ है।",
-    "Hangul": "안녕하세요. 이것은 한글 글꼴 표시를 위한 짧은 예시 문장입니다.",
-    "CJK": "漢字仮名交じり文の例。中文字符測試。日本語テスト。한국어 테스트。",
-}
 
 
 def _specimen_is_variation_selector(cp: int) -> bool:
