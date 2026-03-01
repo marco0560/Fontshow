@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fontshow.types import ScriptISO, iso_to_tag, tag_to_iso
+from fontshow.types import ScriptISO, ScriptRenderPolicy, iso_to_tag, tag_to_iso
 
 # ------------------------------------------------------------------
 # Primary script per language (ISO-639 → ISO-15924)
@@ -258,6 +258,34 @@ SCRIPT_ISO_TO_POLYGLOSSIA: dict[ScriptISO, tuple[str, str]] = {
     ScriptISO("TAML"): ("tamil", "Script=Tamil"),
 }
 
+
+# ------------------------------------------------------------------
+# Languages requiring RTL rendering (polyglossia direction)
+# ------------------------------------------------------------------
+
+RTL_LANGUAGES: frozenset[str] = frozenset(
+    {
+        "arabic",
+        "hebrew",
+        "syriac",
+        "persian",
+        "urdu",
+    }
+)
+
+# ------------------------------------------------------------------
+# Phase 6 — Rendering policy adapter
+# ------------------------------------------------------------------
+
+SCRIPT_RENDER_POLICY: dict[ScriptISO, ScriptRenderPolicy] = {}
+
+for _script, (_lang, _opts) in SCRIPT_ISO_TO_POLYGLOSSIA.items():
+    SCRIPT_RENDER_POLICY[_script] = ScriptRenderPolicy(
+        language=_lang,
+        fontspec_opts=_opts,
+        rtl=_lang in RTL_LANGUAGES,
+        requires_polyglossia=bool(_lang),
+    )
 
 # ------------------------------------------------------------------
 # Ontology invariants (Phase 5)

@@ -36,7 +36,6 @@ import json
 import platform
 import re
 import sys
-import unicodedata
 from collections import OrderedDict
 from collections.abc import Sequence
 from datetime import datetime
@@ -58,6 +57,7 @@ from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.language_tables import (
     SCRIPT_ISO_TO_HUMAN_CANONICAL,
     SCRIPT_ISO_TO_POLYGLOSSIA,
+    SCRIPT_RENDER_POLICY,
 )
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
@@ -66,9 +66,11 @@ from fontshow.types import (
     CatalogFontEntryV12,
     FontRef,
     InferenceInfo,
+    InferenceV12,
     ScriptISO,
     Severity,
 )
+from fontshow.unicode_tables import NON_WRITING_SCRIPTS
 
 # Platform-specific imports (deferred, typing-safe)
 if TYPE_CHECKING:
@@ -191,6 +193,29 @@ def _format_script_display(script_iso: str) -> str:
     return str(iso)
 
 
+def _get_render_policy(script_iso: ScriptISO) -> tuple[str, str]:
+    """
+    Return (polyglossia_language, fontspec_options).
+
+    Invariant:
+        Non-Latin scripts must always receive an explicit Script= option
+        to enable HarfBuzz shaping.
+    """
+    policy = SCRIPT_RENDER_POLICY.get(script_iso)
+
+    if not policy:
+        return "", ""
+
+    lang = policy.language
+    opts = policy.fontspec_opts or ""
+
+    # --- ensure shaping for non-Latin scripts ---
+    if not opts and script_iso and script_iso != ScriptISO("LATN"):
+        opts = f"Script={script_iso.title()}"
+
+    return lang, opts
+
+
 # ============================================================
 # LaTeX rendering logic
 # ============================================================
@@ -232,13 +257,7 @@ LATEX_INITIAL_CODE: str = (
 
 \setmainlanguage{english}
 % Secondary languages for testing non-Latin scripts
-\setotherlanguage{latin}
-\setotherlanguage{arabic}
-\setotherlanguage{hebrew}
-\setotherlanguage{japanese}
-\setotherlanguage{chinese}
-\setotherlanguage{hindi}
-\setotherlanguage{thai}
+%%FONTSHOW_OTHER_LANGUAGES%%
 
 \geometry{margin=2cm}
 
@@ -368,6 +387,39 @@ Problematic fonts are excluded in advance. The compilation is performed with \te
 \section{Detailed Catalog}
 """
 )
+
+
+def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -> str:
+    """
+    Collect the set of polyglossia languages required by this run and generate
+    corresponding \\setotherlanguage{...} lines for the LaTeX preamble.
+
+    Deterministic:
+    - stable ordering (sorted)
+    - never fails rendering if a mapping is missing
+    """
+    # Always include latin to preserve legacy template assumptions
+    langs: set[str] = {"latin"}  # preserve previous template behavior
+
+    for font in font_list:
+        inf_raw = font.get("inference") or {}
+        inf = inf_raw if isinstance(inf_raw, dict) else {}
+        scripts_raw_obj = inf.get("scripts")
+        scripts_raw: list[str] = (
+            scripts_raw_obj if isinstance(scripts_raw_obj, list) else []
+        )
+
+        for s in scripts_raw:
+            if not isinstance(s, str) or not s:
+                continue
+            script_iso = ScriptISO(s.upper())
+            lang, _opts = SCRIPT_ISO_TO_POLYGLOSSIA.get(script_iso, ("", ""))
+            if lang and lang != "english":
+                langs.add(lang)
+
+    return "".join(f"\\setotherlanguage{{{lang}}}\n" for lang in sorted(langs))
+
+
 # -------------------------------------------
 SAMPLE_1: str = r"""\textbf{Sample:}
 \begingroup
@@ -961,17 +1013,14 @@ def render_sample_code(font: dict, fam: str) -> str:
     renderer_prefix = _renderer_option_prefix()
 
     # -------------------------------------------------
-    # Direction-aware rendering (Unicode bidi driven)
+    # Direction-aware rendering (script policy driven)
     # -------------------------------------------------
-    # Determine RTL from actual specimen content instead of script heuristics.
-    is_rtl = any(
-        unicodedata.bidirectional(ch) in {"R", "AL", "AN"} for ch in (txt or "")
-    )
+    script_iso = ScriptISO(ps.upper()) if ps else None
+    policy = SCRIPT_RENDER_POLICY.get(script_iso) if script_iso else None
 
-    if is_rtl:
-        # Resolve polyglossia mapping from script when available (ISO-canonical)
-        script_iso = ScriptISO(ps.upper()) if ps else ScriptISO("")
-        lang, opts = SCRIPT_ISO_TO_POLYGLOSSIA.get(script_iso, ("", ""))
+    if policy and policy.requires_polyglossia:
+        lang = policy.language
+        opts = policy.fontspec_opts
 
         # Ensure specimen exists
         if not txt:
@@ -1152,6 +1201,103 @@ def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
     return "./", norm
 
 
+def _select_primary_script(inference: InferenceV12) -> str:
+    """
+    Deterministically select primary script for rendering.
+
+    Priority:
+    1. Dominant charset coverage (ignoring NON_WRITING_SCRIPTS)
+    2. First inferred script
+    """
+    script0 = ""
+
+    script_cov = inference.get("script_coverage_from_charset")
+    if isinstance(script_cov, dict) and script_cov:
+        try:
+            filtered = {
+                k: v
+                for k, v in script_cov.items()
+                if k.lower() not in NON_WRITING_SCRIPTS
+            }
+            source = filtered or script_cov
+            script0 = max(source.items(), key=lambda kv: kv[1])[0]
+        except (TypeError, ValueError):
+            script0 = ""
+
+    if not script0:
+        scripts_raw = inference.get("scripts")
+        if isinstance(scripts_raw, list) and scripts_raw:
+            script0 = str(scripts_raw[0])
+
+    return script0
+
+
+def _render_font_entry(
+    *,
+    font: CatalogFontEntryV12,
+    safe_specimen: str,
+    script0_iso: ScriptISO,
+    fullpath: str,
+) -> tuple[str, str]:
+    """
+    Produce (render_block, options_plain).
+    """
+
+    path = str(font.get("path", "")).lower()
+    if not path.endswith((".ttf", ".otf", ".ttc")):
+        return "", ""
+
+    _dir, _file = _normalize_path_for_latex(fullpath)
+    detok_dir = "\\detokenize{" + _dir + "}"
+    detok_file = "\\detokenize{" + _file + "}"
+    renderer_prefix = _renderer_option_prefix()
+
+    lang, script_opt = _get_render_policy(script0_iso)
+
+    opts = renderer_prefix + "Path=" + detok_dir
+    if script_opt:
+        opts += "," + script_opt
+
+    options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
+    if script_opt:
+        options_plain += "," + script_opt
+
+    if script0_iso == ScriptISO("LATN"):
+        render = (
+            " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
+            + opts
+            + "]{"
+            + detok_file
+            + "}"
+            + safe_specimen
+            + "}\\endgroup}"
+        )
+    elif lang:
+        render = (
+            " {\\begingroup\\sloppy\\emergencystretch=2em\\TestNonLatin{"
+            + detok_file
+            + "}{"
+            + lang
+            + "}{"
+            + opts
+            + "}{"
+            + safe_specimen
+            + "}\\endgroup}"
+        )
+    else:
+        render = (
+            " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
+            + opts
+            + "]{"
+            + detok_file
+            + "}"
+            + safe_specimen
+            + "}\\endgroup}"
+        )
+
+    return render, options_plain
+
+
 def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     """
     Generate the full LaTeX document for the provided font descriptors.
@@ -1183,6 +1329,12 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     log_info(f"Generating LaTeX file for {len(font_list)} fonts...")
 
     latex_code: str = LATEX_INITIAL_CODE
+
+    other_langs = _collect_polyglossia_other_languages(font_list)
+    if "%%FONTSHOW_OTHER_LANGUAGES%%" in latex_code:
+        latex_code = latex_code.replace("%%FONTSHOW_OTHER_LANGUAGES%%", other_langs)
+    else:
+        log_warn("LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found")
 
     total = len(font_list)
     latex_code += "\\section{Font List (Stage 0)}\n"
@@ -1216,19 +1368,17 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         scripts_raw: list[str] = (
             scripts_raw_obj if isinstance(scripts_raw_obj, list) else []
         )
-        script0 = str(scripts_raw[0]) if scripts_raw else ""
+
+        script0 = _select_primary_script(inference)
 
         languages_raw_obj = inference.get("languages")
         inferred_languages: list[str] = (
             languages_raw_obj if isinstance(languages_raw_obj, list) else []
         )
 
-        path = str(font.get("path", "")).lower()
         fullpath = str(font.get("path", ""))
         fullpath_norm = fullpath.replace("\\", "/")
         detok_fullpath = "\\detokenize{" + fullpath_norm + "}"
-
-        is_opentype = path.endswith((".ttf", ".otf", ".ttc"))
 
         script0_iso = ScriptISO(script0.upper()) if script0 else ScriptISO("")
 
@@ -1247,59 +1397,12 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         options_plain = ""
         render = ""
 
-        if is_opentype:
-            _dir, _file = _normalize_path_for_latex(fullpath)
-            detok_dir = "\\detokenize{" + _dir + "}"
-            detok_file = "\\detokenize{" + _file + "}"
-            renderer_prefix = _renderer_option_prefix()
-
-            options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
-
-            lang, script_opt = SCRIPT_ISO_TO_POLYGLOSSIA.get(script0_iso, ("", ""))
-
-            # Build ONE canonical fontspec option string
-            opts = renderer_prefix + "Path=" + detok_dir
-            if script_opt:
-                opts += "," + script_opt
-
-            options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
-            if script_opt:
-                options_plain += "," + script_opt
-
-            # --- specimen rendering (uniform for all scripts) ---
-            if script0_iso == ScriptISO("LATN"):
-                render = (
-                    " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
-                    + opts
-                    + "]{"
-                    + detok_file
-                    + "}"
-                    + safe_specimen
-                    + "}\\endgroup}"
-                )
-            elif lang:
-                render = (
-                    " {\\begingroup\\sloppy\\emergencystretch=2em\\TestNonLatin{"
-                    + detok_file
-                    + "}{"
-                    + lang
-                    + "}{"
-                    + opts
-                    + "}{"
-                    + safe_specimen
-                    + "}\\endgroup}"
-                )
-            else:
-                # non-latin fallback WITH explicit script
-                render = (
-                    " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
-                    + opts
-                    + "]{"
-                    + detok_file
-                    + "}"
-                    + safe_specimen
-                    + "}\\endgroup}"
-                )
+        render, options_plain = _render_font_entry(
+            font=font,
+            safe_specimen=safe_specimen,
+            script0_iso=script0_iso,
+            fullpath=fullpath,
+        )
 
         options_pretty = (
             "\\detokenize{" + options_plain + "}" if options_plain else "N/A"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any, Literal, NewType, NotRequired, TypedDict
 
@@ -30,6 +31,35 @@ def tag_to_iso(tag: ScriptTag | str) -> ScriptISO:
         latn → LATN
     """
     return ScriptISO(str(tag).upper())
+
+
+# ------------------------------------------------------------------
+# Script Rendering Policy (Phase 6)
+# ------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ScriptRenderPolicy:
+    """
+    Rendering policy for a script.
+
+    language:
+        polyglossia language ("" if none)
+
+    fontspec_opts:
+        options passed to fontspec
+
+    rtl:
+        render right-to-left
+
+    requires_polyglossia:
+        whether TestNonLatin must be used
+    """
+
+    language: str
+    fontspec_opts: str
+    rtl: bool
+    requires_polyglossia: bool
 
 
 Confidence = Literal["high", "medium"]

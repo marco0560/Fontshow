@@ -36,7 +36,7 @@ from fontshow.cli_utils import (
     set_cli_mode,
 )
 from fontshow.common.specimens import choose_language_sample
-from fontshow.dump_fonts import UNICODE_BLOCKS
+from fontshow.dump_fonts import UNICODE_BLOCK_RANGES
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.infer_languages import infer_languages
 from fontshow.json_boundary import normalize_loaded_enums
@@ -177,7 +177,7 @@ def unicode_blocks_from_charset_ranges(
     blocks: dict[str, int] = {}
 
     for r_start, r_end in ranges:
-        for block_name, b_start, b_end in UNICODE_BLOCKS:
+        for block_name, (b_start, b_end) in UNICODE_BLOCK_RANGES.items():
             start = max(r_start, b_start)
             end = min(r_end, b_end)
             if start <= end:
@@ -218,27 +218,22 @@ def script_coverage_from_unicode_blocks(
     if not unicode_blocks or total_codepoints <= 0:
         return {}
 
-    # Map block name -> (start, end)
-    block_ranges = {name: (start, end) for name, start, end in UNICODE_BLOCKS}
+    from collections import defaultdict
 
-    script_counts: dict[str, int] = {}
+    script_counts: dict[str, int] = defaultdict(int)
 
     for block_name, count in unicode_blocks.items():
-        block_range = block_ranges.get(block_name)
-        if not block_range:
+        block_range = UNICODE_BLOCK_RANGES.get(block_name)
+        if block_range is None:
             continue
 
         b_start, b_end = block_range
 
+        # assign block to first matching script (deterministic)
         for script, ranges in script_ranges.items():
-            for r_start, r_end in ranges:
-                # Check intersection between block and script range
-                if b_start <= r_end and b_end >= r_start:
-                    script_counts[script] = script_counts.get(script, 0) + count
-                    break
-            else:
-                continue
-            break
+            if any(b_start <= r_end and b_end >= r_start for r_start, r_end in ranges):
+                script_counts[script] += count
+                break
 
     return {
         script: cnt / total_codepoints
