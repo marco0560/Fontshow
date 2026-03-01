@@ -1449,3 +1449,40 @@ UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
         (0xA490, 0xA4C6),
     ],
 }
+
+# ------------------------------------------------------------------
+# Unicode blocks
+# (authoritative; moved from dump_fonts.py)
+# ------------------------------------------------------------------
+
+UNICODE_BLOCKS = [
+    ("Basic Latin", 0x0000, 0x007F),
+    ("Latin-1 Supplement", 0x0080, 0x00FF),
+    ("Latin Extended-A", 0x0100, 0x017F),
+    ("Latin Extended-B", 0x0180, 0x024F),
+    ("IPA Extensions", 0x0250, 0x02AF),
+    ("Spacing Modifier Letters", 0x02B0, 0x02FF),
+    ("Combining Diacritical Marks", 0x0300, 0x036F),
+    ("Greek and Coptic", 0x0370, 0x03FF),
+    ("Cyrillic", 0x0400, 0x04FF),
+    ("Cyrillic Supplement", 0x0500, 0x052F),
+    ("Armenian", 0x0530, 0x058F),
+    ("Hebrew", 0x0590, 0x05FF),
+    ("Arabic", 0x0600, 0x06FF),
+    ("Arabic Supplement", 0x0750, 0x077F),
+    ("Devanagari", 0x0900, 0x097F),
+    ("Bengali", 0x0980, 0x09FF),
+    ("Gurmukhi", 0x0A00, 0x0A7F),
+    ("Gujarati", 0x0A80, 0x0AFF),
+    ("Oriya", 0x0B00, 0x0B7F),
+    ("Tamil", 0x0B80, 0x0BFF),
+    ("Telugu", 0x0C00, 0x0C7F),
+    ("Kannada", 0x0C80, 0x0CFF),
+    ("Malayalam", 0x0D00, 0x0D7F),
+    ("Thai", 0x0E00, 0x0E7F),
+    ("Lao", 0x0E80, 0x0EFF),
+    ("Georgian", 0x10A0, 0x10FF),
+    ("Cherokee", 0x13A0, 0x13FF),
+    ("Ethiopic", 0x1200, 0x137F),
+    ("CJK Unified Ideographs", 0x4E00, 0x9FFF),
+]

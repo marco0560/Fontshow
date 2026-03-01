@@ -55,6 +55,7 @@ from fontshow.cli_utils import (
 from fontshow.common.specimens import SAMPLE_TEXTS
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.json_boundary import normalize_loaded_enums
+from fontshow.language_tables import SCRIPT_ISO_TO_HUMAN, SCRIPT_TO_POLYGLOSSIA
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.semantic_validation import enforce_semantic_validation
@@ -134,47 +135,6 @@ elif IS_LINUX:
 else:
     EXCLUDED_FONTS = set()
     DEFAULT_TEST_FONTS = set()
-
-
-SCRIPT_TO_POLYGLOSSIA = {
-    "arab": ("arabic", "Script=Arabic"),
-    "beng": ("bengali", "Script=Bengali"),
-    "deva": ("hindi", "Script=Devanagari"),
-    "hani": ("chinese", ""),
-    "hebr": ("hebrew", "Script=Hebrew"),
-    "hira": ("japanese", ""),
-    "kana": ("japanese", ""),
-    "taml": ("tamil", "Script=Tamil"),
-}
-
-# ------------------------------------------------------------------
-# ISO 15924 → Human-readable script names (display only)
-# ------------------------------------------------------------------
-
-SCRIPT_ISO_TO_HUMAN: dict[str, str] = {
-    "arab": "Arabic",
-    "armn": "Armenian",
-    "beng": "Bengali",
-    "bugi": "Buginese",
-    "buhd": "Buhid",
-    "cher": "Cherokee",
-    "cyrl": "Cyrillic",
-    "deva": "Devanagari",
-    "ethi": "Ethiopic",
-    "geor": "Georgian",
-    "grek": "Greek",
-    "hang": "Hangul",
-    "hani": "Han",
-    "hebr": "Hebrew",
-    "jpan": "Japanese",
-    "khmr": "Khmer",
-    "laoo": "Lao",
-    "latn": "Latin",
-    "mymr": "Myanmar",
-    "taml": "Tamil",
-    "thai": "Thai",
-    "yiii": "Yi",
-}
 
 
 # ============================================================

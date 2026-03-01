@@ -43,6 +43,7 @@ from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.types import Severity, WarningInfo
+from fontshow.unicode_tables import UNICODE_BLOCKS
 
 if TYPE_CHECKING:
     # Types only — no runtime side effects
@@ -104,35 +105,6 @@ Logging levels:
 - TRACE   → low-level execution tracing
 - WARNING → recoverable errors
 """
-
-# -----------------------
-
-UNICODE_BLOCKS = [
-    ("Basic Latin", 0x0000, 0x007F),
-    ("Latin-1 Supplement", 0x0080, 0x00FF),
-    ("Latin Extended-A", 0x0100, 0x017F),
-    ("Latin Extended-B", 0x0180, 0x024F),
-    ("Greek and Coptic", 0x0370, 0x03FF),
-    ("Cyrillic", 0x0400, 0x04FF),
-    ("Arabic", 0x0600, 0x06FF),
-    ("Hebrew", 0x0590, 0x05FF),
-    ("Devanagari", 0x0900, 0x097F),
-    # --- CJK ---
-    ("CJK Unified Ideographs", 0x4E00, 0x9FFF),
-    ("CJK Unified Ideographs Extension A", 0x3400, 0x4DBF),
-    ("CJK Unified Ideographs Extension B", 0x20000, 0x2A6DF),
-    ("CJK Unified Ideographs Extension C", 0x2A700, 0x2B73F),
-    ("CJK Unified Ideographs Extension D", 0x2B740, 0x2B81F),
-    ("CJK Unified Ideographs Extension E", 0x2B820, 0x2CEAF),
-    ("CJK Unified Ideographs Extension F", 0x2CEB0, 0x2EBEF),
-    ("Hiragana", 0x3040, 0x309F),
-    ("Katakana", 0x30A0, 0x30FF),
-    ("Hangul Syllables", 0xAC00, 0xD7AF),
-    # --- Emoji / symbols ---
-    ("Miscellaneous Symbols", 0x2600, 0x26FF),
-    ("Emoticons", 0x1F600, 0x1F64F),
-]
-
 
 # -----------------------
 # fontTools extraction
