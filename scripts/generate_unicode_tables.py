@@ -34,7 +34,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-_ISO15924_LINE_RE = re.compile(r"^([A-Za-z]{4});\d+;([^;]+);")
+# ISO15924 lines are semicolon-separated; parsing is done via split()
+_ISO15924_LINE_RE = re.compile(r"^([A-Za-z]{4});")
 
 # ------------------------------------------------------------------
 # Unicode Script property → ISO15924 naming normalization
@@ -46,6 +47,20 @@ _UNICODE_SCRIPT_ALIASES: dict[str, str] = {
     "Devanagari": "Deva",
     "Ethiopic": "Ethi",
 }
+
+# ------------------------------------------------------------------
+# Unicode scripts that are NOT writing systems
+# (derived ontology, exported to generated tables)
+# ------------------------------------------------------------------
+
+_NON_WRITING_UNICODE_SCRIPTS: frozenset[str] = frozenset(
+    {
+        "Common",
+        "Inherited",
+        "Unknown",
+        "Symbols",
+    }
+)
 
 _BLOCKS_LINE_RE = re.compile(
     r"^\s*([0-9A-Fa-f]{4,6})\.\.([0-9A-Fa-f]{4,6})\s*;\s*(.+?)\s*$"
@@ -129,16 +144,24 @@ def _parse_iso15924_registry(path: Path) -> dict[str, str]:
         if not line or line.startswith("#"):
             continue
 
-        m = _ISO15924_LINE_RE.match(line)
-        if not m:
+        if not _ISO15924_LINE_RE.match(line):
             continue
 
-        code, english_name = m.groups()
+        parts = [p.strip() for p in line.split(";")]
 
-        # Normalize Unicode Script property spelling
-        # (Scripts.txt uses identical English names)
-        mapping[english_name] = code.lower()
+        # ISO15924 format:
+        # 0: code
+        # 1: numeric
+        # 2: English name (long description)
+        # 3: French name
+        # 4: Unicode Script property name  ← WE NEED THIS
+        if len(parts) < 5:
+            continue
 
+        code = parts[0]
+        unicode_script_name = parts[4]
+
+        mapping[unicode_script_name] = code.lower()
     return mapping
 
 
@@ -173,8 +196,13 @@ def _aggregate_scripts_to_ranges(
     Keys are normalized to lowercase for now.
     """
     buckets: dict[str, list[tuple[int, int]]] = {}
+    non_writing_scripts: set[str] = set()
+
     for start, end, script in script_spans:
         iso_code = iso_map.get(script)
+
+        if script in _NON_WRITING_UNICODE_SCRIPTS and iso_code is not None:
+            non_writing_scripts.add(iso_code)
 
         if iso_code is None:
             alias = _UNICODE_SCRIPT_ALIASES.get(script)
@@ -192,7 +220,9 @@ def _aggregate_scripts_to_ranges(
         out[key] = _merge_contiguous_ranges(ranges)
 
     # Deterministic order: by key
-    return dict(sorted(out.items(), key=lambda kv: kv[0]))
+    script_ranges_sorted = dict(sorted(out.items(), key=lambda kv: kv[0]))
+
+    return script_ranges_sorted, frozenset(sorted(non_writing_scripts))
 
 
 def _format_py_dict_block_ranges(block_ranges: dict[str, tuple[int, int]]) -> str:
@@ -254,6 +284,7 @@ def _generate_module_text(
     sources: tuple[Path, Path, Path],
     block_ranges: dict[str, tuple[int, int]],
     script_ranges: dict[str, list[tuple[int, int]]],
+    non_writing_scripts: frozenset[str],
 ) -> str:
     blocks_path, scripts_path, iso_path = sources
     now = _dt.datetime.now(tz=_dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -278,6 +309,10 @@ def _generate_module_text(
         _format_py_dict_block_sizes(block_ranges),
         "",
         _format_py_dict_script_ranges(script_ranges),
+        "",
+        "NON_WRITING_SCRIPTS: frozenset[str] = frozenset({",
+        *[f"    {code!r}," for code in sorted(non_writing_scripts)],
+        "})",
         "",
     ]
     return "\n".join(parts)
@@ -344,7 +379,9 @@ def main() -> int:
 
     block_ranges = _parse_ucd_blocks(blocks_path)
     script_spans = _parse_ucd_scripts(scripts_path)
-    script_ranges = _aggregate_scripts_to_ranges(script_spans, iso_map)
+    script_ranges, non_writing_scripts = _aggregate_scripts_to_ranges(
+        script_spans, iso_map
+    )
 
     out_path = Path(args.out)
     module_text = _generate_module_text(
@@ -352,6 +389,7 @@ def main() -> int:
         sources=(blocks_path, scripts_path, iso_path),
         block_ranges=block_ranges,
         script_ranges=script_ranges,
+        non_writing_scripts=non_writing_scripts,
     )
 
     out_path.write_text(module_text, encoding="utf-8")

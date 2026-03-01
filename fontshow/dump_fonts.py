@@ -43,7 +43,7 @@ from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.types import Severity, WarningInfo
-from fontshow.unicode_tables import UNICODE_BLOCKS
+from fontshow.unicode_tables import UNICODE_BLOCK_RANGES
 
 if TYPE_CHECKING:
     # Types only — no runtime side effects
@@ -1211,7 +1211,7 @@ def compute_unicode_blocks(codepoints: set[int]) -> dict[str, int]:
     """
     blocks: dict[str, int] = {}
 
-    for name, start, end in UNICODE_BLOCKS:
+    for name, (start, end) in UNICODE_BLOCK_RANGES.items():
         count = sum(1 for cp in codepoints if start <= cp <= end)
         if count > 0:
             blocks[name] = count
