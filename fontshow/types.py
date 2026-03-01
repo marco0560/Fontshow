@@ -1,11 +1,42 @@
+from __future__ import annotations
+
 from enum import Enum, auto
-from typing import Any, Literal, NotRequired, TypedDict
+from typing import Any, Literal, NewType, NotRequired, TypedDict
+
+# ------------------------------------------------------------------
+# Script identifier canonical types (Phase 5)
+# ------------------------------------------------------------------
+
+# ISO-15924 uppercase (canonical internal representation)
+ScriptISO = NewType("ScriptISO", str)
+
+# lowercase tag representation (serialization / coverage field)
+ScriptTag = NewType("ScriptTag", str)
+
+
+def iso_to_tag(script: ScriptISO | str) -> ScriptTag:
+    """
+    Convert ISO15924 uppercase identifier to lowercase tag form.
+
+        LATN → latn
+    """
+    return ScriptTag(str(script).lower())
+
+
+def tag_to_iso(tag: ScriptTag | str) -> ScriptISO:
+    """
+    Convert lowercase tag to ISO15924 uppercase identifier.
+
+        latn → LATN
+    """
+    return ScriptISO(str(tag).upper())
+
 
 Confidence = Literal["high", "medium"]
 
 
 class LanguageInferenceInfo(TypedDict):
-    confidence: "Confidence"
+    confidence: Confidence
     evidence: list[str]
 
 
@@ -32,7 +63,7 @@ class ExecutionContext(Enum):
         return self.name.lower()
 
     @classmethod
-    def from_str(cls, value: str) -> "ExecutionContext":
+    def from_str(cls, value: str) -> ExecutionContext:
         v = value.lower()
         if v == "native":
             return cls.NATIVE
@@ -62,7 +93,7 @@ class Severity(Enum):
         return self.name.lower()
 
     @classmethod
-    def from_str(cls, value: str) -> "Severity":
+    def from_str(cls, value: str) -> Severity:
         v = value.lower()
         if v == "info":
             return cls.INFO

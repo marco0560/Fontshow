@@ -15,11 +15,11 @@ from typing import Any
 
 from fontshow.language_tables import (
     LANGUAGE_PRIMARY_SCRIPT,
-    LANGUAGE_PROFILES,
-    SCRIPT_TO_DISPLAY_LANGUAGE,
+    LANGUAGE_PROFILES_ISO,
+    SCRIPT_ISO_TO_DISPLAY_LANGUAGE,
 )
 from fontshow.logging_utils import log, log_trace_cat
-from fontshow.types import Confidence, LanguageInferenceInfo
+from fontshow.types import Confidence, LanguageInferenceInfo, ScriptISO
 from fontshow.unicode_tables import UNICODE_BLOCK_SIZES
 
 # Minimum fraction of a Unicode block that must be covered
@@ -129,7 +129,7 @@ def infer_languages(
             if script in scripts_upper
         }
 
-    for lang, profile in LANGUAGE_PROFILES.items():
+    for lang, profile in LANGUAGE_PROFILES_ISO.items():
         if allowed_languages is not None and lang not in allowed_languages:
             continue
 
@@ -200,7 +200,7 @@ def infer_languages(
         extra={
             "policy": policy,
             "languages_inferred": len(inferred),
-            "profiles_total": len(LANGUAGE_PROFILES),
+            "profiles_total": len(LANGUAGE_PROFILES_ISO),
         },
     )
 
@@ -229,7 +229,7 @@ def infer_languages(
     elif isinstance(scripts, list) and scripts:  # Script-driven display fallback
         # Deterministic primary script selection
         primary = sorted(str(s).lower() for s in scripts)[0]
-        lang = SCRIPT_TO_DISPLAY_LANGUAGE.get(primary) or ""
+        lang = SCRIPT_ISO_TO_DISPLAY_LANGUAGE.get(ScriptISO(str(primary).upper())) or ""
         if lang:
             inferred[lang] = LanguageInferenceInfo(
                 confidence="medium",

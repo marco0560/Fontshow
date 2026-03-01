@@ -55,7 +55,10 @@ from fontshow.cli_utils import (
 from fontshow.common.specimens import SAMPLE_TEXTS
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.json_boundary import normalize_loaded_enums
-from fontshow.language_tables import SCRIPT_ISO_TO_HUMAN, SCRIPT_TO_POLYGLOSSIA
+from fontshow.language_tables import (
+    SCRIPT_ISO_TO_HUMAN_CANONICAL,
+    SCRIPT_ISO_TO_POLYGLOSSIA,
+)
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.semantic_validation import enforce_semantic_validation
@@ -63,6 +66,7 @@ from fontshow.types import (
     CatalogFontEntryV12,
     FontRef,
     InferenceInfo,
+    ScriptISO,
     Severity,
 )
 
@@ -178,12 +182,13 @@ def _format_script_display(script_iso: str) -> str:
     Convert ISO script code to human-readable display form.
 
     Example:
-        "taml" -> "Tamil (TAML)"
+        "TAML" -> "Tamil (TAML)"
     """
-    human = SCRIPT_ISO_TO_HUMAN.get(script_iso.lower())
+    iso = ScriptISO(script_iso.upper())
+    human = SCRIPT_ISO_TO_HUMAN_CANONICAL.get(iso)
     if human:
-        return f"{human} ({script_iso.upper()})"
-    return script_iso.upper()
+        return f"{human} ({iso})"
+    return str(iso)
 
 
 # ============================================================
@@ -964,8 +969,9 @@ def render_sample_code(font: dict, fam: str) -> str:
     )
 
     if is_rtl:
-        # Resolve polyglossia mapping from script when available
-        lang, opts = SCRIPT_TO_POLYGLOSSIA.get(ps or "", ("", ""))
+        # Resolve polyglossia mapping from script when available (ISO-canonical)
+        script_iso = ScriptISO(ps.upper()) if ps else ScriptISO("")
+        lang, opts = SCRIPT_ISO_TO_POLYGLOSSIA.get(script_iso, ("", ""))
 
         # Ensure specimen exists
         if not txt:
@@ -1224,7 +1230,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
 
         is_opentype = path.endswith((".ttf", ".otf", ".ttc"))
 
-        script0_lc = script0.lower()
+        script0_iso = ScriptISO(script0.upper()) if script0 else ScriptISO("")
 
         scripts_pretty = (
             ", ".join(_format_script_display(str(s)) for s in scripts_raw)
@@ -1249,7 +1255,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
 
             options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
 
-            lang, script_opt = SCRIPT_TO_POLYGLOSSIA.get(script0_lc, ("", ""))
+            lang, script_opt = SCRIPT_ISO_TO_POLYGLOSSIA.get(script0_iso, ("", ""))
 
             # Build ONE canonical fontspec option string
             opts = renderer_prefix + "Path=" + detok_dir
@@ -1261,7 +1267,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
                 options_plain += "," + script_opt
 
             # --- specimen rendering (uniform for all scripts) ---
-            if script0_lc == "latn":
+            if script0_iso == ScriptISO("LATN"):
                 render = (
                     " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
                     + opts

@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from fontshow.types import ScriptISO, iso_to_tag, tag_to_iso
+
 # ------------------------------------------------------------------
 # Primary script per language (ISO-639 → ISO-15924)
 # ------------------------------------------------------------------
@@ -201,26 +203,26 @@ SCRIPT_TO_DISPLAY_LANGUAGE: dict[str, str] = {
 # (authoritative; moved from create_catalog.py)
 # ------------------------------------------------------------------
 
-SCRIPT_ISO_TO_HUMAN: dict[str, str] = {
-    "arab": "Arabic",
-    "armn": "Armenian",
-    "beng": "Bengali",
-    "cher": "Cherokee",
-    "cyrl": "Cyrillic",
-    "deva": "Devanagari",
-    "ethi": "Ethiopic",
-    "geor": "Georgian",
-    "grek": "Greek",
-    "hani": "Han",
-    "hebr": "Hebrew",
-    "jpan": "Japanese",
-    "khmr": "Khmer",
-    "laoo": "Lao",
-    "latn": "Latin",
-    "mymr": "Myanmar",
-    "sinh": "Sinhala",
-    "taml": "Tamil",
-    "thai": "Thai",
+SCRIPT_ISO_TO_HUMAN_CANONICAL: dict[ScriptISO, str] = {
+    ScriptISO("ARAB"): "Arabic",
+    ScriptISO("ARMN"): "Armenian",
+    ScriptISO("BENG"): "Bengali",
+    ScriptISO("CHER"): "Cherokee",
+    ScriptISO("CYRL"): "Cyrillic",
+    ScriptISO("DEVA"): "Devanagari",
+    ScriptISO("ETHI"): "Ethiopic",
+    ScriptISO("GEOR"): "Georgian",
+    ScriptISO("GREK"): "Greek",
+    ScriptISO("HANI"): "Han",
+    ScriptISO("HEBR"): "Hebrew",
+    ScriptISO("JPAN"): "Japanese",
+    ScriptISO("KHMR"): "Khmer",
+    ScriptISO("LAOO"): "Lao",
+    ScriptISO("LATN"): "Latin",
+    ScriptISO("MYMR"): "Myanmar",
+    ScriptISO("SINH"): "Sinhala",
+    ScriptISO("TAML"): "Tamil",
+    ScriptISO("THAI"): "Thai",
 }
 
 # ------------------------------------------------------------------
@@ -245,13 +247,96 @@ SCRIPT_SAMPLES: dict[str, str] = {
 # (authoritative; moved from create_catalog.py)
 # ------------------------------------------------------------------
 
-SCRIPT_TO_POLYGLOSSIA: dict[str, tuple[str, str]] = {
-    "arab": ("arabic", "Script=Arabic"),
-    "beng": ("bengali", "Script=Bengali"),
-    "deva": ("hindi", "Script=Devanagari"),
-    "hani": ("chinese", ""),
-    "hebr": ("hebrew", "Script=Hebrew"),
-    "hira": ("japanese", ""),
-    "kana": ("japanese", ""),
-    "taml": ("tamil", "Script=Tamil"),
+SCRIPT_ISO_TO_POLYGLOSSIA: dict[ScriptISO, tuple[str, str]] = {
+    ScriptISO("ARAB"): ("arabic", "Script=Arabic"),
+    ScriptISO("BENG"): ("bengali", "Script=Bengali"),
+    ScriptISO("DEVA"): ("hindi", "Script=Devanagari"),
+    ScriptISO("HANI"): ("chinese", ""),
+    ScriptISO("HEBR"): ("hebrew", "Script=Hebrew"),
+    ScriptISO("HIRA"): ("japanese", ""),
+    ScriptISO("KANA"): ("japanese", ""),
+    ScriptISO("TAML"): ("tamil", "Script=Tamil"),
+}
+
+
+# ------------------------------------------------------------------
+# Ontology invariants (Phase 5)
+# ------------------------------------------------------------------
+
+
+def _validate_script_identifier_invariants() -> None:
+    for iso in LANGUAGE_PRIMARY_SCRIPT.values():
+        iso_id = ScriptISO(iso)
+        assert tag_to_iso(iso_to_tag(iso_id)) == iso_id
+
+
+_validate_script_identifier_invariants()
+
+# ------------------------------------------------------------------
+# Phase 5 — ISO-canonical derived views
+# ------------------------------------------------------------------
+
+# Canonical ISO15924 → display language
+SCRIPT_ISO_TO_DISPLAY_LANGUAGE: dict[ScriptISO, str] = {
+    tag_to_iso(tag): lang for tag, lang in SCRIPT_TO_DISPLAY_LANGUAGE.items()
+}
+
+
+# ------------------------------------------------------------------
+# Phase 5 — Human script names normalization
+# ------------------------------------------------------------------
+
+SCRIPT_HUMAN_TO_ISO: dict[str, ScriptISO] = {
+    "Arabic": ScriptISO("ARAB"),
+    "Armenian": ScriptISO("ARMN"),
+    "Bengali": ScriptISO("BENG"),
+    "CJK": ScriptISO("HANI"),
+    "Cherokee": ScriptISO("CHER"),
+    "Cyrillic": ScriptISO("CYRL"),
+    "Devanagari": ScriptISO("DEVA"),
+    "Ethiopic": ScriptISO("ETHI"),
+    "Georgian": ScriptISO("GEOR"),
+    "Greek": ScriptISO("GREK"),
+    "Han": ScriptISO("HANI"),
+    "Hangul": ScriptISO("HANG"),
+    "Hebrew": ScriptISO("HEBR"),
+    "Hiragana": ScriptISO("HIRA"),
+    "Katakana": ScriptISO("KANA"),
+    "Japanese": ScriptISO("JPAN"),
+    "Khmer": ScriptISO("KHMR"),
+    "Lao": ScriptISO("LAOO"),
+    "Latin": ScriptISO("LATN"),
+    "Myanmar": ScriptISO("MYMR"),
+    "Sinhala": ScriptISO("SINH"),
+    "Tamil": ScriptISO("TAML"),
+    "Thai": ScriptISO("THAI"),
+    "Yi": ScriptISO("YIII"),
+}
+
+# Canonical ISO15924 → sample text
+
+_missing_sample_scripts = set(SCRIPT_SAMPLES) - set(SCRIPT_HUMAN_TO_ISO)
+if _missing_sample_scripts:
+    msg = f"Missing SCRIPT_HUMAN_TO_ISO entries for SCRIPT_SAMPLES: {sorted(_missing_sample_scripts)!r}"
+    raise KeyError(msg)
+
+_profile_script_names = {
+    s for _lang, _profile in LANGUAGE_PROFILES.items() for s in _profile["scripts"]
+}
+_missing_profile_scripts = _profile_script_names - set(SCRIPT_HUMAN_TO_ISO)
+if _missing_profile_scripts:
+    msg = f"Missing SCRIPT_HUMAN_TO_ISO entries for LANGUAGE_PROFILES scripts: {sorted(_missing_profile_scripts)!r}"
+    raise KeyError(msg)
+
+SCRIPT_ISO_SAMPLES: dict[ScriptISO, str] = {
+    SCRIPT_HUMAN_TO_ISO[name]: sample for name, sample in SCRIPT_SAMPLES.items()
+}
+
+# Canonical ISO15924 representation of language profiles
+LANGUAGE_PROFILES_ISO: dict[str, dict[str, Any]] = {
+    lang: {
+        **profile,
+        "scripts": [SCRIPT_HUMAN_TO_ISO[s] for s in profile["scripts"]],
+    }
+    for lang, profile in LANGUAGE_PROFILES.items()
 }

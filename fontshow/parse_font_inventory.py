@@ -38,10 +38,14 @@ from fontshow.cli_utils import (
 from fontshow.common.specimens import choose_language_sample
 from fontshow.dump_fonts import UNICODE_BLOCKS
 from fontshow.global_constants import SCHEMA_VERSION
-from fontshow.infer_languages import SCRIPT_TO_DISPLAY_LANGUAGE, infer_languages
+from fontshow.infer_languages import infer_languages
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.json_format import dumps_pretty
-from fontshow.language_tables import LANGUAGE_PRIMARY_SCRIPT, SCRIPT_SAMPLES
+from fontshow.language_tables import (
+    LANGUAGE_PRIMARY_SCRIPT,
+    SCRIPT_ISO_SAMPLES,
+    SCRIPT_ISO_TO_DISPLAY_LANGUAGE,
+)
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.schema_validation import (
@@ -52,6 +56,7 @@ from fontshow.semantic_validation import normalize_languages
 from fontshow.types import (
     FontRef,
     LanguageInferenceInfo,
+    ScriptISO,
     Severity,
     WarningInfo,
 )
@@ -817,18 +822,10 @@ def _specimen_from_script(
         if not script:
             return None, "no_scripts"
 
-    # --- Bridge coverage script → SCRIPT_SAMPLES key deterministically ---
-    key = script
-    if key not in SCRIPT_SAMPLES:
-        key_norm = script.lower()
-        for k in SCRIPT_SAMPLES:
-            if k.lower() == key_norm:
-                key = k
-                break
-        else:
-            return None, "no_script_sample"
+    # --- Canonical ISO script lookup (Phase 5) ---
+    script_iso = ScriptISO(str(script).upper())
 
-    text = SCRIPT_SAMPLES.get(key)
+    text = SCRIPT_ISO_SAMPLES.get(script_iso)
 
     if not isinstance(text, str) or not text.strip():
         return None, "no_script_sample"
@@ -1634,8 +1631,8 @@ def _infer_and_attach_metadata(
 
     script_primary_lang = None
     if inferred_scripts:
-        primary_script = inferred_scripts[0].lower()
-        script_primary_lang = SCRIPT_TO_DISPLAY_LANGUAGE.get(primary_script)
+        primary_script = ScriptISO(str(inferred_scripts[0]).upper())
+        script_primary_lang = SCRIPT_ISO_TO_DISPLAY_LANGUAGE.get(primary_script)
 
     candidates = list(inferred_languages_map.keys())
 
