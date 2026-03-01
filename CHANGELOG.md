@@ -1,3 +1,9 @@
+## [0.41.1](https://github.com/marco0560/Fontshow/compare/v0.41.0...v0.41.1) (2026-03-01)
+
+### Bug Fixes
+
+* **catalog:** stabilize script selection, rendering policy, and LaTeX generation ([ae03c59](https://github.com/marco0560/Fontshow/commit/ae03c5957bf392a70869730ae12d07d7faee0c85))
+
 ## [0.41.0](https://github.com/marco0560/Fontshow/compare/v0.40.2...v0.41.0) (2026-02-28)
 
 ### Features
