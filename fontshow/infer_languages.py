@@ -62,6 +62,8 @@ def _block_coverage_ratio(
 def infer_languages(
     coverage: dict[str, Any],
     policy: str = "permissive",
+    *,
+    scripts_list: list[str] | None = None,
 ) -> dict[str, LanguageInferenceInfo]:
     """
     Infer candidate languages from Unicode coverage metadata.
@@ -111,7 +113,16 @@ def infer_languages(
     # Disabled when no scripts are inferred (emoji/symbol fonts).
     # ------------------------------------------------------------------
 
-    scripts_public = coverage.get("scripts")
+    scripts_public = (
+        scripts_list if scripts_list is not None else coverage.get("scripts")
+    )
+    # --------------------------------------------------------------
+    # SOFT UNKNOWN policy:
+    # treat ["UNKNOWN"] as absence of script constraint
+    # --------------------------------------------------------------
+    if scripts_public == ["UNKNOWN"]:
+        scripts_public = None
+
     inferred_scripts = (
         [str(s).lower() for s in scripts_public]
         if isinstance(scripts_public, list)

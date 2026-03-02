@@ -1572,11 +1572,16 @@ def _infer_and_attach_metadata(
 
     inferred_scripts = list(infer_scripts(coverage, level) or [])
 
+    normalized_scripts = [str(s).upper() for s in inferred_scripts]
+
     # ------------------------------------------------------------------
     # Canonical script field (Step 2 alignment)
     # ------------------------------------------------------------------
-    if inferred_scripts:
-        coverage["scripts"] = sorted({s.upper() for s in inferred_scripts})
+    if normalized_scripts:
+        coverage["scripts"] = normalized_scripts
+        coverage["primary_script"] = normalized_scripts[0]
+    else:
+        coverage["primary_script"] = "UNKNOWN"
 
     log_trace_cat(
         log,
@@ -1588,7 +1593,11 @@ def _infer_and_attach_metadata(
         },
     )
 
-    inferred_languages_map = infer_languages(coverage, policy="permissive")
+    inferred_languages_map = infer_languages(
+        coverage,
+        policy="permissive",
+        scripts_list=normalized_scripts,
+    )
 
     log_trace_cat(
         log,
@@ -1599,8 +1608,6 @@ def _infer_and_attach_metadata(
             "candidates_count": len(inferred_languages_map),
         },
     )
-
-    normalized_scripts = [str(s).upper() for s in inferred_scripts]
 
     log_trace_cat(
         log,
@@ -1664,6 +1671,7 @@ def _infer_and_attach_metadata(
     font["inference"] = {
         "level": level,
         "scripts": normalized_scripts,
+        "primary_script": (normalized_scripts[0] if normalized_scripts else "UNKNOWN"),
         "languages": inferred_languages,
         "declared_scripts": declared_scripts,
         "declared_languages": declared_languages,
