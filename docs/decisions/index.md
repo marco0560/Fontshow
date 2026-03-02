@@ -39,3 +39,4 @@ created before the adoption of the formal decision record system.
 - [0019 — Enum / JSON Boundary Invariant](0019-enum-json-boundary-invariant.md)
 - [0020 — Schema v1.2 Unification and Deprecation of Previous Versions](0020-schema-v1-2-unification-deprecation-previous-versions.md)
 - [0021 — Authoritative Unicode Ontology](0021-authoritative-unicode-ontology.md)
+- [0022 — Fontshow — Specimen Inference Inputs Matrix v1.0](0022-fontshow-specimen-inference-inputs-matrix-v1-0.md)
