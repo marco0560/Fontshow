@@ -1,3 +1,9 @@
+## [0.41.2](https://github.com/marco0560/Fontshow/compare/v0.41.1...v0.41.2) (2026-03-02)
+
+### Bug Fixes
+
+* **parser:** restore language inference semantics and stabilize pipeline contract ([8e7dd55](https://github.com/marco0560/Fontshow/commit/8e7dd556e6287e44a99291f83a5703f9438ad7d1))
+
 ## [0.41.1](https://github.com/marco0560/Fontshow/compare/v0.41.0...v0.41.1) (2026-03-01)
 
 ### Bug Fixes
