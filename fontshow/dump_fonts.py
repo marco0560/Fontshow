@@ -445,10 +445,13 @@ def extract_sample_text(font_path: str) -> list[str] | None:
         return None
 
     if "name" not in tt:
+        tt.close()
         return None
 
     name_table = tt["name"]
-    samples = []
+
+    seen: set[str] = set()
+    unique_samples: list[str] = []
 
     for record in name_table.names:
         if record.nameID != NAME_ID_SAMPLE_TEXT:
@@ -459,21 +462,15 @@ def extract_sample_text(font_path: str) -> list[str] | None:
         except (UnicodeError, ValueError):
             continue
 
-        if text:
-            samples.append(text)
+        if not text or text in seen:
+            continue
 
-    if not samples:
-        return None
+        seen.add(text)
+        unique_samples.append(text)
 
-    # Deduplicate while preserving order
-    seen = set()
-    unique_samples = []
-    for s in samples:
-        if s not in seen:
-            seen.add(s)
-            unique_samples.append(s)
+    tt.close()
 
-    return unique_samples
+    return unique_samples or None
 
 
 def _parse_fc_charset_ranges(raw: str) -> list[str]:

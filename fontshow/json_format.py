@@ -22,6 +22,107 @@ from fontshow.logging_utils import log, log_trace_cat
 from fontshow.types import Severity
 
 
+class _PrettyJSONWriter:
+    def __init__(
+        self,
+        *,
+        indent: int,
+        ensure_ascii: bool,
+        sort_keys: bool,
+        compact_numeric_lists_max_len: int,
+    ) -> None:
+        self.indent = indent
+        self.ensure_ascii = ensure_ascii
+        self.sort_keys = sort_keys
+        self.compact_numeric_lists_max_len = compact_numeric_lists_max_len
+
+        self._indent_cache: dict[int, str] = {0: ""}
+        self._key_cache: dict[str, str] = {}
+
+    # ---------- helpers ----------
+
+    def _pad(self, level: int) -> str:
+        s = self._indent_cache.get(level)
+        if s is None:
+            s = " " * (self.indent * level)
+            self._indent_cache[level] = s
+        return s
+
+    def _primitive(self, v: Any) -> str:
+        if v is None:
+            return "null"
+        if isinstance(v, bool):
+            return "true" if v else "false"
+        return json.dumps(v, ensure_ascii=self.ensure_ascii)
+
+    # ---------- writers ----------
+
+    def write(self, v: Any, level: int) -> str:
+        if isinstance(v, Severity):
+            return json.dumps(v.to_json(), ensure_ascii=self.ensure_ascii)
+
+        if isinstance(v, Enum):
+            return json.dumps(v.name.lower(), ensure_ascii=self.ensure_ascii)
+
+        if v is None or isinstance(v, (str, int, float, bool)):
+            return self._primitive(v)
+
+        if isinstance(v, Mapping):
+            return self._write_mapping(v, level)
+
+        if isinstance(v, Sequence) and not isinstance(v, (bytes, bytearray)):
+            return self._write_sequence(v, level)
+
+        return json.dumps(v, ensure_ascii=self.ensure_ascii)
+
+    def _write_mapping(self, v: Mapping[Any, Any], level: int) -> str:
+        items = list(v.items())
+        if self.sort_keys:
+            items.sort(key=lambda kv: str(kv[0]))
+        if not items:
+            return "{}"
+
+        pad = self._pad(level)
+        pad_in = self._pad(level + 1)
+        out = ["{\n"]
+
+        for i, (k, val) in enumerate(items):
+            k_str = str(k)
+            key_s = self._key_cache.get(k_str)
+            if key_s is None:
+                key_s = json.dumps(k_str, ensure_ascii=self.ensure_ascii)
+                self._key_cache[k_str] = key_s
+
+            out.append(f"{pad_in}{key_s}: {self.write(val, level + 1)}")
+            out.append(",\n" if i < len(items) - 1 else "\n")
+
+        out.append(f"{pad}}}")
+        return "".join(out)
+
+    def _write_sequence(self, v: Sequence[Any], level: int) -> str:
+        if _is_short_numeric_list(v, max_len=self.compact_numeric_lists_max_len):
+            return json.dumps(
+                list(v),
+                ensure_ascii=self.ensure_ascii,
+                separators=(", ", ": "),
+            )
+
+        seq = list(v)
+        if not seq:
+            return "[]"
+
+        pad = self._pad(level)
+        pad_in = self._pad(level + 1)
+        out = ["[\n"]
+
+        for i, item in enumerate(seq):
+            out.append(f"{pad_in}{self.write(item, level + 1)}")
+            out.append(",\n" if i < len(seq) - 1 else "\n")
+
+        out.append(f"{pad}]")
+        return "".join(out)
+
+
 def _is_short_numeric_list(value: Any, *, max_len: int) -> bool:
     """
     Determine whether a value is a short numeric list eligible for compact formatting.
@@ -121,76 +222,15 @@ def dumps_pretty(
         },
     )
 
-    def write(v: Any, level: int) -> str:
-        # --- Severity normalization (canonical) ---
-        if isinstance(v, Severity):
-            return json.dumps(v.to_json(), ensure_ascii=ensure_ascii)
+    writer = _PrettyJSONWriter(
+        indent=indent,
+        ensure_ascii=ensure_ascii,
+        sort_keys=sort_keys,
+        compact_numeric_lists_max_len=compact_numeric_lists_max_len,
+    )
 
-        # --- Generic Enum normalization (safe fallback) ---
-        if isinstance(v, Enum):
-            return json.dumps(v.name.lower(), ensure_ascii=ensure_ascii)
+    out = writer.write(value, 0) + "\n"
 
-        # --- Primitive types ---
-        if v is None or isinstance(v, str | int | float | bool):
-            return json.dumps(v, ensure_ascii=ensure_ascii)
-
-        # --- Mapping (dict-like) ---
-        if isinstance(v, Mapping):
-            items = list(v.items())
-            if sort_keys:
-                items.sort(key=lambda kv: str(kv[0]))
-            if not items:
-                return "{}"
-
-            pad = " " * (indent * level)
-            pad_in = " " * (indent * (level + 1))
-            out = ["{\n"]
-
-            for i, (k, val) in enumerate(items):
-                key_s = json.dumps(str(k), ensure_ascii=ensure_ascii)
-                out.append(f"{pad_in}{key_s}: {write(val, level + 1)}")
-                out.append(",\n" if i < len(items) - 1 else "\n")
-
-            out.append(f"{pad}}}")
-            return "".join(out)
-
-        # --- Sequence (list-like, excluding bytes) ---
-        if isinstance(v, Sequence) and not isinstance(v, bytes | bytearray):
-            if _is_short_numeric_list(v, max_len=compact_numeric_lists_max_len):
-                log_trace_cat(
-                    log,
-                    "raw",
-                    "json compact numeric list applied",
-                    extra={
-                        "length": len(v),
-                        "max_len": compact_numeric_lists_max_len,
-                    },
-                )
-                return json.dumps(
-                    list(v),
-                    ensure_ascii=ensure_ascii,
-                    separators=(", ", ": "),
-                )
-
-            seq = list(v)
-            if not seq:
-                return "[]"
-
-            pad = " " * (indent * level)
-            pad_in = " " * (indent * (level + 1))
-            out = ["[\n"]
-
-            for i, item in enumerate(seq):
-                out.append(f"{pad_in}{write(item, level + 1)}")
-                out.append(",\n" if i < len(seq) - 1 else "\n")
-
-            out.append(f"{pad}]")
-            return "".join(out)
-
-        # --- Fallback ---
-        return json.dumps(v, ensure_ascii=ensure_ascii)
-
-    out = write(value, 0) + "\n"
     log_trace_cat(
         log,
         "raw",
