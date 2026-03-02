@@ -153,8 +153,8 @@
         },
 
         "specimen_text": { "type": "string", "minLength": 1 },
-        "specimen_strategy": { "type": "string", "enum": ["internal", "script", "cmap"] },
-        "specimen_glyph_count": { "type": "integer", "minimum": 1 },
+        "specimen_strategy": { "type": "string", "enum": ["internal", "script", "cmap", "deferred"] },
+        "specimen_glyph_count": { "type": ["integer", "null"], "minimum": 1 },
         "specimen_rejection_reason": { "type": ["string", "null"] },
 
         "warnings": {

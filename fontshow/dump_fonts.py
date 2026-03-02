@@ -332,6 +332,58 @@ def get_installed_font_files_windows() -> list[Path]:
     return sorted(found)
 
 
+# ----------------------------------------------------------------------
+# Charset synthesis helpers (discovery phase)
+# ----------------------------------------------------------------------
+
+
+def _charset_ranges_from_ttfont(tt: TTFont) -> list[list[int]]:
+    """
+    Extract merged Unicode codepoint ranges from cmap tables.
+
+    Returns
+    -------
+    list[list[int]]
+        Sorted contiguous codepoint ranges [[start, end], ...].
+
+    Notes
+    -----
+    Discovery-only helper:
+    - performs no semantic interpretation
+    - deterministic output
+    """
+    try:
+        cmap = tt["cmap"]
+    except KeyError:
+        return []
+
+    codepoints: set[int] = set()
+
+    for table in cmap.tables:
+        if not table.isUnicode():
+            continue
+        codepoints.update(table.cmap.keys())
+
+    if not codepoints:
+        return []
+
+    sorted_cps = sorted(codepoints)
+
+    ranges: list[list[int]] = []
+    start = prev = sorted_cps[0]
+
+    for cp in sorted_cps[1:]:
+        if cp == prev + 1:
+            prev = cp
+            continue
+
+        ranges.append([start, prev])
+        start = prev = cp
+
+    ranges.append([start, prev])
+    return ranges
+
+
 # -----------------------
 # Container detection
 # -----------------------
@@ -1769,16 +1821,6 @@ def _normalize_metrics(
     )
 
 
-def _compute_specimen(sample_text):
-    specimen_text = sample_text.get("text") if isinstance(sample_text, dict) else ""
-    if not isinstance(specimen_text, str) or not specimen_text.strip():
-        specimen_text = "Aa"
-
-    specimen_glyph_count = max(len(set(specimen_text)), 1)
-
-    return specimen_text, "internal", specimen_glyph_count, None
-
-
 def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
     """Build the canonical per-font descriptor used in the JSON inventory.
 
@@ -1882,6 +1924,11 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
         "scripts": scripts,
         "languages": languages,
         "charset": charset,
+        "charset_ranges": (
+            ctx.fonttools.get("unicode_ranges", [])
+            if isinstance(ctx.fonttools.get("unicode_ranges"), list)
+            else []
+        ),
     }
 
     # -------------------------------
@@ -2000,12 +2047,12 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
         (family, style, fullname, postscript),
     )
 
-    (
-        specimen_text,
-        specimen_strategy,
-        specimen_glyph_count,
-        specimen_rejection_reason,
-    ) = _compute_specimen(sample_text)
+    # Specimen inference deferred to parse-inventory.
+    # Must remain schema-valid (non-empty specimen_text).
+    specimen_text = " "
+    specimen_strategy = "deferred"
+    specimen_glyph_count = None
+    specimen_rejection_reason = "deferred_to_parse_inventory"
     return {
         "path": str(ctx.font_path),
         "family": family_s,
@@ -2027,6 +2074,7 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
         "inference": {},
         "charset": {"fc_charset": coverage.get("charset")},
         "sample_text": sample_text,
+        # Specimen fields populated later by parse-inventory
         "specimen_text": specimen_text,
         "specimen_strategy": specimen_strategy,
         "specimen_glyph_count": specimen_glyph_count,
