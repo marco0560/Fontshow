@@ -120,7 +120,7 @@ def infer_languages(
     # SOFT UNKNOWN policy:
     # treat ["UNKNOWN"] as absence of script constraint
     # --------------------------------------------------------------
-    if scripts_public == ["UNKNOWN"]:
+    if scripts_public in (["UNKNOWN"], ["LATN"]):
         scripts_public = None
 
     inferred_scripts = (
