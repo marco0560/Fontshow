@@ -1,3 +1,9 @@
+## [0.41.3](https://github.com/marco0560/Fontshow/compare/v0.41.2...v0.41.3) (2026-03-02)
+
+### Performance Improvements
+
+* **core:** reduce dump-fonts runtime and stabilize JSON formatting performance ([bec3633](https://github.com/marco0560/Fontshow/commit/bec3633dcb2eb8362197a8d5c6f5d2fa225ee173))
+
 ## [0.41.2](https://github.com/marco0560/Fontshow/compare/v0.41.1...v0.41.2) (2026-03-02)
 
 ### Bug Fixes
