@@ -1,5 +1,4 @@
 import json
-import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -70,37 +69,77 @@ def test_dump_fonts_excludes_non_opentype(tmp_path, monkeypatch):
     assert fonts[0]["path"].endswith("font-valid.ttf")
 
 
-def test_parse_inventory_after_dump(tmp_path):
+def test_parse_inventory_after_dump(tmp_path, monkeypatch):
     """
     Ensure parse-inventory succeeds after dump-fonts filtering.
+
+    This test must not depend on system font installation or subprocess CLI
+    calls (determinism + performance).
     """
 
+    # --- Mock font discovery ---
+    fake_fonts = [
+        Path("/fake/font-valid.ttf"),
+        Path("/fake/font-bitmap.pcf"),
+    ]
+
+    monkeypatch.setattr(
+        "fontshow.dump_fonts.get_installed_font_files",
+        lambda: fake_fonts,
+    )
+
+    # --- Mock fonttools extraction ---
+    def fake_fonttools_extract_all(path, **kwargs):
+        if path.name.endswith(".ttf"):
+            return [
+                {
+                    "ok": True,
+                    "ttc_index": None,
+                }
+            ]
+
+        return [
+            {
+                "ok": False,
+                "error": "Not a TrueType or OpenType font",
+                "ttc_index": None,
+            }
+        ]
+
+    monkeypatch.setattr(
+        "fontshow.dump_fonts.fonttools_extract_all",
+        fake_fonttools_extract_all,
+    )
+
+    # --- Run dump-fonts in-process ---
     inventory = tmp_path / "fonts.json"
 
-    dump = subprocess.run(
-        [
-            "fontshow",
-            "dump-fonts",
-            "-o",
-            str(inventory),
-        ],
-        capture_output=True,
-        text=True,
-        cwd=tmp_path,
+    dump_args = SimpleNamespace(
+        output=inventory,
+        cache_dir=tmp_path,
+        include_fc_charset=False,
+        no_cache=True,
+        verbose=False,
     )
 
-    assert dump.returncode == 0
+    ret = run_dump_fonts(dump_args)
+    assert ret == 0
     assert inventory.exists()
 
-    parse = subprocess.run(
-        [
-            "fontshow",
-            "parse-inventory",
-            str(inventory),
-        ],
-        capture_output=True,
-        text=True,
-        cwd=tmp_path,
+    # --- Run parse-inventory in-process ---
+    from fontshow.parse_font_inventory import run_parse_font_inventory
+
+    output = tmp_path / "fonts_enriched.json"
+
+    parse_args = SimpleNamespace(
+        input=inventory,
+        output=output,
+        infer_level="medium",
+        validate_inventory=False,
+        strict_bcp47=False,
+        verbose=False,
     )
 
-    assert parse.returncode == 0
+    ret = run_parse_font_inventory(parse_args)
+    assert ret == 0
+    assert output.exists()
