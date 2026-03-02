@@ -119,7 +119,7 @@ Raw internal sample from font, not guaranteed valid for rendering.
 Required fields:
 
 * `specimen_text`
-* `specimen_strategy` (`internal | script | cmap`)
+* `specimen_strategy` (`internal | script | cmap | deferred`)
 * `specimen_glyph_count`
 
 Optional:

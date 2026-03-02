@@ -153,6 +153,8 @@ Highest authority signal.
 ## 5. Specimen Inference Decision Tree
 
 Performed ONLY in parse-inventory.
+Specimen inference is deferred from dump-fonts to parse-inventory.
+Schema extended with "deferred" specimen_strategy state.
 
 ### Step 1 — Internal specimen
 
