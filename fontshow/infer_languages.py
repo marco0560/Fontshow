@@ -59,86 +59,31 @@ def _block_coverage_ratio(
     return covered / size
 
 
-def infer_languages(
-    coverage: dict[str, Any],
-    policy: str = "permissive",
-    *,
-    scripts_list: list[str] | None = None,
-) -> dict[str, LanguageInferenceInfo]:
-    """
-    Infer candidate languages from Unicode coverage metadata.
-
-    Parameters
-    ----------
-    coverage : dict[str, Any]
-        Unicode coverage metadata (e.g. font_entry["coverage"]).
-    policy : str, optional
-        Language inference policy selector.
-
-    Returns
-    -------
-    dict[str, LanguageInferenceInfo]
-        Mapping of language tags to inference evidence.
-
-    Notes
-    -----
-    This function operates exclusively on Unicode-derived coverage data
-    (e.g. unicode_blocks) and does NOT consume FontConfig charset metadata
-    or any external language declarations.
-
-    The returned mapping represents candidate languages supported by
-    the font, along with supporting evidence, and is not a definitive
-    classification.
-    """
-    log_trace_cat(
-        log,
-        "infer",
-        "language inference started",
-        extra={
-            "policy": policy,
-            "unicode_blocks_count": len(coverage.get("unicode_blocks", {}) or {}),
-        },
-    )
-
-    unicode_blocks: dict[str, int] = coverage.get("unicode_blocks", {}) or {}
-
-    inferred: dict[str, LanguageInferenceInfo] = {}
-
-    # ------------------------------------------------------------------
-    # Script Gate (Step 1 — charset-derived inference only)
-    #
-    # Languages are considered only if their primary script belongs
-    # to the inferred script set.
-    #
-    # Disabled when no scripts are inferred (emoji/symbol fonts).
-    # ------------------------------------------------------------------
-
-    scripts_public = (
-        scripts_list if scripts_list is not None else coverage.get("scripts")
-    )
-    # --------------------------------------------------------------
-    # SOFT UNKNOWN policy:
-    # treat ["UNKNOWN"] as absence of script constraint
-    # --------------------------------------------------------------
-    if scripts_public in (["UNKNOWN"], ["LATN"]):
-        scripts_public = None
-
+def _infer_allowed_languages_from_scripts(
+    scripts_public: object,
+) -> set[str] | None:
     inferred_scripts = (
         [str(s).lower() for s in scripts_public]
         if isinstance(scripts_public, list)
         else None
     )
+    if not inferred_scripts:
+        return None
 
-    allowed_languages: set[str] | None = None
+    scripts_upper = {s.upper() for s in inferred_scripts}
+    return {
+        lang
+        for lang, script in LANGUAGE_PRIMARY_SCRIPT.items()
+        if script in scripts_upper
+    }
 
-    if inferred_scripts:
-        scripts_upper = {s.upper() for s in inferred_scripts}
 
-        allowed_languages = {
-            lang
-            for lang, script in LANGUAGE_PRIMARY_SCRIPT.items()
-            if script in scripts_upper
-        }
+def _infer_languages_from_profiles(
+    *,
+    unicode_blocks: dict[str, int],
+    allowed_languages: set[str] | None,
+) -> dict[str, LanguageInferenceInfo]:
+    inferred: dict[str, LanguageInferenceInfo] = {}
 
     for lang, profile in LANGUAGE_PROFILES_ISO.items():
         if allowed_languages is not None and lang not in allowed_languages:
@@ -147,20 +92,13 @@ def infer_languages(
         required = set(profile["required_blocks"])
         optional = set(profile.get("optional_blocks", []))
 
-        # ------------------------------------------------------------------
-        # Fontshow v1.2 permissive rule:
-        # A language is accepted if ANY required block reaches threshold.
-        # Real fonts frequently expose partial Unicode coverage.
-        # ------------------------------------------------------------------
         passed_blocks: list[str] = []
-
         for block in required:
             ratio = _block_coverage_ratio(
                 block_name=block,
                 block_coverage=unicode_blocks,
                 block_sizes=UNICODE_BLOCK_SIZES,
             )
-
             if ratio >= LANGUAGE_BLOCK_COVERAGE_THRESHOLD:
                 passed_blocks.append(block)
 
@@ -204,6 +142,151 @@ def infer_languages(
             evidence=evidence,
         )
 
+    return inferred
+
+
+def _apply_script_authoritative_fallbacks(
+    *,
+    inferred: dict[str, LanguageInferenceInfo],
+    unicode_blocks: dict[str, int],
+    coverage: dict[str, Any],
+) -> dict[str, LanguageInferenceInfo]:
+    scripts_public = coverage.get("scripts")
+    scripts_lower: list[str] | None = None
+    if isinstance(scripts_public, list) and scripts_public:
+        scripts_lower = [str(s).lower() for s in scripts_public]
+
+    if inferred:
+        if (
+            isinstance(scripts_lower, list)
+            and set(scripts_lower) == {"latn"}
+            and "en" in inferred
+        ):
+            blocks_present = set(unicode_blocks.keys())
+            if blocks_present == {"Basic Latin"}:
+                return {"en": inferred["en"]}
+        return inferred
+
+    if isinstance(scripts_lower, list) and scripts_lower:
+        primary = sorted(str(s).lower() for s in scripts_lower)[0]
+        lang = SCRIPT_ISO_TO_DISPLAY_LANGUAGE.get(ScriptISO(str(primary).upper())) or ""
+        if lang:
+            inferred[lang] = LanguageInferenceInfo(
+                confidence="medium",
+                evidence=["script-default"],
+            )
+
+    return inferred
+
+
+def infer_languages(
+    coverage: dict[str, Any],
+    policy: str = "permissive",
+    *,
+    scripts_list: list[str] | None = None,
+) -> dict[str, LanguageInferenceInfo]:
+    """
+    Infer candidate languages from parsed Unicode coverage metadata.
+
+    This function represents the *language inference phase* of the
+    Fontshow parsing pipeline and operates strictly after script
+    identification has been completed by ``parse_inventory``.
+
+    Language inference is therefore **script-authoritative**:
+    languages are inferred only when canonical scripts are available.
+
+    Parameters
+    ----------
+    coverage : dict[str, Any]
+        Parsed coverage metadata for a font entry. Expected to contain
+        canonical script information produced by the parse phase
+        (``primary_script`` or ``scripts``).
+    policy : str, optional
+        Language inference policy selector (currently informational).
+    scripts_list : list[str] | None, keyword-only
+        Canonical script list provided explicitly by the parse layer.
+        When supplied, this takes precedence over values stored in
+        ``coverage``.
+
+    Returns
+    -------
+    dict[str, LanguageInferenceInfo]
+        Mapping of inferred language tags to supporting evidence.
+        The mapping is deterministically ordered by language code.
+
+    Inference Model
+    ---------------
+    The function follows a strict staged model:
+
+    1. Canonical script resolution.
+    2. Phase gate — inference runs only if scripts are known.
+    3. Non-discriminative script filtering (e.g. LATN-only fonts).
+    4. Unicode block profile evaluation.
+    5. Script-authoritative fallback rules.
+    6. Deterministic ordering of results.
+
+    Notes
+    -----
+    * Language inference never consumes FontConfig charset data or
+      declared languages.
+    * Absence of scripts disables inference entirely.
+    * Latin-only coverage is treated as non-discriminative and does
+      not produce language candidates.
+    * The result represents *capability inference*, not linguistic
+      classification.
+    """
+    log_trace_cat(
+        log,
+        "infer",
+        "language inference started",
+        extra={
+            "policy": policy,
+            "unicode_blocks_count": len(coverage.get("unicode_blocks", {}) or {}),
+        },
+    )
+
+    unicode_blocks: dict[str, int] = coverage.get("unicode_blocks", {}) or {}
+
+    # --------------------------------------------------------------
+    # Canonical script resolution
+    # Priority:
+    #   1. explicit scripts_list (parse layer canonical)
+    #   2. coverage.primary_script (post-v0.41 invariant)
+    #   3. coverage.scripts (legacy fallback)
+    # --------------------------------------------------------------
+    scripts_public: list[str] | None
+
+    # --------------------------------------------------------------
+    # when scripts_list is not None we are in
+    # Pipeline mode: parse layer supplies canonical scripts.
+    # otherwise we are in
+    # Standalone mode: infer directly from unicode_blocks without
+    # requiring parse-phase script inference.
+    # --------------------------------------------------------------
+    scripts_public = scripts_list if scripts_list is not None else None
+
+    # --------------------------------------------------------------
+    # UNKNOWN script handling
+    #
+    # In pipeline mode, UNKNOWN means script inference failed,
+    # therefore language inference must not proceed.
+    # In standalone mode (scripts_list is None), heuristic
+    # inference is still allowed.
+    # --------------------------------------------------------------
+    if scripts_public == ["UNKNOWN"] and scripts_list is not None:
+        return {}
+    if scripts_public == ["LATN"]:
+        blocks_present = set(unicode_blocks.keys())
+        if blocks_present == {"Basic Latin"}:
+            return {}
+
+    allowed_languages = _infer_allowed_languages_from_scripts(scripts_public)
+
+    inferred = _infer_languages_from_profiles(
+        unicode_blocks=unicode_blocks,
+        allowed_languages=allowed_languages,
+    )
+
     log_trace_cat(
         log,
         "infer",
@@ -215,38 +298,10 @@ def infer_languages(
         },
     )
 
-    # ------------------------------------------------------------------
-    # Script-authoritative fallback rules
-    # ------------------------------------------------------------------
+    inferred = _apply_script_authoritative_fallbacks(
+        inferred=inferred,
+        unicode_blocks=unicode_blocks,
+        coverage=coverage,
+    )
 
-    scripts: list[str] | None = None
-
-    # Canonical script source (Step 3.1)
-    scripts_public = coverage.get("scripts")
-    if isinstance(scripts_public, list) and scripts_public:
-        scripts = [str(s).lower() for s in scripts_public]
-
-    if inferred:
-        # Canonical Latin fallback:
-        # if LATN is the only inferred script, collapse to English.
-        if isinstance(scripts, list) and set(scripts) == {"latn"} and "en" in inferred:
-            unicode_blocks = coverage.get("unicode_blocks", {}) or {}
-            blocks_present = set(unicode_blocks.keys())
-
-            # Minimal Latin capability → canonical English fallback
-            if blocks_present == {"Basic Latin"}:
-                inferred = {"en": inferred["en"]}
-
-    elif isinstance(scripts, list) and scripts:  # Script-driven display fallback
-        # Deterministic primary script selection
-        primary = sorted(str(s).lower() for s in scripts)[0]
-        lang = SCRIPT_ISO_TO_DISPLAY_LANGUAGE.get(ScriptISO(str(primary).upper())) or ""
-        if lang:
-            inferred[lang] = LanguageInferenceInfo(
-                confidence="medium",
-                evidence=["script-default"],
-            )
-
-    # Deterministic ordering safeguard:
-    # rebuild dictionary ordered by language code.
     return dict(sorted(inferred.items(), key=lambda kv: kv[0]))
