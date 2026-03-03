@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fontshow.logging_utils import log, log_trace_cat
-from fontshow.preflight.checks import environment, font_discovery, latex
+from fontshow.preflight.checks import environment, font_discovery, latex, ontology
 from fontshow.preflight.model import CheckResult, PreflightResult, Severity
 from fontshow.preflight.registry import get_registered_checks
 
@@ -20,12 +20,14 @@ __all__ = [
     "environment",
     "font_discovery",
     "latex",
+    "ontology",
 ]
 
 # Import built-in check classes (must exist before CHECKS is defined)
 from fontshow.preflight.checks.environment import EnvironmentSupportCheck
 from fontshow.preflight.checks.font_discovery import FontDiscoveryCheck
 from fontshow.preflight.checks.latex import LuaLatexCheck
+from fontshow.preflight.checks.ontology import OntologyCheck
 
 # Built-in checks (stable, explicit). Registry may add more checks at runtime,
 # but CHECKS remains the authoritative list of built-in checks for tests/docs.
@@ -33,6 +35,7 @@ CHECKS: list[type[BaseCheck]] = [
     EnvironmentSupportCheck,
     FontDiscoveryCheck,
     LuaLatexCheck,
+    OntologyCheck,
 ]
 
 

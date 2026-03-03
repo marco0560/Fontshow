@@ -124,6 +124,14 @@ NAME_ID_SAMPLE_TEXT = 19
 IS_LINUX = sys.platform.startswith("linux")
 IS_WINDOWS = sys.platform.startswith("win")
 
+# ------------------------------------------------------------------
+# Subprocess safety limits (Phase 6.4)
+# ------------------------------------------------------------------
+
+# Maximum time allowed for external fontconfig calls.
+# Chosen to be safely above normal execution time while preventing hangs.
+SUBPROCESS_TIMEOUT_SECONDS = 30
+
 
 def utc_now_iso() -> str:
     """
@@ -157,13 +165,22 @@ def run_command(argv: list[str]) -> subprocess.CompletedProcess[str]:
         stderr redirected to stdout. The process is not checked for
         non-zero exit status.
     """
-    return subprocess.run(
-        argv,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        check=False,
-    )
+    try:
+        return subprocess.run(
+            argv,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+            timeout=SUBPROCESS_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        log_err(
+            f"fontconfig subprocess timed out "
+            f"(timeout={SUBPROCESS_TIMEOUT_SECONDS}s, argv={argv})"
+        )
+        msg = "fontconfig subprocess timed out"
+        raise RuntimeError(msg) from exc
 
 
 def make_font_id(path: str, ttc_index: int | None) -> str:

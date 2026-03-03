@@ -1,12 +1,6 @@
 from dataclasses import dataclass
-from enum import Enum, auto
 
-
-class Severity(Enum):
-    INFO = auto()
-    OK = auto()
-    WARN = auto()
-    ERROR = auto()
+from fontshow.types import Severity
 
 
 @dataclass(frozen=True)
