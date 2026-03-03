@@ -1,3 +1,9 @@
+## [0.41.4](https://github.com/marco0560/Fontshow/compare/v0.41.3...v0.41.4) (2026-03-03)
+
+### Bug Fixes
+
+* **validation:** stabilize CLI contract, add ontology validation, unify severity model ([c23862d](https://github.com/marco0560/Fontshow/commit/c23862d84a894c36f72e4d19c0aa95dc2e653353))
+
 ## [0.41.3](https://github.com/marco0560/Fontshow/compare/v0.41.2...v0.41.3) (2026-03-02)
 
 ### Performance Improvements
