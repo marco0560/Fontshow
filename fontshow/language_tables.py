@@ -93,6 +93,12 @@ LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
         "required_blocks": ["Basic Latin"],
         "optional_blocks": ["Latin-1 Supplement"],
     },
+    # Spanish
+    "es": {
+        "scripts": ["Latin"],
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
+    },
     # French
     "fr": {
         "scripts": ["Latin"],
@@ -104,6 +110,12 @@ LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
         "scripts": ["Yi"],
         "required_blocks": ["Yi Syllables"],
         "optional_blocks": [],
+    },
+    # Italian
+    "it": {
+        "scripts": ["Latin"],
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
     },
     # Japanese
     "ja": {
@@ -133,6 +145,12 @@ LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
         "scripts": ["Myanmar"],
         "required_blocks": ["Myanmar", "Myanmar Extended-A", "Myanmar Extended-B"],
         "optional_blocks": [],
+    },
+    # Portuguese
+    "pt": {
+        "scripts": ["Latin"],
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
     },
     # Russian
     "ru": {
@@ -189,7 +207,9 @@ SCRIPT_TO_DISPLAY_LANGUAGE: dict[str, str] = {
     "hang": "ko",
     "hani": "zh",
     "hebr": "he",
+    "hira": "ja",
     "jpan": "ja",
+    "kana": "ja",
     "khmr": "km",
     "laoo": "lo",
     "latn": "en",
@@ -233,15 +253,45 @@ SCRIPT_ISO_TO_HUMAN_CANONICAL: dict[ScriptISO, str] = {
 # ------------------------------------------------------------------
 
 SCRIPT_SAMPLES: dict[str, str] = {
-    "Latin": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    "Greek": "Καλημέρα σας. Αυτό είναι ένα σύντομο δείγμα ελληνικού κειμένου.",
-    "Cyrillic": "Пример текста на кириллице для проверки отображения шрифта.",
     "Arabic": "مرحبا بكم. هذا نص عربي قصير لاختبار عرض الخط بشكل صحيح.",
-    "Hebrew": "שלום לכם. זהו טקסט עברי קצר לבדיקת הצגת הגופן.",
-    "Thai": "สวัสดีครับ นี่เป็นข้อความภาษาไทยสั้น ๆ สำหรับทดสอบแบบอักษร",
-    "Devanagari": "नमस्ते। यह देवनागरी लिपि का एक छोटा नमूना पाठ है।",
-    "Hangul": "안녕하세요. 이것은 한글 글꼴 표시를 위한 짧은 예시 문장입니다.",
+    "Armenian": "Հայերեն տեքստի կարճ օրինակ։",
+    "Bengali": "বাংলা ভাষা একটি সমৃদ্ধ ভাষা। এটি একটি সংক্ষিপ্ত উদাহরণ বাক্য।",
+    "Cherokee": "ᎣᏏᏲ ᎤᏓᎷᎸᏔᏅ ᎠᎴ ᎤᎵᏍᎩᎸᏙᏗ",
     "CJK": "漢字仮名交じり文の例。中文字符測試。日本語テスト。한국어 테스트。",
+    "Cyrillic": "Пример текста на кириллице для проверки отображения шрифта.",
+    "Devanagari": "नमस्ते। यह देवनागरी लिपि का एक छोटा नमूना पाठ है।",
+    "Ethiopic": "ሰላም ለእናንተ። ይህ አጭር የኢትዮጵያ ፊደል ምሳሌ ነው።",
+    "Georgian": "ეს არის ქართული ტექსტის მოკლე ნიმუში.",
+    "Greek": "Καλημέρα σας. Αυτό είναι ένα σύντομο δείγμα ελληνικού κειμένου.",
+    "Hangul": "안녕하세요. 이것은 한글 글꼴 표시를 위한 짧은 예시 문장입니다.",
+    "Han": "天地玄黃 宇宙洪荒 日月盈昃 辰宿列張。",
+    "Hebrew": "שלום לכם. זהו טקסט עברי קצר לבדיקת הצגת הגופן.",
+    "Hiragana": "いろはにほへと ちりぬるを",
+    "Japanese": "日本語の文章例です。漢字とひらがなとカタカナを含みます。",
+    "Katakana": "アイウエオ カキクケコ",
+    "Khmer": "នេះជាឧទាហរណ៍អត្ថបទភាសាខ្មែរ។",
+    "Lao": "ນີ້ແມ່ນຕົວຢ່າງຂໍ້ຄວາມພາສາລາວ",
+    "Latin": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    "Myanmar": "မြန်မာစာ နမူနာ စာသား",
+    "Sinhala": "සිංහල භාෂාව සුන්දරයි. මෙය කෙටි උදාහරණ වාක්‍යයකි.",
+    "Tamil": "தமிழ் மொழி அழகானது. இது ஒரு சுருக்கமான எடுத்துக்காட்டு உரை.",
+    "Thai": "สวัสดีครับ นี่เป็นข้อความภาษาไทยสั้น ๆ สำหรับทดสอบแบบอักษร",
+    "Yi": "ꆈꌠꉙ ꉙꄜꐨ",
+}
+
+# ------------------------------------------------------------------
+# Canonical sample text per language
+# For future use
+# ------------------------------------------------------------------
+
+LANGUAGE_SAMPLES: dict[str, str] = {
+    "de": "Falsches Üben von Xylophonmusik quält jeden größeren Zwerg.",
+    "en": "The quick brown fox jumps over the lazy dog.",
+    "es": "El veloz murciélago hindú comía feliz cardillo y kiwi.",
+    "fr": "Portez ce vieux whisky au juge blond qui fume.",
+    "it": "Quel vituperabile xenofobo zelante assaggia il whisky ed esclama: evviva!",
+    "pt": "Luís argüia que o pingüim feliz tomava chá e bebia água.",
+    "vi": "Chú bé nhỏ đứng giữa trời mưa, nói rằng tiếng Việt rất đẹp.",
 }
 
 # ------------------------------------------------------------------
