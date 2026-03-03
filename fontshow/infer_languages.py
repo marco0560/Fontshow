@@ -11,7 +11,7 @@ influence language inference.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from fontshow.language_tables import (
     LANGUAGE_PRIMARY_SCRIPT,
@@ -19,7 +19,12 @@ from fontshow.language_tables import (
     SCRIPT_ISO_TO_DISPLAY_LANGUAGE,
 )
 from fontshow.logging_utils import log, log_trace_cat
-from fontshow.types import Confidence, LanguageInferenceInfo, ScriptISO
+from fontshow.types import (
+    Confidence,
+    LanguageInferenceInfo,
+    ScriptISO,
+    normalize_script_iso,
+)
 from fontshow.unicode_tables import UNICODE_BLOCK_SIZES
 
 # Minimum fraction of a Unicode block that must be covered
@@ -59,6 +64,35 @@ def _block_coverage_ratio(
     return covered / size
 
 
+# ------------------------------------------------------------------
+# Phase 6.3 — block ratio cache (behavior-preserving)
+# ------------------------------------------------------------------
+
+
+def _build_block_ratio_cache(
+    *,
+    block_coverage: dict[str, int],
+    block_sizes: dict[str, int],
+) -> dict[str, float]:
+    """
+    Precompute Unicode block coverage ratios.
+
+    Pure optimization equivalent to repeated calls to
+    `_block_coverage_ratio`.
+    """
+    ratios: dict[str, float] = {}
+
+    for block_name, block_size in block_sizes.items():
+        if block_size <= 0:
+            ratios[block_name] = 0.0
+            continue
+
+        covered = block_coverage.get(block_name, 0)
+        ratios[block_name] = covered / block_size
+
+    return ratios
+
+
 def _infer_allowed_languages_from_scripts(
     scripts_public: object,
 ) -> set[str] | None:
@@ -70,7 +104,7 @@ def _infer_allowed_languages_from_scripts(
     if not inferred_scripts:
         return None
 
-    scripts_upper = {s.upper() for s in inferred_scripts}
+    scripts_upper = {str(normalize_script_iso(s)) for s in inferred_scripts}
     return {
         lang
         for lang, script in LANGUAGE_PRIMARY_SCRIPT.items()
@@ -83,6 +117,63 @@ def _infer_languages_from_profiles(
     unicode_blocks: dict[str, int],
     allowed_languages: set[str] | None,
 ) -> dict[str, LanguageInferenceInfo]:
+    """
+    Infer candidate languages from Unicode block coverage using
+    deterministic language profiles.
+
+    This function evaluates each language profile defined in
+    `LANGUAGE_PROFILES_ISO` against measured Unicode block coverage
+    for a font. A language is accepted if at least one of its required
+    Unicode blocks meets the configured coverage threshold.
+
+    Inference model
+    ---------------
+    Each language profile defines:
+
+    - required_blocks:
+        Blocks that must reach a minimum coverage ratio for the
+        language to be considered present.
+
+    - optional_blocks:
+        Additional blocks that increase confidence when present,
+        but are not required.
+
+    Confidence levels
+    -----------------
+    - "medium":
+        At least one required block passes the coverage threshold.
+    - "high":
+        Required block(s) pass and at least one optional block is present.
+
+    Performance
+    -----------
+    Unicode block coverage ratios are computed once per invocation
+    and cached locally to avoid repeated division inside the
+    language evaluation loop.
+
+    Determinism
+    -----------
+    The algorithm is fully deterministic:
+    - no probabilistic scoring
+    - stable ordering via sorted evidence lists
+    - identical inputs always produce identical outputs.
+
+    Parameters
+    ----------
+    unicode_blocks:
+        Mapping of Unicode block name → number of covered codepoints.
+
+    allowed_languages:
+        Optional whitelist restricting evaluated languages.
+
+    Returns
+    -------
+    dict[str, LanguageInferenceInfo]
+        Mapping of inferred language codes to inference metadata.
+    Only accepted language candidates are included.
+    """
+    _block_ratio_cache: dict[str, float] | None = None
+
     inferred: dict[str, LanguageInferenceInfo] = {}
 
     for lang, profile in LANGUAGE_PROFILES_ISO.items():
@@ -94,11 +185,13 @@ def _infer_languages_from_profiles(
 
         passed_blocks: list[str] = []
         for block in required:
-            ratio = _block_coverage_ratio(
-                block_name=block,
-                block_coverage=unicode_blocks,
-                block_sizes=UNICODE_BLOCK_SIZES,
-            )
+            if _block_ratio_cache is None:
+                _block_ratio_cache = _build_block_ratio_cache(
+                    block_coverage=unicode_blocks,
+                    block_sizes=UNICODE_BLOCK_SIZES,
+                )
+
+            ratio = _block_ratio_cache.get(block, 0.0)
             if ratio >= LANGUAGE_BLOCK_COVERAGE_THRESHOLD:
                 passed_blocks.append(block)
 
@@ -169,7 +262,12 @@ def _apply_script_authoritative_fallbacks(
 
     if isinstance(scripts_lower, list) and scripts_lower:
         primary = sorted(str(s).lower() for s in scripts_lower)[0]
-        lang = SCRIPT_ISO_TO_DISPLAY_LANGUAGE.get(ScriptISO(str(primary).upper())) or ""
+        lang = (
+            SCRIPT_ISO_TO_DISPLAY_LANGUAGE.get(
+                cast("ScriptISO", normalize_script_iso(primary))
+            )
+            or ""
+        )
         if lang:
             inferred[lang] = LanguageInferenceInfo(
                 confidence="medium",
