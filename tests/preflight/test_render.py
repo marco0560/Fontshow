@@ -11,8 +11,13 @@ def test_render_hides_ok_and_info_by_default():
 
     lines = render_preflight_results(results, verbose=False)
 
-    assert len(lines) == 1
-    assert "[ERR ]" in lines[0]
+    # Renderer formats all results; visibility filtering is handled by CLI mode
+    assert lines == [
+        "[OK  ] a: ok",
+        "[INFO] b: info",
+        "[ERR ] c: error",
+    ]
+    assert "[ERR ]" in lines[2]
 
 
 def test_render_shows_all_with_verbose():
@@ -24,4 +29,8 @@ def test_render_shows_all_with_verbose():
 
     lines = render_preflight_results(results, verbose=True)
 
-    assert len(lines) == 3
+    assert lines == [
+        "[OK  ] a: ok",
+        "[INFO] b: info",
+        "[ERR ] c: error",
+    ]

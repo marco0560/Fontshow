@@ -179,6 +179,29 @@ def escape_latex(text: str) -> str:
     return "".join(replacements.get(c, c) for c in text)
 
 
+def _strip_ascii_control_chars(text: str) -> str:
+    """
+    Remove ASCII control characters from text before LaTeX insertion.
+
+    Keeps newline (\\n) and tab (\\t); strips other chars in:
+        U+0000–U+001F and U+007F
+    """
+    return "".join(
+        ch for ch in text if ch in {"\n", "\t"} or (ord(ch) >= 0x20 and ord(ch) != 0x7F)
+    )
+
+
+def _latex_detokenize_safe(text: str) -> str:
+    """
+    Prepare text for safe inclusion inside \\detokenize{...}.
+
+    Removes ASCII control characters and escapes closing braces,
+    which would otherwise terminate the TeX group.
+    """
+    text = _strip_ascii_control_chars(text)
+    return text.replace("}", r"\}")
+
+
 def _format_script_display(script_iso: str) -> str:
     """
     Convert ISO script code to human-readable display form.
@@ -1249,7 +1272,7 @@ def _render_font_entry(
 
     _dir, _file = _normalize_path_for_latex(fullpath)
     detok_dir = "\\detokenize{" + _dir + "}"
-    detok_file = "\\detokenize{" + _file + "}"
+    detok_file = "\\detokenize{" + _latex_detokenize_safe(_file) + "}"
     renderer_prefix = _renderer_option_prefix()
 
     lang, script_opt = _get_render_policy(script0_iso)
@@ -1330,7 +1353,9 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
 
     latex_code: str = LATEX_INITIAL_CODE
 
-    other_langs = _collect_polyglossia_other_languages(font_list)
+    other_langs = _strip_ascii_control_chars(
+        _collect_polyglossia_other_languages(font_list)
+    )
     if "%%FONTSHOW_OTHER_LANGUAGES%%" in latex_code:
         latex_code = latex_code.replace("%%FONTSHOW_OTHER_LANGUAGES%%", other_langs)
     else:
@@ -1348,7 +1373,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         if idx % 500 == 0 or idx == total:
             log_info(f"  ... processed {idx}/{total}")
 
-        specimen = str(font.get("specimen_text", ""))
+        specimen = _strip_ascii_control_chars(str(font.get("specimen_text", "")))
 
         # If the specimen has no whitespace and is long, TeX cannot line-break it
         # even inside \parbox{\linewidth}. Insert safe break opportunities.
@@ -1378,7 +1403,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
 
         fullpath = str(font.get("path", ""))
         fullpath_norm = fullpath.replace("\\", "/")
-        detok_fullpath = "\\detokenize{" + fullpath_norm + "}"
+        detok_fullpath = "\\detokenize{" + _latex_detokenize_safe(fullpath_norm) + "}"
 
         script0_iso = ScriptISO(script0.upper()) if script0 else ScriptISO("")
 
@@ -1405,7 +1430,9 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         )
 
         options_pretty = (
-            "\\detokenize{" + options_plain + "}" if options_plain else "N/A"
+            "\\detokenize{" + _latex_detokenize_safe(options_plain) + "}"
+            if options_plain
+            else "N/A"
         )
 
         debug_block = (

@@ -14,7 +14,6 @@ import sys
 from pathlib import Path
 
 from fontshow.cli_utils import (
-    _VERBOSE,
     log_err,
     log_info,
     log_ok,
@@ -45,7 +44,12 @@ def _run_preflight_cli(
         "preflight entrypoint started",
     )
 
-    result = run_preflight_fn()
+    try:
+        result = run_preflight_fn()
+    except Exception as exc:  # noqa: BLE001
+        log_err(f"Preflight internal error: {exc}")
+        return 2
+
     exit_code = preflight_exit_code(result)
 
     log_trace_cat(
@@ -58,10 +62,10 @@ def _run_preflight_cli(
         },
     )
 
-    # render_preflight_results() returns list[str]
+    # render_preflight_results() returns formatted lines
     rendered_lines = render_preflight_results(
         result.results,
-        verbose=_VERBOSE,
+        verbose=getattr(args, "verbose", False),
     )
 
     output_path = getattr(args, "output", None)
@@ -76,7 +80,6 @@ def _run_preflight_cli(
             return 1
 
     for line in rendered_lines:
-        # Severity prefix is already embedded in the rendered line
         if line.startswith("[OK"):
             log_ok(line[7:])
         elif line.startswith("[INFO"):
@@ -84,7 +87,6 @@ def _run_preflight_cli(
         elif line.startswith("[WARN"):
             log_warn(line[7:])
         else:
-            # Includes [ERR ] and any unexpected severity
             log_err(line[7:])
 
     if exit_code == 0:
@@ -98,7 +100,11 @@ def _run_preflight_cli(
 def main(args=None) -> int:
 
     set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
-    return _run_preflight_cli(args=args)
+    try:
+        return _run_preflight_cli(args=args)
+    except Exception as exc:  # noqa: BLE001
+        log_err(f"Preflight internal error: {exc}")
+        return 2
 
 
 if __name__ == "__main__":
