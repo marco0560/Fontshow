@@ -186,6 +186,7 @@ SCRIPT_TO_DISPLAY_LANGUAGE: dict[str, str] = {
     "ethi": "am",
     "geor": "ka",
     "grek": "el",
+    "hang": "ko",
     "hani": "zh",
     "hebr": "he",
     "jpan": "ja",
@@ -196,6 +197,7 @@ SCRIPT_TO_DISPLAY_LANGUAGE: dict[str, str] = {
     "sinh": "si",
     "taml": "ta",
     "thai": "th",
+    "yiii": "ii",
 }
 
 # ------------------------------------------------------------------

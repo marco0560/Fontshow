@@ -34,6 +34,38 @@ def tag_to_iso(tag: ScriptTag | str) -> ScriptISO:
 
 
 # ------------------------------------------------------------------
+# Script normalization helpers (Phase 6 — canonical identity)
+# ------------------------------------------------------------------
+
+
+def normalize_script_iso(value: ScriptISO | ScriptTag | str | None) -> ScriptISO | None:
+    """
+    Normalize any script identifier to canonical ScriptISO.
+
+    Behavior-preserving helper:
+        None  -> None
+        other -> uppercase ISO form
+
+    This centralizes scattered `.upper()` conversions without
+    changing semantics.
+    """
+    if value is None:
+        return None
+    return ScriptISO(str(value).upper())
+
+
+def normalize_script_tag(value: ScriptISO | ScriptTag | str | None) -> ScriptTag | None:
+    """
+    Normalize any script identifier to canonical ScriptTag.
+
+    Behavior-preserving helper mirroring historical `.lower()` usage.
+    """
+    if value is None:
+        return None
+    return ScriptTag(str(value).lower())
+
+
+# ------------------------------------------------------------------
 # Script Rendering Policy (Phase 6)
 # ------------------------------------------------------------------
 

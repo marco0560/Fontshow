@@ -59,6 +59,7 @@ from fontshow.types import (
     ScriptISO,
     Severity,
     WarningInfo,
+    normalize_script_iso,
 )
 from fontshow.unicode_tables import UNICODE_SCRIPT_RANGES
 from fontshow.warnings import add_structured_warning
@@ -818,7 +819,7 @@ def _specimen_from_script(
             return None, "no_scripts"
 
     # --- Canonical ISO script lookup (Phase 5) ---
-    script_iso = ScriptISO(str(script).upper())
+    script_iso = cast("ScriptISO", normalize_script_iso(script))
 
     text = SCRIPT_ISO_SAMPLES.get(script_iso)
 
@@ -1499,7 +1500,8 @@ def _process_charset(
 
     if script_cov:
         coverage["script_coverage_from_charset"] = {
-            script.upper(): value for script, value in script_cov.items()
+            str(normalize_script_iso(script)): value
+            for script, value in script_cov.items()
         }
         log_trace_cat(
             log,
@@ -1572,7 +1574,7 @@ def _infer_and_attach_metadata(
 
     inferred_scripts = list(infer_scripts(coverage, level) or [])
 
-    normalized_scripts = [str(s).upper() for s in inferred_scripts]
+    normalized_scripts = [str(normalize_script_iso(s)) for s in inferred_scripts]
 
     # ------------------------------------------------------------------
     # Canonical script field (Step 2 alignment)
@@ -1633,8 +1635,11 @@ def _infer_and_attach_metadata(
 
     script_primary_lang = None
     if inferred_scripts:
-        primary_script = ScriptISO(str(inferred_scripts[0]).upper())
-        script_primary_lang = SCRIPT_ISO_TO_DISPLAY_LANGUAGE.get(primary_script)
+        primary_script = normalize_script_iso(inferred_scripts[0])
+        if primary_script is not None:
+            script_primary_lang = SCRIPT_ISO_TO_DISPLAY_LANGUAGE.get(primary_script)
+        else:
+            script_primary_lang = None
 
     candidates = list(inferred_languages_map.keys())
 
