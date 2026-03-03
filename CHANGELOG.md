@@ -1,3 +1,9 @@
+## [0.42.0](https://github.com/marco0560/Fontshow/compare/v0.41.4...v0.42.0) (2026-03-03)
+
+### Features
+
+* **validation:** strengthen ontology validation and complete script specimen coverage ([03deac1](https://github.com/marco0560/Fontshow/commit/03deac1268471854acf25111b716679c71d2e44e))
+
 ## [0.41.4](https://github.com/marco0560/Fontshow/compare/v0.41.3...v0.41.4) (2026-03-03)
 
 ### Bug Fixes
