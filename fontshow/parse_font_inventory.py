@@ -189,7 +189,7 @@ def unicode_blocks_from_charset_ranges(
 
 def script_coverage_from_unicode_blocks(
     unicode_blocks: dict[str, int],
-    script_ranges: dict[str, list[tuple[int, int]]],
+    script_ranges: dict[ScriptISO, list[tuple[int, int]]],
     total_codepoints: int,
 ) -> dict[str, float]:
     """
