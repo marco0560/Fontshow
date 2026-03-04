@@ -28,11 +28,25 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import re
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+
+@dataclass(frozen=True)
+class UnicodeTablesData:
+    block_ranges: dict[str, tuple[int, int]]
+    script_ranges: dict[str, list[tuple[int, int]]]
+    non_writing_scripts: frozenset[str]
+
+
+@dataclass(frozen=True)
+class GeneratorOptions:
+    script_keys: Literal["tag", "iso"]
+
 
 # ISO15924 lines are semicolon-separated; parsing is done via split()
 _ISO15924_LINE_RE = re.compile(r"^([A-Za-z]{4});")
@@ -189,7 +203,7 @@ def _merge_contiguous_ranges(
 def _aggregate_scripts_to_ranges(
     script_spans: list[tuple[int, int, str]],
     iso_map: dict[str, str],
-) -> dict[str, list[tuple[int, int]]]:
+) -> tuple[dict[str, list[tuple[int, int]]], frozenset[str]]:
     """
     Convert per-span script assignments into merged contiguous ranges per script key.
 
@@ -237,11 +251,21 @@ def _format_py_dict_block_ranges(block_ranges: dict[str, tuple[int, int]]) -> st
 
 def _format_py_dict_script_ranges(
     script_ranges: dict[str, list[tuple[int, int]]],
+    *,
+    script_keys: Literal["tag", "iso"],
 ) -> str:
     lines: list[str] = []
-    lines.append("UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {")
+
+    if script_keys == "iso":
+        lines.append(
+            "UNICODE_SCRIPT_RANGES: dict[ScriptISO, list[tuple[int, int]]] = {"
+        )
+    else:
+        lines.append("UNICODE_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {")
+
     for script in sorted(script_ranges.keys()):
-        lines.append(f"    {script!r}: [")
+        key = f'ScriptISO("{script.upper()}")' if script_keys == "iso" else repr(script)
+        lines.append(f"    {key}: [")
         for start, end in script_ranges[script]:
             lines.append(f"        (0x{start:04X}, 0x{end:04X}),")
         lines.append("    ],")
@@ -282,9 +306,8 @@ def _generate_module_text(
     *,
     unicode_version: str,
     sources: tuple[Path, Path, Path],
-    block_ranges: dict[str, tuple[int, int]],
-    script_ranges: dict[str, list[tuple[int, int]]],
-    non_writing_scripts: frozenset[str],
+    data: UnicodeTablesData,
+    options: GeneratorOptions,
 ) -> str:
     blocks_path, scripts_path, iso_path = sources
     now = _dt.datetime.now(tz=_dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -299,22 +322,52 @@ def _generate_module_text(
 #
 # This module provides Unicode-derived tables for Fontshow.
 """
-    parts = [
+    parts: list[str] = [
         header.rstrip(),
         "",
         "from __future__ import annotations",
         "",
-        _format_block_ranges_section(block_ranges),
-        "",
-        _format_py_dict_block_sizes(block_ranges),
-        "",
-        _format_py_dict_script_ranges(script_ranges),
-        "",
-        "NON_WRITING_SCRIPTS: frozenset[str] = frozenset({",
-        *[f"    {code!r}," for code in sorted(non_writing_scripts)],
-        "})",
-        "",
     ]
+
+    if options.script_keys == "iso":
+        parts.extend(
+            [
+                "from fontshow.types import ScriptISO",
+                "",
+            ]
+        )
+
+    parts.extend(
+        [
+            _format_block_ranges_section(data.block_ranges),
+            "",
+            _format_py_dict_block_sizes(data.block_ranges),
+            "",
+            _format_py_dict_script_ranges(
+                data.script_ranges, script_keys=options.script_keys
+            ),
+            "",
+        ]
+    )
+
+    if options.script_keys == "iso":
+        parts.append("NON_WRITING_SCRIPTS: frozenset[ScriptISO] = frozenset({")
+        parts.extend(
+            [
+                f'    ScriptISO("{code.upper()}"),'
+                for code in sorted(data.non_writing_scripts)
+            ]
+        )
+    else:
+        parts.append("NON_WRITING_SCRIPTS: frozenset[str] = frozenset({")
+        parts.extend([f"    {code!r}," for code in sorted(data.non_writing_scripts)])
+
+    parts.extend(
+        [
+            "})",
+            "",
+        ]
+    )
     return "\n".join(parts)
 
 
@@ -346,6 +399,15 @@ def main() -> int:
         "--out",
         default="fontshow/unicode_tables.py",
         help="Output module path (default: fontshow/unicode_tables.py).",
+    )
+    parser.add_argument(
+        "--script-keys",
+        choices=("tag", "iso"),
+        default="tag",
+        help=(
+            "Key UNICODE_SCRIPT_RANGES by 'tag' (strings like 'latn') or by "
+            "'iso' (ScriptISO objects like ScriptISO(\"LATN\")). Default: tag."
+        ),
     )
     parser.add_argument(
         "--iso-file",
@@ -384,12 +446,19 @@ def main() -> int:
     )
 
     out_path = Path(args.out)
-    module_text = _generate_module_text(
-        unicode_version=args.unicode_version,
-        sources=(blocks_path, scripts_path, iso_path),
+    options = GeneratorOptions(script_keys=args.script_keys)
+
+    data = UnicodeTablesData(
         block_ranges=block_ranges,
         script_ranges=script_ranges,
         non_writing_scripts=non_writing_scripts,
+    )
+
+    module_text = _generate_module_text(
+        unicode_version=args.unicode_version,
+        sources=(blocks_path, scripts_path, iso_path),
+        data=data,
+        options=options,
     )
 
     out_path.write_text(module_text, encoding="utf-8")

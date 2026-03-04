@@ -11,17 +11,10 @@ Usage:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from fontshow.language_tables import SCRIPT_HUMAN_TO_ISO, SCRIPT_SAMPLES
-
-if TYPE_CHECKING:
-    from fontshow.types import ScriptISO
 
 
 def main() -> None:
-    pairs: list[tuple[ScriptISO, str]] = []
-
     pairs_by_iso: dict[str, tuple[str, str]] = {}
 
     # Per-ISO preferred human keys (higher priority first)
