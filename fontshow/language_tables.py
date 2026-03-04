@@ -11,9 +11,17 @@ between parsing and inference modules to avoid circular imports.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypedDict
 
-from fontshow.types import ScriptISO, ScriptRenderPolicy, iso_to_tag, tag_to_iso
+from fontshow.types import ScriptISO, ScriptRenderPolicy
+
+
+class LanguageProfileISO(TypedDict, total=False):
+    required_blocks: list[str]
+    optional_blocks: list[str]
+    scripts: list[ScriptISO]
+    rtl: bool
+
 
 # ------------------------------------------------------------------
 # Primary script per language (ISO-639 → ISO-15924)
@@ -326,41 +334,94 @@ RTL_LANGUAGES: frozenset[str] = frozenset(
 )
 
 # ------------------------------------------------------------------
-# Phase 6 — Rendering policy adapter
+# Table generated with scripts/generate_script_render_policy.py
 # ------------------------------------------------------------------
 
-SCRIPT_RENDER_POLICY: dict[ScriptISO, ScriptRenderPolicy] = {}
-
-for _script, (_lang, _opts) in SCRIPT_ISO_TO_POLYGLOSSIA.items():
-    SCRIPT_RENDER_POLICY[_script] = ScriptRenderPolicy(
-        language=_lang,
-        fontspec_opts=_opts,
-        rtl=_lang in RTL_LANGUAGES,
-        requires_polyglossia=bool(_lang),
-    )
+SCRIPT_RENDER_POLICY: dict[ScriptISO, ScriptRenderPolicy] = {
+    ScriptISO("Arab"): ScriptRenderPolicy(
+        language="arabic",
+        fontspec_opts="Script=Arabic",
+        rtl=True,
+        requires_polyglossia=True,
+    ),
+    ScriptISO("Beng"): ScriptRenderPolicy(
+        language="bengali",
+        fontspec_opts="Script=Bengali",
+        rtl=False,
+        requires_polyglossia=True,
+    ),
+    ScriptISO("Deva"): ScriptRenderPolicy(
+        language="hindi",
+        fontspec_opts="Script=Devanagari",
+        rtl=False,
+        requires_polyglossia=True,
+    ),
+    ScriptISO("Hani"): ScriptRenderPolicy(
+        language="chinese",
+        fontspec_opts="",
+        rtl=False,
+        requires_polyglossia=True,
+    ),
+    ScriptISO("Hebr"): ScriptRenderPolicy(
+        language="hebrew",
+        fontspec_opts="Script=Hebrew",
+        rtl=True,
+        requires_polyglossia=True,
+    ),
+    ScriptISO("Hira"): ScriptRenderPolicy(
+        language="japanese",
+        fontspec_opts="",
+        rtl=False,
+        requires_polyglossia=True,
+    ),
+    ScriptISO("Kana"): ScriptRenderPolicy(
+        language="japanese",
+        fontspec_opts="",
+        rtl=False,
+        requires_polyglossia=True,
+    ),
+    ScriptISO("Taml"): ScriptRenderPolicy(
+        language="tamil",
+        fontspec_opts="Script=Tamil",
+        rtl=False,
+        requires_polyglossia=True,
+    ),
+}
 
 # ------------------------------------------------------------------
-# Ontology invariants (Phase 5)
-# ------------------------------------------------------------------
-
-
-def _validate_script_identifier_invariants() -> None:
-    for iso in LANGUAGE_PRIMARY_SCRIPT.values():
-        iso_id = ScriptISO(iso)
-        assert tag_to_iso(iso_to_tag(iso_id)) == iso_id
-
-
-_validate_script_identifier_invariants()
-
-# ------------------------------------------------------------------
-# Phase 5 — ISO-canonical derived views
+# Canonical ISO15924 → display language
+# Table generated with scripts/generate_script_display_language.py
 # ------------------------------------------------------------------
 
 # Canonical ISO15924 → display language
+# Table generated with scripts/generate_script_display_language.py
 SCRIPT_ISO_TO_DISPLAY_LANGUAGE: dict[ScriptISO, str] = {
-    tag_to_iso(tag): lang for tag, lang in SCRIPT_TO_DISPLAY_LANGUAGE.items()
+    ScriptISO("ARAB"): "ar",
+    ScriptISO("ARMN"): "hy",
+    ScriptISO("BENG"): "bn",
+    ScriptISO("BUGI"): "bug",
+    ScriptISO("BUHD"): "bku",
+    ScriptISO("CHER"): "chr",
+    ScriptISO("CYRL"): "ru",
+    ScriptISO("DEVA"): "hi",
+    ScriptISO("ETHI"): "am",
+    ScriptISO("GEOR"): "ka",
+    ScriptISO("GREK"): "el",
+    ScriptISO("HANG"): "ko",
+    ScriptISO("HANI"): "zh",
+    ScriptISO("HEBR"): "he",
+    ScriptISO("HIRA"): "ja",
+    ScriptISO("JPAN"): "ja",
+    ScriptISO("KANA"): "ja",
+    ScriptISO("KHMR"): "km",
+    ScriptISO("LAOO"): "lo",
+    ScriptISO("LATN"): "en",
+    ScriptISO("MYMR"): "my",
+    ScriptISO("SINH"): "si",
+    ScriptISO("TAML"): "ta",
+    ScriptISO("THAI"): "th",
+    ScriptISO("YIII"): "ii",
 }
-
 
 # ------------------------------------------------------------------
 # Phase 5 — Human script names normalization
@@ -393,30 +454,139 @@ SCRIPT_HUMAN_TO_ISO: dict[str, ScriptISO] = {
     "Yi": ScriptISO("YIII"),
 }
 
-# Canonical ISO15924 → sample text
-
-_missing_sample_scripts = set(SCRIPT_SAMPLES) - set(SCRIPT_HUMAN_TO_ISO)
-if _missing_sample_scripts:
-    msg = f"Missing SCRIPT_HUMAN_TO_ISO entries for SCRIPT_SAMPLES: {sorted(_missing_sample_scripts)!r}"
-    raise KeyError(msg)
-
-_profile_script_names = {
-    s for _lang, _profile in LANGUAGE_PROFILES.items() for s in _profile["scripts"]
-}
-_missing_profile_scripts = _profile_script_names - set(SCRIPT_HUMAN_TO_ISO)
-if _missing_profile_scripts:
-    msg = f"Missing SCRIPT_HUMAN_TO_ISO entries for LANGUAGE_PROFILES scripts: {sorted(_missing_profile_scripts)!r}"
-    raise KeyError(msg)
-
+# ------------------------------------------------------------------
+# Canonical ISO15924 → script specimen
+# Table generated with scripts/generate_script_iso_samples.py
+# ------------------------------------------------------------------
 SCRIPT_ISO_SAMPLES: dict[ScriptISO, str] = {
-    SCRIPT_HUMAN_TO_ISO[name]: sample for name, sample in SCRIPT_SAMPLES.items()
+    ScriptISO("ARAB"): "مرحبا بكم. هذا نص عربي قصير لاختبار عرض الخط بشكل صحيح.",
+    ScriptISO("ARMN"): "Հայերեն տեքստի կարճ օրինակ։",
+    ScriptISO("BENG"): "বাংলা ভাষা একটি সমৃদ্ধ ভাষা। এটি একটি সংক্ষিপ্ত উদাহরণ বাক্য।",
+    ScriptISO("CHER"): "ᎣᏏᏲ ᎤᏓᎷᎸᏔᏅ ᎠᎴ ᎤᎵᏍᎩᎸᏙᏗ",
+    ScriptISO("CYRL"): "Пример текста на кириллице для проверки отображения шрифта.",
+    ScriptISO("DEVA"): "नमस्ते। यह देवनागरी लिपि का एक छोटा नमूना पाठ है।",
+    ScriptISO("ETHI"): "ሰላም ለእናንተ። ይህ አጭር የኢትዮጵያ ፊደል ምሳሌ ነው።",
+    ScriptISO("GEOR"): "ეს არის ქართული ტექსტის მოკლე ნიმუში.",
+    ScriptISO("GREK"): "Καλημέρα σας. Αυτό არის ένα σύντομο δείγμα ελληνικού κειμένου.",
+    ScriptISO("HANG"): "안녕하세요. 이것은 한글 글꼴 표시를 위한 짧은 예시 문장입니다.",
+    ScriptISO(
+        "HANI"
+    ): "漢字仮名交じり文の例。中文字符測試。日本語テスト。한국어 테스트。",
+    ScriptISO("HEBR"): "שלום לכם. זהו טקסט עברי קצר לבדיקת הצגת הגופן.",
+    ScriptISO("HIRA"): "いろはにほへと ちりぬるを",
+    ScriptISO("JPAN"): "日本語の文章例です。漢字とひらがなとカタカナを含みます。",
+    ScriptISO("KANA"): "アイウエオ カキクケコ",
+    ScriptISO("KHMR"): "នេះជាឧទាហរណ៍អត្ថបទភាសាខ្មែរ។",
+    ScriptISO("LAOO"): "ນີ້ແມ່ນຕົວຢ່າງຂໍ້ຄວາມພາສາລາວ",
+    ScriptISO("LATN"): "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    ScriptISO("MYMR"): "မြန်မာစာ နမူနာ စာသား",
+    ScriptISO("SINH"): "සිංහල භාෂාව සුන්දරයි. මෙය කෙටි උදාහරණ වාක්‍යයකි.",
+    ScriptISO("TAML"): "தமிழ் மொழி அழகானது. இது ஒரு சுருக்கமான எடுத்துக்காட்டு உரை.",
+    ScriptISO("THAI"): "สวัสดีครับ นี่เป็นข้อความภาษาไทยสั้น ๆ สำหรับทดสอบแบบอักษร",
+    ScriptISO("YIII"): "ꆈꌠꉙ ꉙꄜꐨ",
 }
 
-# Canonical ISO15924 representation of language profiles
-LANGUAGE_PROFILES_ISO: dict[str, dict[str, Any]] = {
-    lang: {
-        **profile,
-        "scripts": [SCRIPT_HUMAN_TO_ISO[s] for s in profile["scripts"]],
-    }
-    for lang, profile in LANGUAGE_PROFILES.items()
+# ISO-script normalized language profiles
+# Generated with scripts/generate_language_profiles_iso.py
+LANGUAGE_PROFILES_ISO: dict[str, LanguageProfileISO] = {
+    "am": {
+        "required_blocks": ["Ethiopic"],
+        "optional_blocks": ["Ethiopic Supplement", "Ethiopic Extended"],
+        "scripts": [ScriptISO("ETHI")],
+    },
+    "ar": {
+        "required_blocks": ["Arabic"],
+        "optional_blocks": ["Arabic Supplement"],
+        "scripts": [ScriptISO("ARAB")],
+    },
+    "chr": {
+        "required_blocks": ["Cherokee", "Cherokee Supplement"],
+        "optional_blocks": [],
+        "scripts": [ScriptISO("CHER")],
+    },
+    "de": {
+        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
+        "optional_blocks": ["Latin Extended-A"],
+        "scripts": [ScriptISO("LATN")],
+    },
+    "el": {
+        "required_blocks": ["Greek and Coptic"],
+        "optional_blocks": [],
+        "scripts": [ScriptISO("GREK")],
+    },
+    "en": {
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement"],
+        "scripts": [ScriptISO("LATN")],
+    },
+    "es": {
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
+        "scripts": [ScriptISO("LATN")],
+    },
+    "fr": {
+        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
+        "optional_blocks": ["Latin Extended-A"],
+        "scripts": [ScriptISO("LATN")],
+    },
+    "ii": {
+        "required_blocks": ["Yi Syllables"],
+        "optional_blocks": [],
+        "scripts": [ScriptISO("YIII")],
+    },
+    "it": {
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
+        "scripts": [ScriptISO("LATN")],
+    },
+    "ja": {
+        "required_blocks": ["Kana Supplement"],
+        "optional_blocks": [
+            "Hiragana",
+            "Katakana",
+            "Kana Extended-A",
+            "CJK Unified Ideographs",
+        ],
+        "scripts": [ScriptISO("HIRA"), ScriptISO("KANA")],
+    },
+    "ka": {
+        "required_blocks": ["Georgian"],
+        "optional_blocks": ["Georgian Supplement"],
+        "scripts": [ScriptISO("GEOR")],
+    },
+    "lo": {
+        "required_blocks": ["Lao"],
+        "optional_blocks": [],
+        "scripts": [ScriptISO("LAOO")],
+    },
+    "my": {
+        "required_blocks": ["Myanmar", "Myanmar Extended-A", "Myanmar Extended-B"],
+        "optional_blocks": [],
+        "scripts": [ScriptISO("MYMR")],
+    },
+    "pt": {
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
+        "scripts": [ScriptISO("LATN")],
+    },
+    "ru": {
+        "required_blocks": ["Cyrillic"],
+        "optional_blocks": ["Cyrillic Supplement"],
+        "scripts": [ScriptISO("CYRL")],
+    },
+    "ta": {
+        "required_blocks": ["Tamil", "Tamil Supplement"],
+        "optional_blocks": [],
+        "scripts": [ScriptISO("TAML")],
+    },
+    "th": {
+        "required_blocks": ["Thai"],
+        "optional_blocks": [],
+        "scripts": [ScriptISO("THAI")],
+    },
+    "zh": {
+        "required_blocks": ["CJK Unified Ideographs"],
+        "optional_blocks": [],
+        "scripts": [ScriptISO("HANI")],
+    },
 }
