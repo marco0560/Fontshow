@@ -1,3 +1,9 @@
+## [0.43.0](https://github.com/marco0560/Fontshow/compare/v0.42.0...v0.43.0) (2026-03-04)
+
+### Features
+
+* **core:** introduce master ontology tables SCRIPT_INFO and LANGUAGE_INFO (Phase 2) ([6f08c99](https://github.com/marco0560/Fontshow/commit/6f08c99e7d4ab5ce30a81e92ee2d16e65f75ec5f))
+
 ## [0.42.0](https://github.com/marco0560/Fontshow/compare/v0.41.4...v0.42.0) (2026-03-03)
 
 ### Features
