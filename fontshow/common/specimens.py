@@ -1,72 +1,14 @@
 """
-Shared specimen texts and selectors.
+Shared specimen selectors.
 
-This module is pure data + deterministic selectors.
-It must not import parsing or rendering stages.
+This module contains deterministic helpers for selecting
+language samples from the ontology.
 """
 
 from __future__ import annotations
 
-from fontshow.language_tables import SCRIPT_TO_DISPLAY_LANGUAGE
-
-SAMPLE_TEXTS: dict[str, str] = {
-    "ar": "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ الشَّمْسِ",
-    "cop": "Ⲡⲁⲓ ⲙⲉⲧⲁⲛⲟⲓⲁ",
-    "de": "Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich",
-    "el": "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία",
-    "en": "The quick brown fox jumps over the lazy dog",
-    "es": "El veloz murciélago hindú comía feliz cardillo y kiwi",
-    "fr": "Portez ce vieux whisky au juge blond qui fume",
-    "he": "דג סקרן שט בים מאוכזב ולפתע מצא לו חברה",
-    "hy": "Վարդագույն աղվեսը ցատקում է ծույլ շան վրայով",
-    "it": "Ma la volpe col suo balzo ha raggiunto il quieto Fido",
-    "ja": "いろはにほへと ちりぬるを",
-    "ko": "키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다",
-    "ru": "Съешь же ещё этих мягких французских булок",
-    "ta": "யாதும் ஊரே யாவரும் கேளிர்",
-    "te": "అన్ని మానవజాతులు స్వేచ్ఝగా జన్మింయి, అందరికీ సమానమైన గౌరవం మరియు హక్కులు ఉన్నాయి",
-    "ti": "ሰላም እንታይ ከመይ ኢኻ",
-    "vi": "Chữ Việt rất phong phú and đa 다양",
-    "zh": "天地玄黃 宇宙洪荒",
-}
-
-# ------------------------------------------------------------------
-# Representative language fallback (script → language)
-# Used when language inference is empty but script is known.
-# ------------------------------------------------------------------
-
-_SCRIPT_DEFAULT_KEYS: tuple[str, ...] = (
-    "arab",
-    "armn",
-    "beng",
-    "cyrl",
-    "deva",
-    "ethi",
-    "grek",
-    "hang",
-    "hani",
-    "hebr",
-    "jpan",
-    "khmr",
-    "laoo",
-    "latn",
-    "mymr",
-    "taml",
-    "thai",
-    "yiii",
-)
-
-SCRIPT_DEFAULT_LANGUAGE: dict[str, str] = {
-    # Keep the historical public mapping stable, while sourcing canonical
-    # values from the shared ontology when available.
-    **{
-        k: SCRIPT_TO_DISPLAY_LANGUAGE[k]
-        for k in _SCRIPT_DEFAULT_KEYS
-        if k in SCRIPT_TO_DISPLAY_LANGUAGE
-    },
-    # Local override pending policy decision (ethi default: am vs ti).
-    "ethi": "ti",
-}
+from fontshow.language_tables import LANGUAGE_INFO, SCRIPT_INFO
+from fontshow.types import tag_to_iso
 
 
 def choose_language_sample(
@@ -74,26 +16,43 @@ def choose_language_sample(
     scripts: list[str] | None = None,
 ) -> str | None:
     """
-    Choose a deterministic language-aware sample text, if available.
+    Choose a deterministic language-aware sample text.
 
-    Priority is the existing order of `inferred_languages`.
+    Priority
+    --------
+    1. Sample from inferred languages
+    2. Representative language from dominant script
     """
-    if not languages:
-        return None
 
-    # 1. Try inferred languages first
-    for lang in languages:
-        sample = SAMPLE_TEXTS.get(lang)
-        if sample:
-            return sample
+    # ---------------------------------------------------------
+    # 1. Use inferred languages
+    # ---------------------------------------------------------
 
-    # 2. Representative fallback from dominant script
+    if languages:
+        for lang in languages:
+            info = LANGUAGE_INFO.get(lang)
+            if isinstance(info, dict):
+                sample = info.get("sample")
+                if isinstance(sample, str) and sample:
+                    return sample
+
+    # ---------------------------------------------------------
+    # 2. Script fallback
+    # ---------------------------------------------------------
+
     if scripts:
-        primary = scripts[0].lower()
-        fallback_lang = SCRIPT_DEFAULT_LANGUAGE.get(primary)
-        if fallback_lang:
-            sample = SAMPLE_TEXTS.get(fallback_lang)
-            if sample:
-                return sample
+        script_iso = tag_to_iso(scripts[0])
+        script_info = SCRIPT_INFO.get(script_iso)
+
+        if isinstance(script_info, dict):
+            fallback_lang = script_info.get("display_language")
+
+            if isinstance(fallback_lang, str):
+                lang_info = LANGUAGE_INFO.get(fallback_lang)
+
+                if isinstance(lang_info, dict):
+                    sample = lang_info.get("sample")
+                    if isinstance(sample, str) and sample:
+                        return sample
 
     return None

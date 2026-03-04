@@ -2,591 +2,397 @@
 Fontshow — language_tables
 ==========================
 
-Authoritative language ↔ script semantic mappings.
+Authoritative ontology for scripts and languages used by Fontshow.
 
-These mappings are NOT Unicode ontology.
-They represent Fontshow's linguistic policy layer and are shared
-between parsing and inference modules to avoid circular imports.
+Design principles
+-----------------
+- ISO15924 script identifiers are the canonical keys.
+- Language identifiers use ISO 639 codes.
+- Samples are embedded directly in ontology entries.
+- Tables are static and deterministic.
+- Entries are sorted alphabetically for stable diffs.
 """
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import TypedDict
 
-from fontshow.types import ScriptISO, ScriptRenderPolicy
+from fontshow.types import ScriptISO
 
 
-class LanguageProfileISO(TypedDict, total=False):
+class ScriptInfo(TypedDict):
+    """
+    Canonical description of a writing script.
+
+    canonical_name
+        Human readable script name.
+
+    display_language
+        Representative language used when a script-only specimen is required.
+
+    polyglossia_language
+        Polyglossia language identifier (if required).
+
+    fontspec_opts
+        Additional fontspec options required for rendering.
+
+    rtl
+        True for right-to-left scripts.
+
+    requires_polyglossia
+        Whether LuaLaTeX must enable Polyglossia for the script.
+
+    specimen
+        Canonical specimen sentence representative of the script.
+    """
+
+    canonical_name: str
+    display_language: str
+    polyglossia_language: str
+    fontspec_opts: str
+    rtl: bool
+    requires_polyglossia: bool
+    specimen: str | None
+
+
+class LanguageInfo(TypedDict):
+    """
+    Canonical description of a language inference profile.
+
+    scripts
+        Scripts normally used to write the language.
+
+    required_blocks
+        Unicode blocks required for language detection.
+
+    optional_blocks
+        Blocks that increase confidence when present.
+
+    sample
+        Canonical language sample sentence.
+    """
+
+    scripts: list[ScriptISO]
     required_blocks: list[str]
     optional_blocks: list[str]
-    scripts: list[ScriptISO]
-    rtl: bool
+    sample: str | None
 
 
-# ------------------------------------------------------------------
-# Primary script per language (ISO-639 → ISO-15924)
-# ------------------------------------------------------------------
-
-LANGUAGE_PRIMARY_SCRIPT: dict[str, str] = {
-    "ar": "ARAB",
-    "bg": "CYRL",
-    "cop": "COPT",
-    "da": "LATN",
-    "de": "LATN",
-    "el": "GREK",
-    "en": "LATN",
-    "es": "LATN",
-    "fi": "LATN",
-    "fr": "LATN",
-    "he": "HEBR",
-    "hi": "DEVA",
-    "hy": "ARMN",
-    "it": "LATN",
-    "ja": "JPAN",
-    "ko": "HANG",
-    "mk": "CYRL",
-    "ne": "DEVA",
-    "nl": "LATN",
-    "no": "LATN",
-    "pt": "LATN",
-    "ru": "CYRL",
-    "sr": "CYRL",
-    "sv": "LATN",
-    "th": "THAI",
-    "ti": "ETHI",
-    "uk": "CYRL",
-    "vi": "LATN",
-    "zh": "HANI",
+SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
+    ScriptISO("ARAB"): {
+        "canonical_name": "Arabic",
+        "display_language": "ar",
+        "polyglossia_language": "arabic",
+        "fontspec_opts": "Script=Arabic",
+        "rtl": True,
+        "requires_polyglossia": True,
+        "specimen": "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ الشَّمْسِ",
+    },
+    ScriptISO("ARMN"): {
+        "canonical_name": "Armenian",
+        "display_language": "hy",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "Վարդագույն աղվեսը ցատկում է ծույլ շան վրայով",
+    },
+    ScriptISO("BENG"): {
+        "canonical_name": "Bengali",
+        "display_language": "bn",
+        "polyglossia_language": "bengali",
+        "fontspec_opts": "Script=Bengali",
+        "rtl": False,
+        "requires_polyglossia": True,
+        "specimen": "বাংলা ভাষা একটি সমৃদ্ধ ভাষা।",
+    },
+    ScriptISO("CHER"): {
+        "canonical_name": "Cherokee",
+        "display_language": "chr",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "ᎣᏏᏲ ᎠᏓᎨᏫᏍᏗ",
+    },
+    ScriptISO("CYRL"): {
+        "canonical_name": "Cyrillic",
+        "display_language": "ru",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "Съешь же ещё этих мягких французских булок",
+    },
+    ScriptISO("DEVA"): {
+        "canonical_name": "Devanagari",
+        "display_language": "hi",
+        "polyglossia_language": "hindi",
+        "fontspec_opts": "Script=Devanagari",
+        "rtl": False,
+        "requires_polyglossia": True,
+        "specimen": "नमस्ते दुनिया",
+    },
+    ScriptISO("ETHI"): {
+        "canonical_name": "Ethiopic",
+        "display_language": "ti",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "ሰላም እንታይ ከመይ ኢኻ",
+    },
+    ScriptISO("GEOR"): {
+        "canonical_name": "Georgian",
+        "display_language": "ka",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "ქართული ტექსტის მაგალითი",
+    },
+    ScriptISO("GREK"): {
+        "canonical_name": "Greek",
+        "display_language": "el",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία",
+    },
+    ScriptISO("HANG"): {
+        "canonical_name": "Hangul",
+        "display_language": "ko",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "키스의 고유조건은 입술끼리 만나야 한다",
+    },
+    ScriptISO("HANI"): {
+        "canonical_name": "Han",
+        "display_language": "zh",
+        "polyglossia_language": "chinese",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": True,
+        "specimen": "天地玄黃 宇宙洪荒",
+    },
+    ScriptISO("HEBR"): {
+        "canonical_name": "Hebrew",
+        "display_language": "he",
+        "polyglossia_language": "hebrew",
+        "fontspec_opts": "Script=Hebrew",
+        "rtl": True,
+        "requires_polyglossia": True,
+        "specimen": "דג סקרן שט בים מאוכזב",
+    },
+    ScriptISO("HIRA"): {
+        "canonical_name": "Hiragana",
+        "display_language": "ja",
+        "polyglossia_language": "japanese",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": True,
+        "specimen": "いろはにほへと ちりぬるを",
+    },
+    ScriptISO("KANA"): {
+        "canonical_name": "Katakana",
+        "display_language": "ja",
+        "polyglossia_language": "japanese",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": True,
+        "specimen": "アイウエオ カキクケコ",
+    },
+    ScriptISO("KHMR"): {
+        "canonical_name": "Khmer",
+        "display_language": "km",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "ភាសាខ្មែរ​ជា​ភាសា​ស្រស់ស្អាត",
+    },
+    ScriptISO("LAOO"): {
+        "canonical_name": "Lao",
+        "display_language": "lo",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "ພາສາລາວເປັນພາສາທີ່ສວຍງາມ",
+    },
+    ScriptISO("LATN"): {
+        "canonical_name": "Latin",
+        "display_language": "en",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "The quick brown fox jumps over the lazy dog",
+    },
+    ScriptISO("MYMR"): {
+        "canonical_name": "Myanmar",
+        "display_language": "my",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "မြန်မာစာသည် လှပသော ဘာသာဖြစ်သည်",
+    },
+    ScriptISO("SINH"): {
+        "canonical_name": "Sinhala",
+        "display_language": "si",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "සිංහල භාෂාව ලස්සනයි",
+    },
+    ScriptISO("TAML"): {
+        "canonical_name": "Tamil",
+        "display_language": "ta",
+        "polyglossia_language": "tamil",
+        "fontspec_opts": "Script=Tamil",
+        "rtl": False,
+        "requires_polyglossia": True,
+        "specimen": "யாதும் ஊரே யாவரும் கேளிர்",
+    },
+    ScriptISO("THAI"): {
+        "canonical_name": "Thai",
+        "display_language": "th",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "ภาษาไทยเป็นภาษาที่สวยงาม",
+    },
+    ScriptISO("YIII"): {
+        "canonical_name": "Yi",
+        "display_language": "ii",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "ꆈꌠꉙ ꉙꄜꐨ",
+    },
 }
 
 
-# ------------------------------------------------------------------
-# Language coverage profiles (Unicode-block-based)
-# ------------------------------------------------------------------
-
-LANGUAGE_PROFILES: dict[str, dict[str, Any]] = {
-    # Arabic
-    "ar": {
-        "scripts": ["Arabic"],
-        "required_blocks": ["Arabic"],
-        "optional_blocks": ["Arabic Supplement"],
-    },
-    # Ethiopic
+LANGUAGE_INFO: dict[str, LanguageInfo] = {
     "am": {
-        "scripts": ["Ethiopic"],
-        "required_blocks": ["Ethiopic"],
-        "optional_blocks": ["Ethiopic Supplement", "Ethiopic Extended"],
-    },
-    # Cherokee
-    "chr": {
-        "scripts": ["Cherokee"],
-        "required_blocks": ["Cherokee", "Cherokee Supplement"],
-        "optional_blocks": [],
-    },
-    # German
-    "de": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
-        "optional_blocks": ["Latin Extended-A"],
-    },
-    # Greek
-    "el": {
-        "scripts": ["Greek"],
-        "required_blocks": ["Greek and Coptic"],
-        "optional_blocks": [],
-    },
-    # English
-    "en": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin"],
-        "optional_blocks": ["Latin-1 Supplement"],
-    },
-    # Spanish
-    "es": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin"],
-        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
-    },
-    # French
-    "fr": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
-        "optional_blocks": ["Latin Extended-A"],
-    },
-    # Yi
-    "ii": {
-        "scripts": ["Yi"],
-        "required_blocks": ["Yi Syllables"],
-        "optional_blocks": [],
-    },
-    # Italian
-    "it": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin"],
-        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
-    },
-    # Japanese
-    "ja": {
-        "scripts": ["Hiragana", "Katakana"],
-        "required_blocks": ["Kana Supplement"],
-        "optional_blocks": [
-            "Hiragana",
-            "Katakana",
-            "Kana Extended-A",
-            "CJK Unified Ideographs",
-        ],
-    },
-    # Georgian
-    "ka": {
-        "scripts": ["Georgian"],
-        "required_blocks": ["Georgian"],
-        "optional_blocks": ["Georgian Supplement"],
-    },
-    # Lao
-    "lo": {
-        "scripts": ["Lao"],
-        "required_blocks": ["Lao"],
-        "optional_blocks": [],
-    },
-    # Myanmar
-    "my": {
-        "scripts": ["Myanmar"],
-        "required_blocks": ["Myanmar", "Myanmar Extended-A", "Myanmar Extended-B"],
-        "optional_blocks": [],
-    },
-    # Portuguese
-    "pt": {
-        "scripts": ["Latin"],
-        "required_blocks": ["Basic Latin"],
-        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
-    },
-    # Russian
-    "ru": {
-        "scripts": ["Cyrillic"],
-        "required_blocks": ["Cyrillic"],
-        "optional_blocks": ["Cyrillic Supplement"],
-    },
-    # Tamil
-    "ta": {
-        "scripts": ["Tamil"],
-        "required_blocks": ["Tamil", "Tamil Supplement"],
-        "optional_blocks": [],
-    },
-    # Thai
-    "th": {
-        "scripts": ["Thai"],
-        "required_blocks": ["Thai"],
-        "optional_blocks": [],
-    },
-    # Chinese
-    "zh": {
-        "scripts": ["Han"],
-        "required_blocks": ["CJK Unified Ideographs"],
-        "optional_blocks": [],
-    },
-}
-
-# ------------------------------------------------------------------
-# Script → display language mapping
-# (authoritative; moved from infer_languages.py)
-# ------------------------------------------------------------------
-# Canonical display language per ISO-15924 script
-#
-# Purpose:
-# Fontshow needs a representative language for specimen rendering,
-# not linguistic capability classification.
-#
-# This mapping provides a deterministic fallback when coverage-based
-# inference yields no reliable languages.
-# ------------------------------------------------------------------
-
-SCRIPT_TO_DISPLAY_LANGUAGE: dict[str, str] = {
-    "arab": "ar",
-    "armn": "hy",
-    "beng": "bn",
-    "buhd": "bku",
-    "bugi": "bug",
-    "cher": "chr",
-    "cyrl": "ru",
-    "deva": "hi",
-    "ethi": "am",
-    "geor": "ka",
-    "grek": "el",
-    "hang": "ko",
-    "hani": "zh",
-    "hebr": "he",
-    "hira": "ja",
-    "jpan": "ja",
-    "kana": "ja",
-    "khmr": "km",
-    "laoo": "lo",
-    "latn": "en",
-    "mymr": "my",
-    "sinh": "si",
-    "taml": "ta",
-    "thai": "th",
-    "yiii": "ii",
-}
-
-# ------------------------------------------------------------------
-# ISO15924 → human-readable script names
-# (authoritative; moved from create_catalog.py)
-# ------------------------------------------------------------------
-
-SCRIPT_ISO_TO_HUMAN_CANONICAL: dict[ScriptISO, str] = {
-    ScriptISO("ARAB"): "Arabic",
-    ScriptISO("ARMN"): "Armenian",
-    ScriptISO("BENG"): "Bengali",
-    ScriptISO("CHER"): "Cherokee",
-    ScriptISO("CYRL"): "Cyrillic",
-    ScriptISO("DEVA"): "Devanagari",
-    ScriptISO("ETHI"): "Ethiopic",
-    ScriptISO("GEOR"): "Georgian",
-    ScriptISO("GREK"): "Greek",
-    ScriptISO("HANI"): "Han",
-    ScriptISO("HEBR"): "Hebrew",
-    ScriptISO("JPAN"): "Japanese",
-    ScriptISO("KHMR"): "Khmer",
-    ScriptISO("LAOO"): "Lao",
-    ScriptISO("LATN"): "Latin",
-    ScriptISO("MYMR"): "Myanmar",
-    ScriptISO("SINH"): "Sinhala",
-    ScriptISO("TAML"): "Tamil",
-    ScriptISO("THAI"): "Thai",
-}
-
-# ------------------------------------------------------------------
-# Canonical sample text per script
-# (authoritative; moved from parse_font_inventory.py)
-# ------------------------------------------------------------------
-
-SCRIPT_SAMPLES: dict[str, str] = {
-    "Arabic": "مرحبا بكم. هذا نص عربي قصير لاختبار عرض الخط بشكل صحيح.",
-    "Armenian": "Հայերեն տեքստի կարճ օրինակ։",
-    "Bengali": "বাংলা ভাষা একটি সমৃদ্ধ ভাষা। এটি একটি সংক্ষিপ্ত উদাহরণ বাক্য।",
-    "Cherokee": "ᎣᏏᏲ ᎤᏓᎷᎸᏔᏅ ᎠᎴ ᎤᎵᏍᎩᎸᏙᏗ",
-    "CJK": "漢字仮名交じり文の例。中文字符測試。日本語テスト。한국어 테스트。",
-    "Cyrillic": "Пример текста на кириллице для проверки отображения шрифта.",
-    "Devanagari": "नमस्ते। यह देवनागरी लिपि का एक छोटा नमूना पाठ है।",
-    "Ethiopic": "ሰላም ለእናንተ። ይህ አጭር የኢትዮጵያ ፊደል ምሳሌ ነው።",
-    "Georgian": "ეს არის ქართული ტექსტის მოკლე ნიმუში.",
-    "Greek": "Καλημέρα σας. Αυτό είναι ένα σύντομο δείγμα ελληνικού κειμένου.",
-    "Hangul": "안녕하세요. 이것은 한글 글꼴 표시를 위한 짧은 예시 문장입니다.",
-    "Han": "天地玄黃 宇宙洪荒 日月盈昃 辰宿列張。",
-    "Hebrew": "שלום לכם. זהו טקסט עברי קצר לבדיקת הצגת הגופן.",
-    "Hiragana": "いろはにほへと ちりぬるを",
-    "Japanese": "日本語の文章例です。漢字とひらがなとカタカナを含みます。",
-    "Katakana": "アイウエオ カキクケコ",
-    "Khmer": "នេះជាឧទាហរណ៍អត្ថបទភាសាខ្មែរ។",
-    "Lao": "ນີ້ແມ່ນຕົວຢ່າງຂໍ້ຄວາມພາສາລາວ",
-    "Latin": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    "Myanmar": "မြန်မာစာ နမူနာ စာသား",
-    "Sinhala": "සිංහල භාෂාව සුන්දරයි. මෙය කෙටි උදාහරණ වාක්‍යයකි.",
-    "Tamil": "தமிழ் மொழி அழகானது. இது ஒரு சுருக்கமான எடுத்துக்காட்டு உரை.",
-    "Thai": "สวัสดีครับ นี่เป็นข้อความภาษาไทยสั้น ๆ สำหรับทดสอบแบบอักษร",
-    "Yi": "ꆈꌠꉙ ꉙꄜꐨ",
-}
-
-# ------------------------------------------------------------------
-# Canonical sample text per language
-# For future use
-# ------------------------------------------------------------------
-
-LANGUAGE_SAMPLES: dict[str, str] = {
-    "de": "Falsches Üben von Xylophonmusik quält jeden größeren Zwerg.",
-    "en": "The quick brown fox jumps over the lazy dog.",
-    "es": "El veloz murciélago hindú comía feliz cardillo y kiwi.",
-    "fr": "Portez ce vieux whisky au juge blond qui fume.",
-    "it": "Quel vituperabile xenofobo zelante assaggia il whisky ed esclama: evviva!",
-    "pt": "Luís argüia que o pingüim feliz tomava chá e bebia água.",
-    "vi": "Chú bé nhỏ đứng giữa trời mưa, nói rằng tiếng Việt rất đẹp.",
-}
-
-# ------------------------------------------------------------------
-# Script → Polyglossia configuration
-# (authoritative; moved from create_catalog.py)
-# ------------------------------------------------------------------
-
-SCRIPT_ISO_TO_POLYGLOSSIA: dict[ScriptISO, tuple[str, str]] = {
-    ScriptISO("ARAB"): ("arabic", "Script=Arabic"),
-    ScriptISO("BENG"): ("bengali", "Script=Bengali"),
-    ScriptISO("DEVA"): ("hindi", "Script=Devanagari"),
-    ScriptISO("HANI"): ("chinese", ""),
-    ScriptISO("HEBR"): ("hebrew", "Script=Hebrew"),
-    ScriptISO("HIRA"): ("japanese", ""),
-    ScriptISO("KANA"): ("japanese", ""),
-    ScriptISO("TAML"): ("tamil", "Script=Tamil"),
-}
-
-
-# ------------------------------------------------------------------
-# Languages requiring RTL rendering (polyglossia direction)
-# ------------------------------------------------------------------
-
-RTL_LANGUAGES: frozenset[str] = frozenset(
-    {
-        "arabic",
-        "hebrew",
-        "syriac",
-        "persian",
-        "urdu",
-    }
-)
-
-# ------------------------------------------------------------------
-# Table generated with scripts/generate_script_render_policy.py
-# ------------------------------------------------------------------
-
-SCRIPT_RENDER_POLICY: dict[ScriptISO, ScriptRenderPolicy] = {
-    ScriptISO("Arab"): ScriptRenderPolicy(
-        language="arabic",
-        fontspec_opts="Script=Arabic",
-        rtl=True,
-        requires_polyglossia=True,
-    ),
-    ScriptISO("Beng"): ScriptRenderPolicy(
-        language="bengali",
-        fontspec_opts="Script=Bengali",
-        rtl=False,
-        requires_polyglossia=True,
-    ),
-    ScriptISO("Deva"): ScriptRenderPolicy(
-        language="hindi",
-        fontspec_opts="Script=Devanagari",
-        rtl=False,
-        requires_polyglossia=True,
-    ),
-    ScriptISO("Hani"): ScriptRenderPolicy(
-        language="chinese",
-        fontspec_opts="",
-        rtl=False,
-        requires_polyglossia=True,
-    ),
-    ScriptISO("Hebr"): ScriptRenderPolicy(
-        language="hebrew",
-        fontspec_opts="Script=Hebrew",
-        rtl=True,
-        requires_polyglossia=True,
-    ),
-    ScriptISO("Hira"): ScriptRenderPolicy(
-        language="japanese",
-        fontspec_opts="",
-        rtl=False,
-        requires_polyglossia=True,
-    ),
-    ScriptISO("Kana"): ScriptRenderPolicy(
-        language="japanese",
-        fontspec_opts="",
-        rtl=False,
-        requires_polyglossia=True,
-    ),
-    ScriptISO("Taml"): ScriptRenderPolicy(
-        language="tamil",
-        fontspec_opts="Script=Tamil",
-        rtl=False,
-        requires_polyglossia=True,
-    ),
-}
-
-# ------------------------------------------------------------------
-# Canonical ISO15924 → display language
-# Table generated with scripts/generate_script_display_language.py
-# ------------------------------------------------------------------
-
-# Canonical ISO15924 → display language
-# Table generated with scripts/generate_script_display_language.py
-SCRIPT_ISO_TO_DISPLAY_LANGUAGE: dict[ScriptISO, str] = {
-    ScriptISO("ARAB"): "ar",
-    ScriptISO("ARMN"): "hy",
-    ScriptISO("BENG"): "bn",
-    ScriptISO("BUGI"): "bug",
-    ScriptISO("BUHD"): "bku",
-    ScriptISO("CHER"): "chr",
-    ScriptISO("CYRL"): "ru",
-    ScriptISO("DEVA"): "hi",
-    ScriptISO("ETHI"): "am",
-    ScriptISO("GEOR"): "ka",
-    ScriptISO("GREK"): "el",
-    ScriptISO("HANG"): "ko",
-    ScriptISO("HANI"): "zh",
-    ScriptISO("HEBR"): "he",
-    ScriptISO("HIRA"): "ja",
-    ScriptISO("JPAN"): "ja",
-    ScriptISO("KANA"): "ja",
-    ScriptISO("KHMR"): "km",
-    ScriptISO("LAOO"): "lo",
-    ScriptISO("LATN"): "en",
-    ScriptISO("MYMR"): "my",
-    ScriptISO("SINH"): "si",
-    ScriptISO("TAML"): "ta",
-    ScriptISO("THAI"): "th",
-    ScriptISO("YIII"): "ii",
-}
-
-# ------------------------------------------------------------------
-# Phase 5 — Human script names normalization
-# ------------------------------------------------------------------
-
-SCRIPT_HUMAN_TO_ISO: dict[str, ScriptISO] = {
-    "Arabic": ScriptISO("ARAB"),
-    "Armenian": ScriptISO("ARMN"),
-    "Bengali": ScriptISO("BENG"),
-    "CJK": ScriptISO("HANI"),
-    "Cherokee": ScriptISO("CHER"),
-    "Cyrillic": ScriptISO("CYRL"),
-    "Devanagari": ScriptISO("DEVA"),
-    "Ethiopic": ScriptISO("ETHI"),
-    "Georgian": ScriptISO("GEOR"),
-    "Greek": ScriptISO("GREK"),
-    "Han": ScriptISO("HANI"),
-    "Hangul": ScriptISO("HANG"),
-    "Hebrew": ScriptISO("HEBR"),
-    "Hiragana": ScriptISO("HIRA"),
-    "Katakana": ScriptISO("KANA"),
-    "Japanese": ScriptISO("JPAN"),
-    "Khmer": ScriptISO("KHMR"),
-    "Lao": ScriptISO("LAOO"),
-    "Latin": ScriptISO("LATN"),
-    "Myanmar": ScriptISO("MYMR"),
-    "Sinhala": ScriptISO("SINH"),
-    "Tamil": ScriptISO("TAML"),
-    "Thai": ScriptISO("THAI"),
-    "Yi": ScriptISO("YIII"),
-}
-
-# ------------------------------------------------------------------
-# Canonical ISO15924 → script specimen
-# Table generated with scripts/generate_script_iso_samples.py
-# ------------------------------------------------------------------
-SCRIPT_ISO_SAMPLES: dict[ScriptISO, str] = {
-    ScriptISO("ARAB"): "مرحبا بكم. هذا نص عربي قصير لاختبار عرض الخط بشكل صحيح.",
-    ScriptISO("ARMN"): "Հայերեն տեքստի կարճ օրինակ։",
-    ScriptISO("BENG"): "বাংলা ভাষা একটি সমৃদ্ধ ভাষা। এটি একটি সংক্ষিপ্ত উদাহরণ বাক্য।",
-    ScriptISO("CHER"): "ᎣᏏᏲ ᎤᏓᎷᎸᏔᏅ ᎠᎴ ᎤᎵᏍᎩᎸᏙᏗ",
-    ScriptISO("CYRL"): "Пример текста на кириллице для проверки отображения шрифта.",
-    ScriptISO("DEVA"): "नमस्ते। यह देवनागरी लिपि का एक छोटा नमूना पाठ है।",
-    ScriptISO("ETHI"): "ሰላም ለእናንተ። ይህ አጭር የኢትዮጵያ ፊደል ምሳሌ ነው።",
-    ScriptISO("GEOR"): "ეს არის ქართული ტექსტის მოკლე ნიმუში.",
-    ScriptISO("GREK"): "Καλημέρα σας. Αυτό არის ένα σύντομο δείγμα ελληνικού κειμένου.",
-    ScriptISO("HANG"): "안녕하세요. 이것은 한글 글꼴 표시를 위한 짧은 예시 문장입니다.",
-    ScriptISO(
-        "HANI"
-    ): "漢字仮名交じり文の例。中文字符測試。日本語テスト。한국어 테스트。",
-    ScriptISO("HEBR"): "שלום לכם. זהו טקסט עברי קצר לבדיקת הצגת הגופן.",
-    ScriptISO("HIRA"): "いろはにほへと ちりぬるを",
-    ScriptISO("JPAN"): "日本語の文章例です。漢字とひらがなとカタカナを含みます。",
-    ScriptISO("KANA"): "アイウエオ カキクケコ",
-    ScriptISO("KHMR"): "នេះជាឧទាហរណ៍អត្ថបទភាសាខ្មែរ។",
-    ScriptISO("LAOO"): "ນີ້ແມ່ນຕົວຢ່າງຂໍ້ຄວາມພາສາລາວ",
-    ScriptISO("LATN"): "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    ScriptISO("MYMR"): "မြန်မာစာ နမူနာ စာသား",
-    ScriptISO("SINH"): "සිංහල භාෂාව සුන්දරයි. මෙය කෙටි උදාහරණ වාක්‍යයකි.",
-    ScriptISO("TAML"): "தமிழ் மொழி அழகானது. இது ஒரு சுருக்கமான எடுத்துக்காட்டு உரை.",
-    ScriptISO("THAI"): "สวัสดีครับ นี่เป็นข้อความภาษาไทยสั้น ๆ สำหรับทดสอบแบบอักษร",
-    ScriptISO("YIII"): "ꆈꌠꉙ ꉙꄜꐨ",
-}
-
-# ISO-script normalized language profiles
-# Generated with scripts/generate_language_profiles_iso.py
-LANGUAGE_PROFILES_ISO: dict[str, LanguageProfileISO] = {
-    "am": {
-        "required_blocks": ["Ethiopic"],
-        "optional_blocks": ["Ethiopic Supplement", "Ethiopic Extended"],
         "scripts": [ScriptISO("ETHI")],
+        "required_blocks": ["Ethiopic"],
+        "optional_blocks": ["Ethiopic Supplement"],
+        "sample": "ሰላም እንታይ ከመይ ኢኻ",
     },
     "ar": {
+        "scripts": [ScriptISO("ARAB")],
         "required_blocks": ["Arabic"],
         "optional_blocks": ["Arabic Supplement"],
-        "scripts": [ScriptISO("ARAB")],
+        "sample": "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ الشَّمْسِ",
     },
     "chr": {
-        "required_blocks": ["Cherokee", "Cherokee Supplement"],
-        "optional_blocks": [],
         "scripts": [ScriptISO("CHER")],
+        "required_blocks": ["Cherokee"],
+        "optional_blocks": ["Cherokee Supplement"],
+        "sample": "ᎣᏏᏲ",
     },
     "de": {
-        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
-        "optional_blocks": ["Latin Extended-A"],
         "scripts": [ScriptISO("LATN")],
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
+        "sample": "Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich",
     },
     "el": {
+        "scripts": [ScriptISO("GREK")],
         "required_blocks": ["Greek and Coptic"],
         "optional_blocks": [],
-        "scripts": [ScriptISO("GREK")],
+        "sample": "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία",
     },
     "en": {
+        "scripts": [ScriptISO("LATN")],
         "required_blocks": ["Basic Latin"],
         "optional_blocks": ["Latin-1 Supplement"],
-        "scripts": [ScriptISO("LATN")],
+        "sample": "The quick brown fox jumps over the lazy dog",
     },
     "es": {
-        "required_blocks": ["Basic Latin"],
-        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
         "scripts": [ScriptISO("LATN")],
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement"],
+        "sample": "El veloz murciélago hindú comía feliz cardillo y kiwi",
     },
     "fr": {
-        "required_blocks": ["Basic Latin", "Latin-1 Supplement"],
-        "optional_blocks": ["Latin Extended-A"],
         "scripts": [ScriptISO("LATN")],
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement"],
+        "sample": "Portez ce vieux whisky au juge blond qui fume",
     },
     "ii": {
+        "scripts": [ScriptISO("YIII")],
         "required_blocks": ["Yi Syllables"],
         "optional_blocks": [],
-        "scripts": [ScriptISO("YIII")],
+        "sample": "ꆈꌠꉙ ꉙꄜꐨ",
     },
     "it": {
-        "required_blocks": ["Basic Latin"],
-        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
         "scripts": [ScriptISO("LATN")],
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement"],
+        "sample": "Ma la volpe col suo balzo ha raggiunto il quieto Fido",
     },
     "ja": {
-        "required_blocks": ["Kana Supplement"],
-        "optional_blocks": [
-            "Hiragana",
-            "Katakana",
-            "Kana Extended-A",
-            "CJK Unified Ideographs",
-        ],
         "scripts": [ScriptISO("HIRA"), ScriptISO("KANA")],
+        "required_blocks": ["Hiragana"],
+        "optional_blocks": ["Katakana", "CJK Unified Ideographs"],
+        "sample": "いろはにほへと ちりぬるを",
     },
     "ka": {
-        "required_blocks": ["Georgian"],
-        "optional_blocks": ["Georgian Supplement"],
         "scripts": [ScriptISO("GEOR")],
+        "required_blocks": ["Georgian"],
+        "optional_blocks": [],
+        "sample": "ქართული ტექსტის მაგალითი",
     },
     "lo": {
+        "scripts": [ScriptISO("LAOO")],
         "required_blocks": ["Lao"],
         "optional_blocks": [],
-        "scripts": [ScriptISO("LAOO")],
+        "sample": "ພາສາລາວເປັນພາສາທີ່ສວຍງາມ",
     },
     "my": {
-        "required_blocks": ["Myanmar", "Myanmar Extended-A", "Myanmar Extended-B"],
-        "optional_blocks": [],
         "scripts": [ScriptISO("MYMR")],
+        "required_blocks": ["Myanmar"],
+        "optional_blocks": ["Myanmar Extended-A"],
+        "sample": "မြန်မာစာသည် လှပသော ဘာသာဖြစ်သည်",
     },
     "pt": {
-        "required_blocks": ["Basic Latin"],
-        "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
         "scripts": [ScriptISO("LATN")],
+        "required_blocks": ["Basic Latin"],
+        "optional_blocks": ["Latin-1 Supplement"],
+        "sample": "Luís argüia que o pingüim feliz tomava chá",
     },
     "ru": {
+        "scripts": [ScriptISO("CYRL")],
         "required_blocks": ["Cyrillic"],
         "optional_blocks": ["Cyrillic Supplement"],
-        "scripts": [ScriptISO("CYRL")],
+        "sample": "Съешь же ещё этих мягких французских булок",
     },
     "ta": {
-        "required_blocks": ["Tamil", "Tamil Supplement"],
-        "optional_blocks": [],
         "scripts": [ScriptISO("TAML")],
+        "required_blocks": ["Tamil"],
+        "optional_blocks": ["Tamil Supplement"],
+        "sample": "யாதும் ஊரே யாவரும் கேளிர்",
     },
     "th": {
+        "scripts": [ScriptISO("THAI")],
         "required_blocks": ["Thai"],
         "optional_blocks": [],
-        "scripts": [ScriptISO("THAI")],
+        "sample": "ภาษาไทยเป็นภาษาที่สวยงาม",
     },
     "zh": {
+        "scripts": [ScriptISO("HANI")],
         "required_blocks": ["CJK Unified Ideographs"],
         "optional_blocks": [],
-        "scripts": [ScriptISO("HANI")],
+        "sample": "天地玄黃 宇宙洪荒",
     },
 }

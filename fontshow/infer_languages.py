@@ -14,9 +14,8 @@ from __future__ import annotations
 from typing import Any, cast
 
 from fontshow.language_tables import (
-    LANGUAGE_PRIMARY_SCRIPT,
-    LANGUAGE_PROFILES_ISO,
-    SCRIPT_ISO_TO_DISPLAY_LANGUAGE,
+    LANGUAGE_INFO,
+    SCRIPT_INFO,
 )
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.types import (
@@ -107,8 +106,8 @@ def _infer_allowed_languages_from_scripts(
     scripts_upper = {str(normalize_script_iso(s)) for s in inferred_scripts}
     return {
         lang
-        for lang, script in LANGUAGE_PRIMARY_SCRIPT.items()
-        if script in scripts_upper
+        for lang, profile in LANGUAGE_INFO.items()
+        if any(str(script) in scripts_upper for script in profile.get("scripts", []))
     }
 
 
@@ -176,7 +175,7 @@ def _infer_languages_from_profiles(
 
     inferred: dict[str, LanguageInferenceInfo] = {}
 
-    for lang, profile in LANGUAGE_PROFILES_ISO.items():
+    for lang, profile in LANGUAGE_INFO.items():
         if allowed_languages is not None and lang not in allowed_languages:
             continue
 
@@ -262,12 +261,8 @@ def _apply_script_authoritative_fallbacks(
 
     if isinstance(scripts_lower, list) and scripts_lower:
         primary = sorted(str(s).lower() for s in scripts_lower)[0]
-        lang = (
-            SCRIPT_ISO_TO_DISPLAY_LANGUAGE.get(
-                cast("ScriptISO", normalize_script_iso(primary))
-            )
-            or ""
-        )
+        info = SCRIPT_INFO.get(cast("ScriptISO", normalize_script_iso(primary)))
+        lang = info["display_language"] if info else ""
         if lang:
             inferred[lang] = LanguageInferenceInfo(
                 confidence="medium",
@@ -392,7 +387,7 @@ def infer_languages(
         extra={
             "policy": policy,
             "languages_inferred": len(inferred),
-            "profiles_total": len(LANGUAGE_PROFILES_ISO),
+            "profiles_total": len(LANGUAGE_INFO),
         },
     )
 
