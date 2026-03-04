@@ -23,6 +23,43 @@ class LanguageProfileISO(TypedDict, total=False):
     rtl: bool
 
 
+# ============================================================
+# Ontology master structures (Phase 2 – additive coexistence)
+# ============================================================
+
+
+class ScriptInfo(TypedDict):
+    """
+    Canonical description of a writing script.
+
+    This consolidates information currently spread across:
+    - SCRIPT_ISO_TO_HUMAN_CANONICAL
+    - SCRIPT_ISO_TO_DISPLAY_LANGUAGE
+    - SCRIPT_ISO_TO_POLYGLOSSIA
+    - SCRIPT_RENDER_POLICY
+    - SCRIPT_ISO_SAMPLES
+    """
+
+    canonical_name: str
+    display_language: str
+    polyglossia_language: str
+    fontspec_opts: str
+    rtl: bool
+    requires_polyglossia: bool
+    specimens: dict[str, str]
+
+
+class LanguageInfo(TypedDict):
+    """
+    Canonical description of a language profile used for inference.
+    """
+
+    scripts: list[ScriptISO]
+    required_blocks: list[str]
+    optional_blocks: list[str]
+    sample: str | None
+
+
 # ------------------------------------------------------------------
 # Primary script per language (ISO-639 → ISO-15924)
 # ------------------------------------------------------------------
@@ -454,6 +491,14 @@ SCRIPT_HUMAN_TO_ISO: dict[str, ScriptISO] = {
     "Yi": ScriptISO("YIII"),
 }
 
+
+# ------------------------------------------------------------------
+# Canonical normalization map (human script names -> ScriptISO)
+# ------------------------------------------------------------------
+
+SCRIPT_NAME_TO_ISO: dict[str, ScriptISO] = dict(SCRIPT_HUMAN_TO_ISO)
+
+
 # ------------------------------------------------------------------
 # Canonical ISO15924 → script specimen
 # Table generated with scripts/generate_script_iso_samples.py
@@ -485,6 +530,31 @@ SCRIPT_ISO_SAMPLES: dict[ScriptISO, str] = {
     ScriptISO("THAI"): "สวัสดีครับ นี่เป็นข้อความภาษาไทยสั้น ๆ สำหรับทดสอบแบบอักษร",
     ScriptISO("YIII"): "ꆈꌠꉙ ꉙꄜꐨ",
 }
+
+# ------------------------------------------------------------------
+# Canonical script ontology (Phase 2 – master table)
+# ------------------------------------------------------------------
+
+SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {}
+
+for script_iso, policy in SCRIPT_RENDER_POLICY.items():
+    canonical = SCRIPT_ISO_TO_HUMAN_CANONICAL.get(script_iso, str(script_iso))
+    display_language = SCRIPT_ISO_TO_DISPLAY_LANGUAGE.get(script_iso, "en")
+    sample = SCRIPT_ISO_SAMPLES.get(script_iso)
+
+    specimens: dict[str, str] = {}
+    if sample is not None:
+        specimens["default"] = sample
+
+    SCRIPT_INFO[script_iso] = ScriptInfo(
+        canonical_name=canonical,
+        display_language=display_language,
+        polyglossia_language=policy.language,
+        fontspec_opts=policy.fontspec_opts,
+        rtl=policy.rtl,
+        requires_polyglossia=policy.requires_polyglossia,
+        specimens=specimens,
+    )
 
 # ISO-script normalized language profiles
 # Generated with scripts/generate_language_profiles_iso.py
@@ -590,3 +660,17 @@ LANGUAGE_PROFILES_ISO: dict[str, LanguageProfileISO] = {
         "scripts": [ScriptISO("HANI")],
     },
 }
+
+# ------------------------------------------------------------------
+# Canonical language ontology (Phase 2 – master table)
+# ------------------------------------------------------------------
+
+LANGUAGE_INFO: dict[str, LanguageInfo] = {}
+
+for lang, profile in LANGUAGE_PROFILES_ISO.items():
+    LANGUAGE_INFO[lang] = LanguageInfo(
+        scripts=list(profile.get("scripts", [])),
+        required_blocks=list(profile.get("required_blocks", [])),
+        optional_blocks=list(profile.get("optional_blocks", [])),
+        sample=LANGUAGE_SAMPLES.get(lang),
+    )
