@@ -821,7 +821,7 @@ def _specimen_from_script(
     script_iso = cast("ScriptISO", normalize_script_iso(script))
 
     info = SCRIPT_INFO.get(script_iso)
-    text = info["specimens"].get("default") if info else None
+    text = info["specimen"] if info else None
 
     if not isinstance(text, str) or not text.strip():
         return None, "no_script_sample"
