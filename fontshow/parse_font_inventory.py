@@ -42,9 +42,8 @@ from fontshow.infer_languages import infer_languages
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.json_format import dumps_pretty
 from fontshow.language_tables import (
-    LANGUAGE_PRIMARY_SCRIPT,
-    SCRIPT_ISO_SAMPLES,
-    SCRIPT_ISO_TO_DISPLAY_LANGUAGE,
+    LANGUAGE_INFO,
+    SCRIPT_INFO,
 )
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
@@ -821,7 +820,8 @@ def _specimen_from_script(
     # --- Canonical ISO script lookup (Phase 5) ---
     script_iso = cast("ScriptISO", normalize_script_iso(script))
 
-    text = SCRIPT_ISO_SAMPLES.get(script_iso)
+    info = SCRIPT_INFO.get(script_iso)
+    text = info["specimens"].get("default") if info else None
 
     if not isinstance(text, str) or not text.strip():
         return None, "no_script_sample"
@@ -1245,7 +1245,10 @@ def _debug_dump_inference(
 
     log_info("  language primary script matching:")
     for lang in inferred_languages_map:
-        primary_script = LANGUAGE_PRIMARY_SCRIPT.get(lang)
+        profile = LANGUAGE_INFO.get(lang)
+        primary_script = (
+            str(profile["scripts"][0]) if profile and profile.get("scripts") else None
+        )
         matches = primary_script in font_scripts if primary_script else False
         log_info(f"    {lang}: primary_script={primary_script}, matches_font={matches}")
 
@@ -1257,7 +1260,8 @@ def _debug_dump_inference(
 
     log_info("  language primary scripts:")
     for lang in inferred_languages_map:
-        ps = LANGUAGE_PRIMARY_SCRIPT.get(lang)
+        profile = LANGUAGE_INFO.get(lang)
+        ps = str(profile["scripts"][0]) if profile and profile.get("scripts") else None
         match = ps in font_scripts if ps else False
         log_info(f"    - {lang}: primary_script={ps}, matches_font={match}")
 
@@ -1623,7 +1627,10 @@ def _infer_and_attach_metadata(
     font_scripts = set(normalized_scripts)
 
     def _language_sort_key(lang: str) -> tuple[int, str]:
-        primary_script = LANGUAGE_PRIMARY_SCRIPT.get(lang)
+        profile = LANGUAGE_INFO.get(lang)
+        primary_script = (
+            str(profile["scripts"][0]) if profile and profile.get("scripts") else None
+        )
         return (
             0 if primary_script and primary_script in font_scripts else 1,
             lang,
@@ -1637,7 +1644,8 @@ def _infer_and_attach_metadata(
     if inferred_scripts:
         primary_script = normalize_script_iso(inferred_scripts[0])
         if primary_script is not None:
-            script_primary_lang = SCRIPT_ISO_TO_DISPLAY_LANGUAGE.get(primary_script)
+            info = SCRIPT_INFO.get(primary_script)
+            script_primary_lang = info["display_language"] if info else None
         else:
             script_primary_lang = None
 
