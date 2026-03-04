@@ -7,7 +7,8 @@ It must not import parsing or rendering stages.
 
 from __future__ import annotations
 
-from fontshow.language_tables import SCRIPT_TO_DISPLAY_LANGUAGE
+from fontshow.language_tables import SCRIPT_INFO
+from fontshow.types import tag_to_iso
 
 SAMPLE_TEXTS: dict[str, str] = {
     "ar": "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ الشَّمْسِ",
@@ -60,9 +61,9 @@ SCRIPT_DEFAULT_LANGUAGE: dict[str, str] = {
     # Keep the historical public mapping stable, while sourcing canonical
     # values from the shared ontology when available.
     **{
-        k: SCRIPT_TO_DISPLAY_LANGUAGE[k]
+        k: SCRIPT_INFO[tag_to_iso(k)]["display_language"]
         for k in _SCRIPT_DEFAULT_KEYS
-        if k in SCRIPT_TO_DISPLAY_LANGUAGE
+        if tag_to_iso(k) in SCRIPT_INFO
     },
     # Local override pending policy decision (ethi default: am vs ti).
     "ethi": "ti",

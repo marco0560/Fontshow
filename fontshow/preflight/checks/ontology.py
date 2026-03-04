@@ -2,79 +2,82 @@ from __future__ import annotations
 
 from fontshow.preflight.checks.base import BaseCheck
 from fontshow.preflight.model import CheckResult
-from fontshow.types import ScriptISO, Severity, iso_to_tag, tag_to_iso
+from fontshow.types import Severity
 
 
 class OntologyCheck(BaseCheck):
     """
-    Validate internal ontology table consistency.
+    Validate internal ontology consistency.
+
+    Invariants enforced
+    -------------------
+    1. SCRIPT_INFO and LANGUAGE_INFO must not be empty.
+    2. Every language must reference at least one script.
+    3. Every referenced script must exist in SCRIPT_INFO.
+    4. SCRIPT_INFO entries must contain required fields.
     """
 
     check_id = "ontology"
 
     def run(self) -> CheckResult:
-        from fontshow.language_tables import (
-            LANGUAGE_PRIMARY_SCRIPT,
-            LANGUAGE_PROFILES_ISO,
-            SCRIPT_HUMAN_TO_ISO,
-            SCRIPT_ISO_TO_DISPLAY_LANGUAGE,
-            SCRIPT_ISO_TO_POLYGLOSSIA,
-            SCRIPT_SAMPLES,
-        )
-
-        iso_script_keys: set[ScriptISO] = set(SCRIPT_ISO_TO_DISPLAY_LANGUAGE.keys())
-        human_script_keys: set[str] = set(SCRIPT_HUMAN_TO_ISO.keys())
-        human_script_values: set[ScriptISO] = set(SCRIPT_HUMAN_TO_ISO.values())
+        from fontshow.language_tables import LANGUAGE_INFO, SCRIPT_INFO
 
         errors: list[str] = []
 
-        # ------------------------------------------------------------------
-        # Script identifier round-trip invariant
-        # ------------------------------------------------------------------
+        # ------------------------------------------------------------
+        # basic sanity
+        # ------------------------------------------------------------
 
-        for iso_id in LANGUAGE_PRIMARY_SCRIPT.values():
-            if tag_to_iso(iso_to_tag(iso_id)) != iso_id:
-                errors.append(
-                    f"Invalid ISO script identifier round-trip for '{iso_id}'"
-                )
+        if not SCRIPT_INFO:
+            errors.append("SCRIPT_INFO is empty")
 
-        # ------------------------------------------------------------------
-        # Language inference safety invariant
-        # ------------------------------------------------------------------
+        if not LANGUAGE_INFO:
+            errors.append("LANGUAGE_INFO is empty")
 
-        for lang, profile in LANGUAGE_PROFILES_ISO.items():
-            for script in profile.get("scripts", []):
-                if script not in human_script_values:
-                    errors.append(
-                        f"Language '{lang}' references ISO script '{script}' not defined in ontology"
-                    )
+        scripts = set(SCRIPT_INFO.keys())
 
-        # LANGUAGE_PROFILES_ISO references (ISO scripts)
-        for lang, profile in LANGUAGE_PROFILES_ISO.items():
-            for script in profile.get("scripts", []):
-                if script not in iso_script_keys:
+        # ------------------------------------------------------------
+        # validate language → script references
+        # ------------------------------------------------------------
+
+        for lang, lang_info in LANGUAGE_INFO.items():
+
+            lang_scripts = lang_info.get("scripts")
+
+            if not lang_scripts:
+                errors.append(f"Language '{lang}' has no scripts defined")
+                continue
+
+            for script in lang_scripts:
+                if script not in scripts:
                     errors.append(
                         f"Language '{lang}' references unknown script '{script}'"
                     )
 
-        # SCRIPT_SAMPLES coherence (human scripts)
-        for human_script in SCRIPT_SAMPLES:
-            if human_script not in human_script_keys:
-                errors.append(f"Specimen defined for unknown script '{human_script}'")
+        # ------------------------------------------------------------
+        # validate script metadata fields
+        # ------------------------------------------------------------
 
-        # Polyglossia mapping coherence (ISO scripts)
-        for script in SCRIPT_ISO_TO_POLYGLOSSIA:
-            if script not in iso_script_keys:
+        required_fields = {
+            "canonical_name",
+            "display_language",
+            "polyglossia_language",
+            "fontspec_opts",
+            "rtl",
+            "requires_polyglossia",
+            "specimen",
+        }
+
+        for script, script_info in SCRIPT_INFO.items():
+            missing = required_fields - set(script_info.keys())
+            if missing:
                 errors.append(
-                    f"Polyglossia mapping references unknown script '{script}'"
+                    f"Script '{script}' missing fields: {', '.join(sorted(missing))}"
                 )
 
-        # Optional but recommended: ensure every human script has a specimen
-        missing_specimens = human_script_keys - set(SCRIPT_SAMPLES.keys())
-        if missing_specimens:
-            errors.append(
-                "Missing specimen for scripts: " + ", ".join(sorted(missing_specimens))
-            )
+        # ------------------------------------------------------------
+        # result
+        # ------------------------------------------------------------
 
         if errors:
             return CheckResult(
