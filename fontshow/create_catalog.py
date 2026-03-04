@@ -54,11 +54,7 @@ from fontshow.cli_utils import (
 from fontshow.common.specimens import SAMPLE_TEXTS
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.json_boundary import normalize_loaded_enums
-from fontshow.language_tables import (
-    SCRIPT_ISO_TO_HUMAN_CANONICAL,
-    SCRIPT_ISO_TO_POLYGLOSSIA,
-    SCRIPT_RENDER_POLICY,
-)
+from fontshow.language_tables import SCRIPT_INFO
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.semantic_validation import enforce_semantic_validation
@@ -210,8 +206,9 @@ def _format_script_display(script_iso: str) -> str:
         "TAML" -> "Tamil (TAML)"
     """
     iso = ScriptISO(script_iso.upper())
-    human = SCRIPT_ISO_TO_HUMAN_CANONICAL.get(iso)
-    if human:
+    info = SCRIPT_INFO.get(iso)
+    if info:
+        human = info["canonical_name"]
         return f"{human} ({iso})"
     return str(iso)
 
@@ -224,13 +221,13 @@ def _get_render_policy(script_iso: ScriptISO) -> tuple[str, str]:
         Non-Latin scripts must always receive an explicit Script= option
         to enable HarfBuzz shaping.
     """
-    policy = SCRIPT_RENDER_POLICY.get(script_iso)
+    info = SCRIPT_INFO.get(script_iso)
 
-    if not policy:
+    if not info:
         return "", ""
 
-    lang = policy.language
-    opts = policy.fontspec_opts or ""
+    lang = info["polyglossia_language"]
+    opts = info["fontspec_opts"] or ""
 
     # --- ensure shaping for non-Latin scripts ---
     if not opts and script_iso and script_iso != ScriptISO("LATN"):
@@ -436,9 +433,11 @@ def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -
             if not isinstance(s, str) or not s:
                 continue
             script_iso = ScriptISO(s.upper())
-            lang, _opts = SCRIPT_ISO_TO_POLYGLOSSIA.get(script_iso, ("", ""))
-            if lang and lang != "english":
-                langs.add(lang)
+            info = SCRIPT_INFO.get(script_iso)
+            if info:
+                lang = info["polyglossia_language"]
+                if lang and lang != "english":
+                    langs.add(lang)
 
     return "".join(f"\\setotherlanguage{{{lang}}}\n" for lang in sorted(langs))
 
@@ -1039,11 +1038,11 @@ def render_sample_code(font: dict, fam: str) -> str:
     # Direction-aware rendering (script policy driven)
     # -------------------------------------------------
     script_iso = ScriptISO(ps.upper()) if ps else None
-    policy = SCRIPT_RENDER_POLICY.get(script_iso) if script_iso else None
+    info = SCRIPT_INFO.get(script_iso) if script_iso else None
 
-    if policy and policy.requires_polyglossia:
-        lang = policy.language
-        opts = policy.fontspec_opts
+    if info and info["requires_polyglossia"]:
+        lang = info["polyglossia_language"]
+        opts = info["fontspec_opts"]
 
         # Ensure specimen exists
         if not txt:
