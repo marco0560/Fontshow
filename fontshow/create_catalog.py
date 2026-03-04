@@ -51,7 +51,7 @@ from fontshow.cli_utils import (
     log_warn,
     set_cli_mode,
 )
-from fontshow.common.specimens import SAMPLE_TEXTS
+from fontshow.common.specimens import choose_language_sample
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.language_tables import SCRIPT_INFO
@@ -807,12 +807,12 @@ def choose_sample_text(font: FontRef) -> str | None:
         return None
 
     # --- 2. Inferred language fallback ---
-    lang = inferred_languages[0] if inferred_languages else None
-    if lang and lang in SAMPLE_TEXTS:
-        sample = SAMPLE_TEXTS.get(lang)
-        if isinstance(sample, str):
-            return sample
-        return None
+    scripts_raw = inference.get("scripts")
+    inferred_scripts: list[str] = scripts_raw if isinstance(scripts_raw, list) else []
+
+    sample = choose_language_sample(inferred_languages, inferred_scripts)
+    if isinstance(sample, str):
+        return sample
 
     return None
 
@@ -1046,8 +1046,9 @@ def render_sample_code(font: dict, fam: str) -> str:
 
         # Ensure specimen exists
         if not txt:
-            sample_lang = lang[:2] if lang else "ar"
-            txt = SAMPLE_TEXTS.get(sample_lang, SAMPLE_TEXTS.get("ar", ""))
+            langs = [lang] if isinstance(lang, str) else None
+            scripts = [ps] if isinstance(ps, str) else None
+            txt = choose_language_sample(langs, scripts) or ""
 
         return (
             r"\TestNonLatin{"
