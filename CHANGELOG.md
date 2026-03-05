@@ -1,3 +1,9 @@
+## [0.43.1](https://github.com/marco0560/Fontshow/compare/v0.43.0...v0.43.1) (2026-03-05)
+
+### Bug Fixes
+
+* **validation:** fixed ontology.py check and completed language tables ([015387e](https://github.com/marco0560/Fontshow/commit/015387ed0e28fadf29e62cf6f0c32f8866701a07))
+
 ## [0.43.0](https://github.com/marco0560/Fontshow/compare/v0.42.0...v0.43.0) (2026-03-04)
 
 ### Features
