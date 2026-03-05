@@ -293,6 +293,12 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "optional_blocks": ["Arabic Supplement"],
         "sample": "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ الشَّمْسِ",
     },
+    "bn": {
+        "scripts": [ScriptISO("BENG")],
+        "required_blocks": ["Bengali"],
+        "optional_blocks": [],
+        "sample": "আমি বাংলায় গান গাই",
+    },
     "chr": {
         "scripts": [ScriptISO("CHER")],
         "required_blocks": ["Cherokee"],
@@ -329,6 +335,24 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "optional_blocks": ["Latin-1 Supplement"],
         "sample": "Portez ce vieux whisky au juge blond qui fume",
     },
+    "he": {
+        "scripts": [ScriptISO("HEBR")],
+        "required_blocks": ["Hebrew"],
+        "optional_blocks": [],
+        "sample": "דג סקרן שט בים מאוכזב ולפתע מצא לו חברה",
+    },
+    "hi": {
+        "scripts": [ScriptISO("DEVA")],
+        "required_blocks": ["Devanagari"],
+        "optional_blocks": [],
+        "sample": "सभी मनुष्य जन्म से स्वतंत्र और समान अधिकारों वाले हैं",
+    },
+    "hy": {
+        "scripts": [ScriptISO("ARMN")],
+        "required_blocks": ["Armenian"],
+        "optional_blocks": [],
+        "sample": "Վարդագույն աղվեսը ցատկում է ծույլ շան վրայով",
+    },
     "ii": {
         "scripts": [ScriptISO("YIII")],
         "required_blocks": ["Yi Syllables"],
@@ -352,6 +376,18 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "required_blocks": ["Georgian"],
         "optional_blocks": [],
         "sample": "ქართული ტექსტის მაგალითი",
+    },
+    "km": {
+        "scripts": [ScriptISO("KHMR")],
+        "required_blocks": ["Khmer"],
+        "optional_blocks": [],
+        "sample": "មនុស្សទាំងអស់កើតមកមានសេរីភាព",
+    },
+    "ko": {
+        "scripts": [ScriptISO("HANG")],
+        "required_blocks": ["Hangul Syllables"],
+        "optional_blocks": [],
+        "sample": "키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다",
     },
     "lo": {
         "scripts": [ScriptISO("LAOO")],
@@ -377,6 +413,12 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "optional_blocks": ["Cyrillic Supplement"],
         "sample": "Съешь же ещё этих мягких французских булок",
     },
+    "si": {
+        "scripts": [ScriptISO("SINH")],
+        "required_blocks": ["Sinhala"],
+        "optional_blocks": [],
+        "sample": "සියලු මිනිසුන් නිදහස්ව උපදින අතර",
+    },
     "ta": {
         "scripts": [ScriptISO("TAML")],
         "required_blocks": ["Tamil"],
@@ -388,6 +430,12 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "required_blocks": ["Thai"],
         "optional_blocks": [],
         "sample": "ภาษาไทยเป็นภาษาที่สวยงาม",
+    },
+    "ti": {
+        "scripts": [ScriptISO("ETHI")],
+        "required_blocks": ["Ethiopic"],
+        "optional_blocks": [],
+        "sample": "ሰላም እንታይ ከመይ ኢኻ",
     },
     "zh": {
         "scripts": [ScriptISO("HANI")],
