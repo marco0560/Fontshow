@@ -22,21 +22,26 @@ Refs:
 #----------------------------
 # Scopes (Fontshow):
 #   build      = build system / github
-#   catalog    = create_catalog tool
+#   catalog    = catalog-specific logic (labels, sample rendering, LaTeX block generation)
 #   ci         = CI / GitHub Actions
-#   cli        = cli interface
+#   cli        = parser registration + CLI orchestration wrappers
 #   config     = configuration files
 #   core       = core pipeline, data flow, orchestration
 #   decision   = formal decision (architecture, rules...)
 #   dev        = development (tooling, hooks, scripts)
+#   discovery  = interaction with installed fonts, fontconfig, fonttools
 #   docs       = documentation (MkDocs, README, architecture)
 #   dump       = dump_fonts tool
 #   git        = git configuration
+#   inventory  = schema/types/validation/building/parsing/inference of inventory JSON
+#   latex      = generic LaTeX escaping, detokenize safety, NFSS id helpers
 #   output     = output format
+#   ontology   = data erlated to scripts aand languages
 #   parser     = parse_font_inventory tool
 #   planning   = planning and design documents
 #   schema     = json schema definition and data validation
 #   release    = versioning, tags, changelog
+#   unicode    = charset decoding, Unicode blocks coverage, script coverage math
 #   validation = validation tools
 # ----------------------------
 # Rules:
