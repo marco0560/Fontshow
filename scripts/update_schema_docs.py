@@ -32,4 +32,8 @@ pattern = re.compile(
 
 new_text = pattern.sub(replacement, text)
 
-DOC.write_text(new_text)
+if new_text != text:
+    DOC.write_text(new_text)
+    print("Updated docs/schema/inventory_v1_2.md")
+else:
+    print("Schema documentation already up to date")
