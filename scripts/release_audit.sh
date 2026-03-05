@@ -48,6 +48,16 @@ else
 fi
 
 ########################################
+# Skip release checks outside main
+########################################
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+if [[ "$BRANCH" != "main" ]]; then
+  echo "Release audit skipped on branch $BRANCH"
+  exit 0
+fi
+
+########################################
 # [3] Tag integrity (semantic-release safe)
 # Only consider tags reachable from HEAD
 ########################################
