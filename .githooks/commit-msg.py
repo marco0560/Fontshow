@@ -26,6 +26,7 @@ ALLOWED_SCOPES = {
     "dump",
     "git",
     "output",
+    "ontology",
     "parser",
     "planning",
     "schema",
