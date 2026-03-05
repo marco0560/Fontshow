@@ -1,3 +1,9 @@
+## [0.44.0](https://github.com/marco0560/Fontshow/compare/v0.43.1...v0.44.0) (2026-03-05)
+
+### Features
+
+* **ontology:** add canonical language names and enforce Unicode coverage invariant ([86b3d80](https://github.com/marco0560/Fontshow/commit/86b3d80a62a41cca8812c9fe98656f1b166291fe))
+
 ## [0.43.1](https://github.com/marco0560/Fontshow/compare/v0.43.0...v0.43.1) (2026-03-05)
 
 ### Bug Fixes
