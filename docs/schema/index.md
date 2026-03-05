@@ -2,7 +2,11 @@
 
 ## Current Schema
 
-* **Font Inventory Schema v1.2** → `font_inventory.schema.json`
+Runtime schema source of truth:
+
+```bash
+fontshow/schema/inventory_v1_2.json
+```
 
 This is the **only supported schema** for Fontshow.
 
@@ -21,7 +25,7 @@ See: `docs/_archive/schema/`
 
 ## Documentation
 
-* Font Inventory Schema → `font_inventory.md`
+* Font Inventory Schema → `inventory_v1_2.md`
 * Language Normalization → `language-normalization.md`
 
 ---

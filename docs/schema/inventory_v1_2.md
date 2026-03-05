@@ -1,5 +1,23 @@
 # Font Inventory Schema v1.2
 
+## NOTE
+
+The runtime JSON schema is the sole **source of truth** lives in:
+
+fontshow/schema/inventory_v1_2.json
+
+This document is a human-oriented explanation of that schema.
+
+## Full JSON Schema
+
+<!-- SCHEMA_JSON_START -->
+
+```json
+(schema will be injected automatically)
+```
+
+<!--- SCHEMA_JSON_END -->
+
 ## Overview
 
 Schema **v1.2** is the single authoritative schema for the Fontshow inventory.

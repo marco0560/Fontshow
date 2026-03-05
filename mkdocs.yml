@@ -67,8 +67,7 @@ nav:
   - Data model:
     - Data dictionary: data_dictionary.md
     - Schema overview: schema/index.md
-    - Inventory schema v1.2 (Docs): schema/font_inventory.md
-    - Inventory schema v1.2 (JSON): schema/font_inventory.schema.json
+    - Inventory schema v1.2: schema/inventory_v1_2.md
     - Language normalization: schema/language-normalization.md
 
   - Development:

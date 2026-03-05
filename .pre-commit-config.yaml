@@ -43,6 +43,13 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      # Insert JSON in doc
+      - id: update-schema-doc
+        name: Update schema documentation
+        entry: python scripts/update_schema_docs.py
+        language: system
+        pass_filenames: false
       # ------------------------------------------------------------------
       # Static typing (Fontshow)
       # ------------------------------------------------------------------

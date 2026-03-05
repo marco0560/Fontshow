@@ -33,7 +33,7 @@ documentation describes *how the stages relate to each other*.
 
 - [Data dictionary](data_dictionary.md)
 - [Schema overview](schema/index.md)
-- [Inventory schema v1.2](schema/font_inventory.md)
+- [Inventory schema v1.2](schema/inventory_v1_2.md)
 - [Language normalization](schema/language-normalization.md)
 
 ## Development and maintenance
