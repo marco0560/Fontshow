@@ -54,6 +54,11 @@ class OntologyCheck(BaseCheck):
         errors: list[str] = []
 
         for lang, lang_info in LANGUAGE_INFO.items():
+            canonical_name = lang_info.get("canonical_name")
+
+            if not canonical_name or not str(canonical_name).strip():
+                errors.append(f"Language '{lang}' missing canonical_name")
+
             lang_scripts = lang_info.get("scripts")
 
             if not lang_scripts:
@@ -146,6 +151,31 @@ class OntologyCheck(BaseCheck):
 
         return errors
 
+    def _check_unicode_ranges(self, SCRIPT_INFO) -> list[str]:
+        """
+        Validate that every script in SCRIPT_INFO has Unicode coverage.
+
+        Enforced invariant
+        ------------------
+
+        SCRIPT_INFO.keys() ⊆ UNICODE_SCRIPT_RANGES.keys()
+        """
+        from fontshow.unicode_tables import UNICODE_SCRIPT_RANGES
+
+        script_info_scripts = set(SCRIPT_INFO.keys())
+        unicode_range_scripts = set(UNICODE_SCRIPT_RANGES.keys())
+
+        missing_ranges = script_info_scripts - unicode_range_scripts
+
+        errors: list[str] = []
+
+        if missing_ranges:
+            errors.append(
+                "Scripts missing Unicode ranges: " + ", ".join(sorted(missing_ranges))
+            )
+
+        return errors
+
     def run(self) -> CheckResult:
         from fontshow.language_tables import LANGUAGE_INFO, SCRIPT_INFO
 
@@ -162,6 +192,7 @@ class OntologyCheck(BaseCheck):
         errors.extend(self._check_script_display_language(LANGUAGE_INFO, SCRIPT_INFO))
         errors.extend(self._check_specimens(LANGUAGE_INFO, SCRIPT_INFO))
         errors.extend(self._check_bidirectional_consistency(LANGUAGE_INFO, SCRIPT_INFO))
+        errors.extend(self._check_unicode_ranges(SCRIPT_INFO))
 
         if errors:
             return CheckResult(self.check_id, Severity.ERROR, "; ".join(errors))
