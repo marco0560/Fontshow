@@ -15,7 +15,7 @@ This document is a human-oriented explanation of that schema.
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "font_inventory-1.2.schema.json",
+  "$id": "urn:fontshow:schema:inventory:1.2",
   "title": "Fontshow Inventory Schema v1.2",
   "type": "object",
   "required": [

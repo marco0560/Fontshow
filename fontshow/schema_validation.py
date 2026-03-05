@@ -63,9 +63,7 @@ def _validate_inventory_schema_strict(data: dict) -> None:
         )
         raise ValueError(msg)
 
-    schema_path = (
-        Path(__file__).parent.parent / "docs" / "schema" / "font_inventory.schema.json"
-    )
+    schema_path = Path(__file__).parent / "schema" / "inventory_v1_2.json"
 
     if not schema_path.exists():
         msg = f"Schema file not found: {schema_path}"
