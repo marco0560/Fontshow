@@ -56,6 +56,11 @@ from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.inventory.semantic_validation import enforce_semantic_validation
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.language_tables import SCRIPT_INFO
+from fontshow.latex.policy import (
+    _collect_polyglossia_other_languages,
+    _format_script_display,
+    _get_render_policy,
+)
 from fontshow.latex.render import (
     _latex_detokenize_safe,
     _strip_ascii_control_chars,
@@ -142,44 +147,6 @@ elif IS_LINUX:
 else:
     EXCLUDED_FONTS = set()
     DEFAULT_TEST_FONTS = set()
-
-
-def _format_script_display(script_iso: str) -> str:
-    """
-    Convert ISO script code to human-readable display form.
-
-    Example:
-        "TAML" -> "Tamil (TAML)"
-    """
-    iso = ScriptISO(script_iso.upper())
-    info = SCRIPT_INFO.get(iso)
-    if info:
-        human = info["canonical_name"]
-        return f"{human} ({iso})"
-    return str(iso)
-
-
-def _get_render_policy(script_iso: ScriptISO) -> tuple[str, str]:
-    """
-    Return (polyglossia_language, fontspec_options).
-
-    Invariant:
-        Non-Latin scripts must always receive an explicit Script= option
-        to enable HarfBuzz shaping.
-    """
-    info = SCRIPT_INFO.get(script_iso)
-
-    if not info:
-        return "", ""
-
-    lang = info["polyglossia_language"]
-    opts = info["fontspec_opts"] or ""
-
-    # --- ensure shaping for non-Latin scripts ---
-    if not opts and script_iso and script_iso != ScriptISO("LATN"):
-        opts = f"Script={script_iso.title()}"
-
-    return lang, opts
 
 
 # ============================================================
@@ -353,40 +320,6 @@ Problematic fonts are excluded in advance. The compilation is performed with \te
 \section{Detailed Catalog}
 """
 )
-
-
-def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -> str:
-    """
-    Collect the set of polyglossia languages required by this run and generate
-    corresponding \\setotherlanguage{...} lines for the LaTeX preamble.
-
-    Deterministic:
-    - stable ordering (sorted)
-    - never fails rendering if a mapping is missing
-    """
-    # Always include latin to preserve legacy template assumptions
-    langs: set[str] = {"latin"}  # preserve previous template behavior
-
-    for font in font_list:
-        inf_raw = font.get("inference") or {}
-        inf = inf_raw if isinstance(inf_raw, dict) else {}
-        scripts_raw_obj = inf.get("scripts")
-        scripts_raw: list[str] = (
-            scripts_raw_obj if isinstance(scripts_raw_obj, list) else []
-        )
-
-        for s in scripts_raw:
-            if not isinstance(s, str) or not s:
-                continue
-            script_iso = ScriptISO(s.upper())
-            info = SCRIPT_INFO.get(script_iso)
-            if info:
-                lang = info["polyglossia_language"]
-                if lang and lang != "english":
-                    langs.add(lang)
-
-    return "".join(f"\\setotherlanguage{{{lang}}}\n" for lang in sorted(langs))
-
 
 # -------------------------------------------
 SAMPLE_1: str = r"""\textbf{Sample:}
