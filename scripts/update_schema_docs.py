@@ -25,8 +25,14 @@ replacement = f"""{START}
 
 text = DOC.read_text()
 
+if START not in text or END not in text:
+    msg = (
+        "ERROR: schema markers not found or malformed in docs/schema/inventory_v1_2.md"
+    )
+    raise SystemExit(msg)
+
 pattern = re.compile(
-    rf"{START}.*?{END}",
+    rf"{re.escape(START)}.*?{re.escape(END)}",
     re.DOTALL,
 )
 

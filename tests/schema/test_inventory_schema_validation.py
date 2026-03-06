@@ -41,12 +41,19 @@ def test_strict_validation_rejects_unknown_version():
 def test_strict_validation_missing_schema_file(monkeypatch):
     data = make_inventory("1.2")
 
-    def fake_exists(self):
-        return False
+    class FakeSchemaPath:
+        def __truediv__(self, name):
+            return self
 
-    monkeypatch.setattr("pathlib.Path.exists", fake_exists)
+        def read_text(self, *args, **kwargs):
+            raise FileNotFoundError
 
-    with pytest.raises(ValueError, match="Schema file not found"):
+    monkeypatch.setattr(
+        "fontshow.schema_validation.files",
+        lambda *_: FakeSchemaPath(),
+    )
+
+    with pytest.raises(ValueError, match="Schema resource not found"):
         _validate_inventory_schema_strict(data)
 
 

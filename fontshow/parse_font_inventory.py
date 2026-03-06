@@ -39,6 +39,7 @@ from fontshow.common.specimens import choose_language_sample
 from fontshow.dump_fonts import UNICODE_BLOCK_RANGES
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.infer_languages import infer_languages
+from fontshow.inventory.semantic_validation import normalize_languages
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.json_format import dumps_pretty
 from fontshow.language_tables import (
@@ -51,7 +52,6 @@ from fontshow.schema_validation import (
     _validate_inventory_schema_strict,
     validate_inventory_schema,
 )
-from fontshow.semantic_validation import normalize_languages
 from fontshow.types import (
     FontRef,
     LanguageInferenceInfo,

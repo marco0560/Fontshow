@@ -1,4 +1,4 @@
-from fontshow.semantic_validation import validate_language_codes
+from fontshow.inventory.semantic_validation import validate_language_codes
 
 
 def test_raw_languages_are_not_validated():

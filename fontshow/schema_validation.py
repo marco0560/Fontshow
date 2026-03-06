@@ -12,7 +12,7 @@ Design principles
 """
 
 import json
-from pathlib import Path
+from importlib.resources import files
 
 from jsonschema import ValidationError, validate
 
@@ -63,25 +63,23 @@ def _validate_inventory_schema_strict(data: dict) -> None:
         )
         raise ValueError(msg)
 
-    schema_path = Path(__file__).parent / "schema" / "inventory_v1_2.json"
+    schema_path = files("fontshow.schema") / "inventory_v1_2.json"
 
-    if not schema_path.exists():
-        msg = f"Schema file not found: {schema_path}"
+    try:
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    except FileNotFoundError as err:
+        msg = f"Schema resource not found: {schema_path}"
         log_trace_cat(
             log,
             "validate",
             "schema validation failed",
             extra={
                 "schema_version": schema_version,
-                "rule": "schema_file_exists",
+                "rule": "schema_resource_exists",
                 "error": msg,
             },
         )
-        raise ValueError(msg)
-
-    with schema_path.open(encoding="utf-8") as f:
-        schema = json.load(f)
-
+        raise ValueError(msg) from err
     try:
         validate(instance=data, schema=schema)
         log_trace_cat(

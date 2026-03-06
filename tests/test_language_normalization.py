@@ -1,4 +1,4 @@
-from fontshow.semantic_validation import normalize_languages
+from fontshow.inventory.semantic_validation import normalize_languages
 
 
 def test_empty_input():

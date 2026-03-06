@@ -28,9 +28,9 @@ from pathlib import Path
 from jsonschema.exceptions import ValidationError
 
 from fontshow import __version__
+from fontshow.inventory.semantic_validation import validate_language_codes
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.schema_validation import validate_inventory_schema
-from fontshow.semantic_validation import validate_language_codes
 from fontshow.types import Severity
 
 # ------------------------------------------------------------

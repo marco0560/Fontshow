@@ -53,11 +53,11 @@ from fontshow.cli_utils import (
 )
 from fontshow.common.specimens import choose_language_sample
 from fontshow.global_constants import SCHEMA_VERSION
+from fontshow.inventory.semantic_validation import enforce_semantic_validation
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.language_tables import SCRIPT_INFO
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
-from fontshow.semantic_validation import enforce_semantic_validation
 from fontshow.types import (
     CatalogFontEntryV12,
     FontRef,

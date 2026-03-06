@@ -334,7 +334,7 @@ If judgment is required at any point, state so and stop.
 
     - FACT: fontshow.infer_languages is exercised by unit tests in tests/test_infer_languages.py and tests/test_infer_languages_threshold.py. Files: tests/test_infer_languages.py L1-L56, tests/test_infer_languages_threshold.py L1-L46. Rationale: tests import and call infer_languages.
 
-    - FACT: fontshow.semantic_validation functions normalize_languages and validate_language_codes are exercised by tests in tests/test_language_normalization.py, tests/test_semantic_validation.py, and tests/test_validate_language_codes.py. Files: tests/test_language_normalization.py L1-L69, tests/test_semantic_validation.py L1-L65, tests/test_validate_language_codes.py L1-L77. Rationale: tests import and call these functions.
+    - FACT: fontshow.inventory.semantic_validation functions normalize_languages and validate_language_codes are exercised by tests in tests/test_language_normalization.py, tests/test_semantic_validation.py, and tests/test_validate_language_codes.py. Files: tests/test_language_normalization.py L1-L69, tests/test_semantic_validation.py L1-L65, tests/test_validate_language_codes.py L1-L77. Rationale: tests import and call these functions.
 
     - FACT: fontshow.schema_validation is exercised by schema tests. File: tests/schema/test_inventory_schema_validation.py L1-L100. Rationale: tests import and call schema validation functions.
 
