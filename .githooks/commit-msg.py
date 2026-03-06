@@ -22,6 +22,7 @@ ALLOWED_SCOPES = {
     "core",
     "decision",
     "dev",
+    "diagnostics",
     "discovery",
     "docs",
     "dump",

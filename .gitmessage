@@ -29,6 +29,7 @@ Refs:
 #   core       = core pipeline, data flow, orchestration
 #   decision   = formal decision (architecture, rules...)
 #   dev        = development (tooling, hooks, scripts)
+#   diagnostics = internal diagnostic in the pipeline
 #   discovery  = interaction with installed fonts, fontconfig, fonttools
 #   docs       = documentation (MkDocs, README, architecture)
 #   dump       = dump_fonts tool

@@ -18,7 +18,6 @@ Default inference level: ``medium``.
 import argparse
 import json
 import logging
-import re
 import sys
 from pathlib import Path
 from typing import Any, cast
@@ -31,6 +30,11 @@ from fontshow.cli_utils import (
     log_ok,
     log_warn,
     set_cli_mode,
+)
+from fontshow.diagnostics.inventory_warnings import (
+    _collect_language_warnings,
+    _format_font_identity,
+    _get_font_path_for_diagnostics,
 )
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.inventory.entry_validation import validate_font_entry
@@ -52,7 +56,6 @@ from fontshow.schema_validation import (
 from fontshow.types import (
     FontRef,
     Severity,
-    WarningInfo,
 )
 from fontshow.warnings import add_structured_warning
 
@@ -165,80 +168,6 @@ def validate_inventory(
         )
 
     return fatal_errors
-
-
-def _format_font_identity(font: dict, index: int) -> str:
-    """
-    Build a human-readable identifier for a font entry.
-
-    Parameters
-    ----------
-    font : dict
-        Font entry object.
-    index : int
-        Index of the font entry in the inventory.
-
-    Returns
-    -------
-    str
-        Human-readable identifier in the form:
-        "font[<index>] <filename>[:<face_index>]".
-
-    Notes
-    -----
-    - Compatible with schema 1.0 and 1.1 layouts.
-    - Intended for diagnostics and CLI output only.
-    - Does not modify the font entry.
-    """
-    label = f"font[{index}]"
-
-    path = _get_font_path_for_diagnostics(font)
-    family = font.get("family")
-    subfamily = font.get("subfamily")
-
-    if path:
-        name = Path(path).name
-        if family is not None:
-            if subfamily is not None:
-                name += f" ({family} {subfamily})"
-            else:
-                name += f" ({family})"
-        return f"{label} {name}"
-
-    return label
-
-
-def _get_font_path_for_diagnostics(font: dict) -> str | None:
-    """
-    Return the best-available font file path for diagnostics.
-
-    Parameters
-    ----------
-    font : dict
-        Font entry dictionary from the inventory.
-
-    Returns
-    -------
-    str | None
-        Resolved path string according to preference order:
-        1. font["path"] (schema >= 1.1)
-        2. font["identity"]["file"] (schema 1.0)
-        Returns None if no usable path is found.
-
-    Notes
-    -----
-    - This function is read-only and MUST NOT mutate the input.
-    - Used exclusively for human-readable diagnostics.
-    """
-    if isinstance(font, dict):
-        if font.get("path"):
-            return font.get("path")
-
-        identity = font.get("identity")
-        if isinstance(identity, dict):
-            return identity.get("file")
-
-    return None
 
 
 # ============================================================
@@ -432,79 +361,6 @@ def _default_read_text(p: Path) -> str:
 def _default_write_text(p: Path, s: str) -> None:
     """Default file writer used when no injectable I/O is provided."""
     p.write_text(s, encoding="utf-8")
-
-
-# ============================================================
-# Helper: extract language warning aggregates
-# ============================================================
-
-
-def _collect_language_warnings(
-    font: FontRef,
-) -> tuple[list[str], list[str], list[str], list[tuple[str, str, str]]]:
-    """
-    Aggregate warnings for grouped CLI display.
-
-    Returns:
-        normalized, duplicates, dropped, other_warnings
-    """
-
-    lang_norm_pairs: list[str] = []
-    lang_dups: list[str] = []
-    lang_dropped: list[str] = []
-    other_warnings: list[tuple[str, str, str]] = []
-
-    raw_warnings = font.get("warnings")
-    warnings_list: list[WarningInfo] = (
-        raw_warnings if isinstance(raw_warnings, list) else []
-    )
-
-    for warning in warnings_list:
-        severity = warning.get("severity", Severity.WARN)
-
-        code = str(warning.get("code", "unknown_warning"))
-        message = str(warning.get("message", ""))
-
-        extra_raw = warning.get("extra")
-        extra: dict[str, Any] = extra_raw if isinstance(extra_raw, dict) else {}
-
-        def _extract_lang(msg: str) -> str:
-            if not msg:
-                return ""
-            m = re.search(r"'([^']+)'", msg)
-            return m.group(1) if m else ""
-
-        if code == "language_normalized":
-            raw = extra.get("raw") or _extract_lang(message)
-            norm = extra.get("normalized")
-            if isinstance(norm, str):
-                if raw:
-                    lang_norm_pairs.append(f"{raw} -> {norm}")
-                else:
-                    lang_norm_pairs.append(norm)
-            elif raw:
-                lang_norm_pairs.append(raw)
-            continue
-
-        if code == "language_duplicate":
-            raw = extra.get("raw") or _extract_lang(message)
-            if raw:
-                lang_dups.append(raw)
-            continue
-
-        if code == "language_dropped":
-            raw = extra.get("raw") or _extract_lang(message)
-            if raw:
-                lang_dropped.append(raw)
-            continue
-
-        if code in {"normalized_languages", "duplicate_languages", "dropped_languages"}:
-            continue
-
-        if severity in (Severity.WARN, Severity.ERROR):
-            other_warnings.append((severity.name.lower(), code, message))
-
-    return lang_norm_pairs, lang_dups, lang_dropped, other_warnings
 
 
 # ============================================================
