@@ -5,9 +5,9 @@ from pathlib import Path
 
 from fontshow.create_catalog import (
     build_parser,
-    collect_platform_metadata,
     run_create_catalog,
 )
+from fontshow.platform_metadata import collect_platform_metadata
 
 
 def _run(tmp_path, inventory):

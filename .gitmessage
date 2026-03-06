@@ -40,6 +40,7 @@ Refs:
 #   ontology   = data erlated to scripts aand languages
 #   parser     = parse_font_inventory tool
 #   planning   = planning and design documents
+#   platform   = platform_dependent data and procedures
 #   schema     = json schema definition and data validation
 #   release    = versioning, tags, changelog
 #   unicode    = charset decoding, Unicode blocks coverage, script coverage math

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from fontshow.create_catalog import load_font_inventory
+from fontshow.inventory.io import load_font_inventory
 
 
 def _write_inventory(tmp_path: Path, content: bytes | str) -> Path:

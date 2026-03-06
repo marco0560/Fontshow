@@ -33,6 +33,7 @@ ALLOWED_SCOPES = {
     "ontology",
     "parser",
     "planning",
+    "platform",
     "schema",
     "release",
     "unicode",

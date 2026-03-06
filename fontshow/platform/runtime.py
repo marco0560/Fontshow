@@ -29,6 +29,8 @@ the runtime environment.
 
 import sys
 
+from fontshow.platform_metadata import collect_platform_metadata
+
 if sys.platform == "win32":
     # modulo specifico Windows
     IS_WINDOWS = True
@@ -40,3 +42,73 @@ elif sys.platform.startswith("linux"):
 else:
     IS_WINDOWS = False
     IS_LINUX = False
+
+
+def _inventory_platform_mismatch(inv_env: dict, runtime: dict) -> list[str]:
+    """
+    Compare inventory and runtime platform metadata and report mismatches.
+
+    Parameters
+    ----------
+    inv_env : dict
+        Inventory run-environment metadata.
+    runtime : dict
+        Runtime platform metadata collected from the current system.
+
+    Returns
+    -------
+    list[str]
+        List of metadata keys that differ between inventory and runtime.
+        Empty if no mismatch is detected.
+    """
+
+    def _norm(v: object) -> str:
+        """
+        Normalize a value for platform metadata comparison.
+
+        Parameters
+        ----------
+        v : object
+            Value to normalize.
+
+        Returns
+        -------
+        str
+            Lowercased and stripped string representation of the value.
+        """
+        return str(v).strip().lower()
+
+    mismatches: list[str] = []
+
+    for key in ("os", "machine"):
+        if _norm(inv_env.get(key)) != _norm(runtime.get(key)):
+            mismatches.append(key)
+
+    inv_ctx = inv_env.get("execution_context")
+    run_ctx = runtime.get("execution_context")
+
+    if _norm(inv_ctx) != _norm(run_ctx):
+        mismatches.append("execution_context")
+
+    return mismatches
+
+
+def _enforce_platform(inv_env: dict) -> tuple[bool, list[str]]:
+    """
+    Enforce inventory/platform compatibility.
+
+    Parameters
+    ----------
+    inv_env : dict
+        Inventory run-environment metadata.
+
+    Returns
+    -------
+    tuple[bool, list[str]]
+        A pair (ok, mismatches):
+        - ok is True if inventory matches runtime platform.
+        - mismatches contains the differing metadata keys.
+    """
+    runtime = collect_platform_metadata()
+    mismatches = _inventory_platform_mismatch(inv_env, runtime)
+    return (not mismatches), mismatches
