@@ -1,0 +1,42 @@
+"""
+Catalog domain data structures.
+
+This module defines the core data types used internally by the catalog
+subsystem during catalog generation.
+
+Responsibilities
+----------------
+- Provide structured representations of fonts prepared for catalog
+  rendering.
+- Encapsulate normalized metadata derived from the inventory and
+  enriched by catalog preprocessing steps.
+- Serve as the shared data model used by catalog helpers such as
+  labeling, sample selection, and document rendering.
+
+Design principles
+-----------------
+Types defined here belong strictly to the catalog domain layer. They
+should not depend on CLI orchestration code or pipeline modules. The
+goal is to keep catalog logic decoupled from the create-catalog entry
+point while allowing multiple catalog helpers to share a consistent
+data representation.
+
+Architectural role
+------------------
+This module sits between the inventory layer and the catalog rendering
+helpers:
+
+    inventory → catalog.types → catalog.* → pipeline (create_catalog)
+
+The structures defined here are used throughout the catalog subsystem
+but are not part of the inventory schema nor the LaTeX rendering
+infrastructure.
+"""
+
+from typing import TypedDict
+
+
+class _FontDetail(TypedDict):
+    raw_line: str
+    extracted_names: list[str]
+    base_names: list[str]

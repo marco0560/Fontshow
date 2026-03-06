@@ -24,6 +24,8 @@ generation (`catalog.labels`), specimen selection (`catalog.sample`),
 and document rendering (`catalog.document`).
 """
 
+import re
+
 from fontshow.types import CatalogFontEntryV12
 
 
@@ -44,3 +46,24 @@ def font_family(font: CatalogFontEntryV12 | dict[str, object]) -> str:
     fam = font.get("family") or font.get("postscript_name") or font.get("full_name")
 
     return fam if isinstance(fam, str) and fam else "Unknown Font"
+
+
+def clean_font_name(name: str) -> str:
+    """
+    Normalize a raw font name to a base family-like name.
+
+    Parameters
+    ----------
+    name : str
+        Raw font name as obtained from system sources.
+
+    Returns
+    -------
+    str
+        Normalized base name with parenthetical hints removed and
+        common variant suffixes (e.g., Bold, Italic) stripped.
+    """
+    clean_name = re.sub(r"\s*\((TrueType|OpenType|True Type|Type 1)\)\s*$", "", name)
+
+    variants = r"\s+(Bold|Italic|Light|Regular|Medium|Semibold|Black|Thin|Heavy|Narrow|Condensed|Extended|Grassetto|Corsivo|Chiaro|Normale|Medio|Nero|Sottile|Pesante|Condensato|Esteso).*$"
+    return re.sub(variants, "", clean_name, flags=re.IGNORECASE).strip()
