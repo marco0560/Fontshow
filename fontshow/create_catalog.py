@@ -56,6 +56,11 @@ from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.inventory.semantic_validation import enforce_semantic_validation
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.language_tables import SCRIPT_INFO
+from fontshow.latex.render import (
+    _latex_detokenize_safe,
+    _strip_ascii_control_chars,
+    escape_latex,
+)
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.types import (
@@ -137,65 +142,6 @@ elif IS_LINUX:
 else:
     EXCLUDED_FONTS = set()
     DEFAULT_TEST_FONTS = set()
-
-
-# ============================================================
-# LaTeX escaping utility
-# ============================================================
-
-
-def escape_latex(text: str) -> str:
-    """
-    Escape LaTeX special characters in a string.
-
-    Parameters
-    ----------
-    text : str
-        Input string to be escaped for safe inclusion in LaTeX source.
-
-    Returns
-    -------
-    str
-        String with LaTeX special characters escaped.
-    """
-    replacements = {
-        "\\": r"\textbackslash{}",
-        "&": r"\&",
-        "%": r"\%",
-        "$": r"\$",
-        "#": r"\#",
-        "_": r"\_",
-        "{": r"\{",
-        "}": r"\}",
-        "~": r"\textasciitilde{}",
-        "^": r"\textasciicircum{}",
-        "<": r"\textless{}",
-        ">": r"\textgreater{}",
-    }
-    return "".join(replacements.get(c, c) for c in text)
-
-
-def _strip_ascii_control_chars(text: str) -> str:
-    """
-    Remove ASCII control characters from text before LaTeX insertion.
-
-    Keeps newline (\\n) and tab (\\t); strips other chars in:
-        U+0000–U+001F and U+007F
-    """
-    return "".join(
-        ch for ch in text if ch in {"\n", "\t"} or (ord(ch) >= 0x20 and ord(ch) != 0x7F)
-    )
-
-
-def _latex_detokenize_safe(text: str) -> str:
-    """
-    Prepare text for safe inclusion inside \\detokenize{...}.
-
-    Removes ASCII control characters and escapes closing braces,
-    which would otherwise terminate the TeX group.
-    """
-    text = _strip_ascii_control_chars(text)
-    return text.replace("}", r"\}")
 
 
 def _format_script_display(script_iso: str) -> str:
