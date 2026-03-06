@@ -36,10 +36,12 @@ from fontshow.cli_utils import (
     set_cli_mode,
 )
 from fontshow.common.specimens import choose_language_sample
-from fontshow.dump_fonts import UNICODE_BLOCK_RANGES
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.infer_languages import infer_languages
-from fontshow.inventory.script_analysis import script_coverage_from_unicode_blocks
+from fontshow.inventory.script_analysis import (
+    infer_scripts,
+    script_coverage_from_unicode_blocks,
+)
 from fontshow.inventory.semantic_validation import normalize_languages
 from fontshow.json_boundary import normalize_loaded_enums
 from fontshow.json_format import dumps_pretty
@@ -61,6 +63,11 @@ from fontshow.types import (
     WarningInfo,
     normalize_script_iso,
 )
+from fontshow.unicode.charset_ranges import (
+    decode_fc_charset_bitmap,
+    normalize_charset_ranges,
+    unicode_blocks_from_charset_ranges,
+)
 from fontshow.unicode_tables import UNICODE_SCRIPT_RANGES
 from fontshow.warnings import add_structured_warning
 
@@ -73,170 +80,6 @@ logger = logging.getLogger("fontshow")
 # ============================================================
 # Helper functions
 # ============================================================
-
-
-def decode_fc_charset_bitmap(raw: str) -> list[list[int]]:
-    """
-    Decode a FontConfig charset bitmap into Unicode codepoint ranges.
-
-    Parameters
-    ----------
-    raw : str
-        Raw multiline charset bitmap produced by fc-query.
-
-    Returns
-    -------
-    list[list[int]]
-        Sorted, merged [start, end] Unicode ranges (inclusive).
-
-    Notes
-    -----
-    The input is the raw multiline bitmap produced by fc-query, e.g.:
-
-    0000: 00000000 ffffffff ffffffff 7fffffff ...
-    0001: ffffffff ...
-
-    - Each input line encodes 256 codepoints:
-        block_index * 256
-        8 words of 32 bits
-        bits interpreted MSB → LSB
-    - Invalid lines or malformed words are skipped safely.
-    - Output ranges are deduplicated, sorted, and merged.
-    - Pure function: does not mutate external state.
-    """
-    codepoints: list[int] = []
-
-    for line in raw.splitlines():
-        line = line.strip()
-        if not line or ":" not in line:
-            continue
-
-        block_hex, rest = line.split(":", 1)
-        try:
-            block_index = int(block_hex.strip(), 16)
-        except ValueError:
-            continue
-
-        words = rest.strip().split()
-        if len(words) != 8:
-            continue
-
-        base = block_index * 256
-
-        for word_index, word_hex in enumerate(words):
-            try:
-                word = int(word_hex, 16)
-            except ValueError:
-                continue
-
-            for bit in range(32):
-                if word & (1 << (31 - bit)):
-                    codepoints.append(base + word_index * 32 + bit)
-
-    if not codepoints:
-        return []
-
-    codepoints = sorted(set(codepoints))
-
-    ranges: list[list[int]] = []
-    start = prev = codepoints[0]
-
-    for cp in codepoints[1:]:
-        if cp == prev + 1:
-            prev = cp
-        else:
-            ranges.append([start, prev])
-            start = prev = cp
-
-    ranges.append([start, prev])
-    return ranges
-
-
-def unicode_blocks_from_charset_ranges(
-    ranges: list[list[int]],
-) -> dict[str, int]:
-    """
-    Derive Unicode block coverage counts from normalized charset ranges.
-
-    Parameters
-    ----------
-    ranges : list[list[int]]
-        Normalized [start, end] Unicode codepoint ranges (inclusive).
-
-    Returns
-    -------
-    dict[str, int]
-        Mapping of Unicode block name to covered codepoint count.
-
-    Notes
-    -----
-    - Coverage is computed by intersecting each input range with
-      known Unicode block boundaries.
-    - Counts are inclusive and accumulated across overlapping ranges.
-    - Pure function: does not mutate input.
-    """
-    blocks: dict[str, int] = {}
-
-    for r_start, r_end in ranges:
-        for block_name, (b_start, b_end) in UNICODE_BLOCK_RANGES.items():
-            start = max(r_start, b_start)
-            end = min(r_end, b_end)
-            if start <= end:
-                blocks[block_name] = blocks.get(block_name, 0) + (end - start + 1)
-
-    return blocks
-
-
-def normalize_charset_ranges(ranges: list[list[int]]) -> dict[str, Any]:
-    """
-    Normalize a list of Unicode codepoint ranges.
-
-    Parameters
-    ----------
-    ranges : list[list[int]]
-        List of [start, end] Unicode codepoint ranges (inclusive).
-
-    Returns
-    -------
-    dict[str, Any]
-        {
-            "ranges": list[list[int]]
-                Normalized, sorted, and merged ranges.
-            "codepoints_count": int
-                Total number of covered Unicode codepoints (inclusive).
-        }
-
-    Notes
-    -----
-    - Ranges are sorted by start codepoint before normalization.
-    - Overlapping and adjacent ranges are merged.
-    - Result is deterministic and idempotent.
-    - Pure function: does not mutate inputs.
-    """
-    if not ranges:
-        return {"ranges": [], "codepoints_count": 0}
-
-    # Defensive copy + sort
-    ordered = sorted((int(a), int(b)) for a, b in ranges)
-
-    merged: list[list[int]] = []
-    cur_start, cur_end = ordered[0]
-
-    for start, end in ordered[1:]:
-        if start <= cur_end + 1:
-            cur_end = max(cur_end, end)
-        else:
-            merged.append([cur_start, cur_end])
-            cur_start, cur_end = start, end
-
-    merged.append([cur_start, cur_end])
-
-    codepoints_count = sum(end - start + 1 for start, end in merged)
-
-    return {
-        "ranges": merged,
-        "codepoints_count": codepoints_count,
-    }
 
 
 def _validate_str_required(obj: dict, key: str, errors: list[str]) -> None:
@@ -959,191 +802,6 @@ def _specimen_generate_for_font(
             "rejection": font["specimen_rejection_reason"],
         },
     )
-
-
-# ============================================================
-# Inference helpers
-# ============================================================
-
-
-# TODO(#0): classification rule table will grow;
-# refactor to data-driven mapping when script set expands
-def infer_scripts(  # noqa: C901, PLR0912
-    coverage: dict[str, Any], level: str = "medium"
-) -> list[str]:
-    """
-    Infer writing scripts from Unicode coverage metadata.
-
-    The function follows a two-step strategy:
-
-    1. **Primary path**: analyze ``coverage["unicode_blocks"]`` if present.
-    2. **Fallback path**: infer from ``coverage["unicode"]["max"]``.
-
-    Args:
-        coverage: Coverage block extracted from a font entry. Expected keys are
-            ``unicode_blocks`` (mapping block name → count) and/or
-            ``unicode.max`` (maximum code point).
-        level: Inference aggressiveness level. One of
-            ``"conservative"``, ``"medium"`` (default), or ``"aggressive"``.
-
-    Returns:
-        A list of inferred ISO-15924 script codes (lowercase),
-        ordered by decreasing confidence.
-        Examples: "latn", "cyrl", "arab", "taml", "hani".
-        Returns ``["unknown"]`` if no reliable inference is possible.
-        The value ``"unknown"`` is a sentinel and must not be used
-        for downstream language inference.
-    """
-    blocks: dict[str, int] = coverage.get("unicode_blocks", {}) or {}
-
-    # -------------------------------
-    # 1. Primary path: unicode_blocks
-    # -------------------------------
-    if blocks:
-        total = sum(blocks.values()) or 1
-
-        def significant(count: int) -> bool:
-            """Check whether a block count is significant for the given level."""
-            if level == "conservative":
-                return count >= 50 or (count / total) >= 0.10
-            if level == "aggressive":
-                return count >= 5
-            # medium - default
-            return count >= 20 or (count / total) >= 0.05
-
-        scripts_score: dict[str, int] = {}
-
-        def add_script(name: str, weight: int) -> None:
-            scripts_score[name] = scripts_score.get(name, 0) + weight
-
-        # --- block → script mapping (score-based)
-        for block, count in blocks.items():
-            # Latin needs strict significance (to avoid false multi-script noise),
-            # but non-Latin scripts must be more sensitive: their block counts are
-            # often smaller (or split across Extended/Supplement blocks).
-            if block.startswith("Latin"):
-                if not significant(count):
-                    continue
-            elif level == "conservative":
-                if not (count >= 20 or (count / total) >= 0.05):
-                    continue
-            elif level == "aggressive":
-                if count < 2:
-                    continue
-            elif not (count >= 5 or (count / total) >= 0.01):  # medium - default
-                continue
-
-            if block.startswith("Latin"):
-                add_script("latn", count)
-            elif block == "Greek and Coptic":
-                add_script("grek", count)
-            elif block == "Cyrillic":
-                add_script("cyrl", count)
-            elif block == "Arabic":
-                add_script("arab", count)
-            elif block == "Hebrew":
-                add_script("hebr", count)
-            elif block == "Devanagari":
-                add_script("deva", count)
-            elif block == "Bengali":
-                add_script("beng", count)
-            elif block == "Tamil":
-                add_script("taml", count)
-            elif block == "Thai":
-                add_script("thai", count)
-            elif block.startswith("Lao"):
-                add_script("laoo", count)
-            elif block in ("Hiragana", "Katakana"):
-                add_script("jpan", count)
-            elif block == "Hangul Syllables":
-                add_script("hang", count)
-            elif block == "Yi Syllables":
-                add_script("yiii", count)
-            elif block.startswith("Armenian"):
-                add_script("armn", count)
-            elif block.startswith("Georgian"):
-                add_script("geor", count)
-            elif block.startswith("Ethiopic"):
-                add_script("ethi", count)
-            elif block.startswith("Cherokee"):
-                add_script("cher", count)
-            elif block.startswith("Khmer"):
-                add_script("khmr", count)
-            elif block.startswith("Buginese"):
-                add_script("bugi", count)
-            elif block.startswith("Buhid"):
-                add_script("buhd", count)
-            elif block.startswith("Kana"):
-                add_script("jpan", count)
-            elif block.startswith("CJK Unified Ideographs"):
-                add_script("hani", count)
-
-            # --- CJK disambiguation (kept as a single-script outcome)
-            if "hani" in scripts_score:
-                if "jpan" in scripts_score:
-                    return ["jpan"]
-                if "hang" in scripts_score:
-                    return ["hang"]
-                return ["hani"]
-
-        normalized_scores: list[tuple[str, int]] = []
-        for name, score in scripts_score.items():
-            iso = name
-            normalized_scores.append((iso, score))
-
-        if not normalized_scores:
-            return ["unknown"]
-
-        iso_priority: dict[str, int] = {
-            "latn": 0,
-            "grek": 1,
-            "cyrl": 2,
-            "arab": 3,
-            "hebr": 4,
-            "deva": 5,
-            "beng": 6,
-            "taml": 7,
-            "thai": 8,
-            "laoo": 9,
-            "mymr": 10,
-            "armn": 11,
-            "geor": 12,
-            "ethi": 13,
-            "cher": 14,
-            "khmr": 15,
-            "bugi": 16,
-            "buhd": 17,
-            "yiii": 18,
-            "jpan": 19,
-            "hang": 20,
-            "hani": 21,
-        }
-
-        normalized_scores.sort(key=lambda t: (-t[1], iso_priority.get(t[0], 999), t[0]))
-
-        return [iso for iso, _ in normalized_scores]
-
-    # -------------------------------
-    # 2. Fallback: unicode.max
-    # -------------------------------
-    unicode_max = coverage.get("unicode", {}).get("max")
-    if isinstance(unicode_max, int):
-        if unicode_max <= 0x024F:
-            return ["latn"]
-        if 0x0370 <= unicode_max <= 0x03FF:
-            return ["grek"]
-        if 0x0400 <= unicode_max <= 0x04FF:
-            return ["cyrl"]
-        if 0x0590 <= unicode_max <= 0x05FF:
-            return ["hebr"]
-        if 0x0600 <= unicode_max <= 0x06FF:
-            return ["arab"]
-        if 0x0900 <= unicode_max <= 0x097F:
-            return ["deva"]
-        if unicode_max >= 0x4E00:
-            return ["hani"]
-
-    return ["unknown"]
 
 
 # ============================================================
