@@ -1,4 +1,4 @@
-from fontshow.parse_font_inventory import script_coverage_from_unicode_blocks
+from fontshow.inventory.script_analysis import script_coverage_from_unicode_blocks
 
 
 def test_script_coverage_basic_latin_only():
