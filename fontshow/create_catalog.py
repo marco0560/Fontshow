@@ -31,7 +31,6 @@ descriptors.
 """
 
 import argparse
-import hashlib
 import json
 import platform
 import re
@@ -43,6 +42,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypedDict, cast
 
 from fontshow import __version__
+from fontshow.catalog.metadata import font_family
 from fontshow.cli_utils import (
     add_common_arguments,
     log_err,
@@ -51,11 +51,9 @@ from fontshow.cli_utils import (
     log_warn,
     set_cli_mode,
 )
-from fontshow.common.specimens import choose_language_sample
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.inventory.semantic_validation import enforce_semantic_validation
 from fontshow.json_boundary import normalize_loaded_enums
-from fontshow.language_tables import SCRIPT_INFO
 from fontshow.latex.policy import (
     _collect_polyglossia_other_languages,
     _format_script_display,
@@ -63,15 +61,15 @@ from fontshow.latex.policy import (
 )
 from fontshow.latex.render import (
     _latex_detokenize_safe,
+    _renderer_option_prefix,
     _strip_ascii_control_chars,
     escape_latex,
 )
 from fontshow.logging_utils import log, log_trace_cat
+from fontshow.platform.runtime import IS_LINUX, IS_WINDOWS
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.types import (
     CatalogFontEntryV12,
-    FontRef,
-    InferenceInfo,
     InferenceV12,
     ScriptISO,
     Severity,
@@ -89,19 +87,7 @@ else:
     except ImportError:
         winreg = None
 
-if sys.platform == "win32":
-    # modulo specifico Windows
-    IS_WINDOWS = True
-    IS_LINUX = False
-elif sys.platform.startswith("linux"):
-    IS_LINUX = True
-    IS_WINDOWS = False
-    # eventuale alternativa per altri OS
-    # Define a non-Windows placeholder so static checkers won't flag missing 'winreg'
-    winreg = None
-else:
-    IS_WINDOWS = False
-    IS_LINUX = False
+if not IS_WINDOWS:
     winreg = None  # Placeholder for non-Windows systems
 
 # --- Configuration ---
@@ -428,34 +414,6 @@ def get_unique_filename(base_name: str, extension: str) -> str:
     raise ValueError(msg)
 
 
-def nfss_family_id(font: dict) -> str:
-    """
-    Return a deterministic NFSS-safe identifier for a font.
-
-    The identifier is derived from a stable SHA-256 digest of:
-        <identity.file>#<ttc_index>
-
-    Parameters
-    ----------
-    font : dict
-        Font descriptor dictionary containing at least an `identity`
-        mapping with optional `file` and `ttc_index` fields.
-
-    Returns
-    -------
-    str
-        Deterministic identifier prefixed with "FS" and truncated to
-        10 hexadecimal characters.
-    """
-    identity = font.get("identity", {}) or {}
-    file_path = identity.get("file", "")
-    ttc_index = identity.get("ttc_index", 0)
-
-    key = f"{file_path}#{ttc_index}"
-    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
-    return "FS" + digest[:10]
-
-
 def group_fonts_by_family(
     fonts: list[CatalogFontEntryV12],
 ) -> list[CatalogFontEntryV12]:
@@ -600,372 +558,9 @@ def _normalize_inventory_paths(inventory: dict) -> None:
             identity["file"] = font["path"]
 
 
-def font_family(font: CatalogFontEntryV12 | dict[str, object]) -> str:
-    """
-    Return a best-effort font family name for rendering and sorting.
-
-    Parameters
-    ----------
-    font : dict[str, object]
-        Schema 1.2 font descriptor dictionary.
-
-    Returns
-    -------
-    str
-        Resolved family name if available, otherwise "Unknown Font".
-    """
-    fam = font.get("family") or font.get("postscript_name") or font.get("full_name")
-
-    return fam if isinstance(fam, str) and fam else "Unknown Font"
-
-
-def choose_sample_language(font: dict) -> str | None:
-    """
-    Choose a representative language code for a font.
-
-    Parameters
-    ----------
-    font : dict
-        Font descriptor dictionary possibly containing `inference`
-        and `coverage` sections with language lists.
-
-    Returns
-    -------
-    str | None
-        First inferred language if available; otherwise the first
-        declared coverage language; otherwise None.
-    """
-    inf = font.get("inference", {}) or {}
-    langs = inf.get("languages", []) or []
-    if langs:
-        return str(langs[0])
-    cov_langs = font.get("coverage", {}).get("languages", []) or []
-    return str(cov_langs[0]) if cov_langs else None
-
-
-def choose_sample_text(font: FontRef) -> str | None:
-    """
-    Choose a sample text for rendering.
-
-    Parameters
-    ----------
-    font : FontRef
-        Font descriptor containing optional embedded sample text and
-        inference metadata.
-
-    Returns
-    -------
-    str | None
-        Selected sample text, or None if no suitable text is available.
-
-    Notes
-    -----
-    Priority:
-    1. Embedded sample text extracted from the font, only if its language
-       matches the primary inferred language.
-    2. Inferred language-based sample text (fallback).
-    """
-
-    inference_raw = font.get("inference")
-    inference: InferenceInfo = inference_raw if isinstance(inference_raw, dict) else {}
-
-    langs_raw = inference.get("languages")
-    inferred_languages: list[str] = langs_raw if isinstance(langs_raw, list) else []
-
-    # --- 1. Embedded sample text (if present and compatible) ---
-    embedded = font.get("sample_text")
-    if (
-        isinstance(embedded, dict)
-        and inferred_languages
-        and embedded.get("lang") == inferred_languages[0]
-        and embedded.get("text")
-    ):
-        text = embedded.get("text")
-        if isinstance(text, str):
-            return text
-        return None
-
-    # --- 2. Inferred language fallback ---
-    scripts_raw = inference.get("scripts")
-    inferred_scripts: list[str] = scripts_raw if isinstance(scripts_raw, list) else []
-
-    sample = choose_language_sample(inferred_languages, inferred_scripts)
-    if isinstance(sample, str):
-        return sample
-
-    return None
-
-
-def font_type_label(font: dict) -> str:
-    """
-    Classify font type for labeling purposes.
-
-    Parameters
-    ----------
-    font : dict
-        Font descriptor dictionary containing an optional `classification`
-        section.
-
-    Returns
-    -------
-    str
-        One of:
-        - "EMOJI" if the font is classified as emoji
-        - "DECORATIVE" if classified as decorative
-        - "TEXT" otherwise
-    """
-    cls = font.get("classification", {}) or {}
-    if cls.get("is_emoji"):
-        return "EMOJI"
-    if cls.get("is_decorative"):
-        return "DECORATIVE"
-    return "TEXT"
-
-
-def primary_script(font: dict) -> str | None:
-    """
-    Determine the primary script associated with a font.
-
-    Parameters
-    ----------
-    font : dict
-        Font descriptor dictionary possibly containing `inference`
-        and `coverage` sections with script lists.
-
-    Returns
-    -------
-    str | None
-        First inferred script if available; otherwise the first declared
-        coverage script; otherwise None.
-    """
-    inf = font.get("inference", {}) or {}
-    scripts = inf.get("scripts", []) or []
-    if scripts:
-        return str(scripts[0])
-    cov_scripts = font.get("coverage", {}).get("scripts", []) or []
-    return str(cov_scripts[0]) if cov_scripts else None
-
-
-def script_label(font: dict, max_scripts: int = 2) -> str:
-    """
-    Build a short uppercase label summarizing font scripts.
-
-    Parameters
-    ----------
-    font : dict
-        Font descriptor dictionary possibly containing `inference`
-        and `coverage` sections with script lists.
-    max_scripts : int, optional
-        Maximum number of scripts to include in the label (default is 2).
-
-    Returns
-    -------
-    str
-        Uppercase comma-separated script label, or "UNKNOWN" if no script
-        information is available.
-    """
-    inf = font.get("inference", {}) or {}
-    scripts = inf.get("scripts", []) or []
-    if not scripts:
-        scripts = font.get("coverage", {}).get("scripts", []) or []
-    if not scripts:
-        return "UNKNOWN"
-    return ", ".join(str(s).upper() for s in scripts[:max_scripts])
-
-
-def language_label(font: dict) -> str:
-    """
-    Build an uppercase language label for a font.
-
-    Parameters
-    ----------
-    font : dict
-        Font descriptor dictionary used to determine a representative
-        language via `choose_sample_language()`.
-
-    Returns
-    -------
-    str
-        Uppercase language code if available, otherwise "N/A".
-    """
-    lang = choose_sample_language(font)
-    return lang.upper() if lang else "N/A"
-
-
-def render_badges(font: dict[str, object]) -> str:
-    """
-    Render informational badges for a font.
-
-    Parameters
-    ----------
-    font : dict[str, object]
-        Font descriptor dictionary used to extract script, language,
-        and type information.
-
-    Returns
-    -------
-    str
-        LaTeX-formatted string containing ASCII-only badges rendered in
-        monospace. May be an empty string if no badge data is available.
-
-    Notes
-    -----
-    Badges are ASCII-only and typeset in monospace to avoid bidi and
-    script-direction issues.
-    """
-    scripts = script_label(font)
-    languages = language_label(font)
-    ftype = font_type_label(font)
-
-    parts: list[str] = []
-    if scripts:
-        parts.append(f"SCRIPTS: {scripts}")
-    if languages:
-        parts.append(f"LANG: {languages}")
-    if ftype:
-        parts.append(f"TYPE: {ftype}")
-
-    if not parts:
-        return ""
-
-    badge_text = " | ".join(parts)
-
-    return r"{\footnotesize\ttfamily " + badge_text + r"}" "\n"
-
-
-def render_sample_text(font: dict) -> str | None:
-    """
-    Produce a sample text string appropriate for the font classification.
-
-    Parameters
-    ----------
-    font : dict
-        Font descriptor dictionary containing optional `classification`
-        and rendering metadata.
-
-    Returns
-    -------
-    str | None
-        Sample text suitable for rendering, or None if no appropriate
-        sample text can be determined.
-    """
-    cls = font.get("classification", {}) or {}
-    fam = font_family(font)
-    if cls.get("is_emoji"):
-        return "😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇"
-    if cls.get("is_decorative"):
-        return fam
-    return choose_sample_text(cast("FontRef", font))
-
-
-def _renderer_option_prefix() -> str:
-    """
-    Return the fontspec Renderer option prefix.
-
-    Notes
-    -----
-    - On Windows, omit Renderer=Harfbuzz to improve compatibility with the
-      underlying luaotfload/font loader (deterministic fallback).
-    - On non-Windows platforms, keep HarfBuzz enabled.
-    """
-    if IS_WINDOWS:
-        return ""
-    return "Renderer=Harfbuzz,"
-
-
-def render_sample_code(font: dict, fam: str) -> str:
-    """
-    Build the LaTeX snippet used to render the font sample.
-
-    Parameters
-    ----------
-    font : dict
-        Font descriptor dictionary containing classification and
-        inference metadata.
-    fam : str
-        Font family name used for LaTeX rendering.
-
-    Returns
-    -------
-    str
-        LaTeX code snippet rendering the sample text for the font.
-
-    Notes
-    -----
-    Rendering constraints:
-    - Never request Bold / Italic / BoldItalic shapes.
-    - Do not propagate inferred weight/width/style metadata.
-    - For RTL scripts use `TestNonLatin` (polyglossia + harfbuzz).
-    - For LTR scripts use a minimal, NFSS-safe `fontspec` invocation.
-    """
-    log_trace_cat(
-        log,
-        "latex",
-        "rendering sample code",
-        extra={
-            "family": fam,
-        },
-    )
-
-    txt = render_sample_text(font)
-    ps = primary_script(font)
-
-    nfss_id = nfss_family_id(font)
-    renderer_prefix = _renderer_option_prefix()
-
-    # -------------------------------------------------
-    # Direction-aware rendering (script policy driven)
-    # -------------------------------------------------
-    script_iso = ScriptISO(ps.upper()) if ps else None
-    info = SCRIPT_INFO.get(script_iso) if script_iso else None
-
-    if info and info["requires_polyglossia"]:
-        lang = info["polyglossia_language"]
-        opts = info["fontspec_opts"]
-
-        # Ensure specimen exists
-        if not txt:
-            langs = [lang] if isinstance(lang, str) else None
-            scripts = [ps] if isinstance(ps, str) else None
-            txt = choose_language_sample(langs, scripts) or ""
-
-        return (
-            r"\TestNonLatin{"
-            + escape_latex(fam)
-            + r"}{"
-            + lang
-            + r"}{"
-            + opts
-            + r"}{"
-            + escape_latex(txt)
-            + r"}"
-        )
-
-    if not txt:
-        return (
-            r"\textbf{Sample:}"
-            "\n"
-            r"{\mdseries\upshape\fontspec[" + renderer_prefix + f"Family={nfss_id},"
-            r"UprightFont=*,"
-            r"BoldFont={},"
-            r"ItalicFont={},"
-            r"BoldItalicFont={}"
-            r"]{" + escape_latex(fam) + r"}\Li}"
-        )
-
-    return (
-        r"\textbf{Esempio:}"
-        "\n"
-        r"{\mdseries\upshape\fontspec[" + renderer_prefix + f"Family={nfss_id},"
-        r"UprightFont=*,"
-        r"BoldFont={},"
-        r"ItalicFont={},"
-        r"BoldItalicFont={}"
-        r"]{" + escape_latex(fam) + r"}" + escape_latex(txt) + r"}"
-    )
-
-
+# -------------------------------------------------
 # --- System Functions ---
+# -------------------------------------------------
 
 
 def clean_font_name(name: str) -> str:

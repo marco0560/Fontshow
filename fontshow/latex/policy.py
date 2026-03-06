@@ -25,6 +25,8 @@ inventory metadata and the LaTeX rendering layer used by the catalog
 generation pipeline.
 """
 
+import hashlib
+
 from fontshow.language_tables import SCRIPT_INFO
 from fontshow.types import CatalogFontEntryV12, ScriptISO
 
@@ -98,3 +100,31 @@ def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -
                     langs.add(lang)
 
     return "".join(f"\\setotherlanguage{{{lang}}}\n" for lang in sorted(langs))
+
+
+def nfss_family_id(font: dict) -> str:
+    """
+    Return a deterministic NFSS-safe identifier for a font.
+
+    The identifier is derived from a stable SHA-256 digest of:
+        <identity.file>#<ttc_index>
+
+    Parameters
+    ----------
+    font : dict
+        Font descriptor dictionary containing at least an `identity`
+        mapping with optional `file` and `ttc_index` fields.
+
+    Returns
+    -------
+    str
+        Deterministic identifier prefixed with "FS" and truncated to
+        10 hexadecimal characters.
+    """
+    identity = font.get("identity", {}) or {}
+    file_path = identity.get("file", "")
+    ttc_index = identity.get("ttc_index", 0)
+
+    key = f"{file_path}#{ttc_index}"
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
+    return "FS" + digest[:10]

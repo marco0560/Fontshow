@@ -27,6 +27,8 @@ sample rendering code) but does not perform any document assembly or
 policy decisions itself.
 """
 
+from fontshow.platform.runtime import IS_WINDOWS
+
 # ============================================================
 # LaTeX escaping utility
 # ============================================================
@@ -84,3 +86,18 @@ def _latex_detokenize_safe(text: str) -> str:
     """
     text = _strip_ascii_control_chars(text)
     return text.replace("}", r"\}")
+
+
+def _renderer_option_prefix() -> str:
+    """
+    Return the fontspec Renderer option prefix.
+
+    Notes
+    -----
+    - On Windows, omit Renderer=Harfbuzz to improve compatibility with the
+      underlying luaotfload/font loader (deterministic fallback).
+    - On non-Windows platforms, keep HarfBuzz enabled.
+    """
+    if IS_WINDOWS:
+        return ""
+    return "Renderer=Harfbuzz,"
