@@ -1,4 +1,4 @@
-from fontshow.parse_font_inventory import infer_scripts
+from fontshow.inventory.script_analysis import infer_scripts
 
 
 def test_infer_scripts_latn_from_unicode_blocks():

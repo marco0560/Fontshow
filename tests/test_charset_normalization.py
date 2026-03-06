@@ -1,4 +1,4 @@
-from fontshow.parse_font_inventory import (
+from fontshow.unicode.charset_ranges import (
     normalize_charset_ranges,
     unicode_blocks_from_charset_ranges,
 )

@@ -1,4 +1,4 @@
-from fontshow.parse_font_inventory import decode_fc_charset_bitmap
+from fontshow.unicode.charset_ranges import decode_fc_charset_bitmap
 
 
 def test_decode_single_bit():
