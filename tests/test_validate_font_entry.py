@@ -1,4 +1,4 @@
-from fontshow.parse_font_inventory import validate_font_entry
+from fontshow.inventory.entry_validation import validate_font_entry
 from tests.helpers import minimal_font_entry_v12
 
 # ============================================================
