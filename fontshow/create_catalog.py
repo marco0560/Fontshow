@@ -34,12 +34,16 @@ import argparse
 import platform
 import re
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from fontshow.catalog.document import generate_latex
 from fontshow.catalog.metadata import font_family
+from fontshow.catalog.output import (
+    _prepare_output_filename,
+    _write_latex_output,
+    get_unique_filename,
+)
 from fontshow.cli_utils import (
     add_common_arguments,
     log_err,
@@ -49,6 +53,7 @@ from fontshow.cli_utils import (
     set_cli_mode,
 )
 from fontshow.constants.catalog import DEFAULT_TEST_FONTS
+from fontshow.constants.runtime import DATE_STR
 from fontshow.inventory.io import (
     _load_inventory,
     as_font_desc_list,
@@ -73,46 +78,8 @@ if not IS_WINDOWS:
     winreg = None  # Placeholder for non-Windows systems
 
 # --- Configuration ---
-DATE_STR = datetime.now().strftime("%Y%m%d")
 TEST_FONTS: set[str] = set()
 DEFAULT_INVENTORY = "font_inventory_enriched.json"
-
-
-# --------------------------------------------
-# General helper functions
-# --------------------------------------------
-
-
-def get_unique_filename(base_name: str, extension: str) -> str:
-    """
-    Generate a unique filename by appending a three-digit counter (000–999).
-
-    Parameters
-    ----------
-    base_name : str
-        Base filename without extension.
-    extension : str
-        File extension without leading dot.
-
-    Returns
-    -------
-    str
-        A filename of the form:
-            <base_name>_<NNN>.<extension>
-        where NNN is the first available counter between 000 and 999.
-
-    Raises
-    ------
-    ValueError
-        If no available filename is found after 1000 attempts.
-    """
-    for i in range(1000):
-        suffix = f"_{i:03d}"
-        filename = f"{base_name}{suffix}.{extension}"
-        if not Path(filename).exists():
-            return filename
-    msg = f"Impossibile trovare un nome file unico per {base_name}.{extension} dopo 1000 tentativi."
-    raise ValueError(msg)
 
 
 # -------------------------------------------------
@@ -426,37 +393,6 @@ def _handle_list_test_fonts(test_fonts: set[str], inventory_fonts: list[dict]) -
 
 
 # ------------------------------------------------------------------
-# OUTPUT FILE PREPARATION
-# ------------------------------------------------------------------
-
-
-def _prepare_output_filename() -> tuple[int, str | None]:
-    """
-    Build a unique output filename based on platform and DATE_STR.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    tuple[int, str | None]
-        A pair (exit_code, filename):
-        - exit_code == 0 → success, filename contains the generated name.
-        - exit_code == 1 → error already logged, filename is None.
-    """
-    base_name = f"fontshow_{platform.system()}_{DATE_STR}"
-
-    try:
-        output_filename = get_unique_filename(base_name, "tex")
-    except ValueError as e:
-        log_err(f"Error: {e}")
-        return 1, None
-    else:
-        return 0, output_filename
-
-
-# ------------------------------------------------------------------
 # INVENTORY / FONT SOURCE
 # ------------------------------------------------------------------
 
@@ -615,33 +551,6 @@ def _filter_and_prepare_fonts(
     )
 
     return result
-
-
-def _write_latex_output(output_filename: str, latex_content: str) -> None:
-    """
-    Write generated LaTeX catalog to disk and emit user messages.
-
-    Parameters
-    ----------
-    output_filename : str
-        Target filename for the LaTeX document.
-    latex_content : str
-        Full LaTeX document content to be written.
-
-    Returns
-    -------
-    None
-    """
-    log_info(f"Writing file {output_filename}...")
-
-    with Path(output_filename).open("w", encoding="utf-8") as f:
-        f.write(latex_content)
-
-    log_ok("Done! LaTeX file generated successfully.")
-    log_ok("Ready for compilation.")
-    log_ok(
-        f"  Execute: lualatex -interaction=nonstopmode {output_filename} | texlogsieve (twice)"
-    )
 
 
 def run_create_catalog(args) -> int:
