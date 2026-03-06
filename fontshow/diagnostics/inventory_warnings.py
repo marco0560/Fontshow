@@ -14,8 +14,12 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
+from fontshow.cli_utils import (
+    log_info,
+    log_warn,
+)
 from fontshow.types import FontRef, Severity
 
 if TYPE_CHECKING:
@@ -169,3 +173,36 @@ def _collect_language_warnings(
             other_warnings.append((severity.name.lower(), code, message))
 
     return lang_norm_pairs, lang_dups, lang_dropped, other_warnings
+
+
+# ============================================================
+# Helper: verbose warning emitter
+# ============================================================
+
+
+def _emit_verbose_warnings(enriched: dict[str, Any]) -> None:
+    """Emit grouped warnings for verbose CLI mode."""
+
+    fonts = enriched.get("fonts", [])
+    if not isinstance(fonts, list):
+        return
+
+    for idx, font in enumerate(fonts):
+        if not isinstance(font, dict):
+            continue
+
+        ident = _format_font_identity(font, idx)
+
+        norm, dups, dropped, other = _collect_language_warnings(cast("FontRef", font))
+
+        if norm:
+            log_info(f"{ident} normalized_languages: {', '.join(sorted(set(norm)))}")
+
+        if dups:
+            log_info(f"{ident} duplicate_languages: {', '.join(sorted(set(dups)))}")
+
+        if dropped:
+            log_warn(f"{ident} dropped_languages: {', '.join(sorted(set(dropped)))}")
+
+        for _severity, code, message in other:
+            log_warn(f"{ident} {code}: {message}")

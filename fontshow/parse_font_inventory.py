@@ -20,7 +20,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any
 
 from fontshow import __version__
 from fontshow.cli_utils import (
@@ -28,13 +28,9 @@ from fontshow.cli_utils import (
     log_err,
     log_info,
     log_ok,
-    log_warn,
     set_cli_mode,
 )
-from fontshow.diagnostics.inventory_warnings import (
-    _collect_language_warnings,
-    _format_font_identity,
-)
+from fontshow.diagnostics.inventory_warnings import _emit_verbose_warnings
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.inventory.io import _validate_fonts_container
 from fontshow.inventory.metadata_processing import (
@@ -49,9 +45,6 @@ from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.schema_validation import _validate_inventory_schema_strict
-
-if TYPE_CHECKING:
-    from fontshow.types import FontRef
 
 # ============================================================
 # Set up logger
@@ -203,39 +196,6 @@ def _default_read_text(p: Path) -> str:
 def _default_write_text(p: Path, s: str) -> None:
     """Default file writer used when no injectable I/O is provided."""
     p.write_text(s, encoding="utf-8")
-
-
-# ============================================================
-# Helper: verbose warning emitter
-# ============================================================
-
-
-def _emit_verbose_warnings(enriched: dict[str, Any]) -> None:
-    """Emit grouped warnings for verbose CLI mode."""
-
-    fonts = enriched.get("fonts", [])
-    if not isinstance(fonts, list):
-        return
-
-    for idx, font in enumerate(fonts):
-        if not isinstance(font, dict):
-            continue
-
-        ident = _format_font_identity(font, idx)
-
-        norm, dups, dropped, other = _collect_language_warnings(cast("FontRef", font))
-
-        if norm:
-            log_info(f"{ident} normalized_languages: {', '.join(sorted(set(norm)))}")
-
-        if dups:
-            log_info(f"{ident} duplicate_languages: {', '.join(sorted(set(dups)))}")
-
-        if dropped:
-            log_warn(f"{ident} dropped_languages: {', '.join(sorted(set(dropped)))}")
-
-        for _severity, code, message in other:
-            log_warn(f"{ident} {code}: {message}")
 
 
 # ============================================================
