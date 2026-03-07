@@ -4,7 +4,7 @@ import json
 import logging
 from pathlib import Path
 
-import fontshow.logging_utils
+import fontshow.core.logging_utils
 import fontshow.parse_font_inventory
 from tests.helpers import minimal_font_entry_v12, minimal_inventory_v12
 
@@ -13,7 +13,7 @@ def test_inventory_parsing_emits_global_logs(
     enable_fontshow_logging,
     capture_fontshow_logs,
 ):
-    importlib.reload(fontshow.logging_utils)
+    importlib.reload(fontshow.core.logging_utils)
     importlib.reload(fontshow.parse_font_inventory)
 
     inventory = minimal_inventory_v12()
@@ -34,7 +34,7 @@ def test_schema_validation_logging(
     enable_fontshow_logging,
     capture_fontshow_logs,
 ):
-    importlib.reload(fontshow.logging_utils)
+    importlib.reload(fontshow.core.logging_utils)
     importlib.reload(fontshow.parse_font_inventory)
 
     inventory = minimal_inventory_v12()
@@ -60,7 +60,7 @@ def test_parse_inventory_verbosity_levels(capsys, tmp_path):
     verbose -> detailed output
     """
 
-    from fontshow.cli_utils import set_cli_mode
+    from fontshow.core.cli_utils import set_cli_mode
     from fontshow.parse_font_inventory import main
 
     # --- HARD RESET of global CLI state (test isolation) ---

@@ -7,7 +7,7 @@ import socket
 from pathlib import Path
 from typing import Any
 
-from fontshow.types import ExecutionContext
+from fontshow.core.types import ExecutionContext
 
 
 def _detect_execution_context() -> ExecutionContext:

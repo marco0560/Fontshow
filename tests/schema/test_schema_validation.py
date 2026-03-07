@@ -1,10 +1,10 @@
 import pytest
 
-from fontshow.schema_validation import (
+from fontshow.core.types import Severity
+from fontshow.inventory.schema_validation import (
     _validate_inventory_schema_strict,
     validate_inventory_schema,
 )
-from fontshow.types import Severity
 
 # ---------------------------------------------------------------------------
 # Helper — minimal valid v1.2 inventory (must satisfy schema requirements)

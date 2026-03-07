@@ -1,4 +1,4 @@
-from fontshow.infer_languages import infer_languages
+from fontshow.inventory.infer_languages import infer_languages
 
 
 def test_greek_not_inferred_from_symbolic_coverage():

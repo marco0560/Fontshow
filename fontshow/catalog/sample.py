@@ -34,11 +34,11 @@ from typing import cast
 from fontshow.catalog.labels import primary_script
 from fontshow.catalog.metadata import font_family
 from fontshow.common.specimens import choose_language_sample
-from fontshow.language_tables import SCRIPT_INFO
+from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import FontRef, InferenceInfo, ScriptISO
 from fontshow.latex.policy import nfss_family_id
 from fontshow.latex.render import _renderer_option_prefix, escape_latex
-from fontshow.logging_utils import log, log_trace_cat
-from fontshow.types import FontRef, InferenceInfo, ScriptISO
+from fontshow.ontology.language_tables import SCRIPT_INFO
 
 
 def choose_sample_language(font: dict) -> str | None:

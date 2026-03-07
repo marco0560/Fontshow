@@ -332,7 +332,7 @@ def _generate_module_text(
     if options.script_keys == "iso":
         parts.extend(
             [
-                "from fontshow.types import ScriptISO",
+                "from fontshow.core.types import ScriptISO",
                 "",
             ]
         )
@@ -397,8 +397,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--out",
-        default="fontshow/unicode_tables.py",
-        help="Output module path (default: fontshow/unicode_tables.py).",
+        default="fontshow/ontology/unicode_tables.py",
+        help="Output module path (default: fontshow/ontology/unicode_tables.py).",
     )
     parser.add_argument(
         "--script-keys",

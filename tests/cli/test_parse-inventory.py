@@ -14,7 +14,7 @@ def _valid_inventory_from_cli(tmp_path, *_ignored):
             "-c",
             (
                 "import json; "
-                "from fontshow.platform_metadata import collect_platform_metadata; "
+                "from fontshow.inventory.platform_metadata import collect_platform_metadata; "
                 f"open(r'{probe}', 'w').write(json.dumps(collect_platform_metadata()))"
             ),
         ],

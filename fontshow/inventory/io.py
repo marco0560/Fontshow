@@ -35,19 +35,19 @@ from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, cast
 
 from fontshow.catalog.metadata import font_family
-from fontshow.cli_utils import log_err, log_ok
-from fontshow.global_constants import SCHEMA_VERSION
+from fontshow.core.cli_utils import log_err, log_ok
+from fontshow.core.global_constants import SCHEMA_VERSION
+from fontshow.core.json_boundary import normalize_loaded_enums
+from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import Severity
 from fontshow.inventory.semantic_validation import enforce_semantic_validation
-from fontshow.json_boundary import normalize_loaded_enums
-from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform.runtime import _enforce_platform
-from fontshow.types import Severity
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
-    from fontshow.types import CatalogFontEntryV12
+    from fontshow.core.types import CatalogFontEntryV12
 
 
 # ============================================================

@@ -26,7 +26,7 @@ and document rendering (`catalog.document`).
 
 import re
 
-from fontshow.types import CatalogFontEntryV12
+from fontshow.core.types import CatalogFontEntryV12
 
 
 def font_family(font: CatalogFontEntryV12 | dict[str, object]) -> str:

@@ -13,14 +13,14 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from fontshow.cli_utils import (
+from fontshow.core.cli_utils import (
     log_err,
     log_info,
     log_ok,
     log_warn,
     set_cli_mode,
 )
-from fontshow.logging_utils import log, log_trace_cat
+from fontshow.core.logging_utils import log, log_trace_cat
 
 from .render import preflight_exit_code, render_preflight_results
 from .runner import run_preflight

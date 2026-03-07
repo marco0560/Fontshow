@@ -28,8 +28,8 @@ documents.
 import platform
 from pathlib import Path
 
-from fontshow.cli_utils import log_err, log_info, log_ok
 from fontshow.constants.runtime import DATE_STR
+from fontshow.core.cli_utils import log_err, log_info, log_ok
 
 
 def get_unique_filename(base_name: str, extension: str) -> str:

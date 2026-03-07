@@ -13,7 +13,7 @@ of the full inventory.
 import json
 from pathlib import Path
 
-from fontshow.schema_validation import validate_inventory_schema
+from fontshow.inventory.schema_validation import validate_inventory_schema
 
 
 def test_real_inventory_regression_no_errors():

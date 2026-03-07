@@ -1,5 +1,5 @@
-from fontshow.schema_validation import validate_inventory_schema
-from fontshow.types import Severity
+from fontshow.core.types import Severity
+from fontshow.inventory.schema_validation import validate_inventory_schema
 
 # ---------------------------------------------------------------------------
 # Helper — minimal valid v1.2 inventory with charset enrichment

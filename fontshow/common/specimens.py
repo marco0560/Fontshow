@@ -7,8 +7,8 @@ language samples from the ontology.
 
 from __future__ import annotations
 
-from fontshow.language_tables import LANGUAGE_INFO, SCRIPT_INFO
-from fontshow.types import tag_to_iso
+from fontshow.core.types import tag_to_iso
+from fontshow.ontology.language_tables import LANGUAGE_INFO, SCRIPT_INFO
 
 
 def choose_language_sample(

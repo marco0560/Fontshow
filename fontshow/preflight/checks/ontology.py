@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from fontshow.core.types import Severity
 from fontshow.preflight.checks.base import BaseCheck
 from fontshow.preflight.model import CheckResult
-from fontshow.types import Severity
 
 
 class OntologyCheck(BaseCheck):
@@ -160,7 +160,7 @@ class OntologyCheck(BaseCheck):
 
         SCRIPT_INFO.keys() ⊆ UNICODE_SCRIPT_RANGES.keys()
         """
-        from fontshow.unicode_tables import UNICODE_SCRIPT_RANGES
+        from fontshow.ontology.unicode_tables import UNICODE_SCRIPT_RANGES
 
         script_info_scripts = set(SCRIPT_INFO.keys())
         unicode_range_scripts = set(UNICODE_SCRIPT_RANGES.keys())
@@ -177,7 +177,7 @@ class OntologyCheck(BaseCheck):
         return errors
 
     def run(self) -> CheckResult:
-        from fontshow.language_tables import LANGUAGE_INFO, SCRIPT_INFO
+        from fontshow.ontology.language_tables import LANGUAGE_INFO, SCRIPT_INFO
 
         errors: list[str] = []
 

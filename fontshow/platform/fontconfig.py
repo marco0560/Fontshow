@@ -44,8 +44,8 @@ executable must be discoverable in ``PATH``.
 from pathlib import Path
 from typing import Any
 
+from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.inventory.utils import run_command
-from fontshow.logging_utils import log, log_trace_cat
 
 
 def _parse_fc_charset_ranges(raw: str) -> list[str]:

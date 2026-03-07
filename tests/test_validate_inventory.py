@@ -88,7 +88,7 @@ def test_validate_inventory_missing_schema_version_is_fatal():
 
 
 def test_quiet_suppresses_output(capsys):
-    from fontshow.cli_utils import set_cli_mode
+    from fontshow.core.cli_utils import set_cli_mode
 
     set_cli_mode(quiet=True, verbose=False)
 

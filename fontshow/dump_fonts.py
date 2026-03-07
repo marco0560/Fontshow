@@ -23,7 +23,8 @@ from pathlib import Path
 from typing import Any
 
 from fontshow import __version__
-from fontshow.cli_utils import (
+from fontshow.constants.catalog import IS_LINUX
+from fontshow.core.cli_utils import (
     add_common_arguments,
     log_err,
     log_info,
@@ -31,7 +32,8 @@ from fontshow.cli_utils import (
     log_warn,
     set_cli_mode,
 )
-from fontshow.constants.catalog import IS_LINUX
+from fontshow.core.json_format import dumps_pretty
+from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.inventory.font_descriptor import build_font_descriptor
 from fontshow.inventory.fonttools_extraction import (
     FONTTOOLS_AVAILABLE,
@@ -39,17 +41,15 @@ from fontshow.inventory.fonttools_extraction import (
     detect_font_container,
     fonttools_extract_all,
 )
+from fontshow.inventory.platform_metadata import collect_platform_metadata
 from fontshow.inventory.types import FontBuildContext
 from fontshow.inventory.validation import (
     has_style_leak_in_family,
     is_non_opentype_face,
     is_structurally_unloadable_face,
 )
-from fontshow.json_format import dumps_pretty
-from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform.font_discovery import get_installed_font_files
 from fontshow.platform.fontconfig import fc_query_extract_many
-from fontshow.platform_metadata import collect_platform_metadata
 
 
 def build_parser(parser: argparse.ArgumentParser) -> None:

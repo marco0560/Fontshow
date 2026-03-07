@@ -1,5 +1,5 @@
+from fontshow.core.types import Severity
 from fontshow.parse_font_inventory import parse_inventory
-from fontshow.types import Severity
 
 
 def test_parse_inventory_basic_latin_only():

@@ -32,13 +32,13 @@ from fontshow.constants.opentype import (
     NAME_ID_SUBFAMILY,
     NAME_ID_VERSION,
 )
+from fontshow.core.types import Severity, WarningInfo
 from fontshow.inventory.fonttools_extraction import (
     _best_name,
     extract_sample_text,
 )
 from fontshow.inventory.types import FontBuildContext
 from fontshow.inventory.utils import make_font_id
-from fontshow.types import Severity, WarningInfo
 
 
 def classify_font(

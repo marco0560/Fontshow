@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from fontshow.types import ScriptISO
+from fontshow.core.types import ScriptISO
 
 # ------------------------------------------------------------------
 # Unicode block ranges (authoritative ontology)

@@ -1,4 +1,4 @@
-from fontshow.json_format import dumps_pretty
+from fontshow.core.json_format import dumps_pretty
 
 
 def test_dumps_pretty_compacts_short_numeric_lists():

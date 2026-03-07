@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fontshow.unicode_tables import UNICODE_BLOCK_RANGES
+from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
 
 def decode_fc_charset_bitmap(raw: str) -> list[list[int]]:

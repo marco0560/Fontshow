@@ -7,7 +7,7 @@ from fontshow.create_catalog import (
     build_parser,
     run_create_catalog,
 )
-from fontshow.platform_metadata import collect_platform_metadata
+from fontshow.inventory.platform_metadata import collect_platform_metadata
 
 
 def test_only_tex_artifact_created(tmp_path):

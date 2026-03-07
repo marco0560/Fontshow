@@ -6,7 +6,7 @@ from io import StringIO
 from types import SimpleNamespace
 from typing import Any
 
-from fontshow.platform_metadata import collect_platform_metadata
+from fontshow.inventory.platform_metadata import collect_platform_metadata
 from fontshow.preflight.model import CheckResult, Severity
 
 # ============================================================

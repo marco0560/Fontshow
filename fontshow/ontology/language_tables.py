@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from typing import TypedDict
 
-from fontshow.types import ScriptISO
+from fontshow.core.types import ScriptISO
 
 
 class ScriptInfo(TypedDict):

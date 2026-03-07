@@ -27,11 +27,16 @@ final LaTeX output written by the create-catalog pipeline.
 """
 
 from fontshow.catalog.metadata import font_family
-from fontshow.cli_utils import (
+from fontshow.constants.catalog import EXCLUDED_FONTS
+from fontshow.core.cli_utils import (
     log_info,
     log_warn,
 )
-from fontshow.constants.catalog import EXCLUDED_FONTS
+from fontshow.core.types import (
+    CatalogFontEntryV12,
+    InferenceV12,
+    ScriptISO,
+)
 from fontshow.inventory.io import as_font_desc_list
 from fontshow.latex.policy import (
     _collect_polyglossia_other_languages,
@@ -49,12 +54,7 @@ from fontshow.latex.templates import (
     LATEX_END_CODE_2,
     LATEX_INITIAL_CODE,
 )
-from fontshow.types import (
-    CatalogFontEntryV12,
-    InferenceV12,
-    ScriptISO,
-)
-from fontshow.unicode_tables import NON_WRITING_SCRIPTS
+from fontshow.ontology.unicode_tables import NON_WRITING_SCRIPTS
 
 
 def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:

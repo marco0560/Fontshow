@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 
-from fontshow.json_boundary import normalize_loaded_enums
-from fontshow.json_format import dumps_pretty
-from fontshow.types import Severity
+from fontshow.core.json_boundary import normalize_loaded_enums
+from fontshow.core.json_format import dumps_pretty
+from fontshow.core.types import Severity
 
 
 def _build_sample_inventory():

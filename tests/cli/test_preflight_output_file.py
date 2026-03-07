@@ -1,7 +1,7 @@
 from argparse import Namespace
 from pathlib import Path
 
-from fontshow.cli_utils import set_cli_mode
+from fontshow.core.cli_utils import set_cli_mode
 from fontshow.preflight.__main__ import _run_preflight_cli
 from fontshow.preflight.model import CheckResult, PreflightResult, Severity
 

@@ -14,7 +14,7 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import Any
 
-from fontshow.types import Severity
+from fontshow.core.types import Severity
 
 
 def normalize_loaded_enums(data: dict[str, Any]) -> None:

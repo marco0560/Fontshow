@@ -28,8 +28,8 @@ import hashlib
 import subprocess
 from pathlib import Path
 
-from fontshow.cli_utils import log_err
 from fontshow.constants.runtime import SUBPROCESS_TIMEOUT_SECONDS
+from fontshow.core.cli_utils import log_err
 
 
 def run_command(argv: list[str]) -> subprocess.CompletedProcess[str]:

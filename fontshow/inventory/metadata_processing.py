@@ -12,23 +12,23 @@ perform any CLI or orchestration logic themselves.
 
 from typing import Any, cast
 
-from fontshow.cli_utils import log_info
-from fontshow.infer_languages import infer_languages
+from fontshow.core.cli_utils import log_info
+from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import LanguageInferenceInfo, Severity, normalize_script_iso
+from fontshow.core.warnings import add_structured_warning
+from fontshow.inventory.infer_languages import infer_languages
 from fontshow.inventory.script_analysis import (
     infer_scripts,
     script_coverage_from_unicode_blocks,
 )
 from fontshow.inventory.semantic_validation import normalize_languages
-from fontshow.language_tables import LANGUAGE_INFO, SCRIPT_INFO
-from fontshow.logging_utils import log, log_trace_cat
-from fontshow.types import LanguageInferenceInfo, Severity, normalize_script_iso
+from fontshow.ontology.language_tables import LANGUAGE_INFO, SCRIPT_INFO
+from fontshow.ontology.unicode_tables import UNICODE_SCRIPT_RANGES
 from fontshow.unicode.charset_ranges import (
     decode_fc_charset_bitmap,
     normalize_charset_ranges,
     unicode_blocks_from_charset_ranges,
 )
-from fontshow.unicode_tables import UNICODE_SCRIPT_RANGES
-from fontshow.warnings import add_structured_warning
 
 # ============================================================
 # Helper: normalize & process language metadata

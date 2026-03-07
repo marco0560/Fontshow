@@ -16,9 +16,9 @@ from importlib.resources import files
 
 from jsonschema import ValidationError, validate
 
-from fontshow.global_constants import SCHEMA_VERSION
-from fontshow.logging_utils import log, log_trace_cat
-from fontshow.types import Severity
+from fontshow.core.global_constants import SCHEMA_VERSION
+from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import Severity
 
 SUPPORTED_SCHEMA_VERSIONS = {SCHEMA_VERSION}
 

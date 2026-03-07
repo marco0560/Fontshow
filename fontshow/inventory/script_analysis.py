@@ -6,10 +6,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from fontshow.unicode_tables import UNICODE_BLOCK_RANGES
+from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
 if TYPE_CHECKING:
-    from fontshow.types import ScriptISO
+    from fontshow.core.types import ScriptISO
 
 
 def script_coverage_from_unicode_blocks(

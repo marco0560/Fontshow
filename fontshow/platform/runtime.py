@@ -29,7 +29,7 @@ the runtime environment.
 
 import sys
 
-from fontshow.platform_metadata import collect_platform_metadata
+from fontshow.inventory.platform_metadata import collect_platform_metadata
 
 if sys.platform == "win32":
     # modulo specifico Windows

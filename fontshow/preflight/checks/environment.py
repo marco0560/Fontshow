@@ -1,6 +1,6 @@
 # fontshow/preflight/checks/environment.py
 
-from fontshow.logging_utils import log, log_trace_cat
+from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.preflight.checks.base import BaseCheck
 from fontshow.preflight.model import CheckResult, Severity
 

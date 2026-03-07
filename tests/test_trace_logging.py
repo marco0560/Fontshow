@@ -5,9 +5,9 @@ from types import SimpleNamespace
 
 import pytest
 
-import fontshow.logging_utils
+import fontshow.core.logging_utils
 import fontshow.platform.fontconfig as fontconfig
-from fontshow.logging_utils import TRACE_LEVEL_NUM
+from fontshow.core.logging_utils import TRACE_LEVEL_NUM
 
 
 @pytest.mark.parametrize(
@@ -33,7 +33,7 @@ def test_debug_vs_trace_logging(
     # 1. Enable requested log level BEFORE importing consumers
     monkeypatch.setenv("FONTSHOW_LOG_LEVEL", log_level)
 
-    importlib.reload(fontshow.logging_utils)
+    importlib.reload(fontshow.core.logging_utils)
     importlib.reload(fontconfig)
 
     # 2. Fake fc-query execution
@@ -99,7 +99,7 @@ def test_trace_logging_emitted_with_correct_caller(
     # 1. Enable TRACE before importing consumers
     monkeypatch.setenv("FONTSHOW_LOG_LEVEL", "TRACE")
 
-    importlib.reload(fontshow.logging_utils)
+    importlib.reload(fontshow.core.logging_utils)
     importlib.reload(fontconfig)
 
     # 2. Fake fc-query execution

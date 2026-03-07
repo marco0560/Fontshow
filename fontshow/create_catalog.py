@@ -48,15 +48,15 @@ from fontshow.catalog.pipeline import (
     _handle_list_test_fonts,
     _run_inventory_diagnostics,
 )
-from fontshow.cli_utils import (
+from fontshow.constants.runtime import DATE_STR
+from fontshow.core.cli_utils import (
     add_common_arguments,
     log_err,
     log_ok,
     set_cli_mode,
 )
-from fontshow.constants.runtime import DATE_STR
+from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.inventory.io import _load_inventory
-from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform.runtime import IS_WINDOWS
 
 # Platform-specific imports (deferred, typing-safe)

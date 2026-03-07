@@ -13,18 +13,18 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from fontshow.language_tables import (
-    LANGUAGE_INFO,
-    SCRIPT_INFO,
-)
-from fontshow.logging_utils import log, log_trace_cat
-from fontshow.types import (
+from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import (
     Confidence,
     LanguageInferenceInfo,
     ScriptISO,
     normalize_script_iso,
 )
-from fontshow.unicode_tables import UNICODE_BLOCK_SIZES
+from fontshow.ontology.language_tables import (
+    LANGUAGE_INFO,
+    SCRIPT_INFO,
+)
+from fontshow.ontology.unicode_tables import UNICODE_BLOCK_SIZES
 
 # Minimum fraction of a Unicode block that must be covered
 # to infer a language from that block.

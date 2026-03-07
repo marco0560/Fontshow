@@ -2,7 +2,7 @@
 
 from collections.abc import Iterable
 
-from fontshow.types import Severity
+from fontshow.core.types import Severity
 
 from .model import CheckResult, PreflightResult
 

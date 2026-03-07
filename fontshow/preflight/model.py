@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from fontshow.types import Severity
+from fontshow.core.types import Severity
 
 
 @dataclass(frozen=True)

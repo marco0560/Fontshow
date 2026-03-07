@@ -22,28 +22,28 @@ from pathlib import Path
 from typing import Any
 
 from fontshow import __version__
-from fontshow.cli_utils import (
+from fontshow.core.cli_utils import (
     add_common_arguments,
     log_err,
     log_info,
     log_ok,
     set_cli_mode,
 )
+from fontshow.core.global_constants import SCHEMA_VERSION
+from fontshow.core.json_boundary import normalize_loaded_enums
+from fontshow.core.json_format import dumps_pretty
+from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.diagnostics.inventory_warnings import _emit_verbose_warnings
-from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.inventory.io import _validate_fonts_container
 from fontshow.inventory.metadata_processing import (
     _infer_and_attach_metadata,
     _process_charset,
     _process_language_metadata,
 )
+from fontshow.inventory.platform_metadata import collect_platform_metadata
+from fontshow.inventory.schema_validation import _validate_inventory_schema_strict
 from fontshow.inventory.specimens import _specimen_generate_for_font
 from fontshow.inventory.validation import _apply_schema_validation, validate_inventory
-from fontshow.json_boundary import normalize_loaded_enums
-from fontshow.json_format import dumps_pretty
-from fontshow.logging_utils import log, log_trace_cat
-from fontshow.platform_metadata import collect_platform_metadata
-from fontshow.schema_validation import _validate_inventory_schema_strict
 
 # ============================================================
 # REFACTORED MAIN FUNCTION

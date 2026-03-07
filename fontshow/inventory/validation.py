@@ -28,21 +28,21 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from fontshow.cli_utils import (
+from fontshow.core.cli_utils import (
     log_err,
     log_info,
     log_ok,
     log_warn,
 )
+from fontshow.core.logging_utils import log
+from fontshow.core.types import Severity
+from fontshow.core.warnings import add_structured_warning
 from fontshow.diagnostics.inventory_warnings import (
     _format_font_identity,
     _get_font_path_for_diagnostics,
 )
 from fontshow.inventory.entry_validation import validate_font_entry
-from fontshow.logging_utils import log
-from fontshow.schema_validation import validate_inventory_schema
-from fontshow.types import Severity
-from fontshow.warnings import add_structured_warning
+from fontshow.inventory.schema_validation import validate_inventory_schema
 
 
 def validate_inventory(

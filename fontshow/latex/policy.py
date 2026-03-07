@@ -27,8 +27,8 @@ generation pipeline.
 
 import hashlib
 
-from fontshow.language_tables import SCRIPT_INFO
-from fontshow.types import CatalogFontEntryV12, ScriptISO
+from fontshow.core.types import CatalogFontEntryV12, ScriptISO
+from fontshow.ontology.language_tables import SCRIPT_INFO
 
 
 def _format_script_display(script_iso: str) -> str:

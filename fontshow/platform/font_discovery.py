@@ -35,8 +35,8 @@ import sys
 from pathlib import Path
 
 from fontshow.constants.catalog import IS_LINUX, IS_WINDOWS
+from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.inventory.utils import run_command
-from fontshow.logging_utils import log, log_trace_cat
 
 
 def get_installed_font_files() -> list[Path]:

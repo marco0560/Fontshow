@@ -1,6 +1,6 @@
 import pytest
 
-from fontshow.schema_validation import (
+from fontshow.inventory.schema_validation import (
     _validate_inventory_schema_strict,
     validate_inventory_schema,
 )
@@ -49,7 +49,7 @@ def test_strict_validation_missing_schema_file(monkeypatch):
             raise FileNotFoundError
 
     monkeypatch.setattr(
-        "fontshow.schema_validation.files",
+        "fontshow.inventory.schema_validation.files",
         lambda *_: FakeSchemaPath(),
     )
 

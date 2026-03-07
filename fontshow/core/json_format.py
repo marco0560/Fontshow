@@ -18,8 +18,8 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any
 
-from fontshow.logging_utils import log, log_trace_cat
-from fontshow.types import Severity
+from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import Severity
 
 
 class _PrettyJSONWriter:

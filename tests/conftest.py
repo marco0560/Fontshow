@@ -38,9 +38,9 @@ def ensure_fontshow_import_is_clean():
 @pytest.fixture
 def enable_fontshow_logging(monkeypatch):
     monkeypatch.setenv("FONTSHOW_LOG_LEVEL", "DEBUG")
-    import fontshow.logging_utils
+    import fontshow.core.logging_utils
 
-    importlib.reload(fontshow.logging_utils)
+    importlib.reload(fontshow.core.logging_utils)
 
 
 @pytest.fixture
@@ -63,7 +63,7 @@ def silence_root_logger():
 def capture_fontshow_logs(caplog):
     logger = logging.getLogger("fontshow")
 
-    # 🔴 fondamentale
+    # 🔴 mandatory
     old_propagate = logger.propagate
     logger.propagate = True
 
@@ -225,6 +225,6 @@ def stub_create_catalog(monkeypatch, request):
 
 @pytest.fixture(autouse=True)
 def _reset_cli_state():
-    from fontshow.cli_utils import set_cli_mode
+    from fontshow.core.cli_utils import set_cli_mode
 
     set_cli_mode(False, False)

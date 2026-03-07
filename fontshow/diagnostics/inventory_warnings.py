@@ -15,14 +15,14 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-from fontshow.cli_utils import (
+from fontshow.core.cli_utils import (
     log_info,
     log_warn,
 )
-from fontshow.types import FontRef, Severity
+from fontshow.core.types import FontRef, Severity
 
 if TYPE_CHECKING:
-    from fontshow.warnings import WarningInfo
+    from fontshow.core.warnings import WarningInfo
 
 
 def _format_font_identity(font: dict, index: int) -> str:

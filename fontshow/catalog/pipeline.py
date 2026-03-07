@@ -24,11 +24,11 @@ pipeline utilities used during catalog generation.
 """
 
 from fontshow.catalog.metadata import font_family
-from fontshow.cli_utils import log_info, log_warn
 from fontshow.constants.catalog import DEFAULT_TEST_FONTS
+from fontshow.core.cli_utils import log_info, log_warn
+from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import CatalogFontEntryV12
 from fontshow.inventory.io import as_font_desc_list, group_fonts_by_family
-from fontshow.logging_utils import log, log_trace_cat
-from fontshow.types import CatalogFontEntryV12
 
 # ------------------------------------------------------------------
 # TEST FONT CONFIGURATION

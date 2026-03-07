@@ -1,4 +1,4 @@
-from fontshow.infer_languages import infer_languages
+from fontshow.inventory.infer_languages import infer_languages
 
 
 def test_infer_languages_latn():

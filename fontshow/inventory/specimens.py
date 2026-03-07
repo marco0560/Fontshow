@@ -53,10 +53,10 @@ from typing import Any, cast
 from fontTools.ttLib import TTFont, TTLibError
 
 from fontshow.common.specimens import choose_language_sample
-from fontshow.language_tables import SCRIPT_INFO
-from fontshow.logging_utils import log, log_trace_cat
-from fontshow.types import ScriptISO, Severity, normalize_script_iso
-from fontshow.warnings import add_structured_warning
+from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import ScriptISO, Severity, normalize_script_iso
+from fontshow.core.warnings import add_structured_warning
+from fontshow.ontology.language_tables import SCRIPT_INFO
 
 # ============================================================
 # Specimen Engine — Deterministic (Issue #54)

@@ -28,10 +28,10 @@ from pathlib import Path
 from jsonschema.exceptions import ValidationError
 
 from fontshow import __version__
+from fontshow.core.json_boundary import normalize_loaded_enums
+from fontshow.core.types import Severity
+from fontshow.inventory.schema_validation import validate_inventory_schema
 from fontshow.inventory.semantic_validation import validate_language_codes
-from fontshow.json_boundary import normalize_loaded_enums
-from fontshow.schema_validation import validate_inventory_schema
-from fontshow.types import Severity
 
 # ------------------------------------------------------------
 # Centralized CLI presentation state

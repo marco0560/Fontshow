@@ -44,10 +44,10 @@ from typing import TYPE_CHECKING, Any
 from fontTools.ttLib import TTCollection, TTFont, TTLibError
 
 from fontshow.constants.opentype import NAME_ID_SAMPLE_TEXT
+from fontshow.core.json_format import dumps_pretty
+from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.inventory.utils import font_cache_key
-from fontshow.json_format import dumps_pretty
-from fontshow.logging_utils import log, log_trace_cat
-from fontshow.unicode_tables import UNICODE_BLOCK_RANGES
+from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
 # ------------------------------------------------------------
 # Optional fontTools dependency

@@ -17,8 +17,8 @@ from typing import Any
 
 import pycountry
 
-from fontshow.logging_utils import log, log_trace_cat
-from fontshow.types import (
+from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import (
     DeprecatedLanguageInfo,
     DroppedLanguageInfo,
     NormalizeLanguagesResult,
