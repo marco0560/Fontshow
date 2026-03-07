@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import platform
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -41,6 +40,11 @@ from fontshow.inventory.fonttools_extraction import (
     fonttools_extract_all,
 )
 from fontshow.inventory.types import FontBuildContext
+from fontshow.inventory.validation import (
+    has_style_leak_in_family,
+    is_non_opentype_face,
+    is_structurally_unloadable_face,
+)
 from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform.font_discovery import get_installed_font_files
@@ -107,65 +111,6 @@ def register_cli(parser) -> None:
     """
     build_parser(parser)
     parser.set_defaults(func=main)
-
-
-def is_non_opentype_face(face: dict) -> bool:
-    """
-    Canonical detection of non-OpenType / bitmap faces.
-
-    Preserves EXACT previous behaviour:
-    only detects faces rejected by fontTools with the
-    specific 'Not a TrueType or OpenType font' error.
-    """
-    if face.get("ok") is False:
-        err = face.get("error") or ""
-        return "Not a TrueType or OpenType font" in err
-    return False
-
-
-def is_structurally_unloadable_face(face: dict) -> bool:
-    """
-    Detect faces that are structurally missing mandatory OpenType tables.
-
-    Deterministic, fontTools-derived check (no LaTeX, no luaotfload-tool).
-    Conservative: only flags faces that claim ok=True but have missing tables.
-    """
-    if face.get("ok") is not True:
-        return False
-
-    tables = face.get("tables")
-    if not isinstance(tables, list):
-        return False
-
-    table_set = set(tables)
-
-    required = {"cmap", "head", "hhea", "hmtx", "maxp", "name", "post"}
-    if not required.issubset(table_set):
-        return True
-
-    # Must have a glyph table: TrueType glyf or CFF/CFF2.
-    return (
-        ("glyf" not in table_set)
-        and ("CFF " not in table_set)
-        and ("CFF2" not in table_set)
-    )
-
-
-_STYLE_LEAK_RE = re.compile(
-    r"\b("
-    r"bold|italic|oblique|light|regular|medium|"
-    r"semibold|extrabold|black|thin|"
-    r"condensed|narrow|extended"
-    r")\b",
-    re.IGNORECASE,
-)
-
-
-def has_style_leak_in_family(desc: dict) -> bool:
-    fam = desc.get("identity", {}).get("family", "")
-    if not isinstance(fam, str):
-        return False
-    return bool(_STYLE_LEAK_RE.search(fam))
 
 
 def run_dump_fonts(args) -> int:
