@@ -1,4 +1,4 @@
-from fontshow.dump_fonts import make_font_id
+from fontshow.inventory.utils import make_font_id
 
 
 def test_font_identity_id_stable():
