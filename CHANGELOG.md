@@ -4,6 +4,12 @@
 
 * **core:** baseline after architecture refactor ([94c4f74](https://github.com/marco0560/Fontshow/commit/94c4f7433b83229c7ae8c80432a65b4f937d7ba3))
 
+## [0.50.2](https://github.com/marco0560/Fontshow/compare/v0.50.1...v0.50.2) (2026-03-07)
+
+### Bug Fixes
+
+* **core:** baseline after architecture refactor ([94c4f74](https://github.com/marco0560/Fontshow/commit/94c4f7433b83229c7ae8c80432a65b4f937d7ba3))
+
 ## [0.41.0](https://github.com/marco0560/Fontshow/compare/v0.40.2...v0.41.0) (2026-03-07)
 
 ### Features
