@@ -31,7 +31,6 @@ final LaTeX catalog.
 from __future__ import annotations
 
 import json
-import logging
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, cast
 
@@ -40,7 +39,7 @@ from fontshow.cli_utils import log_err, log_ok
 from fontshow.global_constants import SCHEMA_VERSION
 from fontshow.inventory.semantic_validation import enforce_semantic_validation
 from fontshow.json_boundary import normalize_loaded_enums
-from fontshow.logging_utils import log_trace_cat
+from fontshow.logging_utils import log, log_trace_cat
 from fontshow.platform.runtime import _enforce_platform
 from fontshow.types import Severity
 
@@ -49,9 +48,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from fontshow.types import CatalogFontEntryV12
-
-
-log = logging.getLogger("fontshow")
 
 
 # ============================================================

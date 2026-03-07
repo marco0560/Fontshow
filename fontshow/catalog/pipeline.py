@@ -23,16 +23,12 @@ This module belongs to the catalog domain layer and provides internal
 pipeline utilities used during catalog generation.
 """
 
-import logging
-
 from fontshow.catalog.metadata import font_family
 from fontshow.cli_utils import log_info, log_warn
 from fontshow.constants.catalog import DEFAULT_TEST_FONTS
 from fontshow.inventory.io import as_font_desc_list, group_fonts_by_family
-from fontshow.logging_utils import log_trace_cat
+from fontshow.logging_utils import log, log_trace_cat
 from fontshow.types import CatalogFontEntryV12
-
-log = logging.getLogger("fontshow")
 
 # ------------------------------------------------------------------
 # TEST FONT CONFIGURATION

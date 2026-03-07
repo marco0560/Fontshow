@@ -25,7 +25,6 @@ all validation rules.
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from fontshow.cli_utils import (
@@ -39,14 +38,10 @@ from fontshow.diagnostics.inventory_warnings import (
     _get_font_path_for_diagnostics,
 )
 from fontshow.inventory.entry_validation import validate_font_entry
+from fontshow.logging_utils import log
 from fontshow.schema_validation import validate_inventory_schema
 from fontshow.types import Severity
 from fontshow.warnings import add_structured_warning
-
-# ============================================================
-# Set up logger
-# ============================================================
-logger = logging.getLogger("fontshow")
 
 
 def validate_inventory(
@@ -162,15 +157,15 @@ def validate_inventory(
 def _apply_schema_validation(data: dict[str, Any]) -> None:
     """Validate schema and inject structured warnings into inventory."""
 
-    logger.info(
+    log.info(
         "inventory schema validation requested",
         extra={"schema_version": data.get("schema_version")},
     )
-    logger.debug("inventory schema validation started")
+    log.debug("inventory schema validation started")
 
     schema_warnings = validate_inventory_schema(data)
 
-    logger.info(
+    log.info(
         "inventory schema validation completed",
         extra={
             "schema_version": data.get("schema_version"),
@@ -184,7 +179,7 @@ def _apply_schema_validation(data: dict[str, Any]) -> None:
             sev = w.get("severity", Severity.WARN)
             severity_counts[sev] = severity_counts.get(sev, 0) + 1
 
-        logger.debug(
+        log.debug(
             "inventory schema validation produced warnings",
             extra={
                 "schema_version": data.get("schema_version"),

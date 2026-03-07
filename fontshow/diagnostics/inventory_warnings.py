@@ -11,7 +11,6 @@ CLI handling. They are called from the parse_inventory pipeline.
 
 from __future__ import annotations
 
-import logging
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -24,8 +23,6 @@ from fontshow.types import FontRef, Severity
 
 if TYPE_CHECKING:
     from fontshow.warnings import WarningInfo
-
-logger = logging.getLogger(__name__)
 
 
 def _format_font_identity(font: dict, index: int) -> str:

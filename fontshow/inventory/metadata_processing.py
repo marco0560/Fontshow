@@ -10,7 +10,6 @@ The functions here are called by the parse_inventory pipeline but do not
 perform any CLI or orchestration logic themselves.
 """
 
-import logging
 from typing import Any, cast
 
 from fontshow.cli_utils import log_info
@@ -30,9 +29,6 @@ from fontshow.unicode.charset_ranges import (
 )
 from fontshow.unicode_tables import UNICODE_SCRIPT_RANGES
 from fontshow.warnings import add_structured_warning
-
-logger = logging.getLogger("fontshow")
-
 
 # ============================================================
 # Helper: normalize & process language metadata
@@ -213,7 +209,7 @@ def _process_charset(
                 ranges = decode_fc_charset_bitmap(raw)
                 charset["ranges"] = ranges
 
-                logger.debug(
+                log.debug(
                     "fontconfig charset bitmap decoded",
                     extra={"font_path": font_path, "ranges_count": len(ranges)},
                 )
@@ -252,7 +248,7 @@ def _process_charset(
         },
     )
 
-    logger.debug(
+    log.debug(
         "charset normalized",
         extra={
             "font_path": font_path,
@@ -273,7 +269,7 @@ def _process_charset(
                 "blocks_count": len(blocks),
             },
         )
-        logger.debug(
+        log.debug(
             "unicode blocks derived from charset",
             extra={"font_path": font_path, "blocks_count": len(blocks)},
         )
@@ -298,7 +294,7 @@ def _process_charset(
                 "scripts_count": len(script_cov),
             },
         )
-        logger.debug(
+        log.debug(
             "script coverage derived from charset",
             extra={"font_path": font_path, "scripts_count": len(script_cov)},
         )
@@ -485,7 +481,7 @@ def _infer_and_attach_metadata(
         },
     )
 
-    logger.debug(
+    log.debug(
         "font entry parsing completed",
         extra={
             "font_path": font_path,

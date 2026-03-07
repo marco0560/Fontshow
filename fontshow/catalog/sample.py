@@ -29,7 +29,6 @@ so that the same font always produces the same representative sample
 in the catalog.
 """
 
-import logging
 from typing import cast
 
 from fontshow.catalog.labels import primary_script
@@ -38,10 +37,8 @@ from fontshow.common.specimens import choose_language_sample
 from fontshow.language_tables import SCRIPT_INFO
 from fontshow.latex.policy import nfss_family_id
 from fontshow.latex.render import _renderer_option_prefix, escape_latex
-from fontshow.logging_utils import log_trace_cat
+from fontshow.logging_utils import log, log_trace_cat
 from fontshow.types import FontRef, InferenceInfo, ScriptISO
-
-log = logging.getLogger("fontshow")
 
 
 def choose_sample_language(font: dict) -> str | None:

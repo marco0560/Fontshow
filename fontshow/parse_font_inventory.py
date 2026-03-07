@@ -17,7 +17,6 @@ Default inference level: ``medium``.
 
 import argparse
 import json
-import logging
 import sys
 from pathlib import Path
 from typing import Any
@@ -47,12 +46,6 @@ from fontshow.platform_metadata import collect_platform_metadata
 from fontshow.schema_validation import _validate_inventory_schema_strict
 
 # ============================================================
-# Set up logger
-# ============================================================
-logger = logging.getLogger("fontshow")
-
-
-# ============================================================
 # REFACTORED MAIN FUNCTION
 # ============================================================
 
@@ -74,7 +67,7 @@ def parse_inventory(
 
     _apply_schema_validation(data)
 
-    logger.info(
+    log.info(
         "font inventory parsing started",
         extra={
             "schema_version": data.get("schema_version"),
@@ -88,7 +81,7 @@ def parse_inventory(
         family = identity.get("family")
         style = identity.get("style")
 
-        logger.debug(
+        log.debug(
             "font entry parsing started",
             extra={"font_path": font_path, "family": family, "style": style},
         )
@@ -118,7 +111,7 @@ def parse_inventory(
     metadata.setdefault("input_inventory_tool", "parse_font_inventory")
     metadata.setdefault("input_inventory_tool_version", __version__)
 
-    logger.info(
+    log.info(
         "font inventory parsing completed",
         extra={"fonts_processed": len(data.get("fonts", []))},
     )
@@ -243,7 +236,7 @@ def run_parse_font_inventory(
         log_err("Hint: run dump_fonts.py first to generate the inventory.")
         return 1
 
-    logger.debug("inference level enabled", extra={"infer_level": args.infer_level})
+    log.debug("inference level enabled", extra={"infer_level": args.infer_level})
 
     data: dict[str, Any] = json.loads(read_text_fn(input_path))
     normalize_loaded_enums(data)
