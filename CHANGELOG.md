@@ -1,3 +1,9 @@
+## [0.50.4](https://github.com/marco0560/Fontshow/compare/v0.50.3...v0.50.4) (2026-03-07)
+
+### Bug Fixes
+
+* **release:** allow audit really :-) bypass during semantic-release ([b14f934](https://github.com/marco0560/Fontshow/commit/b14f934eaf23e70d306a8ad5dd17905c67de72f4))
+
 ## [0.50.3](https://github.com/marco0560/Fontshow/compare/v0.50.2...v0.50.3) (2026-03-07)
 
 ### Bug Fixes
