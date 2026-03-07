@@ -40,10 +40,10 @@ def test_normalize_charset_empty():
 def test_parse_inventory_adds_normalized_charset(enable_fontshow_logging):
     import importlib
 
-    import fontshow.parse_font_inventory
+    import fontshow.cli.parse_inventory
     from tests.helpers import minimal_font_entry_v12, minimal_inventory_v12
 
-    importlib.reload(fontshow.parse_font_inventory)
+    importlib.reload(fontshow.cli.parse_inventory)
 
     inventory = minimal_inventory_v12()
     font = minimal_font_entry_v12()
@@ -55,7 +55,7 @@ def test_parse_inventory_adds_normalized_charset(enable_fontshow_logging):
 
     inventory["fonts"] = [font]
 
-    fontshow.parse_font_inventory.parse_inventory(inventory, level="medium")
+    fontshow.cli.parse_inventory.parse_inventory(inventory, level="medium")
 
     cov = inventory["fonts"][0]["coverage"]
     assert "normalized_charset" in cov
@@ -72,9 +72,9 @@ def test_unicode_blocks_from_charset_basic_latin():
 def test_parse_inventory_adds_unicode_blocks_from_charset(enable_fontshow_logging):
     import importlib
 
-    import fontshow.parse_font_inventory
+    import fontshow.cli.parse_inventory
 
-    importlib.reload(fontshow.parse_font_inventory)
+    importlib.reload(fontshow.cli.parse_inventory)
 
     from tests.helpers import minimal_font_entry_v12, minimal_inventory_v12
 
@@ -87,7 +87,7 @@ def test_parse_inventory_adds_unicode_blocks_from_charset(enable_fontshow_loggin
     }
 
     inventory["fonts"] = [font]
-    fontshow.parse_font_inventory.parse_inventory(inventory, level="medium")
+    fontshow.cli.parse_inventory.parse_inventory(inventory, level="medium")
 
     cov = inventory["fonts"][0]["coverage"]
     assert "unicode_blocks_from_charset" in cov

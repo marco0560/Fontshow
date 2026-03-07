@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from fontshow.create_catalog import build_parser, run_create_catalog
+from fontshow.cli.create_catalog import build_parser, run_create_catalog
 
 
 def _run(tmp_path, inventory):

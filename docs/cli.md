@@ -142,7 +142,7 @@ Commands can also be executed directly as Python modules, for example:
 
 ```bash
 python -m fontshow.preflight
-python -m fontshow.dump_fonts --help
+python -m fontshow.cli.dump_fonts --help
 ```
 
 This execution mode:

@@ -14,7 +14,12 @@ from typing import Any, cast
 
 from fontshow.core.cli_utils import log_info
 from fontshow.core.logging_utils import log, log_trace_cat
-from fontshow.core.types import LanguageInferenceInfo, Severity, normalize_script_iso
+from fontshow.core.types import (
+    CatalogFontEntryV12,
+    LanguageInferenceInfo,
+    Severity,
+    normalize_script_iso,
+)
 from fontshow.core.warnings import add_structured_warning
 from fontshow.inventory.infer_languages import infer_languages
 from fontshow.inventory.script_analysis import (
@@ -532,3 +537,22 @@ def _language_base_tag(raw: Any) -> str:
         value = value.split("_", 1)[0]
 
     return value
+
+
+def font_family(font: CatalogFontEntryV12 | dict[str, object]) -> str:
+    """
+    Return a best-effort font family name for rendering and sorting.
+
+    Parameters
+    ----------
+    font : dict[str, object]
+        Schema 1.2 font descriptor dictionary.
+
+    Returns
+    -------
+    str
+        Resolved family name if available, otherwise "Unknown Font".
+    """
+    fam = font.get("family") or font.get("postscript_name") or font.get("full_name")
+
+    return fam if isinstance(fam, str) and fam else "Unknown Font"

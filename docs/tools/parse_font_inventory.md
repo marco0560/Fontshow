@@ -269,4 +269,4 @@ Semantic validation is deferred to later pipeline stages
 
 ## API reference
 
-::: fontshow.parse_font_inventory
+::: fontshow.cli.parse_inventory

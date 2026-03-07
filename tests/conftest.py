@@ -167,7 +167,7 @@ def stub_dump_fonts(monkeypatch, request):
 def stub_parse_inventory(monkeypatch, request):
     import copy
 
-    import fontshow.parse_font_inventory as mod
+    import fontshow.cli.parse_inventory as mod
 
     mode = request.param
 

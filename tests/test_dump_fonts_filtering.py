@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from fontshow.dump_fonts import run_dump_fonts
+from fontshow.cli.dump_fonts import run_dump_fonts
 
 
 def test_dump_fonts_excludes_non_opentype(tmp_path, monkeypatch):
@@ -17,7 +17,7 @@ def test_dump_fonts_excludes_non_opentype(tmp_path, monkeypatch):
     ]
 
     monkeypatch.setattr(
-        "fontshow.dump_fonts.get_installed_font_files",
+        "fontshow.cli.dump_fonts.get_installed_font_files",
         lambda: fake_fonts,
     )
 
@@ -40,7 +40,7 @@ def test_dump_fonts_excludes_non_opentype(tmp_path, monkeypatch):
         ]
 
     monkeypatch.setattr(
-        "fontshow.dump_fonts.fonttools_extract_all",
+        "fontshow.cli.dump_fonts.fonttools_extract_all",
         fake_fonttools_extract_all,
     )
 
@@ -84,7 +84,7 @@ def test_parse_inventory_after_dump(tmp_path, monkeypatch):
     ]
 
     monkeypatch.setattr(
-        "fontshow.dump_fonts.get_installed_font_files",
+        "fontshow.cli.dump_fonts.get_installed_font_files",
         lambda: fake_fonts,
     )
 
@@ -107,7 +107,7 @@ def test_parse_inventory_after_dump(tmp_path, monkeypatch):
         ]
 
     monkeypatch.setattr(
-        "fontshow.dump_fonts.fonttools_extract_all",
+        "fontshow.cli.dump_fonts.fonttools_extract_all",
         fake_fonttools_extract_all,
     )
 
@@ -127,7 +127,7 @@ def test_parse_inventory_after_dump(tmp_path, monkeypatch):
     assert inventory.exists()
 
     # --- Run parse-inventory in-process ---
-    from fontshow.parse_font_inventory import run_parse_font_inventory
+    from fontshow.cli.parse_inventory import run_parse_font_inventory
 
     output = tmp_path / "fonts_enriched.json"
 

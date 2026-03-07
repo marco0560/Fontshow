@@ -68,4 +68,4 @@ This mode does not affect:
 
 ## API reference
 
-::: fontshow.create_catalog
+::: fontshow.cli.create_catalog

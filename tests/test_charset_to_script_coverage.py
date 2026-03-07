@@ -21,9 +21,9 @@ def test_script_coverage_basic_latin_only():
 def test_parse_inventory_adds_script_coverage_from_charset(enable_fontshow_logging):
     import importlib
 
-    import fontshow.parse_font_inventory
+    import fontshow.cli.parse_inventory
 
-    importlib.reload(fontshow.parse_font_inventory)
+    importlib.reload(fontshow.cli.parse_inventory)
 
     from tests.helpers import minimal_font_entry_v12, minimal_inventory_v12
 
@@ -37,7 +37,7 @@ def test_parse_inventory_adds_script_coverage_from_charset(enable_fontshow_loggi
 
     inventory["fonts"] = [font]
 
-    fontshow.parse_font_inventory.parse_inventory(inventory, level="medium")
+    fontshow.cli.parse_inventory.parse_inventory(inventory, level="medium")
 
     cov = inventory["fonts"][0]["coverage"]
     assert "script_coverage_from_charset" in cov

@@ -6,10 +6,13 @@ from typing import Any
 from fontshow.core.cli_utils import log_err
 
 try:
-    import fontshow.create_catalog
-    import fontshow.dump_fonts
-    import fontshow.parse_font_inventory
     import fontshow.preflight
+    from fontshow.cli import (
+        create_catalog,
+        dump_fonts,
+        parse_inventory,
+        validate_inventory,
+    )
     from fontshow.core.logging_utils import log, log_trace_cat
 except ModuleNotFoundError as e:
     missing = e.name or "<unknown>"
@@ -24,7 +27,7 @@ def dispatch_command(args: argparse.Namespace) -> int:
     Dispatch a parsed CLI command.
 
     The function invokes the command handler stored in `args.func`,
-    captures its return value, and converts it into a deterministic
+    captures its return value, and converts it into a deterministicwait, this module is called in p
     process exit code. TRACE "flow" events are emitted for start,
     completion, and crash conditions.
 
@@ -111,6 +114,7 @@ def main() -> int:
             "  fontshow preflight\n"
             "  fontshow dump-fonts\n"
             "  fontshow parse-inventory\n"
+            "  fontshow validate-inventory\n"
             "  fontshow create-catalog"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -147,7 +151,7 @@ def main() -> int:
         "dump-fonts",
         help="Extract raw font inventory",
     )
-    fontshow.dump_fonts.register_cli(dump_parser)
+    dump_fonts.register_cli(dump_parser)
 
     # ------------------------------------------------------------------
     # parse-inventory
@@ -155,7 +159,17 @@ def main() -> int:
         "parse-inventory",
         help="Enrich and validate a font inventory",
     )
-    fontshow.parse_font_inventory.register_cli(parse_parser)
+    parse_inventory.register_cli(parse_parser)
+
+    # ------------------------------------------------------------------
+    # validate-inventory
+    validate_parser = subparsers.add_parser(
+        "validate-inventory",
+        help="Validate a Fontshow inventory file against the JSON schema",
+    )
+    validate_inventory.build_parser(validate_parser)
+    validate_parser.set_defaults(func=validate_inventory.run)
+    # ------------------------------------------------------------------
 
     # ------------------------------------------------------------------
     # create-catalog
@@ -163,7 +177,7 @@ def main() -> int:
         "create-catalog",
         help="Generate output artifacts from an inventory",
     )
-    fontshow.create_catalog.register_cli(catalog_parser)
+    create_catalog.register_cli(catalog_parser)
     # ------------------------------------------------------------------
 
     args = parser.parse_args()

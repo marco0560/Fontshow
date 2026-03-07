@@ -32,10 +32,10 @@ in the catalog.
 from typing import cast
 
 from fontshow.catalog.labels import primary_script
-from fontshow.catalog.metadata import font_family
 from fontshow.common.specimens import choose_language_sample
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.core.types import FontRef, InferenceInfo, ScriptISO
+from fontshow.inventory.metadata_processing import font_family
 from fontshow.latex.policy import nfss_family_id
 from fontshow.latex.render import _renderer_option_prefix, escape_latex
 from fontshow.ontology.language_tables import SCRIPT_INFO

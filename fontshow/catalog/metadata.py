@@ -26,27 +26,6 @@ and document rendering (`catalog.document`).
 
 import re
 
-from fontshow.core.types import CatalogFontEntryV12
-
-
-def font_family(font: CatalogFontEntryV12 | dict[str, object]) -> str:
-    """
-    Return a best-effort font family name for rendering and sorting.
-
-    Parameters
-    ----------
-    font : dict[str, object]
-        Schema 1.2 font descriptor dictionary.
-
-    Returns
-    -------
-    str
-        Resolved family name if available, otherwise "Unknown Font".
-    """
-    fam = font.get("family") or font.get("postscript_name") or font.get("full_name")
-
-    return fam if isinstance(fam, str) and fam else "Unknown Font"
-
 
 def clean_font_name(name: str) -> str:
     """

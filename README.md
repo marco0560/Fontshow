@@ -78,7 +78,7 @@ For a detailed rationale, see `decisions.md`.
 Commands can also be executed directly via Python, for example:
 
 ```bash
-python -m fontshow.dump_fonts --help
+python -m fontshow.cli.dump_fonts --help
 ```
 
 This mode is supported primarily for development and debugging.
@@ -189,9 +189,9 @@ Direct module execution via `python -m` is supported primarily for development
 and debugging:
 
 ```bash
-python -m fontshow.dump_fonts --help
-python -m fontshow.parse_font_inventory --help
-python -m fontshow.create_catalog --help
+python -m fontshow.cli.dump_fonts --help
+python -m fontshow.cli.parse_inventory --help
+python -m fontshow.cli.create_catalog --help
 ```
 
 The authoritative, user-facing interface is always `fontshow <command>`.
@@ -207,7 +207,7 @@ The authoritative, user-facing interface is always `fontshow <command>`.
 Generate a JSON inventory of installed fonts:
 
 ```bash
-python -m fontshow.dump_fonts \
+python -m fontshow.cli.dump_fonts \
   --output font_inventory.json
 ```
 <!-- cheatsheet:end -->
@@ -226,7 +226,7 @@ This command produces a versioned inventory including:
 Normalize and enrich a previously generated inventory:
 
 ```bash
-python -m fontshow.parse_font_inventory \
+python -m fontshow.cli.parse_inventory \
   --output font_inventory_enriched.json
 ```
 <!-- cheatsheet:end -->
@@ -235,7 +235,7 @@ python -m fontshow.parse_font_inventory \
 An optional soft validation of the inventory structure can be performed with:
 
 ```bash
-python -m fontshow.parse_font_inventory \
+python -m fontshow.cli.parse_inventory \
   --validate-inventory
 ```
 <!-- cheatsheet:end -->
@@ -248,7 +248,7 @@ python -m fontshow.parse_font_inventory \
 Generate a LaTeX catalog from a parsed inventory:
 
 ```bash
-python -m fontshow.create_catalog
+python -m fontshow.cli.create_catalog
 ```
 <!-- cheatsheet:end -->
 

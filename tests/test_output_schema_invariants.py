@@ -1,8 +1,8 @@
 import json
 
+from fontshow.cli.parse_inventory import parse_inventory
 from fontshow.core.json_format import dumps_pretty
 from fontshow.inventory.schema_validation import validate_inventory_schema
-from fontshow.parse_font_inventory import parse_inventory
 
 # ---------------------------------------------------------------------------
 # Minimal valid v1.2 inventory

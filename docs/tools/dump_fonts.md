@@ -25,7 +25,7 @@ declared Unicode charset information and include it in the generated
 inventory.
 
 ```bash
-python -m fontshow.dump_fonts --include-fc-charset
+python -m fontshow.cli.dump_fonts --include-fc-charset
 ```
 
 The resulting data is stored in the optional `charset` field of each
@@ -68,4 +68,4 @@ This separation ensures that:
 
 ## API reference
 
-::: fontshow.dump_fonts
+::: fontshow.cli.dump_fonts

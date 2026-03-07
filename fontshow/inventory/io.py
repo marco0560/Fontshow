@@ -34,12 +34,12 @@ import json
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, cast
 
-from fontshow.catalog.metadata import font_family
 from fontshow.core.cli_utils import log_err, log_ok
 from fontshow.core.global_constants import SCHEMA_VERSION
 from fontshow.core.json_boundary import normalize_loaded_enums
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.core.types import Severity
+from fontshow.inventory.metadata_processing import font_family
 from fontshow.inventory.semantic_validation import enforce_semantic_validation
 from fontshow.platform.runtime import _enforce_platform
 

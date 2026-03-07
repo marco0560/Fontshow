@@ -314,11 +314,11 @@ If judgment is required at any point, state so and stop.
 
     - preflight → fontshow.preflight → `tests/cli/test_preflight_cli.py`, `tests/preflight/test_render.py` → docs/tools/preflight.md. Files: `fontshow/__main__.py` L69-L77, `tests/cli/test_preflight_cli.py` L7-L101, `tests/preflight/test_render.py` L1-L27, docs/tools/preflight.md L1-L70.
 
-    - dump-fonts → fontshow.dump_fonts → tests/cli/test_dump-fonts.py, tests/test_dump_fonts_filtering.py → docs/tools/dump_fonts.md. Files: `fontshow/__main__.py` L79-L85, tests/cli/test_dump-fonts.py L1-L21, `tests/test_dump_fonts_filtering.py` L1-L104, docs/tools/dump_fonts.md L1-L61.
+    - dump-fonts → fontshow.cli.dump_fonts → tests/cli/test_dump-fonts.py, tests/test_dump_fonts_filtering.py → docs/tools/dump_fonts.md. Files: `fontshow/__main__.py` L79-L85, tests/cli/test_dump-fonts.py L1-L21, `tests/test_dump_fonts_filtering.py` L1-L104, docs/tools/dump_fonts.md L1-L61.
 
-    - parse-inventory → `fontshow.parse_font_inventory` → `tests/cli/test_parse-inventory.py`, `tests/test_parse_inventory_integration.py` → `docs/tools/parse_font_inventory.md`. Files: `fontshow/__main__.py` L87-L93, `tests/cli/test_parse-inventory.py` L1-L45, `tests/test_parse_inventory_integration.py` L1-L67, `docs/tools/parse_font_inventory.md` L1-L41.
+    - parse-inventory → `fontshow.cli.parse_inventory` → `tests/cli/test_parse-inventory.py`, `tests/test_parse_inventory_integration.py` → `docs/tools/parse_font_inventory.md`. Files: `fontshow/__main__.py` L87-L93, `tests/cli/test_parse-inventory.py` L1-L45, `tests/test_parse_inventory_integration.py` L1-L67, `docs/tools/parse_font_inventory.md` L1-L41.
 
-    - create-catalog → `fontshow.create_catalog` → `tests/cli/test_create-catalog.py`, `tests/test_strict_semantic.py` → `docs/tools/create_catalog.md`. Files: `fontshow/__main__.py` L95-L100, `tests/cli/test_create-catalog.py` L1-L21, `tests/test_strict_semantic.py` L1-L73, `docs/tools/create_catalog.md` L1-L61.
+    - create-catalog → `fontshow.cli.create_catalog` → `tests/cli/test_create-catalog.py`, `tests/test_strict_semantic.py` → `docs/tools/create_catalog.md`. Files: `fontshow/__main__.py` L95-L100, `tests/cli/test_create-catalog.py` L1-L21, `tests/test_strict_semantic.py` L1-L73, `docs/tools/create_catalog.md` L1-L61.
 
 2. Dead Code Candidates
 
@@ -328,9 +328,9 @@ If judgment is required at any point, state so and stop.
 
 3. Test Coverage Map
 
-    - FACT: fontshow.dump_fonts is exercised by tests that import and call run_dump_fonts, fc_query_extract, and make_font_id. Files: tests/test_dump_fonts_filtering.py L1-L70, tests/test_fc_query_extract.py L1-L26, tests/test_font_identity.py L1-L10. Rationale: these tests directly import functions from fontshow.dump_fonts.
+    - FACT: fontshow.cli.dump_fonts is exercised by tests that import and call run_dump_fonts, fc_query_extract, and make_font_id. Files: tests/test_dump_fonts_filtering.py L1-L70, tests/test_fc_query_extract.py L1-L26, tests/test_font_identity.py L1-L10. Rationale: these tests directly import functions from fontshow.cli.dump_fonts.
 
-    - FACT: fontshow.parse_font_inventory is exercised by integration and unit tests for parsing, validation, and inference functions. Files: tests/test_parse_inventory_integration.py L1-L67, tests/test_parse_inventory_logging.py L12-L108, tests/test_infer_scripts.py L1-L68. Rationale: these tests import parse_inventory, main, and infer_scripts.
+    - FACT: fontshow.cli.parse_inventory is exercised by integration and unit tests for parsing, validation, and inference functions. Files: tests/test_parse_inventory_integration.py L1-L67, tests/test_parse_inventory_logging.py L12-L108, tests/test_infer_scripts.py L1-L68. Rationale: these tests import parse_inventory, main, and infer_scripts.
 
     - FACT: fontshow.infer_languages is exercised by unit tests in tests/test_infer_languages.py and tests/test_infer_languages_threshold.py. Files: tests/test_infer_languages.py L1-L56, tests/test_infer_languages_threshold.py L1-L46. Rationale: tests import and call infer_languages.
 
@@ -340,7 +340,7 @@ If judgment is required at any point, state so and stop.
 
     - FACT: fontshow.json_format.dumps_pretty is exercised by tests/test_json_formatting.py and tests/test_output_schema_invariants.py. Files: tests/test_json_formatting.py L1-L18, tests/test_output_schema_invariants.py L1-L54. Rationale: tests import and call dumps_pretty.
 
-    - FACT: fontshow.create_catalog is exercised by CLI tests and strict semantic tests. Files: tests/cli/test_create-catalog.py L1-L21, tests/test_strict_semantic.py L1-L73. Rationale: tests invoke the CLI and call run_create_catalog or build_parser.
+    - FACT: fontshow.cli.create_catalog is exercised by CLI tests and strict semantic tests. Files: tests/cli/test_create-catalog.py L1-L21, tests/test_strict_semantic.py L1-L73. Rationale: tests invoke the CLI and call run_create_catalog or build_parser.
 
     - FACT: fontshow.preflight rendering and CLI behavior are exercised by tests. Files: tests/preflight/test_render.py L1-L27, tests/cli/test_preflight_cli.py L7-L101. Rationale: tests import rendering functions and run CLI commands.
 
