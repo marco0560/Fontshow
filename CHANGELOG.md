@@ -1,3 +1,9 @@
+## [0.50.5](https://github.com/marco0560/Fontshow/compare/v0.50.4...v0.50.5) (2026-03-07)
+
+### Bug Fixes
+
+* **ci:** remove duplicate release entries ([d37e7e2](https://github.com/marco0560/Fontshow/commit/d37e7e245d39eb3092ef8dc4120dcb7118e74c11))
+
 ## [0.50.4](https://github.com/marco0560/Fontshow/compare/v0.50.3...v0.50.4) (2026-03-07)
 
 ### Bug Fixes
