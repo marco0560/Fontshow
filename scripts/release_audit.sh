@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # allow semantic-release to bypass audit
-if [ "${SKIP_RELEASE_AUDIT}" = "1" ]; then
+if [ "${SKIP_RELEASE_AUDIT:-0}" = "1" ]; then
   exit 0
 fi
 
