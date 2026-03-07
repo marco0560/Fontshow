@@ -16,7 +16,6 @@ and serialized but not interpreted at this stage.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import platform
@@ -25,8 +24,6 @@ import struct
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import UTC, datetime
-from hashlib import sha1
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -38,6 +35,20 @@ from fontshow.cli_utils import (
     log_ok,
     log_warn,
     set_cli_mode,
+)
+from fontshow.constants.catalog import IS_LINUX, IS_WINDOWS
+from fontshow.constants.opentype import (
+    NAME_ID_FAMILY,
+    NAME_ID_FULLNAME,
+    NAME_ID_POSTSCRIPT,
+    NAME_ID_SAMPLE_TEXT,
+    NAME_ID_SUBFAMILY,
+    NAME_ID_VERSION,
+)
+from fontshow.inventory.utils import (
+    font_cache_key,
+    make_font_id,
+    run_command,
 )
 from fontshow.json_format import dumps_pretty
 from fontshow.logging_utils import log, log_trace_cat
@@ -105,106 +116,6 @@ Logging levels:
 - TRACE   → low-level execution tracing
 - WARNING → recoverable errors
 """
-
-# -----------------------
-# fontTools extraction
-# -----------------------
-NAME_ID_FAMILY = 1
-NAME_ID_SUBFAMILY = 2
-NAME_ID_FULLNAME = 4
-NAME_ID_POSTSCRIPT = 6
-NAME_ID_VERSION = 5
-NAME_ID_LICENSE = 13
-NAME_ID_LICENSE_URL = 14
-NAME_ID_SAMPLE_TEXT = 19
-
-# -----------------------
-# Platform helpers
-# -----------------------
-IS_LINUX = sys.platform.startswith("linux")
-IS_WINDOWS = sys.platform.startswith("win")
-
-# ------------------------------------------------------------------
-# Subprocess safety limits (Phase 6.4)
-# ------------------------------------------------------------------
-
-# Maximum time allowed for external fontconfig calls.
-# Chosen to be safely above normal execution time while preventing hangs.
-SUBPROCESS_TIMEOUT_SECONDS = 30
-
-
-def utc_now_iso() -> str:
-    """
-    Return the current UTC timestamp in ISO-8601 format (seconds precision).
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    str
-        Current UTC time formatted as an ISO-8601 string without microseconds.
-    """
-    return datetime.now(UTC).replace(microsecond=0).isoformat()
-
-
-def run_command(argv: list[str]) -> subprocess.CompletedProcess[str]:
-    """
-    Execute a subprocess command and capture combined stdout/stderr.
-
-    Parameters
-    ----------
-    argv : list[str]
-        Argument vector to pass to subprocess.
-
-    Returns
-    -------
-    subprocess.CompletedProcess[str]
-        Completed process object with stdout captured as text and
-        stderr redirected to stdout. The process is not checked for
-        non-zero exit status.
-    """
-    try:
-        return subprocess.run(
-            argv,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            check=False,
-            timeout=SUBPROCESS_TIMEOUT_SECONDS,
-        )
-    except subprocess.TimeoutExpired as exc:
-        log_err(
-            f"fontconfig subprocess timed out "
-            f"(timeout={SUBPROCESS_TIMEOUT_SECONDS}s, argv={argv})"
-        )
-        msg = "fontconfig subprocess timed out"
-        raise RuntimeError(msg) from exc
-
-
-def make_font_id(path: str, ttc_index: int | None) -> str:
-    """
-    Build a stable, reproducible identifier for a font face.
-
-    Parameters
-    ----------
-    path : str
-        Filesystem path to the font file.
-    ttc_index : int | None
-        Face index for TrueType Collections, or None for single-face fonts.
-
-    Returns
-    -------
-    str
-        Short hexadecimal identifier derived from path and TTC index.
-
-    Notes
-    -----
-    Intended for comparison, caching, and debugging purposes.
-    """
-    key = f"{path}|{ttc_index if ttc_index is not None else 'single'}"
-    return sha1(key.encode("utf-8")).hexdigest()[:12]
 
 
 # -----------------------
@@ -441,43 +352,6 @@ def detect_font_container(path: Path) -> str:
     if ext == ".ttc":
         return "TTC"
     return "UNKNOWN"
-
-
-# -----------------------
-# Cache
-# -----------------------
-
-
-def font_cache_key(path: Path, ttc_index: int | None = None) -> str:
-    """
-    Return a stable cache key for a font face.
-
-    Parameters
-    ----------
-    path : pathlib.Path
-        Path to the font file.
-    ttc_index : int | None, optional
-        Face index for TrueType Collections (None for single-face fonts).
-
-    Returns
-    -------
-    str
-        SHA-256 hexadecimal digest suitable for use as a cache filename.
-
-    Notes
-    -----
-    The key combines:
-    - absolute file path,
-    - file modification time (nanoseconds),
-    - file size,
-    - optional TTC face index.
-
-    Ensures cache invalidation when the font file changes.
-    """
-    st = path.stat()
-    idx = "" if ttc_index is None else f"|ttc:{ttc_index}"
-    key = f"{path.resolve()}|{st.st_mtime_ns}|{st.st_size}{idx}"
-    return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
 
 # -----------------------

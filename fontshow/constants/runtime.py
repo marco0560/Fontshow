@@ -28,3 +28,11 @@ provides shared runtime values used throughout the application.
 from datetime import datetime
 
 DATE_STR = datetime.now().strftime("%Y%m%d")
+
+# ------------------------------------------------------------------
+# Subprocess safety limits (Phase 6.4)
+# ------------------------------------------------------------------
+
+# Maximum time allowed for external fontconfig calls.
+# Chosen to be safely above normal execution time while preventing hangs.
+SUBPROCESS_TIMEOUT_SECONDS = 30
