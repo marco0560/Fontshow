@@ -12,27 +12,14 @@
 
 ## [0.50.2](https://github.com/marco0560/Fontshow/compare/v0.50.1...v0.50.2) (2026-03-07)
 
-### Bug Fixes
-
-* **core:** baseline after architecture refactor ([94c4f74](https://github.com/marco0560/Fontshow/commit/94c4f7433b83229c7ae8c80432a65b4f937d7ba3))
-
-## [0.50.2](https://github.com/marco0560/Fontshow/compare/v0.50.1...v0.50.2) (2026-03-07)
-
-### Bug Fixes
-
-* **core:** baseline after architecture refactor ([94c4f74](https://github.com/marco0560/Fontshow/commit/94c4f7433b83229c7ae8c80432a65b4f937d7ba3))
-
-## [0.41.0](https://github.com/marco0560/Fontshow/compare/v0.40.2...v0.41.0) (2026-03-07)
-
 ### Features
 
-* **core:** introduce master ontology tables SCRIPT_INFO and LANGUAGE_INFO (Phase 2) ([28bc59d](https://github.com/marco0560/Fontshow/commit/28bc59db5f722b174c6d5b63dc9b49047ae9acd7))
 * **ontology:** add canonical language names and enforce Unicode coverage invariant ([00e7a20](https://github.com/marco0560/Fontshow/commit/00e7a20493e51279219ab0ea479dd6abc9352fbf))
-* **parser:** introduce tables from authoritative sources ([0d798b5](https://github.com/marco0560/Fontshow/commit/0d798b58730f93579fa04d04e15b1bfcf12980b6))
 * **validation:** strengthen ontology validation and complete script specimen coverage ([f3c3775](https://github.com/marco0560/Fontshow/commit/f3c3775e6b261306e98b6aca7ff1d6f80519f9c5))
 
 ### Bug Fixes
 
+* **core:** baseline after architecture refactor ([94c4f74](https://github.com/marco0560/Fontshow/commit/94c4f7433b83229c7ae8c80432a65b4f937d7ba3))
 * **catalog:** stabilize script selection, rendering policy, and LaTeX generation ([fefeec8](https://github.com/marco0560/Fontshow/commit/fefeec8ccb8d52006f828db462223e116fa1d037))
 * **ci:** updated instructions for copilot ([aff9d0a](https://github.com/marco0560/Fontshow/commit/aff9d0a096e865647606d8e1bb225e96904f3d78))
 * **docs:** Now auto inclusion of JSON in doc works ([de680e1](https://github.com/marco0560/Fontshow/commit/de680e148db78d4ac60aed64b57690d93e444d8d))
@@ -40,7 +27,6 @@
 * **git:** Skip release checks outside main branch ([c4b9488](https://github.com/marco0560/Fontshow/commit/c4b94884a631bb5c4dac9e0a7bf97977206c8a28))
 * **parser:** restore language inference semantics and stabilize pipeline contract ([5bd8be0](https://github.com/marco0560/Fontshow/commit/5bd8be07e4afbb48590c7f90bf86b57fae720b73))
 * **schema:** load inventory schema from package after schema relocation ([c6149f5](https://github.com/marco0560/Fontshow/commit/c6149f5943c5dca7e23714dcea781b4bd50b74b7))
-* **validation:** fixed ontology.py check and completed language tables ([4797d63](https://github.com/marco0560/Fontshow/commit/4797d63bfe4e62d0c3ea439cedb8b03176058a1f))
 * **validation:** stabilize CLI contract, add ontology validation, unify severity model ([59b097a](https://github.com/marco0560/Fontshow/commit/59b097a4d563ea53b0e35baf293dd5526b9477e7))
 
 ### Performance Improvements
