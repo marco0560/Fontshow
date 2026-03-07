@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from fontshow.dump_fonts import fc_query_extract
+from fontshow.platform.fontconfig import fc_query_extract
 from tests.helpers import make_fc_query_output
 
 
 def test_fc_query_extract_basic(monkeypatch):
     monkeypatch.setattr(
-        "fontshow.dump_fonts.run_command",
+        "fontshow.platform.fontconfig.run_command",
         lambda cmd: make_fc_query_output(
             lang="en|it",
             scripts=["latn", "grek"],
@@ -27,7 +27,7 @@ def test_fc_query_extract_basic(monkeypatch):
 
 def test_fc_query_extract_no_capability(monkeypatch):
     monkeypatch.setattr(
-        "fontshow.dump_fonts.run_command",
+        "fontshow.platform.fontconfig.run_command",
         lambda cmd: make_fc_query_output(lang="en"),
     )
 
@@ -39,7 +39,7 @@ def test_fc_query_extract_no_capability(monkeypatch):
 
 def test_fc_query_extract_empty_output(monkeypatch):
     monkeypatch.setattr(
-        "fontshow.dump_fonts.run_command",
+        "fontshow.platform.fontconfig.run_command",
         lambda cmd: make_fc_query_output(),
     )
 

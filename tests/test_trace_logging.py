@@ -5,8 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
-import fontshow.dump_fonts
 import fontshow.logging_utils
+import fontshow.platform.fontconfig as fontconfig
 from fontshow.logging_utils import TRACE_LEVEL_NUM
 
 
@@ -34,7 +34,7 @@ def test_debug_vs_trace_logging(
     monkeypatch.setenv("FONTSHOW_LOG_LEVEL", log_level)
 
     importlib.reload(fontshow.logging_utils)
-    importlib.reload(fontshow.dump_fonts)
+    importlib.reload(fontconfig)
 
     # 2. Fake fc-query execution
     def fake_run_command(cmd):
@@ -45,7 +45,7 @@ def test_debug_vs_trace_logging(
         )
 
     monkeypatch.setattr(
-        "fontshow.dump_fonts.run_command",
+        "fontshow.platform.fontconfig.run_command",
         fake_run_command,
     )
 
@@ -59,7 +59,7 @@ def test_debug_vs_trace_logging(
             TRACE_LEVEL_NUM if log_level == "TRACE" else logging.DEBUG,
             logger="fontshow",
         ):
-            fontshow.dump_fonts.fc_query_extract(Path("/fake/font.ttf"))
+            fontconfig.fc_query_extract(Path("/fake/font.ttf"))
     finally:
         logger.removeHandler(caplog.handler)
 
@@ -80,7 +80,7 @@ def test_debug_vs_trace_logging(
         # helper (_run_fc_query). The important contract is that TRACE
         # reports a real execution layer, not logging_utils internals.
         assert any(
-            mod == "dump_fonts" and fn in {"fc_query_extract", "_run_fc_query"}
+            mod == "fontconfig" and fn in {"fc_query_extract", "_run_fc_query"}
             for mod, fn in callers
         )
     else:
@@ -100,7 +100,7 @@ def test_trace_logging_emitted_with_correct_caller(
     monkeypatch.setenv("FONTSHOW_LOG_LEVEL", "TRACE")
 
     importlib.reload(fontshow.logging_utils)
-    importlib.reload(fontshow.dump_fonts)
+    importlib.reload(fontconfig)
 
     # 2. Fake fc-query execution
     def fake_run_command(cmd):
@@ -111,7 +111,7 @@ def test_trace_logging_emitted_with_correct_caller(
         )
 
     monkeypatch.setattr(
-        "fontshow.dump_fonts.run_command",
+        "fontshow.platform.fontconfig.run_command",
         fake_run_command,
     )
 
@@ -122,7 +122,7 @@ def test_trace_logging_emitted_with_correct_caller(
 
     try:
         with caplog.at_level(logging.NOTSET):
-            fontshow.dump_fonts.fc_query_extract(Path("/fake/font.ttf"))
+            fontconfig.fc_query_extract(Path("/fake/font.ttf"))
     finally:
         logger.removeHandler(caplog.handler)
 
@@ -142,6 +142,6 @@ def test_trace_logging_emitted_with_correct_caller(
     # helper (_run_fc_query). The important contract is that TRACE
     # reports a real execution layer, not logging_utils internals.
     assert any(
-        mod == "dump_fonts" and fn in {"fc_query_extract", "_run_fc_query"}
+        mod == "fontconfig" and fn in {"fc_query_extract", "_run_fc_query"}
         for mod, fn in callers
     )

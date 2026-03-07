@@ -816,7 +816,7 @@ def log_trace_cat(
         payload: dict[str, object] = {
             "level": "TRACE",
             "category": category,
-            "message": message,
+            "event": message,
         }
         for k, v in extra.items():
             if k == "trace_category":
@@ -825,6 +825,7 @@ def log_trace_cat(
 
         extra["_trace_json"] = json.dumps(
             payload,
+            default=str,
             ensure_ascii=False,
             sort_keys=True,
         )

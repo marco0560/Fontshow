@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 from pytest import MonkeyPatch
 
-import fontshow.dump_fonts
+import fontshow.platform.fontconfig as fontconfig
 
 
 def test_fc_query_extract_emits_basic_logs(
@@ -13,7 +13,7 @@ def test_fc_query_extract_emits_basic_logs(
     capture_fontshow_logs,
 ):
     # reload consumer after logging is enabled
-    importlib.reload(fontshow.dump_fonts)
+    importlib.reload(fontconfig)
 
     def fake_run_command(cmd):
         return SimpleNamespace(
@@ -24,12 +24,12 @@ def test_fc_query_extract_emits_basic_logs(
 
     mp = MonkeyPatch()
     mp.setattr(
-        "fontshow.dump_fonts.run_command",
+        "fontshow.platform.fontconfig.run_command",
         fake_run_command,
     )
 
     with capture_fontshow_logs.at_level(logging.DEBUG, logger="fontshow"):
-        fontshow.dump_fonts.fc_query_extract(Path("/fake/font.ttf"))
+        fontconfig.fc_query_extract(Path("/fake/font.ttf"))
 
     messages = [rec.getMessage() for rec in capture_fontshow_logs.records]
 
@@ -41,7 +41,7 @@ def test_fc_query_extract_logs_warning_on_failure(
     enable_fontshow_logging,
     capture_fontshow_logs,
 ):
-    importlib.reload(fontshow.dump_fonts)
+    importlib.reload(fontconfig)
 
     def fake_run_command(cmd):
         return SimpleNamespace(
@@ -52,12 +52,12 @@ def test_fc_query_extract_logs_warning_on_failure(
 
     mp = MonkeyPatch()
     mp.setattr(
-        "fontshow.dump_fonts.run_command",
+        "fontshow.platform.fontconfig.run_command",
         fake_run_command,
     )
 
     with capture_fontshow_logs.at_level(logging.WARNING, logger="fontshow"):
-        fontshow.dump_fonts.fc_query_extract(Path("/fake/font.ttf"))
+        fontconfig.fc_query_extract(Path("/fake/font.ttf"))
 
     assert any(
         rec.levelname == "WARNING" and "fc-query execution failed" in rec.message
