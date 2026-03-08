@@ -1,3 +1,26 @@
+"""
+Verify inventory schema validation behavior.
+
+This module tests the validation logic responsible for ensuring that
+Fontshow inventory files comply with the declared schema version.
+
+Responsibilities
+----------------
+- Verify strict schema validation behavior.
+- Ensure schema validation reports the correct severity levels.
+- Validate correct handling of missing or malformed schema fields.
+
+Design principles
+-----------------
+Schema validation tests operate on minimal inventory structures so
+that schema rule regressions are detected deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the schema validation logic used for inventory data structures.
+"""
+
 import pytest
 
 from fontshow.inventory.schema_validation import (

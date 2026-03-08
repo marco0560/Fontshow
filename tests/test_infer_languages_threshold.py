@@ -1,3 +1,22 @@
+"""
+Verify threshold behavior in language inference.
+
+Responsibilities
+----------------
+- Ensure symbolic or minimal block coverage does not trigger inference.
+- Validate language inference once coverage thresholds are exceeded.
+
+Design principles
+----------------
+Threshold tests verify that inference heuristics remain stable and
+do not produce false positives for small symbolic coverage.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+threshold rules applied by the language inference algorithm.
+"""
+
 from fontshow.inventory.infer_languages import infer_languages
 
 

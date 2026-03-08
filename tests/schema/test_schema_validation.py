@@ -1,3 +1,26 @@
+"""
+Verify general schema validation rules.
+
+This module tests the primary validation routines responsible for
+checking inventory data against the defined schema.
+
+Responsibilities
+----------------
+- Validate schema compliance for minimal valid inventories.
+- Ensure schema violations produce the expected severity levels.
+- Verify behavior of strict and non-strict validation modes.
+
+Design principles
+-----------------
+Validation tests rely on minimal inventories to isolate schema rule
+behavior and detect regressions deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+core schema validation logic for inventory structures.
+"""
+
 import pytest
 
 from fontshow.core.types import Severity

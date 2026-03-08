@@ -1,3 +1,22 @@
+"""
+Verify extraction of metadata from fc-query output.
+
+Responsibilities
+----------------
+- Ensure fc-query output is parsed correctly.
+- Validate extraction of language, script, and feature metadata.
+
+Design principles
+----------------
+Tests mock the command execution layer so that fc-query parsing logic
+can be validated deterministically without invoking the system tool.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the parsing logic used to extract metadata from Fontconfig queries.
+"""
+
 from pathlib import Path
 
 from fontshow.platform.fontconfig import fc_query_extract

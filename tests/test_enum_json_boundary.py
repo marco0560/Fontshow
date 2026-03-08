@@ -1,3 +1,23 @@
+"""
+Verify JSON boundary handling for enum serialization.
+
+Responsibilities
+----------------
+- Ensure enum values are serialized to JSON as strings.
+- Verify enum normalization when loading JSON inventories.
+
+Design principles
+-----------------
+Boundary tests validate the interface between internal enum types and
+JSON representations so that serialization and deserialization remain
+stable and deterministic.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the JSON boundary behavior for enum values in inventory data.
+"""
+
 from __future__ import annotations
 
 import json

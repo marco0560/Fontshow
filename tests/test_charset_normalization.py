@@ -1,3 +1,22 @@
+"""
+Verify charset normalization utilities.
+
+Responsibilities
+----------------
+- Ensure charset ranges are merged and sorted correctly.
+- Validate computation of derived Unicode block coverage.
+
+Design principles
+-----------------
+Normalization tests use small synthetic range sets so that merging,
+sorting, and coverage calculations are deterministic.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+utility functions that normalize charset range information.
+"""
+
 from fontshow.unicode.charset_ranges import (
     normalize_charset_ranges,
     unicode_blocks_from_charset_ranges,

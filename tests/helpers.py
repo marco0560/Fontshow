@@ -1,3 +1,24 @@
+"""
+Test helper utilities for the Fontshow test suite.
+
+Responsibilities
+----------------
+- Provide helper functions for constructing minimal inventory and font
+  structures used in tests.
+- Offer utilities for invoking the CLI and capturing output streams.
+- Centralize reusable testing primitives shared across modules.
+
+Design principles
+-----------------
+Helpers encapsulate common setup logic so that individual tests remain
+focused on behavior verification rather than environment preparation.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and provides
+utility functions used throughout the Fontshow test suite.
+"""
+
 from __future__ import annotations
 
 import sys

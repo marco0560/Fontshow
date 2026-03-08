@@ -1,3 +1,24 @@
+"""
+Pytest configuration and shared fixtures for Fontshow tests.
+
+Responsibilities
+----------------
+- Provide global pytest fixtures used across the test suite.
+- Configure import paths and runtime environment for tests.
+- Offer shared helpers for invoking the Fontshow CLI in tests.
+
+Design principles
+-----------------
+Test infrastructure must remain deterministic and isolated from the
+developer environment. Fixtures here centralize setup logic so tests
+remain concise and reproducible.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and provides
+shared pytest configuration and fixtures for the Fontshow test suite.
+"""
+
 import importlib
 import logging
 import sys

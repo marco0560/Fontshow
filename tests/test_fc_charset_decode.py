@@ -1,3 +1,22 @@
+"""
+Verify decoding of Fontconfig charset bitmaps.
+
+Responsibilities
+----------------
+- Ensure bitmap representations of charset ranges are decoded correctly.
+- Validate handling of single bits, contiguous ranges, and merged blocks.
+
+Design principles
+----------------
+Decoding tests use synthetic Fontconfig bitmap strings so that charset
+range decoding behavior can be verified deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the bitmap decoding utilities used to interpret Fontconfig charset data.
+"""
+
 from fontshow.unicode.charset_ranges import decode_fc_charset_bitmap
 
 

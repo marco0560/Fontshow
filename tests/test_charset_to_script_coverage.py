@@ -1,3 +1,22 @@
+"""
+Verify conversion from Unicode block coverage to script coverage.
+
+Responsibilities
+----------------
+- Ensure script coverage is correctly derived from Unicode block data.
+- Validate that unrelated scripts are not reported.
+
+Design principles
+-----------------
+Coverage tests rely on minimal synthetic Unicode block maps so that
+coverage calculations remain deterministic.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the logic that derives script coverage from Unicode block statistics.
+"""
+
 from fontshow.inventory.script_analysis import script_coverage_from_unicode_blocks
 
 

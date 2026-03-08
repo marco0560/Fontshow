@@ -1,11 +1,27 @@
 """
-This test uses a reduced real-world inventory snapshot.
+Verify schema validation regression behavior.
 
-Purpose:
-- validate schema compatibility
-- detect breaking changes
-- ensure no ERROR-level warnings are produced
+This module tests schema validation using a reduced real-world
+inventory snapshot.
 
+Responsibilities
+----------------
+- Validate compatibility with real inventory data.
+- Detect schema-breaking changes.
+- Ensure no ERROR-level validation issues occur for the snapshot.
+
+Design principles
+-----------------
+Regression tests use stable input snapshots so that changes to schema
+validation logic are detected deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+schema validation stability across real-world inventory examples.
+
+Note
+----
 This file is NOT intended to be exhaustive nor representative
 of the full inventory.
 """

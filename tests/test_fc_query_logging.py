@@ -1,3 +1,23 @@
+"""
+Verify logging behavior during Fontconfig queries.
+
+Responsibilities
+----------------
+- Ensure fc-query extraction emits expected diagnostic logs.
+- Validate integration between Fontconfig querying and the logging
+  infrastructure.
+
+Design principles
+----------------
+Logging tests enable the Fontshow logging system and capture emitted
+messages so logging behavior can be validated deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+logging instrumentation for Fontconfig query operations.
+"""
+
 import importlib
 import logging
 from pathlib import Path

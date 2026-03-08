@@ -1,4 +1,21 @@
-# tests/test_charset_decoding.py
+"""
+Verify charset decoding behavior when loading font inventories.
+
+Responsibilities
+----------------
+- Ensure UTF-8 encoded inventory files are correctly decoded.
+- Validate that malformed encodings are handled predictably.
+
+Design principles
+-----------------
+Decoding tests operate on small synthetic inventories so that
+encoding behavior can be validated deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the charset decoding logic used when loading inventory files.
+"""
 
 import json
 from pathlib import Path

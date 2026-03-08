@@ -1,3 +1,22 @@
+"""
+Verify filtering behavior of the dump-fonts command.
+
+Responsibilities
+----------------
+- Ensure non-OpenType fonts are excluded from dump-fonts output.
+- Verify filtering logic independent of the system font installation.
+
+Design principles
+-----------------
+Tests mock the font discovery layer so that filtering behavior can be
+verified deterministically without relying on actual system fonts.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the filtering rules applied by the dump-fonts CLI command.
+"""
+
 import json
 from pathlib import Path
 from types import SimpleNamespace

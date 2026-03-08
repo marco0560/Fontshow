@@ -1,3 +1,22 @@
+"""
+Verify language inference from Unicode block coverage.
+
+Responsibilities
+----------------
+- Ensure languages are correctly inferred from Unicode block statistics.
+- Validate inference for representative scripts such as Latin and Cyrillic.
+
+Design principles
+----------------
+Language inference tests use synthetic coverage maps so that inference
+behavior can be validated deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+language inference logic derived from Unicode block coverage.
+"""
+
 from fontshow.inventory.infer_languages import infer_languages
 
 

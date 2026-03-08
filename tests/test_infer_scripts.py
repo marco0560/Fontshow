@@ -1,3 +1,22 @@
+"""
+Verify script inference from Unicode block coverage.
+
+Responsibilities
+----------------
+- Ensure scripts are inferred correctly from Unicode block statistics.
+- Validate inference behavior for representative scripts.
+
+Design principles
+----------------
+Script inference tests rely on small synthetic coverage datasets so
+that inference behavior can be validated deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the logic that derives script inference results from Unicode coverage.
+"""
+
 from fontshow.inventory.script_analysis import infer_scripts
 
 

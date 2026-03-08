@@ -1,3 +1,25 @@
+"""
+Verify schema validation with charset enrichment.
+
+This module tests schema validation behavior when inventory entries
+include charset information derived from font analysis.
+
+Responsibilities
+----------------
+- Validate schema acceptance of charset enrichment fields.
+- Ensure charset-related metadata does not violate schema rules.
+
+Design principles
+-----------------
+Tests construct minimal inventories with charset information so that
+schema compatibility for enrichment features is verified deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+schema validation behavior for charset-enriched inventory entries.
+"""
+
 from fontshow.core.types import Severity
 from fontshow.inventory.schema_validation import validate_inventory_schema
 
