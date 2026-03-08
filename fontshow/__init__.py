@@ -1,3 +1,26 @@
+"""
+Fontshow package initialization and compatibility exports.
+
+Responsibilities
+----------------
+- Expose the package version through the ``__version__`` attribute.
+- Provide backward-compatible re-exports for CLI command modules that
+  historically lived at the top level of the package.
+- Allow external code and tests to import CLI entrypoints from the
+  package root.
+
+Design principles
+-----------------
+The package initializer should remain minimal and avoid importing heavy
+subsystems at import time. Only lightweight compatibility exports and
+metadata retrieval are performed here.
+
+Architectural role
+------------------
+This module belongs to the **package infrastructure layer** and provides
+version metadata and compatibility imports for the Fontshow CLI modules.
+"""
+
 from importlib.metadata import PackageNotFoundError, version
 
 try:

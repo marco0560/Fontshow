@@ -1,3 +1,25 @@
+"""
+Fontshow command-line entry point.
+
+Responsibilities
+----------------
+- Parse command-line arguments for the Fontshow CLI.
+- Dispatch CLI commands to the corresponding handler functions.
+- Provide consistent exit codes and error reporting for CLI operations.
+
+Design principles
+-----------------
+The entry point should remain thin and deterministic: argument parsing,
+command dispatch, and high-level error handling occur here, while the
+actual command implementations live in the ``fontshow.cli`` package.
+
+Architectural role
+------------------
+This module belongs to the **CLI interface layer** and serves as the
+runtime entry point when Fontshow is executed as a module
+(``python -m fontshow``).
+"""
+
 import argparse
 import sys
 from importlib.metadata import PackageNotFoundError, version

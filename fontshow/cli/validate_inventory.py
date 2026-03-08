@@ -1,10 +1,25 @@
 """
-CLI command: validate-inventory
+Fontshow validate-inventory CLI command.
 
-Implements inventory validation entry point for the Fontshow CLI.
+This module implements the inventory validation stage of the Fontshow
+pipeline.
 
-This module intentionally lives outside `fontshow.core` because it
-depends on domain modules such as inventory validation rules.
+Responsibilities
+----------------
+- Validate inventory structure against the JSON schema.
+- Run semantic validation checks on inventory metadata.
+- Report validation results and warnings to the CLI.
+
+Design principles
+-----------------
+Validation logic itself resides in the inventory subsystem. This
+module only orchestrates the validation workflow and formats CLI
+output while delegating the actual checks to domain modules.
+
+Architectural role
+------------------
+This module belongs to the **CLI interface layer** and implements the
+inventory validation entry point for the Fontshow CLI.
 """
 
 import argparse

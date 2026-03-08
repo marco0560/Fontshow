@@ -1,33 +1,31 @@
 """
-Fontshow create-catalog module.
+Fontshow create-catalog CLI command.
 
-This module implements the LaTeX catalog generation stage of the Fontshow
-pipeline.
+This module implements the catalog generation stage of the Fontshow
+pipeline and provides the CLI entry point for the `create-catalog`
+command.
 
 Responsibilities
 ----------------
 - Load and strictly validate a schema v1.2 inventory.
-- Enforce platform compatibility constraints.
-- Perform semantic validation.
-- Transform normalized font descriptors into deterministic LaTeX output.
-- Provide CLI orchestration for the `create-catalog` command.
+- Run semantic and platform validation checks before catalog generation.
+- Orchestrate catalog preparation steps (filtering, grouping, diagnostics).
+- Invoke catalog helpers that transform normalized font descriptors
+  into deterministic LaTeX output.
 
-Design constraints
+Design principles
+-----------------
+The module acts as the orchestration layer for catalog generation.
+Rendering logic lives in the `fontshow.catalog` domain modules,
+while inventory analysis and validation belong to the
+`fontshow.inventory` subsystem. This separation keeps the CLI entry
+point focused on workflow coordination.
+
+Architectural role
 ------------------
-- Pure rendering stage: no font binary inspection.
-- Inventory-driven: all semantic information originates from JSON.
-- Deterministic output: stable ordering and identifiers.
-- LaTeX-first: optimized for LuaLaTeX workflows.
-- Whitespace-sensitive templates: LaTeX blocks must not be modified
-  unintentionally.
-
-Primary entry points
---------------------
-- `run_create_catalog(args)`
-- `generate_latex(font_list)`
-
-All rendering decisions must operate exclusively on normalized font
-descriptors.
+This module belongs to the **CLI interface layer** and coordinates the
+catalog generation workflow between the inventory subsystem and the
+catalog rendering helpers.
 """
 
 import argparse

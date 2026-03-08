@@ -1,16 +1,29 @@
 """
-Fontshow raw inventory generation.
+Fontshow dump-fonts CLI command.
 
-This module produces a *raw* Fontshow inventory (schema_version = 1.0) by
-collecting font metadata from system sources such as FontConfig.
+This module implements the inventory discovery stage of the Fontshow
+pipeline and produces a raw inventory describing fonts available on the
+system.
 
-The output of this stage is intentionally best-effort and informational:
-- metadata may be incomplete or partially missing,
-- no semantic interpretation or inference is performed here,
-- extracted data is preserved verbatim for downstream enrichment.
+Responsibilities
+----------------
+- Discover fonts using platform-specific mechanisms (Fontconfig or
+  equivalent tools).
+- Extract raw font metadata from system sources.
+- Serialize discovered font information into the initial inventory
+  format used by subsequent pipeline stages.
 
-In particular, FontConfig-derived charset metadata (when enabled) is extracted
-and serialized but not interpreted at this stage.
+Design principles
+-----------------
+This stage performs **no semantic interpretation** of font metadata.
+All extracted information is preserved as-is so that later stages
+(`parse-inventory`, validation, and catalog generation) can perform
+analysis and enrichment deterministically.
+
+Architectural role
+------------------
+This module belongs to the **CLI interface layer** and implements the
+font discovery stage that generates the initial Fontshow inventory.
 """
 
 from __future__ import annotations

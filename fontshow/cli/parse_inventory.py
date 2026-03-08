@@ -1,18 +1,28 @@
 """
-Fontshow – parse_font_inventory.py
-=================================
+Fontshow parse-inventory CLI command.
 
-Parse and enrich a ``font_inventory.json`` produced by ``dump_fonts.py`` by
-applying deterministic inference of writing scripts and language candidates.
+This module implements the inventory enrichment stage of the Fontshow
+pipeline. It reads a raw inventory produced by `dump-fonts`, performs
+deterministic metadata inference, and produces a normalized inventory
+ready for validation and catalog generation.
+
+Responsibilities
+----------------
+- Load and validate the structure of a raw Fontshow inventory.
+- Perform deterministic inference of scripts and languages.
+- Enrich inventory entries with derived metadata.
+- Serialize the normalized inventory for downstream processing.
 
 Design principles
 -----------------
-- **Cross-platform**: works only on JSON data, never touches font files.
-- **Deterministic**: same input → same output.
-- **Non-destructive**: declared metadata is never overwritten.
-- **Configurable**: inference aggressiveness selectable from CLI.
+This stage operates exclusively on JSON inventory data and performs
+no direct inspection of font binaries. All inference logic must be
+deterministic so that identical inputs produce identical outputs.
 
-Default inference level: ``medium``.
+Architectural role
+------------------
+This module belongs to the **CLI interface layer** and implements the
+inventory enrichment stage of the Fontshow processing pipeline.
 """
 
 import argparse
