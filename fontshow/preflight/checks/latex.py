@@ -1,4 +1,26 @@
-# fontshow/preflight/checks/latex.py
+"""
+LuaLaTeX capability checks.
+
+This module implements the preflight check verifying that the LuaLaTeX
+engine required for catalog generation is available on the system.
+
+Responsibilities
+----------------
+- Detect availability of the `lualatex` executable.
+- Evaluate LuaLaTeX capability according to the current platform.
+- Produce structured results describing LaTeX support.
+
+Design principles
+-----------------
+The module checks only the presence of the LuaLaTeX engine and does not
+perform document compilation. Platform-specific behavior is evaluated
+based on runtime environment detection.
+
+Architectural role
+------------------
+This module belongs to the **preflight subsystem** and implements the
+LaTeX capability check executed during environment validation.
+"""
 
 import shutil
 

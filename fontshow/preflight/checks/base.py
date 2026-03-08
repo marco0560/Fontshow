@@ -1,4 +1,27 @@
-# fontshow/preflight/checks/base.py
+"""
+Preflight check base classes.
+
+This module defines the abstract base class used by all preflight
+environment checks.
+
+Responsibilities
+----------------
+- Provide the base interface implemented by all checks.
+- Automatically register concrete check classes.
+- Define the contract for executing checks and returning results.
+
+Design principles
+-----------------
+Preflight checks are implemented as independent classes that return
+structured results. Automatic registration ensures that checks can be
+discovered without requiring manual configuration.
+
+Architectural role
+------------------
+This module belongs to the **preflight subsystem** and defines the
+foundation used by all preflight environment checks.
+"""
+
 from __future__ import annotations
 
 import inspect

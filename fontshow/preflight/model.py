@@ -1,3 +1,27 @@
+"""
+Preflight data model.
+
+This module defines the core data structures used to represent the
+results of preflight environment checks.
+
+Responsibilities
+----------------
+- Define immutable representations of individual check results.
+- Aggregate check results into a structured preflight report.
+- Provide utilities for computing overall severity levels.
+
+Design principles
+-----------------
+The data model is intentionally minimal and independent from CLI
+presentation or check execution logic. It provides deterministic and
+serializable representations of check outcomes.
+
+Architectural role
+------------------
+This module belongs to the **preflight subsystem** and defines the
+result structures produced by the preflight execution pipeline.
+"""
+
 from dataclasses import dataclass
 
 from fontshow.core.types import Severity

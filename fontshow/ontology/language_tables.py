@@ -1,16 +1,26 @@
 """
-Fontshow — language_tables
-==========================
+Script and language ontology tables.
 
-Authoritative ontology for scripts and languages used by Fontshow.
+This module defines the authoritative ontology used by Fontshow to
+describe writing systems and language inference profiles.
+
+Responsibilities
+----------------
+- Define canonical script metadata keyed by ISO 15924 identifiers.
+- Provide language inference profiles describing script usage.
+- Supply representative specimen samples for scripts and languages.
 
 Design principles
 -----------------
-- ISO15924 script identifiers are the canonical keys.
-- Language identifiers use ISO 639 codes.
-- Samples are embedded directly in ontology entries.
-- Tables are static and deterministic.
-- Entries are sorted alphabetically for stable diffs.
+Ontology tables are static and deterministic. Script identifiers follow
+ISO 15924 conventions and language identifiers follow ISO 639 codes.
+Entries are ordered deterministically to ensure stable repository diffs.
+
+Architectural role
+------------------
+This module belongs to the **ontology subsystem** and provides the
+linguistic knowledge base used by inventory analysis and catalog
+generation.
 """
 
 from __future__ import annotations

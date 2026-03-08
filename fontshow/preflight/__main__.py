@@ -1,11 +1,25 @@
-# fontshow/preflight/__main__.py
-
 """
-Fontshow preflight entry point.
+Preflight CLI entry point.
 
-Allows running preflight checks via:
+This module implements the command-line entry point used to execute the
+Fontshow preflight checks.
 
-    python -m fontshow.preflight
+Responsibilities
+----------------
+- Run the preflight check pipeline.
+- Render a human-readable report describing check results.
+- Produce deterministic process exit codes based on check outcomes.
+
+Design principles
+-----------------
+The entry point performs only CLI orchestration and presentation logic.
+Actual check execution is delegated to the preflight runner and check
+registry modules.
+
+Architectural role
+------------------
+This module belongs to the **preflight subsystem** and provides the
+standalone CLI interface invoked via `python -m fontshow.preflight`.
 """
 
 from __future__ import annotations

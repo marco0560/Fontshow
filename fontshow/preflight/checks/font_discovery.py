@@ -1,4 +1,26 @@
-# fontshow/preflight/checks/font_discovery.py
+"""
+Font discovery capability checks.
+
+This module implements the preflight check verifying that the system
+supports font discovery required by the inventory generation pipeline.
+
+Responsibilities
+----------------
+- Detect availability of the `fc-list` command used by Fontconfig.
+- Evaluate whether font discovery is supported on the current platform.
+- Produce structured results describing discovery capability.
+
+Design principles
+-----------------
+Font discovery checks verify only the availability of required system
+tools and do not perform actual font enumeration. The module isolates
+environment capability checks from the inventory pipeline.
+
+Architectural role
+------------------
+This module belongs to the **preflight subsystem** and implements the
+font discovery capability check used during environment validation.
+"""
 
 import shutil
 

@@ -1,6 +1,9 @@
 """
 Fontshow command-line entry point.
 
+This module implements the command-line interface entry point used when
+executing Fontshow as a Python module.
+
 Responsibilities
 ----------------
 - Parse command-line arguments for the Fontshow CLI.

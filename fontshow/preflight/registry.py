@@ -1,3 +1,27 @@
+"""
+Preflight check registry.
+
+This module implements the internal registry used to store and retrieve
+preflight check classes.
+
+Responsibilities
+----------------
+- Register preflight check implementations.
+- Provide access to the ordered list of registered checks.
+- Support deterministic check execution order.
+
+Design principles
+-----------------
+The registry is intentionally simple and deterministic. Check classes
+are registered explicitly and the registration order is preserved to
+ensure stable execution behaviour.
+
+Architectural role
+------------------
+This module belongs to the **preflight subsystem** and provides the
+registration mechanism used by the preflight runner.
+"""
+
 from __future__ import annotations
 
 from fontshow.preflight.checks.base import BaseCheck

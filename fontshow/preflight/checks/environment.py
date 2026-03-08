@@ -1,4 +1,27 @@
-# fontshow/preflight/checks/environment.py
+"""
+Environment capability checks.
+
+This module implements the preflight check responsible for verifying
+that the current execution environment is supported by Fontshow.
+
+Responsibilities
+----------------
+- Detect the operating system used to run Fontshow.
+- Detect the execution mode (bare-metal, container, WSL, CI).
+- Report whether the detected environment is supported.
+
+Design principles
+-----------------
+Environment detection is implemented using lightweight runtime checks
+without relying on external tools. The module produces structured
+results describing environment compatibility.
+
+Architectural role
+------------------
+This module belongs to the **preflight subsystem** and provides the
+environment support check executed during the preflight validation
+pipeline.
+"""
 
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.preflight.checks.base import BaseCheck

@@ -1,4 +1,26 @@
-# fontshow/preflight/render.py
+"""
+Preflight result rendering helpers.
+
+This module implements utilities used to transform preflight check
+results into human-readable output for the command-line interface.
+
+Responsibilities
+----------------
+- Convert preflight results into formatted text lines.
+- Compute deterministic process exit codes from check outcomes.
+- Provide presentation helpers used by the preflight CLI entry point.
+
+Design principles
+-----------------
+Rendering logic is kept separate from check execution so that the
+preflight runner produces structured results while this module
+handles only presentation concerns.
+
+Architectural role
+------------------
+This module belongs to the **preflight subsystem** and implements the
+presentation layer used by the preflight CLI interface.
+"""
 
 from collections.abc import Iterable
 

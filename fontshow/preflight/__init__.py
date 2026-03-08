@@ -1,3 +1,29 @@
+"""
+Preflight subsystem package.
+
+This package implements the preflight checking system used to verify
+that the execution environment satisfies the requirements for running
+Fontshow.
+
+Responsibilities
+----------------
+- Execute registered environment checks.
+- Provide CLI integration for the `fontshow preflight` command.
+- Render human-readable reports describing check results.
+
+Design principles
+-----------------
+Preflight checks are implemented as modular components that can be
+registered and executed by the runner. The subsystem separates check
+implementation, execution, and CLI presentation.
+
+Architectural role
+------------------
+This package belongs to the **preflight subsystem** and provides the
+environment validation stage used before running inventory or catalog
+pipelines.
+"""
+
 from .runner import run_preflight
 
 __all__ = [

@@ -1,25 +1,26 @@
 """
-Fontshow – platform.font_discovery
-==================================
+Font discovery helpers.
 
-Font discovery utilities used by the dump-fonts pipeline.
-
-This module contains platform-specific logic used to locate font files
-installed on the system. The goal is to isolate operating-system
-interaction from the higher-level inventory pipeline.
+This module implements platform-specific mechanisms used to locate
+installed font files on the host system.
 
 Responsibilities
 ----------------
-• Enumerate installed font files
-• Implement platform-specific discovery logic
-• Provide a uniform interface to the pipeline layer
+- Enumerate installed font files.
+- Implement platform-specific discovery strategies.
+- Provide a uniform interface for higher-level pipeline modules.
 
 Design principles
 -----------------
-• Platform-specific code lives only in the platform layer
-• No dependency on inventory or catalog modules
-• Pure discovery: no font parsing or metadata extraction
-• Deterministic results based on the system environment
+Font discovery is limited to locating font files on the system and does
+not perform font parsing or metadata extraction. Platform-specific code
+is confined to the platform subsystem to keep the inventory pipeline
+portable.
+
+Architectural role
+------------------
+This module belongs to the **platform subsystem** and provides the font
+discovery stage used by the `dump-fonts` workflow.
 
 Supported platforms
 -------------------

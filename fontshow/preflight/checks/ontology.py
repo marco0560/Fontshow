@@ -1,3 +1,29 @@
+"""
+Ontology consistency checks.
+
+This module implements the preflight check verifying that the internal
+Fontshow ontology tables are structurally consistent.
+
+Responsibilities
+----------------
+- Validate integrity of script metadata definitions.
+- Verify language inference profiles reference valid scripts.
+- Ensure representative languages and specimen samples are available.
+- Guarantee deterministic resolution of script → language → specimen.
+
+Design principles
+-----------------
+Ontology validation operates entirely on the static tables defined in
+the ontology subsystem. The check ensures that ontology data remains
+internally coherent and safe for use by inventory analysis and catalog
+generation.
+
+Architectural role
+------------------
+This module belongs to the **preflight subsystem** and implements the
+ontology integrity check executed during environment validation.
+"""
+
 from __future__ import annotations
 
 from fontshow.core.types import Severity

@@ -1,3 +1,28 @@
+"""
+Preflight execution engine.
+
+This module implements the core logic responsible for executing the
+registered preflight checks and aggregating their results.
+
+Responsibilities
+----------------
+- Select and execute preflight check classes.
+- Aggregate check results into a structured preflight report.
+- Provide deterministic execution order for built-in checks.
+- Support runtime check registration.
+
+Design principles
+-----------------
+The runner orchestrates check execution but does not implement the
+checks themselves. Individual checks remain isolated classes that
+produce structured results consumed by this module.
+
+Architectural role
+------------------
+This module belongs to the **preflight subsystem** and implements the
+execution stage responsible for running environment validation checks.
+"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

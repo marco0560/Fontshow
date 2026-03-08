@@ -1,10 +1,28 @@
 """
-Charset range decoding utilities.
+Unicode charset decoding helpers.
 
-Extracted from parse_font_inventory to isolate pure Unicode logic.
+This module provides utilities for decoding and analysing Unicode
+character set information derived from external font metadata sources.
 
-These helpers operate purely on charset bitmaps and codepoint ranges
-and therefore belong in the unicode domain layer.
+Responsibilities
+----------------
+- Decode FontConfig charset bitmaps into normalized Unicode ranges.
+- Derive Unicode block coverage from normalized charset ranges.
+- Provide deterministic Unicode coverage data used by inventory
+  analysis and language inference.
+
+Design principles
+-----------------
+Unicode decoding logic is isolated from inventory parsing and platform
+integration layers. Functions in this module operate purely on Unicode
+data structures and perform deterministic transformations without
+external side effects.
+
+Architectural role
+------------------
+This module belongs to the **Unicode processing subsystem** and provides
+low-level charset decoding utilities used by inventory metadata
+analysis.
 """
 
 from __future__ import annotations

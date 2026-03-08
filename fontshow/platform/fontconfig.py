@@ -1,32 +1,27 @@
 """
-Fontshow – platform.fontconfig
-==============================
+Fontconfig integration helpers.
 
-Fontconfig integration utilities used by the dump-fonts pipeline.
-
-This module isolates all interaction with the external ``fc-query`` tool
-provided by Fontconfig. Its responsibilities include executing the
-command-line tool, decoding its structured output, and extracting
-character set coverage and basic metadata for font files.
-
-Separating this logic from the pipeline layer ensures that platform
-integration code remains confined to the ``platform`` package, while
-higher-level modules operate on normalized data structures.
+This module provides utilities for interacting with the external
+Fontconfig tools used during font discovery and inventory generation.
 
 Responsibilities
 ----------------
-• Invoke the ``fc-query`` executable
-• Batch font file paths to avoid command-line limits
-• Parse fc-query output blocks
-• Decode fontconfig charset bitmap information
-• Extract core metadata fields reported by fontconfig
+- Execute the `fc-query` command-line tool.
+- Parse structured output produced by Fontconfig.
+- Decode charset bitmap information reported for fonts.
+- Extract platform metadata required for inventory construction.
 
 Design principles
 -----------------
-• No dependency on pipeline entrypoints
-• No dependency on catalog or LaTeX layers
-• Deterministic parsing of fc-query output
-• Pure platform integration: no inventory object construction
+Platform integration logic is isolated in this module so that higher
+pipeline layers operate only on normalized Python data structures.
+The module performs deterministic parsing and does not construct
+inventory objects.
+
+Architectural role
+------------------
+This module belongs to the **platform subsystem** and implements
+Fontconfig-based metadata extraction used during inventory generation.
 
 Typical workflow
 ----------------
