@@ -1,3 +1,22 @@
+"""
+Verify TRACE-level logging behavior.
+
+Responsibilities
+----------------
+- Ensure TRACE-level logging emits additional diagnostics.
+- Validate behavior differences between DEBUG and TRACE levels.
+
+Design principles
+----------------
+Logging tests control the logging configuration so that emitted
+messages can be verified deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+TRACE-level logging support in the Fontshow logging subsystem.
+"""
+
 import importlib
 import logging
 from pathlib import Path

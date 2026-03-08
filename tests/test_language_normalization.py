@@ -1,3 +1,22 @@
+"""
+Verify language normalization utilities.
+
+Responsibilities
+----------------
+- Ensure language codes are normalized to canonical form.
+- Validate handling of case normalization and empty inputs.
+
+Design principles
+----------------
+Normalization tests rely on small synthetic language lists so that
+normalization rules can be validated deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+language normalization behavior used during inventory validation.
+"""
+
 from fontshow.inventory.semantic_validation import normalize_languages
 
 

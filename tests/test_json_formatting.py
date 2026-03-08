@@ -1,3 +1,22 @@
+"""
+Verify JSON formatting utilities.
+
+Responsibilities
+----------------
+- Ensure pretty-printing compacts short numeric lists.
+- Verify long lists remain expanded for readability.
+
+Design principles
+----------------
+Formatting tests validate output structure so that JSON formatting
+behavior remains stable and deterministic.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the JSON formatting utilities used by Fontshow.
+"""
+
 from fontshow.core.json_format import dumps_pretty
 
 

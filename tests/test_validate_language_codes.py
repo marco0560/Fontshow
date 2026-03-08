@@ -1,3 +1,22 @@
+"""
+Verify validation of language codes in inventories.
+
+Responsibilities
+----------------
+- Ensure valid language codes do not produce warnings.
+- Verify invalid inferred language codes generate validation warnings.
+
+Design principles
+----------------
+Tests use minimal synthetic inventories so that language validation
+behavior can be verified deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+semantic validation rules for language codes within inventory data.
+"""
+
 from fontshow.inventory.semantic_validation import validate_language_codes
 
 

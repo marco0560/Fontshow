@@ -1,3 +1,22 @@
+"""
+Verify output schema invariants.
+
+Responsibilities
+----------------
+- Ensure parsed inventory outputs remain schema-valid.
+- Validate structural invariants expected by the inventory schema.
+
+Design principles
+----------------
+Invariant tests construct minimal inventories to ensure schema
+compliance checks remain deterministic.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+that parsed inventory outputs maintain schema invariants.
+"""
+
 import json
 
 from fontshow.cli.parse_inventory import parse_inventory

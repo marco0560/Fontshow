@@ -1,3 +1,22 @@
+"""
+Verify integration behavior of inventory parsing.
+
+Responsibilities
+----------------
+- Ensure the parse_inventory CLI logic produces valid inference results.
+- Validate integration between parsing, inference, and output structure.
+
+Design principles
+----------------
+Integration tests use minimal inventory structures so that parsing and
+inference behavior can be verified deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+integration behavior of the inventory parsing pipeline.
+"""
+
 from fontshow.cli.parse_inventory import parse_inventory
 from fontshow.core.types import Severity
 

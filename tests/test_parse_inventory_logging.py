@@ -1,3 +1,23 @@
+"""
+Verify logging behavior during inventory parsing.
+
+Responsibilities
+----------------
+- Ensure the parse-inventory command emits expected diagnostic logs.
+- Validate integration between inventory parsing and the logging
+  subsystem.
+
+Design principles
+----------------
+Logging tests reload the logging and CLI modules to ensure logging
+configuration is applied deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+logging instrumentation during inventory parsing.
+"""
+
 import argparse
 import importlib
 import json

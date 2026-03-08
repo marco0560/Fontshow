@@ -1,3 +1,22 @@
+"""
+Verify semantic validation of language codes.
+
+Responsibilities
+----------------
+- Ensure raw language tags are not validated prematurely.
+- Verify that only normalized language lists are checked.
+
+Design principles
+----------------
+Semantic validation tests isolate language validation logic using
+minimal synthetic inventories.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+semantic validation rules for language codes.
+"""
+
 from fontshow.inventory.semantic_validation import validate_language_codes
 
 

@@ -1,3 +1,22 @@
+"""
+Verify validation of font inventory entries.
+
+Responsibilities
+----------------
+- Ensure minimal valid entries pass validation.
+- Verify structural errors are detected for malformed entries.
+
+Design principles
+----------------
+Validation tests construct minimal inventory entries so that schema
+and structural validation rules can be verified deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+validation logic for individual font inventory entries.
+"""
+
 from fontshow.inventory.entry_validation import validate_font_entry
 from tests.helpers import minimal_font_entry_v12
 

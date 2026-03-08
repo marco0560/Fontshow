@@ -1,3 +1,22 @@
+"""
+Verify validation of complete font inventories.
+
+Responsibilities
+----------------
+- Ensure minimal valid inventories pass validation.
+- Verify structural validation detects invalid inventory roots.
+
+Design principles
+----------------
+Validation tests rely on minimal synthetic inventories so that
+inventory validation behavior can be verified deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+validation behavior for complete inventory structures.
+"""
+
 from fontshow.cli.parse_inventory import validate_inventory
 from tests.helpers import minimal_font_entry_v12, minimal_inventory_v12
 
