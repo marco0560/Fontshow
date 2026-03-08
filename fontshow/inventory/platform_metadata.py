@@ -1,3 +1,29 @@
+"""
+Platform metadata extraction helpers.
+
+This module collects runtime platform metadata used to describe the
+environment in which a Fontshow inventory was generated.
+
+Responsibilities
+----------------
+- Detect the execution environment (native, container, WSL).
+- Collect operating system and kernel information.
+- Capture host and runtime metadata such as hostname and Python version.
+- Produce schema-compatible metadata structures.
+
+Design principles
+-----------------
+Platform metadata must be gathered in a deterministic and portable
+manner using only standard library facilities. The module acts as the
+single source of truth for runtime metadata across inventory generation
+and downstream pipeline stages.
+
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and provides runtime
+environment metadata included in Fontshow inventories.
+"""
+
 from __future__ import annotations
 
 import getpass

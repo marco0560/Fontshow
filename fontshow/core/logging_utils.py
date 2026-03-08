@@ -1,5 +1,31 @@
 """
-Fontshow structured logging subsystem.
+Structured logging subsystem.
+
+This module implements the centralized logging infrastructure used
+throughout Fontshow.
+
+Responsibilities
+----------------
+- Provide a lightweight logging facade wrapping the Python stdlib
+  logging system.
+- Define and manage the custom TRACE logging level.
+- Implement structured logging helpers for deterministic diagnostics.
+- Support category-based TRACE filtering.
+
+Design principles
+-----------------
+Logging must never interfere with program execution. When disabled,
+logging calls must behave as no-ops with minimal overhead. Structured
+logging output must remain deterministic and machine-readable.
+
+Architectural role
+------------------
+This module belongs to the **core infrastructure layer** and provides
+the logging framework used across all Fontshow subsystems.
+
+
+ARCHITECTURAL NOTES:
+====================
 
 This module provides the centralized logging infrastructure used across
 Fontshow, including:

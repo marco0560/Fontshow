@@ -1,10 +1,26 @@
 """
 Inventory entry validation helpers.
 
-Extracted from parse_font_inventory.py during module refactoring.
+This module implements validation routines used to verify the semantic
+consistency of individual font entries within a parsed inventory.
 
-These helpers validate semantic consistency of parsed font entries
-before they are used by downstream catalog generation.
+Responsibilities
+----------------
+- Validate required fields of normalized inventory entries.
+- Enforce type and value constraints for entry attributes.
+- Collect validation errors associated with individual font entries.
+
+Design principles
+-----------------
+Validation helpers operate on normalized inventory structures and must
+not perform orchestration or CLI interactions. They provide deterministic
+checks that can be reused by multiple pipeline stages.
+
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and supports semantic
+validation of parsed inventory entries before they are consumed by
+catalog generation or other downstream stages.
 """
 
 from __future__ import annotations

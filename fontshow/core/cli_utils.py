@@ -1,22 +1,28 @@
 """
-CLI utilities for Fontshow.
+CLI utility helpers.
 
-This module centralizes:
+This module provides shared utilities used by Fontshow command-line
+modules to implement consistent argument handling and terminal output.
 
-- CLI presentation state management (quiet / verbose modes)
-- Deterministic message formatting for terminal output
-- Severity-based routing of CLI messages
-- Common argument registration helpers
-- Standalone CLI entry point for inventory validation
+Responsibilities
+----------------
+- Manage CLI presentation modes (quiet / verbose).
+- Provide standardized logging helpers for CLI output.
+- Register common CLI arguments shared across commands.
+- Route messages according to severity levels.
 
-The design ensures:
+Design principles
+-----------------
+CLI presentation concerns are centralized here so that command modules
+remain focused on workflow orchestration. All user-visible terminal
+messages should pass through these helpers to ensure deterministic and
+consistent output formatting.
 
-- Deterministic output formatting
-- Centralized control of presentation behavior
-- Clear separation between CLI presentation and business logic
-- Compatibility with schema and semantic validation layers
-
-All CLI-facing output in Fontshow should route through this module.
+Architectural role
+------------------
+This module belongs to the **core infrastructure layer** and provides
+CLI-facing utilities used by command modules in the `fontshow.cli`
+package.
 """
 
 import argparse

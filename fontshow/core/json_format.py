@@ -1,14 +1,27 @@
 """
-JSON formatting helpers.
+JSON formatting utilities.
 
-This module provides a small, dependency-free JSON pretty-printer
-used for stable, human-friendly output artifacts.
+This module implements a deterministic JSON pretty-printer used by
+Fontshow when producing human-readable artifacts.
 
-Design goal:
-- Keep object/array indentation (like json.dumps(indent=2))
-- Compact short numeric arrays (e.g. Unicode ranges) onto a single line
+Responsibilities
+----------------
+- Provide stable and deterministic JSON formatting.
+- Preserve indentation and readability for structured objects.
+- Compact short numeric arrays (such as Unicode ranges) onto a
+  single line.
 
-This is intentionally formatting-only: it MUST NOT change data.
+Design principles
+-----------------
+Formatting logic must never alter data semantics. The module performs
+presentation-only transformations while preserving the exact data
+content.
+
+Architectural role
+------------------
+This module belongs to the **core infrastructure layer** and provides
+stable JSON formatting used by inventory generation, parsing, and
+catalog output.
 """
 
 from __future__ import annotations

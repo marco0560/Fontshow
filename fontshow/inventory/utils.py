@@ -1,27 +1,27 @@
 """
-Fontshow – inventory.utils
-==========================
+Inventory utility helpers.
 
-Small helper utilities used during font inventory construction.
+This module provides lightweight helper functions used during inventory
+generation and metadata extraction.
 
-This module contains lightweight functions that do not depend on
-pipeline entrypoints or external platform integrations. Their purpose
-is to support deterministic font inventory generation while keeping
-pipeline modules thin.
+Responsibilities
+----------------
+- Provide deterministic helpers used during inventory construction.
+- Implement subprocess wrappers for external tool execution.
+- Generate stable identifiers for font entries.
+- Provide cache keys and other small utilities used by the inventory
+  pipeline.
 
 Design principles
 -----------------
-• No dependency on pipeline modules
-• No side effects beyond simple subprocess execution
-• Deterministic helpers used during inventory generation
-• Safe to import from inventory, catalog, or pipeline layers
+Utilities in this module must remain lightweight and independent from
+pipeline orchestration. They are safe to import across inventory,
+catalog, and CLI layers.
 
-Typical responsibilities
-------------------------
-• Timestamp generation for inventory metadata
-• Safe subprocess execution wrappers
-• Deterministic font identifiers
-• Cache key generation for font metadata extraction
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and provides shared
+helper functions used during inventory generation.
 """
 
 import hashlib

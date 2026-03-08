@@ -1,23 +1,28 @@
 """
-Fontshow – constants.opentype
-=============================
+OpenType specification constants.
 
-OpenType specification constants used by Fontshow.
+This module defines numeric identifiers and fixed values derived from
+the OpenType specification.
 
-This module centralizes numeric identifiers and fixed values defined by the
-OpenType specification, primarily those related to the ``name`` table and
-other standardized font metadata structures.
-
-The purpose of this module is to avoid scattering OpenType identifiers across
-the codebase and to ensure that all specification-derived constants are
-defined in a single canonical location.
+Responsibilities
+----------------
+- Provide constants representing OpenType ``name`` table identifiers.
+- Centralize specification-derived values used during font metadata
+  extraction.
+- Serve as the canonical reference for OpenType numeric identifiers
+  used by Fontshow.
 
 Design principles
 -----------------
-• Values mirror the OpenType specification and must not be modified.
-• No runtime logic or functions are defined here.
-• Safe to import from any layer of the architecture.
-• Acts as the authoritative reference for OpenType numeric identifiers.
+Constants mirror the OpenType specification and must not be modified.
+This module contains no runtime logic and is safe to import from any
+layer of the architecture.
+
+Architectural role
+------------------
+This module belongs to the **constants infrastructure layer** and
+provides specification-derived identifiers used by the inventory and
+metadata extraction subsystems.
 
 Typical usage
 -------------

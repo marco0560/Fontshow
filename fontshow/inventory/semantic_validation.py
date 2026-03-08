@@ -1,13 +1,25 @@
 """
-Semantic validation for enriched Fontshow inventories.
+Semantic validation helpers for inventory data.
 
-This module performs semantic consistency checks on enriched inventory data.
-Semantic validation:
-- does not perform inference,
-- does not normalize or modify data,
-- reports issues exclusively via structured warnings.
+This module performs semantic consistency checks on enriched Fontshow
+inventory structures.
 
-Semantic validation is distinct from both schema validation and inference logic.
+Responsibilities
+----------------
+- Validate semantic correctness of normalized inventory metadata.
+- Detect invalid or deprecated language codes.
+- Emit structured warnings describing semantic issues.
+
+Design principles
+-----------------
+Semantic validation must not modify inventory data. It operates only as
+a diagnostic stage that reports issues through structured warnings.
+
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and performs semantic
+validation after metadata enrichment and before downstream catalog
+processing.
 """
 
 from __future__ import annotations

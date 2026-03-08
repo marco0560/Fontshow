@@ -1,14 +1,24 @@
 """
-Schema validation utilities for Fontshow inventory files.
+Inventory schema validation helpers.
 
-This module validates the *structural correctness* of inventory files.
+This module validates the structural correctness of Fontshow inventory
+files against the supported JSON schema version.
+
+Responsibilities
+----------------
+- Validate inventory structure against the JSON schema.
+- Ensure the inventory schema version is supported.
+- Report validation failures for malformed inventory data.
 
 Design principles
 -----------------
-- Structural validation is strict and raises on failure
-- Public API remains backward-compatible
-- Semantic validation is handled elsewhere
-- Schema version selection is explicit
+Structural validation is strict and raises errors on failure. Semantic
+validation of inventory contents is handled separately by other modules.
+
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and performs the
+schema validation stage used during inventory parsing and validation.
 """
 
 import json

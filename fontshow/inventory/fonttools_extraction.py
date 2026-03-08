@@ -1,30 +1,29 @@
 """
-Fontshow – inventory.fonttools_extraction
-=========================================
+FontTools metadata extraction helpers.
 
-Font metadata extraction using FontTools.
-
-This module contains the logic responsible for inspecting OpenType and
-TrueType fonts using the `fontTools` library and extracting normalized
-metadata required for building the Fontshow inventory.
+This module implements the logic used to extract font metadata from
+OpenType and TrueType font binaries using the `fontTools` library.
 
 Responsibilities
 ----------------
-• Read OpenType tables via fontTools.TTFont
-• Extract name table metadata (family, style, version, license, etc.)
-• Decode OS/2 table information
-• Detect color font tables
-• Compute Unicode block coverage
-• Derive charset ranges
-• Extract OpenType feature information
-• Produce structured metadata used by the inventory layer
+- Inspect OpenType tables via `fontTools.ttLib`.
+- Extract name table metadata such as family, style, and version.
+- Decode OS/2 table information and font capabilities.
+- Detect color font tables and other format features.
+- Compute Unicode block coverage and charset ranges.
+- Produce normalized metadata used by the inventory subsystem.
 
 Design principles
 -----------------
-• No dependency on pipeline entrypoints
-• Deterministic extraction independent of platform
-• Isolate all fontTools interaction in a single module
-• Return plain Python structures suitable for inventory construction
+All interaction with the `fontTools` library is isolated in this module
+so that font binary inspection remains centralized and deterministic.
+The module returns plain Python structures suitable for inventory
+construction and serialization.
+
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and performs the
+font binary inspection stage used during inventory generation.
 
 Typical workflow
 ----------------

@@ -1,8 +1,26 @@
 """
-Shared specimen selectors.
+Shared specimen selection helpers.
 
-This module contains deterministic helpers for selecting
-language samples from the ontology.
+This module provides deterministic utilities for selecting representative
+text samples used when rendering font specimens.
+
+Responsibilities
+----------------
+- Select a representative language sample based on inferred languages.
+- Provide fallback samples derived from script metadata when languages
+  are unavailable.
+- Ensure specimen selection is deterministic across runs.
+
+Design principles
+-----------------
+Sample selection operates exclusively on normalized language and script
+metadata derived from the ontology tables. No rendering or formatting
+logic is implemented here.
+
+Architectural role
+------------------
+This module belongs to the **shared utilities layer** and provides
+specimen-selection helpers used by the catalog rendering subsystem.
 """
 
 from __future__ import annotations

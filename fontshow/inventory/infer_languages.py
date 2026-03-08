@@ -1,12 +1,26 @@
-# fontshow/infer_languages.py
 """
-Language inference based on Unicode coverage metadata.
+Language inference helpers.
 
-This module infers candidate languages exclusively from Unicode block coverage
-data produced during the raw inventory stage.
+This module implements deterministic inference of candidate languages
+based on Unicode block coverage information.
 
-FontConfig-derived charset metadata is NOT consumed by this module and does not
-influence language inference.
+Responsibilities
+----------------
+- Infer candidate languages from Unicode block coverage statistics.
+- Compute confidence levels for inferred languages.
+- Produce structured language inference metadata used by the inventory.
+
+Design principles
+-----------------
+Language inference operates exclusively on Unicode coverage data
+produced during inventory generation. Platform-specific charset
+metadata is intentionally ignored to ensure deterministic behavior
+across environments.
+
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and performs
+language inference used during the inventory parsing stage.
 """
 
 from __future__ import annotations

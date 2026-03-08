@@ -1,26 +1,26 @@
 """
 Inventory validation helpers.
 
-This module contains the validation logic used by the inventory parsing
-pipeline to ensure that font inventory JSON data conforms to the expected
-schema and structural constraints before further processing.
+This module implements validation logic applied to parsed Fontshow
+inventory structures.
 
 Responsibilities
 ----------------
-- Apply JSON schema validation to the inventory document.
+- Apply JSON schema validation to inventory documents.
 - Perform structural checks on the inventory container and entries.
-- Provide deterministic error reporting for invalid inventories.
+- Produce deterministic error reporting for invalid inventories.
 
-Design notes
-------------
-The functions in this module are called from the `parse_inventory` pipeline
-but do not perform any orchestration, CLI interaction, or file I/O. They
-operate purely on in-memory data structures and raise exceptions when
-validation fails.
+Design principles
+-----------------
+Validation helpers operate purely on in-memory inventory structures and
+must not perform CLI orchestration or file I/O. They enforce structural
+and semantic constraints while keeping pipeline modules focused on
+workflow coordination.
 
-This separation keeps the pipeline module (`parse_font_inventory.py`)
-focused on orchestration while the inventory domain module encapsulates
-all validation rules.
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and implements the
+validation stage used during inventory parsing and validation workflows.
 """
 
 from __future__ import annotations

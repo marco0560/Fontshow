@@ -1,8 +1,25 @@
 """
-Catalog generation constants.
+Catalog subsystem constants.
 
-This module contains configuration constants used during catalog
-generation such as excluded fonts and default rendering parameters.
+This module defines configuration constants used during catalog
+generation.
+
+Responsibilities
+----------------
+- Define font families excluded from catalog rendering.
+- Provide default font sets used for catalog testing.
+- Expose catalog-specific configuration values.
+
+Design principles
+-----------------
+Constants are centralized in this module to avoid duplication and to
+ensure consistent configuration across the catalog generation workflow.
+
+Architectural role
+------------------
+This module belongs to the **constants infrastructure layer** and
+provides catalog-specific configuration values used by the catalog
+pipeline and CLI commands.
 """
 
 from fontshow.platform.runtime import IS_LINUX, IS_WINDOWS

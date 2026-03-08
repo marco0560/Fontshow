@@ -1,5 +1,25 @@
 """
-Script coverage analysis utilities for inventory processing.
+Script coverage analysis helpers.
+
+This module derives writing system coverage statistics from Unicode
+coverage metadata.
+
+Responsibilities
+----------------
+- Compute script coverage ratios from Unicode block coverage data.
+- Map Unicode block coverage to script ranges defined in the ontology.
+- Produce normalized script coverage metrics used by the inventory.
+
+Design principles
+-----------------
+Script coverage analysis operates exclusively on Unicode coverage data
+produced during earlier inventory stages. The functions are pure and
+must not mutate input structures.
+
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and performs script
+coverage analysis used during metadata enrichment.
 """
 
 from __future__ import annotations

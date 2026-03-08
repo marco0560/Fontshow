@@ -1,16 +1,27 @@
 """
-Fontshow – inventory.types
-==========================
+Inventory internal data structures.
 
-Internal data structures used during the font inventory construction
-pipeline.
+This module defines internal data containers used during inventory
+construction and metadata extraction.
 
-These types represent intermediate contexts and data containers used
-while extracting metadata from fonts and building normalized inventory
-entries.
+Responsibilities
+----------------
+- Provide context objects used while building inventory entries.
+- Define intermediate data structures used during font metadata
+  extraction.
+- Support deterministic construction of normalized inventory records.
 
-They are not part of the public inventory schema and must not be used
-outside the inventory subsystem.
+Design principles
+-----------------
+These types represent internal implementation details of the inventory
+pipeline and must not appear in the serialized inventory schema. The
+module contains lightweight data structures without external
+dependencies.
+
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and defines internal
+types used during font metadata extraction and inventory construction.
 """
 
 from dataclasses import dataclass

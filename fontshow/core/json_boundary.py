@@ -1,12 +1,26 @@
 """
-JSON read-boundary normalization.
+JSON boundary normalization utilities.
 
-Invariant:
-    In-memory: enums are enums
-    On disk: enums are strings
+This module handles normalization steps performed immediately after
+loading Fontshow JSON inventories.
 
-This module performs the **single allowed conversion**
-after JSON load and before the data enters the core pipeline.
+Responsibilities
+----------------
+- Convert serialized enum values into internal Enum objects.
+- Enforce the invariant between on-disk JSON representations and
+  in-memory data structures.
+
+Design principles
+-----------------
+The JSON boundary is the only location where conversion between
+serialized and in-memory representations is permitted. All subsequent
+pipeline stages operate on normalized in-memory structures.
+
+Architectural role
+------------------
+This module belongs to the **core infrastructure layer** and implements
+the normalization step applied at the JSON input boundary of the
+Fontshow pipeline.
 """
 
 from __future__ import annotations

@@ -1,13 +1,27 @@
 """
 Inventory metadata enrichment helpers.
 
-This module implements the deterministic enrichment stages used by the
-inventory parsing pipeline. These stages transform raw font inventory
-entries by attaching derived metadata such as language information,
-script coverage, and normalized charset information.
+This module implements deterministic metadata enrichment stages used
+during the inventory parsing pipeline.
 
-The functions here are called by the parse_inventory pipeline but do not
-perform any CLI or orchestration logic themselves.
+Responsibilities
+----------------
+- Derive script coverage from Unicode block information.
+- Perform language inference based on coverage statistics.
+- Normalize language and script metadata.
+- Attach derived metadata and structured warnings to inventory entries.
+
+Design principles
+-----------------
+Metadata enrichment operates exclusively on normalized inventory
+structures produced by earlier pipeline stages. The module performs
+pure data transformations and must not implement CLI orchestration or
+external tool interaction.
+
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and performs the
+metadata enrichment stage used during the `parse-inventory` workflow.
 """
 
 from typing import Any, cast

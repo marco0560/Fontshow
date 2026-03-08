@@ -1,12 +1,25 @@
 """
-Inventory parsing diagnostics helpers.
+Inventory parsing diagnostic helpers.
 
-This module contains utilities used by the inventory parsing pipeline to
-format diagnostic messages, collect language inference warnings, and emit
-debug information during parsing.
+This module provides utilities used during the inventory parsing stage
+to build and emit diagnostic messages.
 
-The functions here are pure helpers and do not perform orchestration or
-CLI handling. They are called from the parse_inventory pipeline.
+Responsibilities
+----------------
+- Format human-readable identifiers for inventory entries.
+- Emit warnings related to language inference and metadata extraction.
+- Provide diagnostic helpers used by the inventory parsing pipeline.
+
+Design principles
+-----------------
+Diagnostics helpers operate on parsed inventory structures and must
+not perform orchestration or CLI command handling. Their purpose is
+to keep diagnostic logic separate from the core parsing workflow.
+
+Architectural role
+------------------
+This module belongs to the **diagnostics subsystem** and supports the
+inventory parsing stage implemented in `fontshow.cli.parse_inventory`.
 """
 
 from __future__ import annotations

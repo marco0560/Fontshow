@@ -6,8 +6,8 @@ during inventory parsing. A specimen is a representative string of characters
 that can be rendered later in the catalog to demonstrate a font's glyph
 coverage.
 
-Design goals
-------------
+Design principles
+-----------------
 - Deterministic: the same font always produces the same specimen.
 - Script-aware: prefer internally curated samples when possible.
 - Robust fallback: derive specimens from cmap coverage when no curated

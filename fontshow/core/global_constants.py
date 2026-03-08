@@ -1,16 +1,25 @@
 """
-Global constants used across the Fontshow project.
+Global project constants.
 
-This module defines versioned and project-wide constants that must remain
-stable and centrally maintained to guarantee deterministic behavior across
-all pipeline stages.
+This module defines versioned constants shared across the Fontshow
+pipeline.
 
-Constants
----------
-SCHEMA_VERSION : str
-    Current Fontshow JSON inventory schema version. This value is used by
-    producers and consumers of the inventory to ensure compatibility and
-    validation correctness.
+Responsibilities
+----------------
+- Define the canonical inventory schema version.
+- Provide project-wide constants used across multiple subsystems.
+
+Design principles
+-----------------
+Constants that influence cross-module behavior must be defined in a
+single authoritative location to ensure deterministic behavior across
+pipeline stages.
+
+Architectural role
+------------------
+This module belongs to the **core infrastructure layer** and exposes
+global constants used by inventory processing, validation, and CLI
+modules.
 """
 
 SCHEMA_VERSION = "1.2"

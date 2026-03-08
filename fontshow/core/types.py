@@ -1,3 +1,28 @@
+"""
+Core shared type definitions.
+
+This module defines fundamental data types used throughout the
+Fontshow codebase.
+
+Responsibilities
+----------------
+- Define typed structures used across the pipeline.
+- Provide canonical representations of script identifiers.
+- Provide shared enums and TypedDict structures used by multiple
+  subsystems.
+
+Design principles
+-----------------
+Core types must remain lightweight and dependency-free so they can be
+imported from any subsystem without introducing circular dependencies.
+
+Architectural role
+------------------
+This module belongs to the **core infrastructure layer** and defines
+shared type abstractions used across the inventory, catalog, platform,
+and CLI subsystems.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

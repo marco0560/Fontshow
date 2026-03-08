@@ -1,26 +1,27 @@
 """
-Fontshow – inventory.font_descriptor
-====================================
+Font inventory descriptor construction.
 
-Construction of normalized font inventory entries.
-
-This module transforms raw metadata extracted from font binaries and
-platform tools into the structured inventory representation used by
-Fontshow.
+This module builds normalized font inventory entries from metadata
+collected during the discovery stage.
 
 Responsibilities
 ----------------
-• Classify font types (variable, color, decorative, etc.)
-• Normalize font metrics and metadata fields
-• Combine platform and fontTools metadata
-• Construct the final inventory descriptor for each font face
+- Combine metadata obtained from platform tools and fontTools.
+- Normalize font properties and metrics.
+- Classify fonts according to format characteristics.
+- Construct the final inventory descriptor for each font face.
 
 Design principles
 -----------------
-• No direct interaction with external tools
-• No font binary parsing
-• Pure transformation of already extracted metadata
-• Deterministic output suitable for JSON inventory serialization
+The module performs deterministic transformations of already extracted
+metadata. It must not invoke external tools or perform direct font
+binary parsing.
+
+Architectural role
+------------------
+This module belongs to the **inventory subsystem** and constructs the
+normalized font descriptors that form the core of the Fontshow
+inventory structure.
 """
 
 from typing import Any
