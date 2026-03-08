@@ -1,4 +1,30 @@
 #!python
+"""
+Run a local semantic-release preview.
+
+This maintenance script validates the local release-preview environment
+and runs semantic-release in dry-run mode so release metadata can be
+checked before performing an actual release workflow.
+
+Responsibilities
+----------------
+- Verify that required release executables are available.
+- Validate the configured semantic-release configuration path.
+- Execute a local dry-run release preview command.
+
+Design principles
+-----------------
+Release preview must be explicit, local, and non-destructive. The script
+checks preconditions before execution and limits itself to dry-run
+operations so release logic can be inspected without mutating repository
+state.
+
+Architectural role
+------------------
+This module belongs to the developer tooling layer and provides a
+release-maintenance utility outside the production Fontshow runtime.
+"""
+
 from __future__ import annotations
 
 import argparse

@@ -1,15 +1,28 @@
 #!python
 """
-clean_repo.py
+Clean repository artifacts.
 
-Remove generated artifacts and ignored files from the Fontshow repository,
-bringing the working tree back to a clean state.
+This maintenance script removes generated artifacts and git-ignored files
+from the Fontshow repository so the working tree can be restored to a
+clean state before validation, release, or refactoring work.
 
-By default, the script removes files that are:
-- untracked
-- ignored by .gitignore
+Responsibilities
+----------------
+- Discover ignored paths currently present in the repository working tree.
+- Remove removable files and directories while respecting protected paths.
+- Support dry-run execution so cleanup actions can be reviewed safely.
 
-Use --dry-run to preview what would be removed without deleting anything.
+Design principles
+-----------------
+Repository cleanup must be deterministic and conservative. The script only
+acts on paths reported as ignored by git and explicitly preserves protected
+developer directories such as virtual environments or editor metadata.
+
+Architectural role
+------------------
+This module belongs to the developer tooling layer and provides a local
+repository-maintenance utility used outside the production Fontshow
+pipeline.
 """
 
 import argparse

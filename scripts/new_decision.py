@@ -1,4 +1,30 @@
 #!python
+"""
+Create a new architectural decision record.
+
+This maintenance script creates a new decision note under
+`docs/decisions/` by assigning the next numeric prefix and deriving a
+filesystem-friendly slug from a human-readable title.
+
+Responsibilities
+----------------
+- Determine the next available decision-note number.
+- Normalize decision titles into stable slug filenames.
+- Create new architectural decision records in the canonical location.
+
+Design principles
+-----------------
+Decision-note creation must follow a deterministic naming scheme so the
+documentation history remains ordered and easy to navigate. The script
+centralizes numbering and slug generation to avoid manual inconsistencies.
+
+Architectural role
+------------------
+This module belongs to the developer tooling layer and provides a
+documentation-maintenance utility for the project's architectural
+decision log.
+"""
+
 from __future__ import annotations
 
 import argparse

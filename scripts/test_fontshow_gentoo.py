@@ -1,4 +1,30 @@
 #!python
+"""
+Run a local Gentoo-style Fontshow end-to-end test.
+
+This maintenance script exercises the installed Fontshow command-line
+workflow in a temporary working directory, covering preflight,
+inventory generation, parsing, and validation in a local environment.
+
+Responsibilities
+----------------
+- Verify the availability of required Fontshow executables.
+- Execute the end-to-end CLI workflow in a temporary workspace.
+- Report failures early and preserve the workspace when requested.
+
+Design principles
+-----------------
+End-to-end verification must mimic a real local user workflow while
+remaining isolated from the repository state. The script uses a temporary
+working directory and explicit command execution so failures are easy to
+diagnose and the workflow remains reproducible.
+
+Architectural role
+------------------
+This module belongs to the developer tooling layer and provides a local
+integration-test utility outside the production Fontshow pipeline.
+"""
+
 from __future__ import annotations
 
 import argparse

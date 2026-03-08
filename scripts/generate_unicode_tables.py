@@ -1,26 +1,31 @@
 #!/usr/bin/env python3
 """
-Fontshow — generate_unicode_tables.py
-====================================
+Generate Unicode-derived Python tables.
 
-Deterministically generate Python tables from vendored Unicode Character
-Database (UCD) files.
+This maintenance script reads vendored Unicode Character Database inputs
+and deterministically produces Python source text for derived tables used
+by Fontshow's Unicode and script-processing infrastructure.
 
-Inputs (vendored, pinned by version):
-- fontshow/data/unicode/Blocks-<VERSION>.txt
-- fontshow/data/unicode/Scripts-<VERSION>.txt
+Responsibilities
+----------------
+- Parse vendored Unicode block and script registry inputs.
+- Normalize and aggregate Unicode script metadata into deterministic
+  Python table representations.
+- Generate source text for committed Unicode support tables.
 
-Outputs (generated, committed in a later step):
-- fontshow/unicode_tables.py
+Design principles
+-----------------
+Unicode table generation must be reproducible, standalone, and based only
+on vendored authoritative inputs. The script avoids runtime side effects
+and isolates table-generation logic from the production pipeline so that
+derived data can be regenerated deterministically when upstream Unicode
+data changes.
 
-Notes
------
-- This script is intentionally standalone (stdlib only).
-- It does not modify any runtime behavior unless the generated module is later
-  imported by production code.
-- Script keys produced are *Unicode Script property values* (e.g. "Latin",
-  "Hebrew") normalized to lowercase (e.g. "latin", "hebrew") for now.
-  In a later step we will map/normalize to ISO-15924 codes where needed.
+Architectural role
+------------------
+This module belongs to the developer tooling layer and provides a
+code-generation utility for the Unicode constants and ontology
+infrastructure used by Fontshow.
 """
 
 from __future__ import annotations

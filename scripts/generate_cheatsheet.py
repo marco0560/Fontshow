@@ -1,4 +1,30 @@
 #!python
+"""
+Generate the project cheat sheet.
+
+This maintenance script scans the documentation tree for marked
+cheat-sheet fragments and assembles them into a single generated
+`docs/cheatsheet.md` file for quick reference.
+
+Responsibilities
+----------------
+- Discover markdown files under the documentation tree.
+- Extract blocks delimited by cheat-sheet markers.
+- Write a deterministic aggregated cheat-sheet document.
+
+Design principles
+-----------------
+Generated documentation must be reproducible and derived only from source
+documentation blocks explicitly marked for inclusion. The script performs
+a one-way aggregation step and avoids any interpretation beyond marker
+extraction and stable ordering.
+
+Architectural role
+------------------
+This module belongs to the developer tooling layer and provides a
+documentation-maintenance utility used during repository upkeep rather
+than at Fontshow runtime.
+"""
 
 import re
 from pathlib import Path

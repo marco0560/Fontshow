@@ -1,4 +1,28 @@
 #!/usr/bin/env python3
+"""
+Synchronize schema documentation with the canonical JSON schema.
+
+This maintenance script updates the embedded JSON schema section in the
+inventory schema documentation so the rendered markdown stays aligned
+with the authoritative schema file in the repository.
+
+Responsibilities
+----------------
+- Read the canonical inventory schema JSON document.
+- Replace the marked schema block inside the schema markdown document.
+- Write updated documentation only when the rendered schema changes.
+
+Design principles
+-----------------
+Schema documentation must be derived from the canonical schema source
+rather than edited manually. The script performs a marker-bounded update
+so documentation remains synchronized while preserving surrounding prose.
+
+Architectural role
+------------------
+This module belongs to the developer tooling layer and provides a
+documentation-maintenance utility for schema-related project artifacts.
+"""
 
 import json
 import re
