@@ -1,3 +1,29 @@
+"""
+Verify repository artifact hygiene.
+
+This module tests that generated artifacts produced by the Fontshow
+pipeline follow repository conventions and remain consistent with the
+expected project structure.
+
+Responsibilities
+----------------
+- Verify that generated files conform to expected naming conventions.
+- Ensure that artifact locations follow repository layout rules.
+- Detect accidental creation of unexpected output files.
+
+Design principles
+-----------------
+Artifact hygiene tests operate only on generated test fixtures and
+temporary directories so repository integrity rules can be validated
+without altering the working tree.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the structural integrity of artifacts produced by the Fontshow
+generation pipeline.
+"""
+
 import argparse
 import json
 import os

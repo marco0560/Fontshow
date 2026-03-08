@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
-set -e
+#
+# Purpose
+# -------
+# Validate git tag usage and invariants before release operations.
+#
+# Responsibilities
+# ----------------
+# - Ensure tag names follow the repository versioning conventions.
+# - Prevent duplicate or malformed tags from being used in releases.
+# - Provide deterministic diagnostics when tag invariants are violated.
+#
+# Design principles
+# -----------------
+# Tag validation must be conservative and deterministic. The script must
+# inspect repository metadata only and must not modify tags or commits.
+#
+set -euo pipefail
 
 echo "== Tag Guard =="
 

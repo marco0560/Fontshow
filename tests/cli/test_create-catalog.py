@@ -1,3 +1,27 @@
+"""
+Verify the create-catalog CLI command.
+
+This module tests the behavior of the `fontshow create-catalog`
+command, ensuring correct exit codes and option handling.
+
+Responsibilities
+----------------
+- Validate successful catalog generation via the CLI.
+- Verify support for output-related CLI options.
+- Ensure command invocation follows expected semantics.
+
+Design principles
+-----------------
+CLI command tests rely on stubbed implementations and temporary
+directories so behavior can be verified without invoking the full
+Fontshow pipeline.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the command-line interface for catalog generation.
+"""
+
 import pytest
 
 

@@ -1,3 +1,25 @@
+"""
+Verify the root CLI version command.
+
+This module tests the behavior of the `fontshow --version` command,
+ensuring that the application reports its version correctly.
+
+Responsibilities
+----------------
+- Verify that the root CLI command exposes the package version.
+- Ensure that version output is printed to standard output.
+
+Design principles
+-----------------
+Version tests must isolate the CLI entry point and capture output
+streams so the reported version can be verified deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and validates
+the version-reporting behavior of the Fontshow command-line interface.
+"""
+
 import pytest
 
 

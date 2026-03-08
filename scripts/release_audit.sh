@@ -1,4 +1,22 @@
 #!/usr/bin/env bash
+#
+# Purpose
+# -------
+# Audit repository release readiness before a push or release operation.
+#
+# Responsibilities
+# ----------------
+# - Enforce release-history and tag ancestry invariants.
+# - Verify repository cleanliness and release-policy preconditions.
+# - Fail fast with deterministic diagnostics when release conditions are not
+#   satisfied.
+#
+# Design principles
+# -----------------
+# This audit must be conservative and non-destructive. It performs only
+# validation checks and exits on first failure so unsafe release workflows are
+# blocked before mutating repository state.
+#
 set -euo pipefail
 
 # allow semantic-release to bypass audit

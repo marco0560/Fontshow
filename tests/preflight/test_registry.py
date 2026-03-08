@@ -1,3 +1,25 @@
+"""
+Verify preflight check registry behavior.
+
+This module tests the registry responsible for managing the set of
+available preflight checks.
+
+Responsibilities
+----------------
+- Ensure checks can be registered and cleared correctly.
+- Verify registry lookup and enumeration semantics.
+
+Design principles
+-----------------
+Registry tests focus on structural integrity of the registration
+mechanism without executing check logic.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and validates
+the integrity of the preflight check registry.
+"""
+
 import pytest
 
 from fontshow.preflight.checks.base import BaseCheck

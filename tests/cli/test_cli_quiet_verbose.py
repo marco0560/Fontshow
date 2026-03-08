@@ -1,5 +1,25 @@
-# tests/cli/test_cli_quiet_verbose.py
-"""Tests for fontshow CLI --quiet and --verbose flags."""
+"""
+Verify CLI verbosity control flags.
+
+This module tests the behavior of the Fontshow CLI when the `--quiet`
+and `--verbose` flags are provided.
+
+Responsibilities
+----------------
+- Verify that CLI verbosity flags affect command output correctly.
+- Ensure that quiet mode suppresses informational output.
+- Ensure that verbose mode enables additional diagnostic output.
+
+Design principles
+-----------------
+CLI tests must invoke the command-line entry point in an isolated
+subprocess environment so output behavior can be validated reliably.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and validates
+user-facing CLI behavior related to logging verbosity.
+"""
 
 import subprocess
 import sys

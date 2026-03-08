@@ -1,4 +1,22 @@
 #!/usr/bin/env bash
+#
+# Purpose
+# -------
+# Validate CHANGELOG.md consistency before release or push operations.
+#
+# Responsibilities
+# ----------------
+# - Detect duplicate released version headings in CHANGELOG.md.
+# - Verify that the newest changelog version matches the latest git tag.
+# - Fail fast with deterministic diagnostics when changelog invariants are
+#   violated.
+#
+# Design principles
+# -----------------
+# This guard must be read-only, deterministic, and conservative. It checks
+# repository metadata without modifying files so that release hygiene errors
+# are caught early in automated or local workflows.
+#
 set -euo pipefail
 
 echo "== Changelog Guard =="

@@ -1,5 +1,27 @@
 # tests/preflight/test_latex_policy.py
 
+"""
+Verify LaTeX capability policy.
+
+This module tests the policy logic that determines how LaTeX toolchain
+availability is evaluated during preflight checks.
+
+Responsibilities
+----------------
+- Validate severity levels when LuaLaTeX is available or missing.
+- Ensure policy decisions reflect supported execution environments.
+
+Design principles
+-----------------
+Capability policy tests enumerate environment combinations explicitly
+to guarantee deterministic verification of the toolchain policy.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+policy decisions implemented by the LaTeX capability preflight check.
+"""
+
 import pytest
 
 from fontshow.preflight import runner

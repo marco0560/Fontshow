@@ -1,3 +1,28 @@
+"""
+Verify CLI invariants.
+
+This module tests structural invariants of the Fontshow command-line
+interface to ensure that CLI commands maintain stable semantics across
+versions.
+
+Responsibilities
+----------------
+- Verify that CLI commands expose the expected parser interface.
+- Ensure that CLI command wiring remains stable.
+- Validate invariants required by downstream tooling and tests.
+
+Design principles
+-----------------
+Invariant tests verify CLI structure rather than execution behavior so
+regressions in command definitions can be detected early and
+deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and ensures
+the structural stability of the Fontshow command-line interface.
+"""
+
 import argparse
 import json
 

@@ -1,4 +1,25 @@
-# tests/preflight/test_check_contract.py
+"""
+Verify that preflight checks respect the BaseCheck contract.
+
+This module tests the internal contract required for all preflight
+checks registered in the Fontshow validation framework.
+
+Responsibilities
+----------------
+- Ensure every registered check inherits from BaseCheck.
+- Verify the structural interface required by the preflight system.
+
+Design principles
+-----------------
+Contract tests must operate purely on class metadata and avoid
+executing the checks themselves. This ensures fast and deterministic
+validation of the framework structure.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the structural integrity of the preflight checking framework.
+"""
 
 from __future__ import annotations
 

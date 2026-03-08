@@ -1,3 +1,25 @@
+"""
+Verify rendering of preflight results.
+
+This module tests the formatting logic used to render preflight
+validation results for CLI display.
+
+Responsibilities
+----------------
+- Ensure results are rendered with correct severity labels.
+- Verify output formatting of rendered check results.
+
+Design principles
+-----------------
+Rendering tests validate output structure independently of CLI mode
+filtering, ensuring deterministic formatting of validation results.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the formatting behavior of the preflight results renderer.
+"""
+
 from fontshow.preflight.model import CheckResult, Severity
 from fontshow.preflight.render import render_preflight_results
 

@@ -1,3 +1,27 @@
+"""
+Verify the dump-fonts CLI command.
+
+This module tests the behavior of the `fontshow dump-fonts` command,
+ensuring correct exit codes and expected CLI interactions.
+
+Responsibilities
+----------------
+- Verify successful inventory generation through the CLI.
+- Validate error handling for failing dump operations.
+- Confirm command-line interface semantics.
+
+Design principles
+-----------------
+Tests use stubbed implementations of the dump operation so CLI
+behavior can be validated without depending on actual system font
+installations.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the CLI entry point responsible for font inventory generation.
+"""
+
 import pytest
 
 

@@ -1,3 +1,27 @@
+"""
+Verify platform strictness behavior.
+
+This module tests that Fontshow enforces the expected platform
+constraints when executing CLI commands.
+
+Responsibilities
+----------------
+- Verify that supported environments are accepted.
+- Ensure unsupported environments are rejected deterministically.
+- Validate the strict platform checks performed before pipeline
+  execution.
+
+Design principles
+-----------------
+Platform validation must fail early and deterministically whenever
+required system capabilities or assumptions are not satisfied.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and validates
+the environment strictness guarantees enforced by the Fontshow CLI.
+"""
+
 import argparse
 import json
 import os

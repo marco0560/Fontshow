@@ -1,3 +1,27 @@
+"""
+Verify BaseCheck inheritance contract.
+
+This module tests the structural contract required for preflight checks
+in the Fontshow validation framework.
+
+Responsibilities
+----------------
+- Ensure all registered checks inherit from BaseCheck.
+- Verify that the preflight check abstraction is respected.
+
+Design principles
+-----------------
+Contract tests validate structural invariants of the preflight system
+without executing full check logic, ensuring deterministic and fast
+verification.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and validates
+the integrity of the preflight check abstraction used by the
+validation subsystem.
+"""
+
 from __future__ import annotations
 
 from fontshow.preflight.checks.base import BaseCheck

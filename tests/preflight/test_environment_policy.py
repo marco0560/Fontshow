@@ -1,3 +1,26 @@
+"""
+Verify environment policy rules.
+
+This module tests the policy rules implemented by the environment
+preflight checks.
+
+Responsibilities
+----------------
+- Ensure unsupported platforms trigger the correct severity.
+- Validate that policy decisions implemented in the environment
+  checks behave as expected.
+
+Design principles
+-----------------
+Policy tests isolate the environment-check logic so that platform
+policy changes are detected immediately and deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the policy behavior of the environment validation checks.
+"""
+
 import pytest
 
 from fontshow.preflight.checks import environment

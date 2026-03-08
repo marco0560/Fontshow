@@ -1,7 +1,23 @@
 #!/usr/bin/env bash
-set -e
+#
+# Purpose
+# -------
+# Perform a self-check of the release tooling environment.
+#
+# Responsibilities
+# ----------------
+# - Verify required release tools are available in PATH.
+# - Confirm the semantic-release environment is correctly configured.
+# - Fail early if the release system prerequisites are not satisfied.
+#
+# Design principles
+# -----------------
+# The script must be deterministic and read-only. It performs validation
+# checks only and does not modify repository state.
+#
+set -euo pipefail
 
-echo "== Release System Self-Check =="
+echo "== Release system self-check =="
 
 FAIL=0
 

@@ -1,3 +1,27 @@
+"""
+Verify the parse-inventory CLI command.
+
+This module tests the behavior of the `fontshow parse-inventory`
+command, ensuring that inventory parsing works correctly when invoked
+through the command-line interface.
+
+Responsibilities
+----------------
+- Validate successful parsing of inventory files through the CLI.
+- Verify correct handling of command-line options.
+- Ensure deterministic output behavior for parsed inventories.
+
+Design principles
+-----------------
+Tests use temporary files and subprocess invocation so the CLI
+behavior is validated in conditions similar to real user execution.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+the command-line interface responsible for parsing font inventories.
+"""
+
 import json
 import subprocess
 import sys

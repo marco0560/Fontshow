@@ -1,3 +1,27 @@
+"""
+Verify preflight CLI output file handling.
+
+This module tests the behavior of the preflight CLI when an output file
+is requested, ensuring that results are written correctly to the
+specified location.
+
+Responsibilities
+----------------
+- Verify that preflight results can be written to an output file.
+- Ensure correct serialization of preflight results.
+- Validate expected CLI semantics when an output path is provided.
+
+Design principles
+-----------------
+Tests operate on in-memory results and temporary filesystem paths so
+output-file behavior can be verified deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+file-output behavior of the preflight command-line interface.
+"""
+
 from argparse import Namespace
 from pathlib import Path
 

@@ -1,3 +1,27 @@
+"""
+Verify strict semantic validation.
+
+This module tests the semantic validation rules applied to catalog
+and inventory data structures produced by the Fontshow pipeline.
+
+Responsibilities
+----------------
+- Ensure semantic validation rules are enforced.
+- Detect malformed or inconsistent catalog entries.
+- Verify correct error reporting when semantic violations occur.
+
+Design principles
+-----------------
+Semantic validation tests operate on controlled inputs so logical
+consistency of catalog structures can be verified deterministically
+without depending on external resources.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+semantic correctness of internal Fontshow data representations.
+"""
+
 import argparse
 import json
 

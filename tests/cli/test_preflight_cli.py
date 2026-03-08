@@ -1,3 +1,28 @@
+"""
+Verify the preflight CLI command.
+
+This module tests the behavior of the `fontshow preflight` command,
+ensuring that the CLI correctly invokes the preflight validation
+pipeline.
+
+Responsibilities
+----------------
+- Verify that the preflight CLI command executes successfully.
+- Ensure correct propagation of exit codes.
+- Validate expected CLI output semantics.
+
+Design principles
+-----------------
+Preflight CLI tests invoke the command through subprocess execution so
+the complete CLI behavior—including exit codes and output streams—is
+verified in an isolated environment.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and validates
+the command-line entry point for the preflight validation pipeline.
+"""
+
 import subprocess
 import sys
 

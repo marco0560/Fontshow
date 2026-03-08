@@ -1,5 +1,28 @@
 # tests/preflight/test_font_discovery_policy.py
 
+"""
+Verify font discovery capability policy.
+
+This module tests the environment policy governing the availability of
+font discovery mechanisms used by the Fontshow pipeline.
+
+Responsibilities
+----------------
+- Validate severity outcomes when Fontconfig is available or missing.
+- Ensure environment policy decisions match the expected matrix of
+  platform and execution modes.
+
+Design principles
+-----------------
+Policy tests enumerate environment combinations explicitly so that
+changes to platform capability rules are detected deterministically.
+
+Architectural role
+------------------
+This module belongs to the **test infrastructure layer** and verifies
+policy decisions implemented by the font discovery preflight check.
+"""
+
 import pytest
 
 from fontshow.preflight import runner
