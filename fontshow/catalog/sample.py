@@ -133,6 +133,13 @@ def render_sample_text(font: dict) -> str | None:
     str | None
         Sample text suitable for rendering, or None if no appropriate
         sample text can be determined.
+
+    Notes
+    -----
+    Classification-specific overrides take precedence over general sample
+    selection. Emoji fonts use a fixed emoji specimen, decorative fonts
+    use the family name, and all other fonts delegate to
+    `choose_sample_text`.
     """
     cls = font.get("classification", {}) or {}
     fam = font_family(font)

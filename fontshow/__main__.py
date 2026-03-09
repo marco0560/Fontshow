@@ -51,21 +51,24 @@ def dispatch_command(args: argparse.Namespace) -> int:
     """
     Dispatch a parsed CLI command.
 
-    The function invokes the command handler stored in `args.func`,
-    captures its return value, and converts it into a deterministicwait, this module is called in p
-    process exit code. TRACE "flow" events are emitted for start,
-    completion, and crash conditions.
+    Invokes the command handler stored in ``args.func`` and converts its
+    result into a deterministic process exit code. TRACE "flow" events are
+    emitted for start, completion, and crash conditions.
 
-    Args:
-        args: Parsed CLI arguments. Must provide a callable `func` attribute
-            that accepts `args` and returns either an integer-like exit code or
-            `None`.
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments. Must provide a callable ``func`` attribute
+        accepting ``args`` and returning either an integer-like exit code
+        or ``None``.
 
-    Returns:
+    Returns
+    -------
+    int
         Process exit code:
-        - 0 when the handler returns `None` or raises `SystemExit(None)`,
-        - `int(result)` when the handler returns a non-None value,
-        - `int(e.code)` when the handler raises `SystemExit(code)`,
+        - 0 when the handler returns ``None`` or raises ``SystemExit(None)``,
+        - ``int(result)`` when the handler returns a non-None value,
+        - ``int(e.code)`` when the handler raises ``SystemExit(code)``,
         - 2 for any other unhandled exception.
     """
     log_trace_cat(
@@ -110,12 +113,7 @@ def dispatch_command(args: argparse.Namespace) -> int:
 
 def main() -> int:
     """
-    CLI entrypoint.
-
-    NOTE:
-    Logging configuration is intentionally NOT performed here.
-    Logging is handled centrally via `fontshow.logging_utils`
-    and test harnesses (pytest caplog).
+    Build the top-level CLI parser, register subcommands, and run dispatch.
 
     Parameters
     ----------
@@ -124,7 +122,16 @@ def main() -> int:
     Returns
     -------
     int
-        Process exit code (0 for success, non-zero for failure).
+        Process exit code. Returns 0 after printing help when no subcommand
+        is selected; otherwise returns the exit code produced by
+        ``dispatch_command``.
+
+    Notes
+    -----
+    Logging configuration is intentionally not performed here. Logging is
+    handled centrally by the shared logging utilities and by test harnesses.
+    The package version is resolved from installed metadata and falls back
+    to ``"development"`` when the package is not installed.
     """
     try:
         FONTSHOW_VERSION = version("fontshow")

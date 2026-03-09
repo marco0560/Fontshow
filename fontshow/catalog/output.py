@@ -64,11 +64,6 @@ def get_unique_filename(base_name: str, extension: str) -> str:
     raise ValueError(msg)
 
 
-# ------------------------------------------------------------------
-# OUTPUT FILE PREPARATION
-# ------------------------------------------------------------------
-
-
 def _prepare_output_filename() -> tuple[int, str | None]:
     """
     Build a unique output filename based on platform and DATE_STR.
@@ -109,6 +104,11 @@ def _write_latex_output(output_filename: str, latex_content: str) -> None:
     Returns
     -------
     None
+
+    Notes
+    -----
+    In addition to writing the file, this helper emits completion messages
+    and prints the recommended two-pass `lualatex` compilation command.
     """
     log_info(f"Writing file {output_filename}...")
 

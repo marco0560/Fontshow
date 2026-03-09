@@ -61,15 +61,21 @@ def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
     """
     Normalize a font file path for LaTeX/fontspec usage.
 
+    Parameters
+    ----------
+    fullpath : str
+        Original font file path, possibly using platform-specific
+        separators.
+
     Returns
     -------
     tuple[str, str]
-        (dir_with_trailing_slash, filename)
+        Two-element tuple ``(dir_with_trailing_slash, filename)``.
 
     Notes
     -----
-    - Uses forward slashes regardless of platform.
-    - Guarantees a non-empty directory (defaults to "./").
+    Uses forward slashes regardless of platform and guarantees a
+    non-empty directory component, defaulting to ``"./"``.
     """
     norm = fullpath.replace("\\", "/")
     if "/" in norm:
@@ -81,11 +87,25 @@ def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
 
 def _select_primary_script(inference: InferenceV12) -> str:
     """
-    Deterministically select primary script for rendering.
+    Deterministically select the primary script used for rendering.
 
-    Priority:
-    1. Dominant charset coverage (ignoring NON_WRITING_SCRIPTS)
-    2. First inferred script
+    Parameters
+    ----------
+    inference : InferenceV12
+        Inference mapping that may contain charset-derived script
+        coverage and ordered script guesses.
+
+    Returns
+    -------
+    str
+        Selected primary script identifier, or an empty string if no
+        usable script information is available.
+
+    Notes
+    -----
+    Selection priority is: dominant charset coverage excluding
+    ``NON_WRITING_SCRIPTS``, then the first inferred script. Any
+    malformed coverage data falls back safely to the remaining sources.
     """
     script0 = ""
 
@@ -118,7 +138,31 @@ def _render_font_entry(
     fullpath: str,
 ) -> tuple[str, str]:
     """
-    Produce (render_block, options_plain).
+    Render a single catalog entry specimen block and plain option string.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Normalized catalog font entry being rendered.
+    safe_specimen : str
+        Already-sanitized specimen text ready to be inserted into LaTeX.
+    script0_iso : ScriptISO
+        Primary ISO script code used to choose the rendering policy.
+    fullpath : str
+        Font file path used to build fontspec path and file options.
+
+    Returns
+    -------
+    tuple[str, str]
+        Two-element tuple ``(render_block, options_plain)``. Returns
+        ``("", "")`` when the font path does not refer to a supported
+        font file extension.
+
+    Notes
+    -----
+    The rendering path depends on the selected script policy. Latin
+    entries use a direct ``\\fontspec`` block, while eligible non-Latin
+    entries may use ``\\TestNonLatin`` with language and script options.
     """
 
     path = str(font.get("path", "")).lower()
@@ -182,14 +226,20 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
 
     Parameters
     ----------
-    font_list : list[dict]
-        List of normalized font descriptor dictionaries as produced by
-        `parse_font_inventory`.
+    font_list : list[CatalogFontEntryV12]
+        List of normalized catalog font entries used to assemble the
+        final document.
 
     Returns
     -------
     str
         Complete LaTeX document as a string.
+
+    Notes
+    -----
+    The function first normalizes the input list, deduplicates entries
+    by family name, injects auxiliary Polyglossia language declarations,
+    and then renders one catalog block per surviving font entry.
     """
     font_list = as_font_desc_list(font_list)
 

@@ -30,10 +30,6 @@ from fontshow.core.types import CatalogFontEntryV12
 from fontshow.inventory.io import as_font_desc_list, group_fonts_by_family
 from fontshow.inventory.metadata_processing import font_family
 
-# ------------------------------------------------------------------
-# TEST FONT CONFIGURATION
-# ------------------------------------------------------------------
-
 
 def _configure_test_fonts(args) -> set[str]:
     """
@@ -47,13 +43,13 @@ def _configure_test_fonts(args) -> set[str]:
     Returns
     -------
     set[str]
-        Final set of font names to be used for test filtering.
+        Final set of font family names used for test filtering.
 
     Notes
     -----
-    Semantics:
-    - "__DEFAULT__" enables DEFAULT_TEST_FONTS.
-    - Explicit values extend the set.
+    When `args.test_font` is provided, explicit CLI values are unioned with
+    `DEFAULT_TEST_FONTS`. When `args.test_font` is absent, the function
+    returns `DEFAULT_TEST_FONTS` alone.
     """
     cli_fonts: set[str] = set()
 
@@ -76,6 +72,9 @@ def _handle_list_test_fonts(test_fonts: set[str], inventory_fonts: list[dict]) -
     ----------
     test_fonts : set[str]
         Effective set of test font names used for filtering.
+    inventory_fonts : list[dict]
+        Inventory font descriptors used as the authoritative source for
+        exact family-name matching.
 
     Returns
     -------
@@ -118,11 +117,6 @@ def _handle_list_test_fonts(test_fonts: set[str], inventory_fonts: list[dict]) -
             log_info(f"  - {name}")
 
     return 0
-
-
-# ------------------------------------------------------------------
-# DIAGNOSTICS
-# ------------------------------------------------------------------
 
 
 def _run_inventory_diagnostics(fonts: list) -> None:
@@ -179,11 +173,6 @@ def _run_inventory_diagnostics(fonts: list) -> None:
         )
 
 
-# ------------------------------------------------------------------
-# FONT FILTERING / OUTPUT GENERATION
-# ------------------------------------------------------------------
-
-
 def _filter_and_prepare_fonts(
     fonts: list[CatalogFontEntryV12], args, test_fonts: set[str]
 ) -> list[CatalogFontEntryV12]:
@@ -192,17 +181,25 @@ def _filter_and_prepare_fonts(
 
     Parameters
     ----------
-    fonts : list
-        List of font descriptor objects.
+    fonts : list[CatalogFontEntryV12]
+        Input font descriptor objects.
     args : argparse.Namespace
         Parsed CLI arguments controlling filtering and limiting.
     test_fonts : set[str]
-        Set of font name substrings used for test filtering.
+        Set of exact family names used for test filtering.
 
     Returns
     -------
-    list
-        List of filtered, sorted, and deduplicated font descriptor dictionaries.
+    list[CatalogFontEntryV12]
+        Filtered font descriptors normalized with `as_font_desc_list`,
+        optionally limited by `args.number`, sorted by family name, and
+        grouped by family.
+
+    Notes
+    -----
+    The helper does not mutate descriptors by adding non-schema keys.
+    Display-name fallbacks are derived transiently to remain compliant
+    with schema v1.2.
     """
     log_trace_cat(
         log,

@@ -39,8 +39,15 @@ def clean_font_name(name: str) -> str:
     Returns
     -------
     str
-        Normalized base name with parenthetical hints removed and
-        common variant suffixes (e.g., Bold, Italic) stripped.
+        Normalized base name with trailing container hints removed and
+        common style or weight suffixes stripped.
+
+    Notes
+    -----
+    Normalization is performed in two regex-based passes. The first
+    removes terminal parenthetical format markers such as ``(TrueType)``
+    and ``(OpenType)``. The second strips a broad set of style, weight,
+    and width suffixes, including both English and Italian variants.
     """
     clean_name = re.sub(r"\s*\((TrueType|OpenType|True Type|Type 1)\)\s*$", "", name)
 
