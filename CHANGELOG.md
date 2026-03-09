@@ -1,3 +1,9 @@
+## [0.51.0](https://github.com/marco0560/Fontshow/compare/v0.50.5...v0.51.0) (2026-03-09)
+
+### Features
+
+* **dev:** added a scripts to produce and verify bootstrap audit report ([2ee2c69](https://github.com/marco0560/Fontshow/commit/2ee2c69f5b8eac1935332b112351a5b7a0f49752))
+
 ## [0.50.5](https://github.com/marco0560/Fontshow/compare/v0.50.4...v0.50.5) (2026-03-07)
 
 ### Bug Fixes
