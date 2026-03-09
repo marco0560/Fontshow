@@ -297,13 +297,13 @@ def list_python_files(repo_root: Path) -> list[Path]:
     Only Python files that are both:
 
     • tracked by git
-    • located under fontshow/, tests/, or scripts/
+    • located under fontshow/, tests/, scripts/ or githooks/
 
     are included.
     """
     tracked = git_tracked_files(repo_root)
 
-    allowed_roots = ("fontshow", "tests", "scripts")
+    allowed_roots = ("fontshow", "tests", "scripts", ".githooks")
 
     files = [
         path

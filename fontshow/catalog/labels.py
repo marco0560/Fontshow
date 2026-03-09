@@ -43,6 +43,12 @@ def font_type_label(font: dict) -> str:
         - "EMOJI" if the font is classified as emoji
         - "DECORATIVE" if classified as decorative
         - "TEXT" otherwise
+
+    Notes
+    -----
+    When multiple classification flags are present, emoji takes
+    precedence over decorative, and decorative takes precedence over the
+    default text label.
     """
     cls = font.get("classification", {}) or {}
     if cls.get("is_emoji"):
@@ -67,6 +73,13 @@ def primary_script(font: dict) -> str | None:
     str | None
         First inferred script if available; otherwise the first declared
         coverage script; otherwise None.
+
+    Notes
+    -----
+    Script selection is deterministic: the function prefers the first
+    entry in ``font["inference"]["scripts"]`` and falls back to the
+    first entry in ``font["coverage"]["scripts"]`` only when no inferred
+    script is available.
     """
     inf = font.get("inference", {}) or {}
     scripts = inf.get("scripts", []) or []
@@ -93,6 +106,12 @@ def script_label(font: dict, max_scripts: int = 2) -> str:
     str
         Uppercase comma-separated script label, or "UNKNOWN" if no script
         information is available.
+
+    Notes
+    -----
+    The function uses inferred scripts when available and falls back to
+    coverage scripts otherwise. The output is truncated to the first
+    ``max_scripts`` entries before joining them with commas.
     """
     inf = font.get("inference", {}) or {}
     scripts = inf.get("scripts", []) or []
