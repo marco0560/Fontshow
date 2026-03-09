@@ -45,6 +45,15 @@ import re
 import subprocess
 from pathlib import Path
 
+EXCLUDED_TREE_DIRS = {
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "node_modules",
+}
+
 FUNC_PATTERN = re.compile(
     r"^[ \t]*(async[ \t]+def|def)[ \t]+[A-Za-z_][A-Za-z0-9_]*[ \t]*\(",
     re.MULTILINE,
@@ -114,18 +123,26 @@ def verify_git_blobs(repo_root: Path) -> bool:
         True if all tracked files match their Git blob hashes.
     """
     result = subprocess.run(
-        ["git", "ls-files", "-s"],  # noqa: S607
+        ["git", "ls-files", "-s", "-z"],  # noqa: S607
         cwd=repo_root,
         capture_output=True,
-        text=True,
+        text=False,
         check=True,
     )
 
-    for line in result.stdout.splitlines():
-        _, blob_hash, _, path = line.split(maxsplit=3)
+    entries = result.stdout.split(b"\0")
+
+    for entry in entries:
+        if not entry:
+            continue
+
+        meta, path = entry.split(b"\t", 1)
+        mode, blob_hash, stage = meta.decode().split()
+
+        path_str = path.decode()
 
         current = subprocess.run(
-            ["git", "hash-object", path],  # noqa: S607
+            ["git", "hash-object", path_str],  # noqa: S607
             cwd=repo_root,
             capture_output=True,
             text=True,
@@ -242,6 +259,8 @@ def build_repository_tree(root: Path) -> list[str]:
     lines: list[str] = []
 
     for dirpath, dirnames, filenames in os.walk(root):
+        # Exclude git internal directory
+        dirnames[:] = [d for d in dirnames if d not in EXCLUDED_TREE_DIRS]
         dirnames.sort()
         filenames.sort()
         rel = Path(dirpath).relative_to(root)

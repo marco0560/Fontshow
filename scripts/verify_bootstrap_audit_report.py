@@ -96,7 +96,7 @@ def verify_report_checksum(report_text: str) -> None:
     """
     Validate bootstrap report checksum.
     """
-    marker = "BOOTSTRAP CHECKSUM"
+    marker = "\nBOOTSTRAP CHECKSUM\n"
     idx = report_text.find(marker)
 
     if idx == -1:
@@ -105,11 +105,18 @@ def verify_report_checksum(report_text: str) -> None:
 
     body = report_text[:idx]
 
-    expected_line = report_text.split("report_sha256:")[-1].strip().split()[0]
+    # Extract stored checksum
+    for line in report_text[idx:].splitlines():
+        if line.startswith("report_sha256:"):
+            expected = line.split(":", 1)[1].strip()
+            break
+    else:
+        msg = "Checksum line missing"
+        raise RuntimeError(msg)
 
     actual = compute_text_sha256(body)
 
-    if actual != expected_line:
+    if actual != expected:
         msg = "Bootstrap report checksum mismatch"
         raise RuntimeError(msg)
 
@@ -195,4 +202,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except RuntimeError as exc:
+        print(f"\nERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    print("\nRepository matches bootstrap audit report.")
+    sys.exit(0)
