@@ -1,3 +1,9 @@
+## [0.51.1](https://github.com/marco0560/Fontshow/compare/v0.51.0...v0.51.1) (2026-03-09)
+
+### Bug Fixes
+
+* **dev:** fixed generation an verification scripts for edge cases ([77e0ee7](https://github.com/marco0560/Fontshow/commit/77e0ee73694dd01fc0dda52dffb131c3c84a29a6))
+
 ## [0.51.0](https://github.com/marco0560/Fontshow/compare/v0.50.5...v0.51.0) (2026-03-09)
 
 ### Features
