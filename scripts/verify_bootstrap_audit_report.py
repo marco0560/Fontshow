@@ -198,8 +198,6 @@ def main() -> None:
 
     print("All file hashes match")
 
-    print("\nRepository matches bootstrap audit report.")
-
 
 if __name__ == "__main__":
     try:
