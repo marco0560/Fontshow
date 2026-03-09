@@ -1,3 +1,9 @@
+## [0.51.2](https://github.com/marco0560/Fontshow/compare/v0.51.1...v0.51.2) (2026-03-09)
+
+### Bug Fixes
+
+* **dev:** fixed another edge cas in script ([6cccda4](https://github.com/marco0560/Fontshow/commit/6cccda438ce4815d90a1b15ac8bd0fbc4dc83632))
+
 ## [0.51.1](https://github.com/marco0560/Fontshow/compare/v0.51.0...v0.51.1) (2026-03-09)
 
 ### Bug Fixes
