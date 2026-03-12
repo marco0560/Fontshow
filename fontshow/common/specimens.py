@@ -36,10 +36,28 @@ def choose_language_sample(
     """
     Choose a deterministic language-aware sample text.
 
-    Priority
-    --------
-    1. Sample from inferred languages
-    2. Representative language from dominant script
+    Parameters
+    ----------
+    languages : list[str] | None
+        Ordered candidate language tags, typically inferred from font
+        metadata.
+    scripts : list[str] | None, optional
+        Ordered candidate script tags used as fallback when no direct
+        language sample can be selected.
+
+    Returns
+    -------
+    str | None
+        Representative sample text for the first usable language or
+        script-derived fallback, or None if no sample can be resolved.
+
+    Notes
+    -----
+    Selection priority is deterministic:
+    1. Sample from inferred languages.
+    2. Representative language derived from the first script tag.
+    The function relies on ontology table entries in `LANGUAGE_INFO` and
+    `SCRIPT_INFO` and returns only non-empty string samples.
     """
 
     # ---------------------------------------------------------
