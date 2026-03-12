@@ -285,8 +285,8 @@ def extract_sample_text(font_path: str) -> list[str] | None:
     Raises
     ------
     None
-        Extraction errors are handled internally and converted into a
-        ``None`` result.
+        Extraction errors (OSError, ValueError, TTLibError, UnicodeError)
+        are handled internally and converted into a ``None`` result.
 
     Notes
     -----

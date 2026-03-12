@@ -256,12 +256,6 @@ def validate_font_entry(entry: Any, *, index: int) -> list[str]:
         List of validation error messages.
         Empty list indicates a structurally valid entry.
 
-    Raises
-    ------
-    None
-        This helper reports validation failures via returned error
-        strings and does not raise exceptions for invalid entries.
-
     Notes
     -----
     - Validation is schema-level only (no inference required).

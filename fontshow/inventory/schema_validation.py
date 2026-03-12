@@ -150,6 +150,7 @@ def validate_inventory_schema(data: dict) -> list[dict]:
     ------
     None
         This function is backward-compatible and MUST NOT raise.
+        ValueError is handled internally
 
     Notes
     -----

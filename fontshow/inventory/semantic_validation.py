@@ -320,11 +320,6 @@ def enforce_semantic_validation(
         validation passed and ``warnings`` contains the accumulated
         structured warning records.
 
-    Raises
-    ------
-    None
-        This function does not raise exceptions.
-
     Notes
     -----
     - ``ok == True`` means semantic validation passed.
