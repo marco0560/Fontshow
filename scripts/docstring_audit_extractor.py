@@ -203,10 +203,24 @@ def should_select(node: ast.AST, doc: str | None, args: argparse.Namespace) -> b
     """
     Determine whether a node should be selected for docstring auditing.
 
+    The selection logic depends on the command-line flags provided:
+
+    * ``--all`` selects every node.
+    * ``--missing`` selects nodes whose docstring is missing.
+    * ``--nonstandard`` selects nodes whose docstring is present but does not
+      follow NumPy style, or functions that raise exceptions but do not
+      document them in a ``Raises`` section.
+
+    NumPy-style validation is applied only to functions, asynchronous
+    functions, and classes. Module docstrings are excluded from this
+    validation because module documentation typically follows narrative
+    documentation conventions rather than NumPy-style API documentation.
+
     Parameters
     ----------
     node : ast.AST
-        AST node representing a function or class definition.
+        AST node representing a module, function, asynchronous function,
+        or class definition.
     doc : str or None
         Extracted docstring for the node, if present.
     args : argparse.Namespace
@@ -226,14 +240,18 @@ def should_select(node: ast.AST, doc: str | None, args: argparse.Namespace) -> b
 
     if args.nonstandard:
 
-        if doc and not is_numpy_style(doc):
-            return True
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
 
-        return (
-            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-            and function_raises_exception(node)
-            and not has_raises_section(doc)
-        )
+            if doc and not is_numpy_style(doc):
+                return True
+
+            return (
+                isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and function_raises_exception(node)
+                and not has_raises_section(doc)
+            )
+
+        return False
 
     return False
 
