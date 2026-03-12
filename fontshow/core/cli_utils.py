@@ -271,6 +271,18 @@ def _log_by_severity(severity: Severity | None, message: str) -> None:
 
 
 def add_version_argument(parser: argparse.ArgumentParser) -> None:
+    """
+    Add the standard Fontshow version flag to a parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Argument parser to extend with the version action.
+
+    Returns
+    -------
+    None
+    """
     parser.add_argument(
         "-V",
         "--version",
@@ -280,6 +292,18 @@ def add_version_argument(parser: argparse.ArgumentParser) -> None:
 
 
 def add_verbose_argument(parser: _ActionsContainer) -> None:
+    """
+    Add the standard verbose-mode flag to a parser or argument group.
+
+    Parameters
+    ----------
+    parser : _ActionsContainer
+        Parser-like action container to extend.
+
+    Returns
+    -------
+    None
+    """
     parser.add_argument(
         "-v",
         "--verbose",
@@ -289,6 +313,18 @@ def add_verbose_argument(parser: _ActionsContainer) -> None:
 
 
 def add_quiet_argument(parser: _ActionsContainer) -> None:
+    """
+    Add the standard quiet-mode flag to a parser or argument group.
+
+    Parameters
+    ----------
+    parser : _ActionsContainer
+        Parser-like action container to extend.
+
+    Returns
+    -------
+    None
+    """
     parser.add_argument(
         "-q",
         "--quiet",

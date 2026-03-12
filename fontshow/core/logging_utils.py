@@ -340,6 +340,18 @@ class _LogFacade:
         logger.log(level, msg, *args, stacklevel=stacklevel + 1, **kwargs)
 
     def _logger(self) -> logging.Logger | None:
+        """
+        Return the current root logger wrapper target.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        logging.Logger | None
+            Active configured logger, or None when logging is disabled.
+        """
         return _ROOT_LOGGER
 
     def error(self, message: str, *, extra: Mapping[str, Any] | None = None) -> None:

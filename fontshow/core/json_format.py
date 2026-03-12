@@ -36,6 +36,20 @@ from fontshow.core.types import Severity
 
 
 class _PrettyJSONWriter:
+    """
+    Internal stateful JSON writer used by `dumps_pretty()`.
+
+    Parameters
+    ----------
+    None
+
+    Notes
+    -----
+    The writer caches indentation strings and serialized keys to keep
+    recursive pretty-printing deterministic and efficient. It is an
+    internal helper and not part of the public formatting API.
+    """
+
     def __init__(
         self,
         *,
@@ -44,6 +58,24 @@ class _PrettyJSONWriter:
         sort_keys: bool,
         compact_numeric_lists_max_len: int,
     ) -> None:
+        """
+        Initialize writer configuration and internal caches.
+
+        Parameters
+        ----------
+        indent : int
+            Number of spaces per indentation level.
+        ensure_ascii : bool
+            Whether non-ASCII characters must be escaped.
+        sort_keys : bool
+            Whether mapping keys should be emitted in sorted order.
+        compact_numeric_lists_max_len : int
+            Maximum list length eligible for one-line numeric formatting.
+
+        Returns
+        -------
+        None
+        """
         self.indent = indent
         self.ensure_ascii = ensure_ascii
         self.sort_keys = sort_keys
@@ -55,6 +87,19 @@ class _PrettyJSONWriter:
     # ---------- helpers ----------
 
     def _pad(self, level: int) -> str:
+        """
+        Return cached indentation padding for a nesting level.
+
+        Parameters
+        ----------
+        level : int
+            Nesting depth to convert into leading spaces.
+
+        Returns
+        -------
+        str
+            Indentation string for the requested level.
+        """
         s = self._indent_cache.get(level)
         if s is None:
             s = " " * (self.indent * level)
@@ -62,6 +107,19 @@ class _PrettyJSONWriter:
         return s
 
     def _primitive(self, v: Any) -> str:
+        """
+        Serialize a primitive JSON-compatible value.
+
+        Parameters
+        ----------
+        v : Any
+            Primitive value to serialize.
+
+        Returns
+        -------
+        str
+            JSON text for null, booleans, strings, or numbers.
+        """
         if v is None:
             return "null"
         if isinstance(v, bool):
@@ -71,6 +129,21 @@ class _PrettyJSONWriter:
     # ---------- writers ----------
 
     def write(self, v: Any, level: int) -> str:
+        """
+        Serialize an arbitrary value using the writer's formatting rules.
+
+        Parameters
+        ----------
+        v : Any
+            Value to serialize.
+        level : int
+            Current nesting depth.
+
+        Returns
+        -------
+        str
+            Deterministically formatted JSON fragment.
+        """
         if isinstance(v, Severity):
             return json.dumps(v.to_json(), ensure_ascii=self.ensure_ascii)
 
@@ -89,6 +162,21 @@ class _PrettyJSONWriter:
         return json.dumps(v, ensure_ascii=self.ensure_ascii)
 
     def _write_mapping(self, v: Mapping[Any, Any], level: int) -> str:
+        """
+        Serialize a mapping with stable indentation and optional key sorting.
+
+        Parameters
+        ----------
+        v : Mapping[Any, Any]
+            Mapping to serialize.
+        level : int
+            Current nesting depth.
+
+        Returns
+        -------
+        str
+            Formatted JSON object literal.
+        """
         items = list(v.items())
         if self.sort_keys:
             items.sort(key=lambda kv: str(kv[0]))
@@ -113,6 +201,21 @@ class _PrettyJSONWriter:
         return "".join(out)
 
     def _write_sequence(self, v: Sequence[Any], level: int) -> str:
+        """
+        Serialize a sequence with compact handling for short numeric lists.
+
+        Parameters
+        ----------
+        v : Sequence[Any]
+            Sequence to serialize.
+        level : int
+            Current nesting depth.
+
+        Returns
+        -------
+        str
+            Formatted JSON array literal.
+        """
         if _is_short_numeric_list(v, max_len=self.compact_numeric_lists_max_len):
             return json.dumps(
                 list(v),
