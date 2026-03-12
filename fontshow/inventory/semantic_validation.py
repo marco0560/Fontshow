@@ -72,9 +72,22 @@ def _is_known_language(code: str) -> bool:
     """
     Check whether a primary language subtag is "known enough" for Fontshow.
 
+    Parameters
+    ----------
+    code : str
+        Primary language subtag to validate.
+
+    Returns
+    -------
+    bool
+        True if the code is accepted by the explicit allowlist or by
+        `pycountry` ISO-639 lookup.
+
+    Notes
+    -----
     Order:
-    1) explicit allowlist (covers gaps in pycountry)
-    2) pycountry ISO-639-1/3 lookup
+    1. Explicit allowlist (covers gaps in pycountry).
+    2. pycountry ISO-639-1/3 lookup.
     """
     if code in _EXTRA_LANGUAGE_ALLOWLIST:
         return True
@@ -191,9 +204,21 @@ def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
     """
     Check semantic consistency of an enriched Fontshow inventory.
 
+    Parameters
+    ----------
+    inventory : dict[str, Any]
+        Enriched inventory structure to inspect.
+
+    Returns
+    -------
+    list[dict[str, Any]]
+        Structured warning records describing invalid or suspicious
+        language codes.
+
+    Notes
+    -----
     This function performs semantic checks without modifying data.
     All detected issues are reported as structured warnings.
-
     No inference, normalization, or enrichment is performed here.
     """
     warnings: list[dict[str, Any]] = []

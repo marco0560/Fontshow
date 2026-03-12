@@ -33,12 +33,46 @@ from typing import Any
 
 
 def _validate_str_required(obj: dict, key: str, errors: list[str]) -> None:
+    """
+    Validate that a required field is a non-empty string.
+
+    Parameters
+    ----------
+    obj : dict
+        Entry dictionary being validated.
+    key : str
+        Required field name.
+    errors : list[str]
+        Mutable error accumulator updated in place.
+
+    Returns
+    -------
+    None
+    """
     v = obj.get(key)
     if not isinstance(v, str) or not v:
         errors.append(f"Missing or invalid '{key}'")
 
 
 def _validate_int_min(obj: dict, key: str, min_value: int, errors: list[str]) -> None:
+    """
+    Validate that a required integer field is at least a minimum value.
+
+    Parameters
+    ----------
+    obj : dict
+        Entry dictionary being validated.
+    key : str
+        Required field name.
+    min_value : int
+        Minimum accepted integer value.
+    errors : list[str]
+        Mutable error accumulator updated in place.
+
+    Returns
+    -------
+    None
+    """
     v = obj.get(key)
     if not isinstance(v, int) or v < min_value:
         errors.append(f"Missing or invalid '{key}'")
@@ -47,30 +81,118 @@ def _validate_int_min(obj: dict, key: str, min_value: int, errors: list[str]) ->
 def _validate_int_range(
     obj: dict, key: str, lo: int, hi: int, errors: list[str]
 ) -> None:
+    """
+    Validate that a required integer field falls within an inclusive range.
+
+    Parameters
+    ----------
+    obj : dict
+        Entry dictionary being validated.
+    key : str
+        Required field name.
+    lo : int
+        Inclusive lower bound.
+    hi : int
+        Inclusive upper bound.
+    errors : list[str]
+        Mutable error accumulator updated in place.
+
+    Returns
+    -------
+    None
+    """
     v = obj.get(key)
     if not isinstance(v, int) or not (lo <= v <= hi):
         errors.append(f"Missing or invalid '{key}'")
 
 
 def _validate_obj_required(obj: dict, key: str, errors: list[str]) -> None:
+    """
+    Validate that a required field is a dictionary object.
+
+    Parameters
+    ----------
+    obj : dict
+        Entry dictionary being validated.
+    key : str
+        Required field name.
+    errors : list[str]
+        Mutable error accumulator updated in place.
+
+    Returns
+    -------
+    None
+    """
     v = obj.get(key)
     if not isinstance(v, dict):
         errors.append(f"Missing or invalid '{key}'")
 
 
 def _validate_bool_required(obj: dict, key: str, errors: list[str]) -> None:
+    """
+    Validate that a required field is a boolean.
+
+    Parameters
+    ----------
+    obj : dict
+        Entry dictionary being validated.
+    key : str
+        Required field name.
+    errors : list[str]
+        Mutable error accumulator updated in place.
+
+    Returns
+    -------
+    None
+    """
     v = obj.get(key)
     if not isinstance(v, bool):
         errors.append(f"Missing or invalid '{key}'")
 
 
 def _validate_number_required(obj: dict, key: str, errors: list[str]) -> None:
+    """
+    Validate that a required field is numeric.
+
+    Parameters
+    ----------
+    obj : dict
+        Entry dictionary being validated.
+    key : str
+        Required field name.
+    errors : list[str]
+        Mutable error accumulator updated in place.
+
+    Returns
+    -------
+    None
+    """
     v = obj.get(key)
     if not isinstance(v, (int, float)):
         errors.append(f"Missing or invalid '{key}'")
 
 
 def _validate_sample_text(entry: dict, errors: list[str]) -> None:
+    """
+    Validate the normalized embedded sample-text block.
+
+    Parameters
+    ----------
+    entry : dict
+        Inventory entry being validated.
+    errors : list[str]
+        Mutable error accumulator updated in place.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The helper enforces the schema v1.2 expectation that
+    ``sample_text.source`` is ``"font"`` and that the embedded text is a
+    non-empty string.
+    """
     sample_text = entry.get("sample_text")
     if not isinstance(sample_text, dict):
         errors.append("Missing or invalid 'sample_text'")
@@ -85,6 +207,25 @@ def _validate_sample_text(entry: dict, errors: list[str]) -> None:
 
 
 def _validate_specimen(entry: dict, errors: list[str]) -> None:
+    """
+    Validate specimen-related fields of an inventory entry.
+
+    Parameters
+    ----------
+    entry : dict
+        Inventory entry being validated.
+    errors : list[str]
+        Mutable error accumulator updated in place.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This helper validates specimen text presence, generation strategy,
+    and glyph count metadata expected by downstream rendering code.
+    """
     specimen_text = entry.get("specimen_text")
     if not isinstance(specimen_text, str) or not specimen_text:
         errors.append("Missing or invalid 'specimen_text'")

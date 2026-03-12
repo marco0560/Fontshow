@@ -59,10 +59,20 @@ def _validate_fonts_container(data: dict[str, Any]) -> list[Any] | None:
     """
     Validate and return the 'fonts' container from an inventory JSON.
 
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Inventory root object expected to contain a `fonts` list.
+
     Returns
     -------
     list[Any] | None
         The fonts list if present and valid, otherwise None.
+
+    Notes
+    -----
+    This helper performs only container-shape validation. It does not
+    validate individual font entries.
     """
     fonts = data.get("fonts")
 

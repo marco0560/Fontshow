@@ -125,7 +125,20 @@ def infer_scripts(  # noqa: C901, PLR0912
         total = sum(blocks.values()) or 1
 
         def significant(count: int) -> bool:
-            """Check whether a block count is significant for the given level."""
+            """
+            Check whether a block count is significant for the current level.
+
+            Parameters
+            ----------
+            count : int
+                Covered codepoint count for the current Unicode block.
+
+            Returns
+            -------
+            bool
+                True when the block count passes the level-dependent
+                significance threshold.
+            """
             if level == "conservative":
                 return count >= 50 or (count / total) >= 0.10
             if level == "aggressive":
@@ -136,6 +149,20 @@ def infer_scripts(  # noqa: C901, PLR0912
         scripts_score: dict[str, int] = {}
 
         def add_script(name: str, weight: int) -> None:
+            """
+            Accumulate weighted evidence for a candidate script tag.
+
+            Parameters
+            ----------
+            name : str
+                Script tag receiving score credit.
+            weight : int
+                Weight to add to the accumulated script score.
+
+            Returns
+            -------
+            None
+            """
             scripts_score[name] = scripts_score.get(name, 0) + weight
 
         # --- block → script mapping (score-based)

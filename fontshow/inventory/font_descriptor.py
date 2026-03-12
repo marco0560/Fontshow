@@ -90,6 +90,33 @@ def _normalize_metrics(
     names,
     identity: tuple[str | None, str | None, str | None, str | None],
 ):
+    """
+    Normalize core metrics and identity fields for descriptor emission.
+
+    Parameters
+    ----------
+    fonttools : Any
+        FontTools-derived metadata block for the current face.
+    typography : Any
+        Typography sub-block containing normalized weight and width data.
+    names : Any
+        Name-table mapping used to resolve fallback version strings.
+    identity : tuple[str | None, str | None, str | None, str | None]
+        Tuple ``(family, style, fullname, postscript)`` with optional
+        identity values extracted earlier in descriptor construction.
+
+    Returns
+    -------
+    tuple[str, str, str, str, str, int, int, int, int, int, float, bool, int]
+        Normalized identity and metric values ready for insertion into
+        the final inventory descriptor.
+
+    Notes
+    -----
+    The helper applies schema-safe defaults and clamps width, weight,
+    units-per-em, and glyph-count values to valid ranges expected by
+    downstream inventory validation.
+    """
     family, style, fullname, postscript = identity
 
     family_s = family or "Unknown"

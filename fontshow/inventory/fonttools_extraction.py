@@ -74,17 +74,86 @@ else:
         FONTTOOLS_AVAILABLE = False
 
         class TTLibError(Exception):
+            """
+            Fallback exception used when `fontTools` is unavailable.
+
+            Parameters
+            ----------
+            None
+            """
+
             _MSG = "fontTools is not installed"
 
             def __init__(self) -> None:
+                """
+                Initialize the fallback exception with a fixed message.
+
+                Parameters
+                ----------
+                None
+
+                Returns
+                -------
+                None
+                """
                 super().__init__(self._MSG)
 
         class TTFont:
+            """
+            Fallback stub that raises `TTLibError` on instantiation.
+
+            Parameters
+            ----------
+            None
+            """
+
             def __init__(self, *_args, **_kwargs) -> None:
+                """
+                Reject construction when `fontTools` is unavailable.
+
+                Parameters
+                ----------
+                None
+
+                Returns
+                -------
+                None
+
+                Raises
+                ------
+                TTLibError
+                    Always raised because the real `fontTools` backend is
+                    unavailable.
+                """
                 raise TTLibError
 
         class TTCollection:
+            """
+            Fallback stub that raises `TTLibError` on instantiation.
+
+            Parameters
+            ----------
+            None
+            """
+
             def __init__(self, *_args, **_kwargs) -> None:
+                """
+                Reject construction when `fontTools` is unavailable.
+
+                Parameters
+                ----------
+                None
+
+                Returns
+                -------
+                None
+
+                Raises
+                ------
+                TTLibError
+                    Always raised because the real `fontTools` backend is
+                    unavailable.
+                """
                 raise TTLibError
 
 

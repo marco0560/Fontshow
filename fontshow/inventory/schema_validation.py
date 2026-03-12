@@ -42,10 +42,27 @@ def _validate_inventory_schema_strict(data: dict) -> None:
     data : dict
         Inventory data.
 
+    Returns
+    -------
+    None
+
     Raises
     ------
     ValueError
-        If schema version is unsupported or validation fails.
+        If `metadata.schema_version` is unsupported.
+    ValueError
+        If the schema resource file cannot be found.
+    ValueError
+        If the inventory fails JSON Schema validation.
+    json.JSONDecodeError
+        If the bundled schema resource exists but contains invalid JSON.
+
+    Notes
+    -----
+    The function normalizes jsonschema validation failures into
+    `ValueError` for callers, but schema resource loading may still
+    propagate low-level JSON decoding failures if the bundled schema
+    file is malformed.
     """
 
     schema_version = data.get("metadata", {}).get("schema_version")

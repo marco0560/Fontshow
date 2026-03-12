@@ -37,6 +37,23 @@ from fontshow.core.types import ExecutionContext
 
 
 def _detect_execution_context() -> ExecutionContext:
+    """
+    Detect the current runtime execution context.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    ExecutionContext
+        Detected runtime context such as native, WSL, or container.
+
+    Notes
+    -----
+    Detection is best-effort and relies on environment variables,
+    `/proc/version`, and container marker files.
+    """
     # WSL detection
     if "WSL_DISTRO_NAME" in os.environ:
         return ExecutionContext.WSL
@@ -60,9 +77,20 @@ def collect_platform_metadata() -> dict[str, Any]:
     """
     Canonical platform metadata extractor.
 
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    dict[str, Any]
+        Schema-compatible runtime metadata describing operating system,
+        Python runtime, host identity, and execution context.
+
+    Notes
+    -----
     This function is the SINGLE SOURCE OF TRUTH for runtime platform
     metadata across dump → parse → create_catalog.
-
     Output structure MUST remain schema-compatible (schema 1.2).
     """
 

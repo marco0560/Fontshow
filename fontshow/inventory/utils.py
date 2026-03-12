@@ -47,6 +47,13 @@ def run_command(argv: list[str]) -> subprocess.CompletedProcess[str]:
         Completed process object with stdout captured as text and
         stderr redirected to stdout. The process is not checked for
         non-zero exit status.
+
+    Raises
+    ------
+    RuntimeError
+        If the subprocess exceeds `SUBPROCESS_TIMEOUT_SECONDS` and is
+        converted from `subprocess.TimeoutExpired` into a deterministic
+        inventory-layer failure.
     """
     try:
         return subprocess.run(

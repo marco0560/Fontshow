@@ -151,7 +151,24 @@ def validate_inventory(
 
 
 def _apply_schema_validation(data: dict[str, Any]) -> None:
-    """Validate schema and inject structured warnings into inventory."""
+    """
+    Validate the inventory schema and attach resulting structured warnings.
+
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Inventory document to validate and annotate.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The function delegates schema validation to
+    `validate_inventory_schema()` and injects the returned warnings into
+    the inventory root via `add_structured_warning()`.
+    """
 
     log.info(
         "inventory schema validation requested",
@@ -196,6 +213,20 @@ def is_non_opentype_face(face: dict) -> bool:
     """
     Canonical detection of non-OpenType / bitmap faces.
 
+    Parameters
+    ----------
+    face : dict
+        Face-level extraction result produced by fontTools helpers.
+
+    Returns
+    -------
+    bool
+        True only when the face was rejected with the specific
+        fontTools error indicating that it is not a TrueType or
+        OpenType font.
+
+    Notes
+    -----
     Preserves EXACT previous behaviour:
     only detects faces rejected by fontTools with the
     specific 'Not a TrueType or OpenType font' error.
@@ -210,6 +241,19 @@ def is_structurally_unloadable_face(face: dict) -> bool:
     """
     Detect faces that are structurally missing mandatory OpenType tables.
 
+    Parameters
+    ----------
+    face : dict
+        Face-level extraction result produced by fontTools helpers.
+
+    Returns
+    -------
+    bool
+        True when the face claims successful extraction but lacks
+        mandatory OpenType tables or any supported glyph table.
+
+    Notes
+    -----
     Deterministic, fontTools-derived check (no LaTeX, no luaotfload-tool).
     Conservative: only flags faces that claim ok=True but have missing tables.
     """
@@ -245,6 +289,24 @@ _STYLE_LEAK_RE = re.compile(
 
 
 def has_style_leak_in_family(desc: dict) -> bool:
+    """
+    Detect whether a family name appears to contain style qualifiers.
+
+    Parameters
+    ----------
+    desc : dict
+        Font descriptor whose identity block is inspected.
+
+    Returns
+    -------
+    bool
+        True if the family name matches the style-leak heuristic regex.
+
+    Notes
+    -----
+    This helper is used as a conservative signal that style information
+    may have leaked into the normalized family field.
+    """
     fam = desc.get("identity", {}).get("family", "")
     if not isinstance(fam, str):
         return False

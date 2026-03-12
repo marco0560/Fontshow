@@ -90,6 +90,20 @@ def _build_block_ratio_cache(
     """
     Precompute Unicode block coverage ratios.
 
+    Parameters
+    ----------
+    block_coverage : dict[str, int]
+        Mapping of block names to covered codepoint counts.
+    block_sizes : dict[str, int]
+        Mapping of block names to normative block sizes.
+
+    Returns
+    -------
+    dict[str, float]
+        Mapping of block names to precomputed coverage ratios.
+
+    Notes
+    -----
     Pure optimization equivalent to repeated calls to
     `_block_coverage_ratio`.
     """
@@ -109,6 +123,20 @@ def _build_block_ratio_cache(
 def _infer_allowed_languages_from_scripts(
     scripts_public: object,
 ) -> set[str] | None:
+    """
+    Restrict language candidates to those compatible with inferred scripts.
+
+    Parameters
+    ----------
+    scripts_public : object
+        Public script list extracted from coverage metadata.
+
+    Returns
+    -------
+    set[str] | None
+        Set of allowed language codes derived from script membership, or
+        None when no usable script list is available.
+    """
     inferred_scripts = (
         [str(s).lower() for s in scripts_public]
         if isinstance(scripts_public, list)
@@ -257,6 +285,29 @@ def _apply_script_authoritative_fallbacks(
     unicode_blocks: dict[str, int],
     coverage: dict[str, Any],
 ) -> dict[str, LanguageInferenceInfo]:
+    """
+    Apply deterministic script-based fallbacks to inferred languages.
+
+    Parameters
+    ----------
+    inferred : dict[str, LanguageInferenceInfo]
+        Current inferred language mapping.
+    unicode_blocks : dict[str, int]
+        Unicode block coverage counts used for special-case fallbacks.
+    coverage : dict[str, Any]
+        Coverage structure containing public script information.
+
+    Returns
+    -------
+    dict[str, LanguageInferenceInfo]
+        Possibly reduced or augmented language inference mapping.
+
+    Notes
+    -----
+    The helper preserves script-authoritative behavior. It may narrow a
+    Latin-only result to English for Basic Latin coverage, or inject a
+    script-default display language when no language could be inferred.
+    """
     scripts_public = coverage.get("scripts")
     scripts_lower: list[str] | None = None
     if isinstance(scripts_public, list) and scripts_public:

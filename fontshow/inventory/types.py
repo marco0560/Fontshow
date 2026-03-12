@@ -31,6 +31,20 @@ from typing import Any
 
 @dataclass(slots=True)
 class FontBuildContext:
+    """
+    Context object used while constructing a single inventory descriptor.
+
+    Parameters
+    ----------
+    None
+
+    Notes
+    -----
+    The structure bundles all per-face inputs required by
+    `build_font_descriptor()`: the source path, normalized platform
+    name, fontTools metadata, and optional Fontconfig metadata.
+    """
+
     font_path: Path
     platform_name: str
     fonttools: dict[str, Any]

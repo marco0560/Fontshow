@@ -123,8 +123,25 @@ def _collect_language_warnings(
     """
     Aggregate warnings for grouped CLI display.
 
-    Returns:
-        normalized, duplicates, dropped, other_warnings
+    Parameters
+    ----------
+    font : FontRef
+        Font descriptor whose structured warnings are inspected.
+
+    Returns
+    -------
+    tuple[list[str], list[str], list[str], list[tuple[str, str, str]]]
+        Four-element tuple containing:
+        - normalized language transformations
+        - duplicate language tags
+        - dropped language tags
+        - other warning triples as ``(severity, code, message)``
+
+    Notes
+    -----
+    The helper groups warning records for compact CLI presentation and
+    only forwards non-language warnings when their severity is warning
+    or error.
     """
 
     lang_norm_pairs: list[str] = []
@@ -147,6 +164,20 @@ def _collect_language_warnings(
         extra: dict[str, Any] = extra_raw if isinstance(extra_raw, dict) else {}
 
         def _extract_lang(msg: str) -> str:
+            """
+            Extract a quoted language token from a warning message.
+
+            Parameters
+            ----------
+            msg : str
+                Warning message text to inspect.
+
+            Returns
+            -------
+            str
+                Extracted token if a quoted substring is present,
+                otherwise an empty string.
+            """
             if not msg:
                 return ""
             m = re.search(r"'([^']+)'", msg)
@@ -191,7 +222,23 @@ def _collect_language_warnings(
 
 
 def _emit_verbose_warnings(enriched: dict[str, Any]) -> None:
-    """Emit grouped warnings for verbose CLI mode."""
+    """
+    Emit grouped warnings for verbose CLI mode.
+
+    Parameters
+    ----------
+    enriched : dict[str, Any]
+        Enriched inventory structure containing a ``fonts`` list.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The function formats warning groups per font entry and routes them
+    through CLI logging helpers without mutating the inventory.
+    """
 
     fonts = enriched.get("fonts", [])
     if not isinstance(fonts, list):

@@ -90,14 +90,55 @@ def _specimen_is_variation_selector(cp: int) -> bool:
 
 
 def _specimen_is_control_like(cp: int) -> bool:
+    """
+    Check whether a codepoint belongs to a control-like Unicode category.
+
+    Parameters
+    ----------
+    cp : int
+        Unicode codepoint.
+
+    Returns
+    -------
+    bool
+        True if the character category is one of ``Cc``, ``Cf``, ``Cs``,
+        ``Co``, or ``Cn``.
+    """
     return unicodedata.category(chr(cp)) in {"Cc", "Cf", "Cs", "Co", "Cn"}
 
 
 def _specimen_is_mark(cp: int) -> bool:
+    """
+    Check whether a codepoint is a combining mark used in specimen filtering.
+
+    Parameters
+    ----------
+    cp : int
+        Unicode codepoint.
+
+    Returns
+    -------
+    bool
+        True if the character category is ``Mn`` or ``Mc``.
+    """
     return unicodedata.category(chr(cp)) in {"Mn", "Mc"}
 
 
 def _specimen_skip(cp: int) -> bool:
+    """
+    Decide whether a codepoint must be skipped during specimen selection.
+
+    Parameters
+    ----------
+    cp : int
+        Unicode codepoint.
+
+    Returns
+    -------
+    bool
+        True if the codepoint is control-like, a variation selector, or
+        a combining mark.
+    """
     return (
         _specimen_is_control_like(cp)
         or _specimen_is_variation_selector(cp)
@@ -106,6 +147,20 @@ def _specimen_skip(cp: int) -> bool:
 
 
 def _specimen_preference(cp: int) -> int:
+    """
+    Compute a stable ordering priority for cmap fallback glyph selection.
+
+    Parameters
+    ----------
+    cp : int
+        Unicode codepoint.
+
+    Returns
+    -------
+    int
+        Preference bucket where letters sort first, decimal digits
+        second, and all other categories last.
+    """
     import unicodedata
 
     cat = unicodedata.category(chr(cp))
@@ -117,6 +172,28 @@ def _specimen_preference(cp: int) -> int:
 
 
 def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
+    """
+    Filter specimen text against cmap support and rendering-safety rules.
+
+    Parameters
+    ----------
+    text : str
+        Candidate specimen text.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str, int]
+        Two-element tuple ``(filtered_text, glyph_count)`` where
+        `glyph_count` counts accepted base glyphs.
+
+    Notes
+    -----
+    Combining marks are retained only when they follow an accepted base
+    glyph. Unsupported, control-like, and variation-selector codepoints
+    are discarded.
+    """
     out: list[str] = []
     glyphs = 0
     prev_base = False
@@ -146,6 +223,27 @@ def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
 
 
 def _specimen_collect_cmap(path: str | None, ttc_index: int | None) -> set[int]:
+    """
+    Collect supported Unicode codepoints from the font cmap.
+
+    Parameters
+    ----------
+    path : str | None
+        Filesystem path to the font binary.
+    ttc_index : int | None
+        Face index for TrueType collections.
+
+    Returns
+    -------
+    set[int]
+        Set of supported Unicode codepoints, capped defensively for very
+        large cmaps.
+
+    Notes
+    -----
+    Extraction is best-effort. Errors while opening or reading the font
+    return an empty set rather than raising.
+    """
     if not isinstance(path, str) or not path:
         return set()
     try:
@@ -178,6 +276,20 @@ def _specimen_from_internal(
 ) -> tuple[str | None, str | None]:
     """
     Level 1 — Use internal sample text if present and usable.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry that may carry an embedded sample text.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str | None, str | None]
+        Either ``(filtered_sample, "internal")`` on success or
+        ``(None, rejection_reason)`` when the internal sample is absent,
+        unsupported, or too short.
     """
 
     text = font.get("sample_text")
@@ -203,9 +315,26 @@ def _specimen_from_script(
     """
     Level 2 — Use script-derived fallback sample.
 
+    Parameters
+    ----------
+    coverage : dict[str, Any]
+        Coverage block containing script metadata and optional
+        charset-derived script coverage.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str | None, str | None]
+        Either ``(filtered_sample, "script")`` on success or
+        ``(None, rejection_reason)`` when no suitable script sample can
+        be produced.
+
+    Notes
+    -----
     Deterministic selection:
-    1) Use dominant script by coverage ratio if available
-    2) Otherwise fallback to first declared script
+    1. Use dominant script by coverage ratio if available.
+    2. Otherwise fall back to the first declared script.
     """
 
     scripts = coverage.get("scripts")
@@ -264,6 +393,27 @@ def _specimen_from_cmap(
     font: dict[str, Any],
     cps: set[int],
 ) -> tuple[str, str]:
+    """
+    Build a deterministic specimen from cmap coverage as the final fallback.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry being enriched.
+    cps : set[int]
+        Supported Unicode codepoints extracted from the font cmap.
+
+    Returns
+    -------
+    tuple[str, str]
+        Two-element tuple ``(specimen_text, "cmap")``.
+
+    Notes
+    -----
+    Candidate codepoints are ordered with `_specimen_preference()` and
+    filtered through `_specimen_skip()`. The function also injects a
+    structured informational warning to record cmap-fallback usage.
+    """
     ordered = sorted(cps, key=_specimen_preference)
     chosen: list[int] = []
 
@@ -292,7 +442,29 @@ def _specimen_apply_semantic_validation(
 ) -> tuple[str, int, str | None]:
     """
     Ensure specimen characters belong to the font cmap.
-    Returns possibly modified (filtered, glyph_count, strategy).
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry whose inference metadata may be used for fallback.
+    filtered : str
+        Current specimen candidate.
+    g : int
+        Glyph count associated with `filtered`.
+    cps : set[int] | None
+        Supported Unicode codepoints for the font, if known.
+
+    Returns
+    -------
+    tuple[str, int, str | None]
+        Possibly updated ``(filtered_text, glyph_count, strategy)``
+        triple. The strategy is None when no replacement was needed.
+
+    Notes
+    -----
+    When unsupported characters are detected, the helper first attempts
+    a language-based replacement sample and finally falls back to a
+    fixed ASCII alphabet specimen.
     """
     if not cps:
         return filtered, g, None

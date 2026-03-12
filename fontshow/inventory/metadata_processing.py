@@ -60,7 +60,31 @@ def _process_language_metadata(
     *,
     strict_bcp47: bool,
 ) -> None:
-    """Normalize languages and inject normalization warnings."""
+    """
+    Normalize language metadata and attach normalization warnings.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry being enriched with warning records.
+    coverage : dict[str, Any]
+        Coverage block whose language and script fields are normalized in
+        place.
+    strict_bcp47 : bool
+        Whether invalid BCP-47 tags must be rejected strictly during
+        normalization.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The helper copies inferred languages and scripts into coverage when
+    those fields are missing, preserves the original raw language list
+    in ``languages_raw``, and injects structured warnings for
+    deprecated, normalized, duplicate, and dropped language tags.
+    """
 
     inference = font.get("inference")
     if isinstance(inference, dict):
@@ -160,6 +184,23 @@ def _debug_dump_inference(
     """
     Emit detailed inference diagnostics when FONTSHOW_DEBUG_INFERENCE=1.
 
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry whose inference state is being inspected.
+    coverage : dict[str, Any]
+        Coverage block used during inference.
+    inferred_languages_map : dict[str, LanguageInferenceInfo]
+        Mapping of inferred language candidates and their evidence.
+    inferred_languages : list[str]
+        Final ordered language list attached to the font.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
     Debug-only helper isolated from core parsing logic.
     No-op unless the debug environment variable is enabled.
     """
@@ -217,7 +258,30 @@ def _debug_dump_inference(
 def _process_charset(
     font: dict[str, Any], coverage: dict[str, Any], font_path: str | None
 ) -> None:
-    """Decode and normalize FontConfig charset metadata."""
+    """
+    Decode and normalize Fontconfig charset metadata.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry being enriched with charset-derived warnings.
+    coverage : dict[str, Any]
+        Coverage block updated in place with normalized charset,
+        Unicode-block, and script-coverage information.
+    font_path : str | None
+        Filesystem path used only for diagnostics and warning payloads.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The helper is best-effort. Charset decode failures emit structured
+    warnings, while successful decodes populate normalized charset
+    ranges, Unicode blocks, and script coverage derived from those
+    ranges.
+    """
 
     charset = font.get("charset")
 
@@ -331,7 +395,31 @@ def _infer_and_attach_metadata(
     level: str,
     font_path: str | None,
 ) -> None:
-    """Run script & language inference and attach structured result."""
+    """
+    Run script and language inference and attach the normalized result.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry updated in place with inference results.
+    coverage : dict[str, Any]
+        Coverage block supplying declared metadata and derived Unicode
+        statistics.
+    level : str
+        Inference aggressiveness level forwarded to script inference.
+    font_path : str | None
+        Filesystem path used for diagnostics only.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This helper normalizes declared scripts, infers scripts and
+    languages, ranks candidate languages by script affinity, attaches
+    the final inference block, and optionally emits debug diagnostics.
+    """
 
     identity = font.get("identity", {})
     family = identity.get("family")
@@ -424,6 +512,20 @@ def _infer_and_attach_metadata(
     font_scripts = set(normalized_scripts)
 
     def _language_sort_key(lang: str) -> tuple[int, str]:
+        """
+        Rank inferred languages by script affinity and lexical stability.
+
+        Parameters
+        ----------
+        lang : str
+            Candidate language code to rank.
+
+        Returns
+        -------
+        tuple[int, str]
+            Sort key that prioritizes languages whose primary script is
+            present in the font, then falls back to lexical ordering.
+        """
         profile = LANGUAGE_INFO.get(lang)
         primary_script = (
             str(profile["scripts"][0]) if profile and profile.get("scripts") else None
