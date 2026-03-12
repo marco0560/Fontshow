@@ -101,20 +101,29 @@ def infer_scripts(  # noqa: C901, PLR0912
     1. **Primary path**: analyze ``coverage["unicode_blocks"]`` if present.
     2. **Fallback path**: infer from ``coverage["unicode"]["max"]``.
 
-    Args:
-        coverage: Coverage block extracted from a font entry. Expected keys are
-            ``unicode_blocks`` (mapping block name → count) and/or
-            ``unicode.max`` (maximum code point).
-        level: Inference aggressiveness level. One of
-            ``"conservative"``, ``"medium"`` (default), or ``"aggressive"``.
+    Parameters
+    ----------
+    coverage : dict[str, Any]
+        Coverage block extracted from a font entry. Expected keys are
+        ``unicode_blocks`` (mapping block name to count) and/or
+        ``unicode.max`` (maximum code point).
+    level : str, optional
+        Inference aggressiveness level. One of
+        ``"conservative"``, ``"medium"`` (default), or ``"aggressive"``.
 
-    Returns:
-        A list of inferred ISO-15924 script codes (lowercase),
-        ordered by decreasing confidence.
-        Examples: "latn", "cyrl", "arab", "taml", "hani".
-        Returns ``["unknown"]`` if no reliable inference is possible.
-        The value ``"unknown"`` is a sentinel and must not be used
-        for downstream language inference.
+    Returns
+    -------
+    list[str]
+        Inferred ISO-15924 script codes in lowercase, ordered by
+        decreasing confidence. Returns ``["unknown"]`` if no reliable
+        inference is possible.
+
+    Notes
+    -----
+    Examples of returned script tags include ``"latn"``, ``"cyrl"``,
+    ``"arab"``, ``"taml"``, and ``"hani"``. The value ``"unknown"``
+    is a sentinel and must not be used for downstream language
+    inference.
     """
     blocks: dict[str, int] = coverage.get("unicode_blocks", {}) or {}
 

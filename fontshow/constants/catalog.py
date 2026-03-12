@@ -20,6 +20,11 @@ Architectural role
 This module belongs to the **constants infrastructure layer** and
 provides catalog-specific configuration values used by the catalog
 pipeline and CLI commands.
+
+Notes
+-----
+The exported sets are platform-sensitive and are resolved at import
+time from the current runtime environment.
 """
 
 from fontshow.platform.runtime import IS_LINUX, IS_WINDOWS

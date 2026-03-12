@@ -36,8 +36,17 @@ class BaseCheck(ABC):
     """
     Abstract base class for all preflight checks.
 
-    Concrete subclasses are automatically registered at import time
-    and form the authoritative registry for built-in checks.
+    Responsibilities
+    ----------------
+    - Define the execution contract implemented by concrete checks.
+    - Provide automatic registration for non-abstract subclasses.
+    - Establish shared metadata such as ``check_id`` and
+      ``executable``.
+
+    Notes
+    -----
+    Concrete subclasses are automatically registered at import time and
+    form the authoritative registry for built-in checks.
     """
 
     registry: ClassVar[list[type[BaseCheck]]] = []
@@ -83,5 +92,12 @@ class BaseCheck(ABC):
         -------
         CheckResult
             Result object describing the outcome of the check.
+
+        Raises
+        ------
+        NotImplementedError
+            Raised by the abstract base implementation. Concrete
+            subclasses must override this method and may document
+            additional exceptions.
         """
         raise NotImplementedError

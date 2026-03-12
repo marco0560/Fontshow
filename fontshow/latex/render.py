@@ -47,6 +47,11 @@ def escape_latex(text: str) -> str:
     -------
     str
         String with LaTeX special characters escaped.
+
+    Notes
+    -----
+    Escaping is character-based and deterministic. The helper does not
+    attempt full LaTeX lexical analysis.
     """
     replacements = {
         "\\": r"\textbackslash{}",
@@ -116,6 +121,16 @@ def _latex_detokenize_safe(text: str) -> str:
 def _renderer_option_prefix() -> str:
     """
     Return the fontspec Renderer option prefix.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    str
+        ``"Renderer=Harfbuzz,"`` on non-Windows platforms, otherwise an
+        empty string.
 
     Notes
     -----

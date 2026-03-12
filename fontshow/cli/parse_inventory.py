@@ -251,6 +251,11 @@ def _default_read_text(p: Path) -> str:
     -------
     str
         File contents decoded as UTF-8.
+
+    Raises
+    ------
+    OSError
+        Propagates filesystem errors raised while reading the file.
     """
     return p.read_text(encoding="utf-8")
 
@@ -269,6 +274,11 @@ def _default_write_text(p: Path, s: str) -> None:
     Returns
     -------
     None
+
+    Raises
+    ------
+    OSError
+        Propagates filesystem errors raised while writing the file.
     """
     p.write_text(s, encoding="utf-8")
 
@@ -313,6 +323,11 @@ def run_parse_font_inventory(
     json.JSONDecodeError
         May propagate indirectly from the injected read/parse path if
         malformed JSON is not intercepted by the caller.
+    OSError
+        May propagate from injected read or write adapters.
+    ValueError
+        May propagate from `parse_inventory_fn` if enrichment or strict
+        validation rejects the loaded inventory.
 
     Notes
     -----

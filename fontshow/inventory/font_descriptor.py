@@ -64,6 +64,12 @@ def classify_font(
     -------
     dict[str, Any]
         Dictionary containing boolean classification flags and format hints.
+
+    Notes
+    -----
+    Emoji classification is intentionally heuristic and currently
+    depends on the combination of color-font support and a Unicode
+    maximum reaching the emoji range.
     """
     container = format_block.get("container")
     font_type = format_block.get("font_type")
@@ -162,7 +168,8 @@ def _normalize_metrics(
 
 
 def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
-    """Build the canonical per-font descriptor used in the JSON inventory.
+    """
+    Build the canonical per-font descriptor used in the JSON inventory.
 
     This function assembles **all metadata for a single font face** into a
     stable, JSON-serializable structure consumed by the rest of the project
@@ -188,19 +195,20 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
 
     Parameters
     ----------
-    font_path : pathlib.Path
-        Path to the font file on disk.
-    platform_name : str
-        Normalized platform identifier (e.g. "linux", "windows").
-    fonttools : dict[str, Any]
-        Metadata block produced by fonttools_extract_all for a single face.
-    fontconfig : dict[str, Any] | None
-        Optional FontConfig-derived metadata (Linux only).
+    ctx : FontBuildContext
+        Descriptor-construction context bundling font path, platform
+        identity, extracted fontTools metadata, and optional Fontconfig
+        enrichment.
 
     Returns
     -------
     dict[str, Any]
         Dictionary representing the canonical font descriptor for the font face.
+
+    Notes
+    -----
+    The descriptor is intentionally self-contained so downstream stages
+    do not need to reopen the font binary.
     """
     names: dict[str, list[str]] = (
         ctx.fonttools.get("names", {})

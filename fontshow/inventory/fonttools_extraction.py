@@ -80,6 +80,12 @@ else:
             Parameters
             ----------
             None
+
+            Notes
+            -----
+            This local fallback preserves the exception type used by the
+            rest of the module when the real dependency cannot be
+            imported.
             """
 
             _MSG = "fontTools is not installed"
@@ -105,6 +111,11 @@ else:
             Parameters
             ----------
             None
+
+            Notes
+            -----
+            This stub exists only to preserve import-time compatibility
+            when `fontTools` is unavailable.
             """
 
             def __init__(self, *_args, **_kwargs) -> None:
@@ -134,6 +145,11 @@ else:
             Parameters
             ----------
             None
+
+            Notes
+            -----
+            This stub exists only to preserve import-time compatibility
+            when `fontTools` is unavailable.
             """
 
             def __init__(self, *_args, **_kwargs) -> None:
@@ -171,6 +187,11 @@ def detect_font_container(path: Path) -> str:
     str
         Detected container type: "TTF", "OTF", "TTC", "WOFF", "WOFF2",
         or "UNKNOWN" if not recognized.
+
+    Notes
+    -----
+    Detection is best-effort and combines magic-byte checks with
+    filename extension fallback when header inspection is unavailable.
     """
     ext = path.suffix.lower()
     try:
@@ -197,6 +218,11 @@ def detect_font_container(path: Path) -> str:
 def _charset_ranges_from_ttfont(tt: TTFont) -> list[list[int]]:
     """
     Extract merged Unicode codepoint ranges from cmap tables.
+
+    Parameters
+    ----------
+    tt : TTFont
+        Open font object whose Unicode cmap tables are inspected.
 
     Returns
     -------
@@ -256,6 +282,12 @@ def extract_sample_text(font_path: str) -> list[str] | None:
         List of unique embedded sample text strings if present,
         otherwise None.
 
+    Raises
+    ------
+    None
+        Extraction errors are handled internally and converted into a
+        ``None`` result.
+
     Notes
     -----
     Extraction is best-effort and silently ignores malformed
@@ -314,6 +346,13 @@ def _best_name(names: dict[str, list[str]], name_id: int) -> str | None:
     str | None
         First non-empty, stripped string for the given nameID, or None
         if no usable value is found.
+
+    Notes
+    -----
+    Candidate values are evaluated in stored order and the first usable
+    string wins.
+
+    Empty and whitespace-only candidates are ignored.
     """
     vals = names.get(str(name_id), [])
     for v in vals:

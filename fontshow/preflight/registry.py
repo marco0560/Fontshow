@@ -98,5 +98,7 @@ def clear_registry() -> None:
     Notes
     -----
     This function is intended for test isolation only.
+    Production code is expected to register checks during import-time
+    initialization rather than mutating the registry repeatedly.
     """
     _CHECK_REGISTRY.clear()

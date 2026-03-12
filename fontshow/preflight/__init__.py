@@ -39,6 +39,19 @@ def run(args):
     Called by argparse via:
         parser.set_defaults(func=run)
 
+    Parameters
+    ----------
+    args : object
+        Parsed CLI arguments forwarded unchanged to the internal
+        preflight CLI runner.
+
+    Returns
+    -------
+    int
+        Process exit code returned by the preflight CLI workflow.
+
+    Notes
+    -----
     Behavior:
     - runs the preflight checks
     - renders a human-readable report unless --quiet is set
@@ -62,5 +75,10 @@ def register_cli(parser):
     Returns
     -------
     None
+
+    Notes
+    -----
+    This function binds the ``preflight`` command name and assigns
+    `run` as the argparse callback via ``set_defaults()``.
     """
     parser.set_defaults(command="preflight", func=run)

@@ -23,6 +23,12 @@ Architectural role
 ------------------
 This module belongs to the **constants infrastructure layer** and
 provides shared runtime values used throughout the application.
+
+Notes
+-----
+Values in this module are intentionally lightweight and import-safe so
+they can be used from low-level helpers without introducing circular
+dependencies.
 """
 
 from datetime import datetime

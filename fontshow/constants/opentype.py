@@ -24,6 +24,11 @@ This module belongs to the **constants infrastructure layer** and
 provides specification-derived identifiers used by the inventory and
 metadata extraction subsystems.
 
+Notes
+-----
+The numeric values defined here are copied from the OpenType
+specification and are treated as stable external identifiers.
+
 Typical usage
 -------------
 These constants are typically used when reading or interpreting OpenType

@@ -57,6 +57,10 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
     The function replaces the local parser variable with a dedicated
     `ArgumentParser` configuration for the standalone validation CLI.
     The incoming parser object is therefore not mutated in place.
+
+    This preserves the current implementation behavior exactly, even
+    though it differs from the in-place mutation pattern used by other
+    CLI modules.
     """
     parser = argparse.ArgumentParser(
         prog="fontshow-validate",
@@ -85,6 +89,11 @@ def run(args) -> int:
         - 0 if validation succeeds
         - 1 if the file is missing, invalid JSON, schema validation fails,
           or semantic validation emits blocking errors.
+
+    Raises
+    ------
+    OSError
+        May propagate if the inventory file exists but cannot be read.
 
     Notes
     -----

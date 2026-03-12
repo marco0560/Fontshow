@@ -136,12 +136,25 @@ def validate_inventory_schema(data: dict) -> list[dict]:
     """
     Validate inventory structure and return structured warnings.
 
-    This function is backward-compatible and MUST NOT raise.
+    Parameters
+    ----------
+    data : dict
+        Inventory document to validate.
 
     Returns
     -------
     list[dict]
         Structured schema warnings, empty if valid.
+
+    Raises
+    ------
+    None
+        This function is backward-compatible and MUST NOT raise.
+
+    Notes
+    -----
+    Missing or unknown schema versions are converted into structured
+    warning/error records instead of exceptions.
     """
 
     warnings: list[dict] = []

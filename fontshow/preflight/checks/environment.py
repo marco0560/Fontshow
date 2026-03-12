@@ -41,6 +41,11 @@ def detect_os() -> str:
     str
         One of ``"linux"``, ``"windows"``, ``"macos"``, or
         ``"unknown"``.
+
+    Notes
+    -----
+    Detection is based on `platform.system()` and normalized into the
+    small set of identifiers used by the preflight subsystem.
     """
     import platform
 
@@ -67,6 +72,12 @@ def detect_execution_mode() -> str:
     str
         One of ``"ci"``, ``"wsl"``, ``"container"``, or
         ``"bare-metal"``.
+
+    Notes
+    -----
+    Detection is heuristic and relies on common environment variables
+    and filesystem markers. It is intended for support classification,
+    not for security-sensitive decisions.
     """
     import os
     from pathlib import Path
@@ -87,6 +98,11 @@ class EnvironmentSupportCheck(BaseCheck):
     Parameters
     ----------
     None
+
+    Notes
+    -----
+    Support is classified using the combination of normalized operating
+    system and execution mode detected by this module.
     """
 
     check_id = "environment.support"
@@ -105,6 +121,12 @@ class EnvironmentSupportCheck(BaseCheck):
             Structured result describing whether the detected OS and
             execution mode are fully supported, partially supported, or
             unsupported.
+
+        Notes
+        -----
+        Linux bare-metal is treated as the fully supported baseline.
+        Linux non-bare-metal and Windows environments return warnings,
+        while other operating systems return an error result.
         """
         os_name = detect_os()
         execution_mode = detect_execution_mode()

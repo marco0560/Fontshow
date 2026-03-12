@@ -168,6 +168,10 @@ def render_badges(font: dict[str, object]) -> str:
     Badges are ASCII-only and typeset in monospace to avoid bidi and
     script-direction issues. Badge fields are emitted in a stable order:
     scripts, language, then font type.
+
+    The function does not perform LaTeX escaping beyond the fixed badge
+    wrapper and therefore assumes badge payloads are already safe
+    ASCII-derived labels.
     """
     scripts = script_label(font)
     languages = language_label(font)

@@ -34,25 +34,22 @@ class ScriptInfo(TypedDict):
     """
     Canonical description of a writing script.
 
-    canonical_name
+    Parameters
+    ----------
+    canonical_name : str
         Human readable script name.
-
-    display_language
-        Representative language used when a script-only specimen is required.
-
-    polyglossia_language
-        Polyglossia language identifier (if required).
-
-    fontspec_opts
-        Additional fontspec options required for rendering.
-
-    rtl
-        True for right-to-left scripts.
-
-    requires_polyglossia
+    display_language : str
+        Representative language used when a script-only specimen is
+        required.
+    polyglossia_language : str
+        Polyglossia language identifier, if required.
+    fontspec_opts : str
+        Additional ``fontspec`` options required for rendering.
+    rtl : bool
+        Whether the script is right-to-left.
+    requires_polyglossia : bool
         Whether LuaLaTeX must enable Polyglossia for the script.
-
-    specimen
+    specimen : str | None
         Canonical specimen sentence representative of the script.
     """
 
@@ -69,16 +66,17 @@ class LanguageInfo(TypedDict):
     """
     Canonical description of a language inference profile.
 
-    scripts
+    Parameters
+    ----------
+    canonical_name : str
+        Human readable language name.
+    scripts : list[ScriptISO]
         Scripts normally used to write the language.
-
-    required_blocks
+    required_blocks : list[str]
         Unicode blocks required for language detection.
-
-    optional_blocks
+    optional_blocks : list[str]
         Blocks that increase confidence when present.
-
-    sample
+    sample : str | None
         Canonical language sample sentence.
     """
 

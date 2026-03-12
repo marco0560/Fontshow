@@ -36,7 +36,14 @@ class FontBuildContext:
 
     Parameters
     ----------
-    None
+    font_path : Path
+        Filesystem path to the source font file.
+    platform_name : str
+        Normalized platform identifier for the current runtime.
+    fonttools : dict[str, Any]
+        Per-face metadata extracted from fontTools.
+    fontconfig : dict[str, Any] | None
+        Optional Fontconfig enrichment metadata.
 
     Notes
     -----

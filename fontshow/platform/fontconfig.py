@@ -91,6 +91,11 @@ def _run_fc_query(path: Path) -> str:
         Raw stdout produced by `fc-query`. Returns an empty string
         if no output is available.
 
+    Raises
+    ------
+    RuntimeError
+        May propagate from `run_command()` when the subprocess times out.
+
     Notes
     -----
     Logging and error semantics are preserved. Non-zero exit codes
@@ -277,6 +282,18 @@ def _run_fc_query_many(paths: list[Path]) -> dict[Path, str]:
     -------
     dict[pathlib.Path, str]
         Mapping from font path to its corresponding raw `fc-query` output block.
+
+    Raises
+    ------
+    RuntimeError
+        May propagate from `run_command()` when any chunked subprocess
+        invocation times out.
+
+    Notes
+    -----
+    Chunking is used to keep command-line argument size within a
+    conservative safety budget while preserving deterministic output
+    mapping per path.
     """
     out: dict[Path, str] = {}
 
@@ -514,6 +531,11 @@ def _parse_fc_query_output(
     dict[str, Any]
         Normalized metadata dictionary containing languages, scripts,
         charset (optional), and boolean flags.
+
+    Notes
+    -----
+    The parser strips leading indentation from `fc-query` output before
+    delegating to the field- and charset-specific helpers.
     """
     log_trace_cat(
         log,
@@ -577,6 +599,12 @@ def fc_query_extract(path: Path, include_charset: bool = False) -> dict[str, Any
         Metadata dictionary containing languages, scripts, charset (optional),
         and boolean flags derived from FontConfig.
 
+    Raises
+    ------
+    RuntimeError
+        May propagate timeout failures raised by the underlying
+        subprocess wrapper.
+
     Notes
     -----
     Refactored design:
@@ -609,6 +637,17 @@ def fc_query_extract_many(
     -------
     dict[pathlib.Path, dict[str, Any]]
         Mapping from each font path to its extracted FontConfig metadata.
+
+    Raises
+    ------
+    RuntimeError
+        May propagate timeout failures raised while querying chunks of
+        paths.
+
+    Notes
+    -----
+    Output keys preserve the original input paths, even when a queried
+    block is empty.
     """
     raw_map = _run_fc_query_many(paths)
     out: dict[Path, dict[str, Any]] = {}

@@ -86,6 +86,11 @@ def _select_checks(
     -------
     list[type[BaseCheck]]
         Ordered list of selected check classes.
+
+    Notes
+    -----
+    Filtering preserves input order and applies the enabled whitelist
+    before the disabled blacklist.
     """
     selected: list[type[BaseCheck]] = []
 
@@ -133,15 +138,43 @@ def run_preflight(
     checks: list[type[BaseCheck]] | None = None,
 ) -> PreflightResult:
     """
-    Run preflight checks and return a PreflightResult.
+    Run preflight checks and aggregate their results.
 
+    Parameters
+    ----------
+    enabled : set[str] | None, optional
+        Optional whitelist of check identifiers to run when ``checks``
+        is not provided.
+    disabled : set[str] | None, optional
+        Optional blacklist of check identifiers to skip when ``checks``
+        is not provided.
+    checks : list[type[BaseCheck]] | None, optional
+        Explicit check classes to execute. When provided, this overrides
+        registry resolution and ``enabled`` / ``disabled`` filtering.
+
+    Returns
+    -------
+    PreflightResult
+        Aggregate result containing one ``CheckResult`` for each
+        executed or skipped check.
+
+    Raises
+    ------
+    Exception
+        Propagates exceptions raised while instantiating a check class
+        or executing ``check.run()``. This runner intentionally does
+        not mask unexpected check failures.
+
+    Notes
+    -----
     Selection precedence:
-    1. If `checks` is provided, only those check classes are executed.
-       (Intended for tests and advanced usage.)
+    1. If ``checks`` is provided, only those check classes are
+       executed. Intended for tests and advanced usage.
     2. Otherwise, checks are selected from the resolved registry using
-       `enabled` / `disabled`.
+       ``enabled`` and ``disabled``.
 
-    By default, all checks listed in CHECKS are executed in deterministic order.
+    By default, all checks listed in ``CHECKS`` are executed in
+    deterministic order.
     """
     log_trace_cat(
         log,

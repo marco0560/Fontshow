@@ -365,6 +365,12 @@ def add_common_arguments(
     - `--verbose`
     - `--quiet`
     - `--output` (optional)
+
+    Raises
+    ------
+    argparse.ArgumentError
+        May be raised by argparse if conflicting options are added to
+        a parser that already defines the same flags.
     """
     if include_output:
         parser.add_argument(

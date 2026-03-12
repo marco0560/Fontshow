@@ -58,6 +58,8 @@ def choose_language_sample(
     2. Representative language derived from the first script tag.
     The function relies on ontology table entries in `LANGUAGE_INFO` and
     `SCRIPT_INFO` and returns only non-empty string samples.
+
+    Unknown language or script identifiers are ignored without raising.
     """
 
     # ---------------------------------------------------------

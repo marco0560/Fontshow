@@ -57,6 +57,11 @@ def get_installed_font_files() -> list[Path]:
     ------
     RuntimeError
         If the current platform is unsupported.
+
+    Notes
+    -----
+    This is the public platform-dispatch entry point used by the
+    inventory discovery workflow.
     """
     if IS_LINUX:
         return get_installed_font_files_linux()
@@ -83,6 +88,11 @@ def get_installed_font_files_linux() -> list[Path]:
     ------
     RuntimeError
         If `fc-list` execution fails.
+
+    Notes
+    -----
+    Results are resolved, deduplicated, filtered to existing paths, and
+    returned in sorted order for deterministic downstream processing.
     """
     from time import perf_counter
 
@@ -131,6 +141,8 @@ def _windows_font_dirs() -> list[Path]:
     -----
     Windows supports per-user font installs under:
     %LOCALAPPDATA%\\Microsoft\\Windows\\Fonts
+
+    The returned list contains only directories that currently exist.
     """
     dirs: list[Path] = []
     windir = os.environ.get("WINDIR") or os.environ.get("SYSTEMROOT")

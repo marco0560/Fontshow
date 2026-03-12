@@ -159,6 +159,12 @@ def nfss_family_id(font: dict) -> str:
     str
         Deterministic identifier prefixed with "FS" and truncated to
         10 hexadecimal characters.
+
+    Notes
+    -----
+    The identifier is stable for a given ``identity.file`` and
+    ``ttc_index`` pair and is suitable for use as an internal NFSS
+    family token rather than a user-facing label.
     """
     identity = font.get("identity", {}) or {}
     file_path = identity.get("file", "")

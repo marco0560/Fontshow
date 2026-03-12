@@ -20,6 +20,11 @@ Architectural role
 This module belongs to the **core infrastructure layer** and exposes
 global constants used by inventory processing, validation, and CLI
 modules.
+
+Notes
+-----
+The constants defined here are intentionally minimal and versioned so
+schema-sensitive pipeline stages share a single authoritative source.
 """
 
 SCHEMA_VERSION = "1.2"

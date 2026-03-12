@@ -54,6 +54,11 @@ def run_command(argv: list[str]) -> subprocess.CompletedProcess[str]:
         If the subprocess exceeds `SUBPROCESS_TIMEOUT_SECONDS` and is
         converted from `subprocess.TimeoutExpired` into a deterministic
         inventory-layer failure.
+
+    Notes
+    -----
+    This helper does not raise on non-zero exit status; callers must
+    inspect ``returncode`` explicitly.
     """
     try:
         return subprocess.run(
@@ -127,6 +132,12 @@ def font_cache_key(path: Path, ttc_index: int | None = None) -> str:
     - optional TTC face index.
 
     Ensures cache invalidation when the font file changes.
+
+    Raises
+    ------
+    OSError
+        Propagates filesystem errors raised while statting or resolving
+        the target path.
     """
     st = path.stat()
     idx = "" if ttc_index is None else f"|ttc:{ttc_index}"

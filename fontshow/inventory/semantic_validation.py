@@ -105,6 +105,22 @@ def normalize_languages(
     """
     Normalize raw language tags into ISO-compatible primary language codes.
 
+    Parameters
+    ----------
+    raw_languages : list[str]
+        Raw language tags to normalize.
+    strict_bcp47 : bool, optional
+        If True, reject tags that fail the heuristic BCP-47 structural
+        check before normalization.
+
+    Returns
+    -------
+    NormalizeLanguagesResult
+        Structured result containing normalized codes, deprecated-code
+        remaps, and dropped inputs with reasons.
+
+    Notes
+    -----
     Pipeline (non-strict):
     - strip whitespace
     - lowercase
@@ -115,17 +131,18 @@ def normalize_languages(
     - deduplicate (preserving order)
 
     Pipeline (strict_bcp47=True):
-    - before any normalization, ensure raw matches a BCP-47-ish structural regex
-      (heuristic; not full ABNF). If it fails, drop as invalid_bcp47.
+    - before any normalization, ensure raw matches a BCP-47-ish
+      structural regex (heuristic; not full ABNF). If it fails, drop as
+      invalid_bcp47.
 
-    Returns:
+    Returned structure:
         {
             "normalized": [str],
             "deprecated": [{"raw": str, "from": str, "to": str}],
             "dropped": [{"raw": str, "reason": str, ...}]
         }
 
-    Reasons:
+    Drop reasons:
     - invalid_format
     - invalid_bcp47
     - unknown_language
@@ -217,6 +234,8 @@ def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
 
     Notes
     -----
+    The function inspects both coverage languages and inferred
+    languages, skipping the sentinel value ``"unknown"``.
     This function performs semantic checks without modifying data.
     All detected issues are reported as structured warnings.
     No inference, normalization, or enrichment is performed here.
@@ -286,13 +305,31 @@ def enforce_semantic_validation(
     """
     Perform semantic validation.
 
-    Returns:
-        (ok, warnings)
+    Parameters
+    ----------
+    inventory : dict
+        Inventory structure to validate semantically.
+    strict : bool
+        Whether warnings with warning-or-error severity should cause the
+        overall validation result to fail.
 
-    - ok == True  → semantic validation passed
-    - ok == False → semantic validation failed (only possible in strict mode)
+    Returns
+    -------
+    tuple[bool, list[dict]]
+        Pair ``(ok, warnings)`` where ``ok`` indicates whether semantic
+        validation passed and ``warnings`` contains the accumulated
+        structured warning records.
 
-    This function does not raise exceptions.
+    Raises
+    ------
+    None
+        This function does not raise exceptions.
+
+    Notes
+    -----
+    - ``ok == True`` means semantic validation passed.
+    - ``ok == False`` means semantic validation failed, which is only
+      possible in strict mode.
     """
     warnings = []
 

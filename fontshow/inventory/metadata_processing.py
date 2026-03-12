@@ -203,6 +203,9 @@ def _debug_dump_inference(
     -----
     Debug-only helper isolated from core parsing logic.
     No-op unless the debug environment variable is enabled.
+
+    The emitted output is intended for developer diagnostics and is not
+    part of the stable CLI contract.
     """
     import os
     import pprint
@@ -281,6 +284,9 @@ def _process_charset(
     warnings, while successful decodes populate normalized charset
     ranges, Unicode blocks, and script coverage derived from those
     ranges.
+
+    The input structures are updated in place and existing non-charset
+    metadata is otherwise preserved.
     """
 
     charset = font.get("charset")

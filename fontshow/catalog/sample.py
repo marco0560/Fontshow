@@ -92,6 +92,9 @@ def choose_sample_text(font: FontRef) -> str | None:
     1. Embedded sample text extracted from the font, only if its language
        matches the primary inferred language.
     2. Inferred language-based sample text (fallback).
+
+    Embedded sample payloads with a non-string ``text`` field are
+    treated as unusable and do not raise.
     """
 
     inference_raw = font.get("inference")
@@ -172,6 +175,12 @@ def render_sample_code(font: dict, fam: str) -> str:
     -------
     str
         LaTeX code snippet rendering the sample text for the font.
+
+    Raises
+    ------
+    KeyError
+        May propagate if the selected script entry exists in
+        ``SCRIPT_INFO`` but is missing required rendering fields.
 
     Notes
     -----

@@ -41,6 +41,11 @@ def has_lualatex() -> bool:
     -------
     bool
         True if `lualatex` is discoverable in `PATH`.
+
+    Notes
+    -----
+    This function performs a simple executable lookup only. It does not
+    verify that the engine can successfully compile a document.
     """
     return shutil.which("lualatex") is not None
 
@@ -48,6 +53,11 @@ def has_lualatex() -> bool:
 class LuaLatexCheck(BaseCheck):
     """
     Preflight check for LuaLaTeX availability.
+
+    Notes
+    -----
+    The check evaluates tool availability and coarse platform support
+    only. It does not execute LuaLaTeX.
     """
 
     check_id = "latex.capability"
@@ -65,6 +75,12 @@ class LuaLatexCheck(BaseCheck):
         CheckResult
             Structured result describing whether the `lualatex` engine is
             available and supported in the current environment.
+
+        Notes
+        -----
+        Linux bare-metal environments require LuaLaTeX for a successful
+        result. CI and Windows environments use downgraded result
+        severities to reflect partial or experimental support.
         """
         os_name = environment.detect_os()
         execution_mode = environment.detect_execution_mode()

@@ -102,6 +102,12 @@ def generate_test_output(
     -------
     None
 
+    Raises
+    ------
+    OSError
+        Propagates filesystem errors raised while writing the auxiliary
+        diagnostics file.
+
     Notes
     -----
     The generated file groups inventory data at the family level and
@@ -306,6 +312,9 @@ def _resolve_inventory_path(args) -> Path | None:
     1. Explicit --inventory path.
     2. DEFAULT_INVENTORY if it exists.
     3. None if no valid inventory can be resolved.
+
+    An explicit ``--inventory`` value is returned as-is without checking
+    for existence; existence is validated by the caller.
     """
     if args.inventory:
         return Path(args.inventory)
@@ -332,6 +341,12 @@ def run_create_catalog(args) -> int:
         Process exit code:
         - 0 on success
         - non-zero on failure
+
+    Raises
+    ------
+    Exception
+        Unexpected exceptions from downstream helpers are allowed to
+        propagate to `main`, which converts them into exit code ``2``.
 
     Notes
     -----

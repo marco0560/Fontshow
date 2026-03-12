@@ -500,11 +500,34 @@ def _specimen_generate_for_font(
     """
     Deterministic specimen generator (3-level fallback).
 
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory font entry updated in place with specimen fields.
+    coverage : dict[str, Any]
+        Coverage block used to derive script-based fallback specimens.
+    font_path : str | None
+        Filesystem path to the font binary, used for cmap extraction.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
     Writes:
         specimen_text
         specimen_strategy
         specimen_glyph_count
         specimen_rejection_reason
+
+    Fallback order:
+    1. internal sample text
+    2. script-derived curated sample
+    3. cmap-derived fallback
+
+    The function always leaves a visible specimen in the font record,
+    even when curated and cmap-derived samples are both unusable.
     """
     identity = font.get("identity", {})
     ttc_index = identity.get("ttc_index")

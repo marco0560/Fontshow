@@ -67,6 +67,11 @@ def _block_coverage_ratio(
     float
         Fraction of the block covered (covered / size).
         Returns 0.0 if the block size is unknown or zero.
+
+    Notes
+    -----
+    The ratio is purely arithmetic and does not clamp values above 1.0
+    if the provided coverage counts exceed normative block sizes.
     """
     covered = block_coverage.get(block_name, 0)
     size = block_sizes.get(block_name, 0)
@@ -136,6 +141,11 @@ def _infer_allowed_languages_from_scripts(
     set[str] | None
         Set of allowed language codes derived from script membership, or
         None when no usable script list is available.
+
+    Notes
+    -----
+    Script identifiers are normalized to uppercase ISO form before
+    comparing them against language profile script memberships.
     """
     inferred_scripts = (
         [str(s).lower() for s in scripts_public]
@@ -201,17 +211,16 @@ def _infer_languages_from_profiles(
 
     Parameters
     ----------
-    unicode_blocks:
-        Mapping of Unicode block name → number of covered codepoints.
-
-    allowed_languages:
+    unicode_blocks : dict[str, int]
+        Mapping of Unicode block name to number of covered codepoints.
+    allowed_languages : set[str] | None
         Optional whitelist restricting evaluated languages.
 
     Returns
     -------
     dict[str, LanguageInferenceInfo]
         Mapping of inferred language codes to inference metadata.
-    Only accepted language candidates are included.
+        Only accepted language candidates are included.
     """
     _block_ratio_cache: dict[str, float] | None = None
 

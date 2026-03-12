@@ -70,6 +70,11 @@ def dispatch_command(args: argparse.Namespace) -> int:
         - ``int(result)`` when the handler returns a non-None value,
         - ``int(e.code)`` when the handler raises ``SystemExit(code)``,
         - 2 for any other unhandled exception.
+
+    Notes
+    -----
+    Unexpected exceptions are intentionally converted into exit code
+    ``2`` after TRACE crash logging rather than being re-raised.
     """
     log_trace_cat(
         log,
@@ -132,6 +137,10 @@ def main() -> int:
     handled centrally by the shared logging utilities and by test harnesses.
     The package version is resolved from installed metadata and falls back
     to ``"development"`` when the package is not installed.
+
+    Subcommand registration is performed eagerly so the generated help
+    output reflects the full CLI surface available in the current
+    installation.
     """
     try:
         FONTSHOW_VERSION = version("fontshow")

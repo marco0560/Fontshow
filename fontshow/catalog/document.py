@@ -158,6 +158,12 @@ def _render_font_entry(
         ``("", "")`` when the font path does not refer to a supported
         font file extension.
 
+    Raises
+    ------
+    KeyError
+        May propagate if downstream rendering-policy or script metadata
+        lookups yield incomplete entries.
+
     Notes
     -----
     The rendering path depends on the selected script policy. Latin
@@ -237,6 +243,12 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     str
         Complete LaTeX document as a string.
 
+    Raises
+    ------
+    KeyError
+        May propagate if downstream rendering helpers require metadata
+        fields that are absent from an entry after normalization.
+
     Notes
     -----
     The function first normalizes the input list, deduplicates entries
@@ -246,6 +258,9 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     inferred languages, and the effective fontspec options used for
     rendering. Fonts with unsupported file extensions produce an empty
     render block while still contributing to the itemized catalog list.
+
+    Fonts are deduplicated by normalized family name before rendering,
+    preserving first-seen order.
     """
     font_list = as_font_desc_list(font_list)
 

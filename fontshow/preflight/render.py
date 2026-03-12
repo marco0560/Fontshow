@@ -42,6 +42,11 @@ def preflight_exit_code(result: PreflightResult) -> int:
     -------
     int
         `1` when any check has error severity, otherwise `0`.
+
+    Notes
+    -----
+    Only `Severity.ERROR` produces a failing exit code. Warning-only
+    runs still exit successfully.
     """
     if result.overall_severity is Severity.ERROR:
         return 1
@@ -66,6 +71,13 @@ def render_preflight_results(
     -------
     list[str]
         Formatted output lines suitable for CLI presentation.
+
+    Notes
+    -----
+    - Output order matches the input iteration order.
+    - Each line uses a fixed-width severity prefix.
+    - ``verbose`` is currently reserved for future rendering variants
+      and does not yet change the output.
     """
     _ = verbose  # reserved for future verbosity-aware rendering
     lines: list[str] = []

@@ -145,6 +145,12 @@ def run_dump_fonts(args) -> int:
     int
         Process exit code (0 for success, non-zero for failure).
 
+    Raises
+    ------
+    OSError
+        May propagate from filesystem writes such as cache directory
+        creation or final inventory output.
+
     Notes
     -----
     This function performs the full dump pipeline and returns an exit code.
@@ -345,6 +351,11 @@ def _run_dump_fonts(args) -> int:
     -------
     int
         Process exit code returned by run_dump_fonts.
+
+    Notes
+    -----
+    This indirection exists primarily to support tests that need to
+    patch the core implementation without altering CLI wrapper logic.
     """
     return run_dump_fonts(args)
 
@@ -362,6 +373,11 @@ def run(args):
     -------
     int
         Process exit code.
+
+    Notes
+    -----
+    Thin compatibility wrapper kept for the top-level dispatcher and
+    tests.
     """
     return main(args)
 
@@ -384,6 +400,9 @@ def main(args) -> int:
     -----
     Unexpected `TypeError` exceptions are treated as non-fatal to
     preserve the command's legacy wrapper semantics.
+
+    Shared CLI quiet/verbose mode is configured before invoking the
+    injectable runner.
     """
     set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
 

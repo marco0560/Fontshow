@@ -92,6 +92,9 @@ def collect_platform_metadata() -> dict[str, Any]:
     This function is the SINGLE SOURCE OF TRUTH for runtime platform
     metadata across dump → parse → create_catalog.
     Output structure MUST remain schema-compatible (schema 1.2).
+
+    The returned mapping contains both schema-required fields and a
+    small set of additional informational fields allowed by the schema.
     """
 
     ctx = _detect_execution_context()

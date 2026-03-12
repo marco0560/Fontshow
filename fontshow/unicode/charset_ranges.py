@@ -131,6 +131,9 @@ def unicode_blocks_from_charset_ranges(
       known Unicode block boundaries.
     - Counts are inclusive and accumulated across overlapping ranges.
     - Pure function: does not mutate input.
+
+    Input ranges are assumed to be normalized or at least non-pathological;
+    overlapping input ranges may increase counts more than once.
     """
     blocks: dict[str, int] = {}
 
@@ -162,6 +165,12 @@ def normalize_charset_ranges(ranges: list[list[int]]) -> dict[str, Any]:
             "codepoints_count": int
                 Total number of covered Unicode codepoints (inclusive).
         }
+
+    Raises
+    ------
+    ValueError
+        May propagate if an input element cannot be unpacked into a
+        two-item range pair.
 
     Notes
     -----

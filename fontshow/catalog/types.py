@@ -42,7 +42,12 @@ class _FontDetail(TypedDict):
 
     Parameters
     ----------
-    None
+    raw_line : str
+        Original input line from which font details were parsed.
+    extracted_names : list[str]
+        Names extracted directly from the raw line before cleanup.
+    base_names : list[str]
+        Normalized base-name variants derived from the extracted names.
 
     Notes
     -----

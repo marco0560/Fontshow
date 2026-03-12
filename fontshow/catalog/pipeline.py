@@ -47,9 +47,9 @@ def _configure_test_fonts(args) -> set[str]:
 
     Notes
     -----
-    When `args.test_font` is provided, explicit CLI values are unioned with
-    `DEFAULT_TEST_FONTS`. When `args.test_font` is absent, the function
-    returns `DEFAULT_TEST_FONTS` alone.
+    When `args.test_font` is provided, explicit CLI values are unioned
+    with `DEFAULT_TEST_FONTS`. When `args.test_font` is absent, the
+    function returns `DEFAULT_TEST_FONTS` alone.
     """
     cli_fonts: set[str] = set()
 
@@ -200,6 +200,13 @@ def _filter_and_prepare_fonts(
         Filtered font descriptors normalized with `as_font_desc_list`,
         optionally limited by `args.number`, sorted by family name, and
         grouped by family.
+
+    Raises
+    ------
+    TypeError
+        May propagate from downstream normalization helpers if the input
+        collection contains values that cannot be treated as catalog
+        font descriptors.
 
     Notes
     -----

@@ -100,6 +100,8 @@ def _get_font_path_for_diagnostics(font: dict) -> str | None:
     -----
     - This function is read-only and MUST NOT mutate the input.
     - Used exclusively for human-readable diagnostics.
+    - Preference order preserves compatibility across older and newer
+      inventory layouts.
     """
     if isinstance(font, dict):
         if font.get("path"):
@@ -238,6 +240,9 @@ def _emit_verbose_warnings(enriched: dict[str, Any]) -> None:
     -----
     The function formats warning groups per font entry and routes them
     through CLI logging helpers without mutating the inventory.
+
+    Duplicate warning payloads within a group are collapsed through
+    ``set()`` before emission to keep CLI output compact.
     """
 
     fonts = enriched.get("fonts", [])

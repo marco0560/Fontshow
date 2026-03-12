@@ -41,6 +41,11 @@ def has_fontconfig() -> bool:
     -------
     bool
         True if `fc-list` is discoverable in `PATH`.
+
+    Notes
+    -----
+    This is a lightweight capability probe only. It does not validate
+    the behavior of Fontconfig itself or enumerate any fonts.
     """
 
     return shutil.which("fc-list") is not None
@@ -49,6 +54,11 @@ def has_fontconfig() -> bool:
 class FontDiscoveryCheck(BaseCheck):
     """
     Preflight check for font discovery capability.
+
+    Notes
+    -----
+    The check evaluates only environment support for discovery
+    backends. It does not perform actual font enumeration.
     """
 
     check_id = "font_discovery.capability"
@@ -66,6 +76,12 @@ class FontDiscoveryCheck(BaseCheck):
         CheckResult
             Structured result describing whether platform font discovery
             requirements are satisfied for the current environment.
+
+        Notes
+        -----
+        Linux environments require ``fc-list`` unless execution is
+        explicitly classified as CI. Windows currently reports limited
+        support, while unsupported platforms return an error result.
         """
         os_name = environment.detect_os()
         execution_mode = environment.detect_execution_mode()

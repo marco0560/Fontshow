@@ -146,19 +146,27 @@ def normalize_script_tag(value: ScriptISO | ScriptTag | str | None) -> ScriptTag
 @dataclass(frozen=True)
 class ScriptRenderPolicy:
     """
-    Rendering policy for a script.
+    Rendering policy describing how a script should be typeset.
 
-    language:
-        polyglossia language ("" if none)
+    Parameters
+    ----------
+    language : str
+        Polyglossia language identifier, or ``""`` when no explicit
+        language should be selected.
+    fontspec_opts : str
+        Raw ``fontspec`` options applied when rendering text for the
+        script.
+    rtl : bool
+        Whether the script must be rendered right-to-left.
+    requires_polyglossia : bool
+        Whether rendering requires the ``TestNonLatin`` / Polyglossia
+        path instead of the default Latin-oriented template flow.
 
-    fontspec_opts:
-        options passed to fontspec
-
-    rtl:
-        render right-to-left
-
-    requires_polyglossia:
-        whether TestNonLatin must be used
+    Notes
+    -----
+    This dataclass is a normalized policy object shared between script
+    analysis and LaTeX rendering code. It carries rendering decisions
+    only and does not perform any inference itself.
     """
 
     language: str
@@ -348,7 +356,14 @@ class WarningInfo(TypedDict, total=False):
 
     Parameters
     ----------
-    None
+    severity : Severity
+        Severity level associated with the warning.
+    code : str
+        Machine-readable warning identifier.
+    message : str
+        Human-readable warning message.
+    extra : dict[str, Any]
+        Optional structured payload with warning-specific metadata.
     """
 
     severity: Severity
@@ -363,7 +378,10 @@ class SampleTextInfo(TypedDict, total=False):
 
     Parameters
     ----------
-    None
+    lang : str
+        Language tag associated with the embedded sample text.
+    text : str
+        Sample text payload extracted for the font.
     """
 
     lang: str
@@ -376,7 +394,20 @@ class FontRef(TypedDict):
 
     Parameters
     ----------
-    None
+    family : str
+        Canonical family name.
+    style : str
+        Style or subfamily label.
+    path : str | None, optional
+        Source font path when available.
+    index : int | None, optional
+        Face index for collection-based fonts.
+    inference : InferenceInfo, optional
+        Minimal inference payload associated with the font.
+    warnings : list[WarningInfo], optional
+        Structured warnings attached to the font.
+    sample_text : SampleTextInfo, optional
+        Embedded sample text payload.
 
     Notes
     -----
@@ -400,7 +431,10 @@ class CoverageV12(TypedDict, total=False):
 
     Parameters
     ----------
-    None
+    scripts : list[str]
+        Normalized script tags associated with the font.
+    unicode_blocks : dict[str, int]
+        Covered Unicode block counts keyed by block name.
 
     Notes
     -----
@@ -418,7 +452,14 @@ class InferenceV12(TypedDict, total=False):
 
     Parameters
     ----------
-    None
+    level : str
+        Inference aggressiveness level used to derive the payload.
+    scripts : list[str]
+        Inferred script tags.
+    languages : list[str]
+        Inferred language tags.
+    unicode_blocks : dict[str, int]
+        Unicode block counts retained for inference diagnostics.
 
     Notes
     -----
@@ -439,7 +480,16 @@ class CatalogFontEntryV12(TypedDict, total=False):
 
     Parameters
     ----------
-    None
+    path : str
+        Source font path.
+    family : str
+        Canonical family name.
+    specimen_text : str
+        Text chosen for catalog specimen rendering.
+    inference : InferenceV12
+        Inference payload used by catalog helpers.
+    coverage : CoverageV12
+        Coverage payload used by catalog helpers.
 
     Notes
     -----
@@ -461,7 +511,12 @@ class DeprecatedLanguageInfo(TypedDict):
 
     Parameters
     ----------
-    None
+    raw : str
+        Original raw language value.
+    from_ : str
+        Deprecated normalized language tag.
+    to : str
+        Replacement canonical language tag.
     """
 
     raw: str
@@ -475,7 +530,12 @@ class DroppedLanguageInfo(TypedDict, total=False):
 
     Parameters
     ----------
-    None
+    raw : str
+        Original raw language value.
+    reason : str
+        Drop reason identifier.
+    normalized : str
+        Replacement normalized value when one exists.
 
     Notes
     -----
@@ -494,7 +554,12 @@ class NormalizeLanguagesResult(TypedDict):
 
     Parameters
     ----------
-    None
+    normalized : list[str]
+        Accepted normalized language tags.
+    deprecated : list[DeprecatedLanguageInfo]
+        Deprecated-tag remaps encountered during normalization.
+    dropped : list[DroppedLanguageInfo]
+        Dropped inputs with structured reasons.
 
     Notes
     -----

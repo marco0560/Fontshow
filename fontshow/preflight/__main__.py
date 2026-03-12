@@ -61,6 +61,12 @@ def _run_preflight_cli(
     int
         Exit code derived from preflight execution and report rendering.
 
+    Raises
+    ------
+    None
+        Internal execution and output-writing failures are converted into
+        user-facing error messages and non-zero exit codes.
+
     Notes
     -----
     This function is intentionally side-effect free (no `sys.exit`) so
@@ -145,6 +151,10 @@ def main(args=None) -> int:
     -----
     Unexpected internal exceptions are converted into exit code ``2``
     after user-facing error reporting.
+
+    CLI quiet/verbose mode is configured before delegating to the core
+    runner so report emission follows the shared CLI presentation
+    contract.
     """
 
     set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))

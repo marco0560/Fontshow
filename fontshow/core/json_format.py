@@ -41,7 +41,15 @@ class _PrettyJSONWriter:
 
     Parameters
     ----------
-    None
+    indent : int
+        Number of spaces emitted per indentation level.
+    ensure_ascii : bool
+        Whether non-ASCII characters are escaped in the JSON output.
+    sort_keys : bool
+        Whether mapping keys are serialized in sorted order.
+    compact_numeric_lists_max_len : int
+        Maximum numeric-list length eligible for compact single-line
+        formatting.
 
     Notes
     -----

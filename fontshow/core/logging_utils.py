@@ -270,14 +270,29 @@ def _prepare_extra(extra: Mapping[str, Any] | None) -> dict[str, Any]:
 
 class _LogFacade:
     """
-    Minimal logging facade.
+    Minimal logging facade used by the rest of the codebase.
 
-    - Disabled by default
-    - Preserves caller module and function (via stacklevel)
-    - Structured payload via 'extra'
+    Responsibilities
+    ----------------
+    - Provide a narrow wrapper around the configured stdlib logger.
+    - Expose convenience methods for the standard levels plus TRACE.
+    - Preserve caller attribution by adjusting ``stacklevel``.
+    - Normalize structured payloads passed through ``extra``.
 
-    stacklevel=2 ensures log origin points to caller, not facade
+    Design principles
+    -----------------
+    The facade must be safe to call when logging is disabled and must
+    never force callers to guard logging statements themselves. All
+    methods act as thin wrappers so logging behavior remains predictable
+    and close to the stdlib implementation.
 
+    Notes
+    -----
+    - Disabled by default.
+    - Preserves caller module and function via ``stacklevel`` handling.
+    - Structured payloads are routed through the ``extra`` field.
+    - ``stacklevel=2`` ensures log origin points to the caller, not the
+      facade.
     """
 
     def isEnabledFor(self, level: int) -> bool:

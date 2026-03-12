@@ -56,19 +56,31 @@ def add_structured_warning(
 
     Parameters
     ----------
-    target : dict
-        Inventory root or font entry.
+    container : dict[str, Any]
+        Inventory root or font entry receiving the warning. The mapping
+        is modified in place.
     code : str
         Machine-readable warning code.
     message : str
         Human-readable warning message.
-    severity : Severity, optional
-        Severity level (default: ``"Severity.WARN"``).
+    severity : Severity
+        Severity level assigned to the warning.
+    extra : dict[str, Any] | None, optional
+        Optional machine-readable payload attached under the warning's
+        ``extra`` field.
+
+    Returns
+    -------
+    None
 
     Notes
     -----
     - Warnings are appended to the ``warnings`` list of the target.
     - The target dictionary is modified in place.
+    - If the ``warnings`` list does not exist yet, it is created.
+
+    The helper assumes the existing ``warnings`` field, if present, is
+    list-compatible with the project warning schema.
     """
 
     w: WarningInfo = {

@@ -34,12 +34,22 @@ class CheckResult:
 
     Parameters
     ----------
-    None
+    check_id : str
+        Stable identifier of the check that produced the result.
+    severity : Severity
+        Final severity assigned to the check outcome.
+    message : str
+        User-facing summary describing the outcome.
+    skipped : bool, optional
+        Whether the check was skipped instead of executed.
 
     Notes
     -----
     Each instance captures the check identifier, final severity,
     user-facing message, and whether the check was skipped.
+
+    Instances are frozen so check results remain stable once produced by
+    the runner.
     """
 
     check_id: str
@@ -55,12 +65,17 @@ class PreflightResult:
 
     Parameters
     ----------
-    None
+    results : list[CheckResult]
+        Ordered list of individual check results produced by the
+        runner.
 
     Notes
     -----
     The result stores the ordered list of individual `CheckResult`
     objects and derives an overall severity via `overall_severity`.
+
+    The container itself is mutable so tests or orchestration layers can
+    construct result sets incrementally if needed.
     """
 
     results: list[CheckResult]
@@ -79,6 +94,10 @@ class PreflightResult:
         Severity
             `ERROR` if any check failed, otherwise `WARN` if any warning
             is present, otherwise `OK`.
+
+        Notes
+        -----
+        An empty result set currently resolves to `Severity.OK`.
         """
         if any(r.severity is Severity.ERROR for r in self.results):
             return Severity.ERROR

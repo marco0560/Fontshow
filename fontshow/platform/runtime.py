@@ -60,6 +60,11 @@ def _inventory_platform_mismatch(inv_env: dict, runtime: dict) -> list[str]:
     list[str]
         List of metadata keys that differ between inventory and runtime.
         Empty if no mismatch is detected.
+
+    Notes
+    -----
+    Comparison is currently limited to ``os``, ``machine``, and
+    ``execution_context`` after lowercase string normalization.
     """
 
     def _norm(v: object) -> str:
@@ -75,6 +80,11 @@ def _inventory_platform_mismatch(inv_env: dict, runtime: dict) -> list[str]:
         -------
         str
             Lowercased and stripped string representation of the value.
+
+        Notes
+        -----
+        Normalization is intentionally lossy because the comparison
+        contract is equality-by-normalized-string, not type preservation.
         """
         return str(v).strip().lower()
 
@@ -108,6 +118,11 @@ def _enforce_platform(inv_env: dict) -> tuple[bool, list[str]]:
         A pair (ok, mismatches):
         - ok is True if inventory matches runtime platform.
         - mismatches contains the differing metadata keys.
+
+    Notes
+    -----
+    Runtime metadata is collected fresh on each call via
+    `collect_platform_metadata()`.
     """
     runtime = collect_platform_metadata()
     mismatches = _inventory_platform_mismatch(inv_env, runtime)

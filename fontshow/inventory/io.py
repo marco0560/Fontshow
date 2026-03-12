@@ -131,6 +131,11 @@ def group_fonts_by_family(
         List containing a single representative font for each family.
         The first encountered font per family is preserved, and the
         order of first occurrence is maintained.
+
+    Notes
+    -----
+    Grouping is stable and deterministic because it preserves the first
+    occurrence of each family in the input order.
     """
     families: OrderedDict[str, Any] = OrderedDict()
     for font in fonts:
@@ -242,6 +247,11 @@ def _validate_fonts_structure(inventory: dict) -> tuple[bool, list]:
         - ok is True if the `fonts` section exists, is a non-empty list,
           and all elements are dictionaries.
         - fonts is the extracted list (or an empty list on failure).
+
+    Notes
+    -----
+    This helper performs shallow structural validation only. It does
+    not validate schema details or per-font semantic correctness.
     """
     if "fonts" not in inventory:
         return False, []
@@ -279,6 +289,13 @@ def _load_inventory(
         A pair (exit_code, fonts):
         - exit_code == 0 → success, fonts contains validated descriptors.
         - exit_code == 1 → validation or load error (already logged), fonts empty.
+
+    Raises
+    ------
+    None
+        All filesystem, decoding, and validation exceptions handled by
+        this helper are converted into logged error messages and a
+        ``(1, [])`` result.
 
     Notes
     -----

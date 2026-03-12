@@ -71,6 +71,11 @@ class OntologyCheck(BaseCheck):
         script → representative language → specimen
 
     always resolves deterministically.
+
+    Notes
+    -----
+    The check operates entirely on in-repository static ontology data
+    and performs no filesystem or network access.
     """
 
     check_id = "ontology"

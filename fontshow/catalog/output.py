@@ -54,6 +54,11 @@ def get_unique_filename(base_name: str, extension: str) -> str:
     ------
     ValueError
         If no available filename is found after 1000 attempts.
+
+    Notes
+    -----
+    Existence checks are performed in the current working directory and
+    the returned value is a filename string, not an opened path object.
     """
     for i in range(1000):
         suffix = f"_{i:03d}"
@@ -111,6 +116,12 @@ def _write_latex_output(output_filename: str, latex_content: str) -> None:
     Returns
     -------
     None
+
+    Raises
+    ------
+    OSError
+        Propagates filesystem errors raised while opening or writing the
+        target file.
 
     Notes
     -----

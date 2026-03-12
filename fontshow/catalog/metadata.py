@@ -50,6 +50,9 @@ def clean_font_name(name: str) -> str:
     and width suffixes, including both English and Italian variants.
     The result is intended for family-like grouping in the catalog
     domain rather than for preserving the original display name.
+
+    The function is intentionally lossy and should not be used when the
+    original display name must be preserved verbatim.
     """
     clean_name = re.sub(r"\s*\((TrueType|OpenType|True Type|Type 1)\)\s*$", "", name)
 

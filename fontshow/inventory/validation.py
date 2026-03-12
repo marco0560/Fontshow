@@ -168,6 +168,9 @@ def _apply_schema_validation(data: dict[str, Any]) -> None:
     The function delegates schema validation to
     `validate_inventory_schema()` and injects the returned warnings into
     the inventory root via `add_structured_warning()`.
+
+    Existing inventory content is preserved; only warning records may be
+    appended to the root warning collection.
     """
 
     log.info(
@@ -230,6 +233,9 @@ def is_non_opentype_face(face: dict) -> bool:
     Preserves EXACT previous behaviour:
     only detects faces rejected by fontTools with the
     specific 'Not a TrueType or OpenType font' error.
+
+    This helper is intentionally narrow and should not be treated as a
+    general classifier for all unsupported font formats.
     """
     if face.get("ok") is False:
         err = face.get("error") or ""
@@ -256,6 +262,9 @@ def is_structurally_unloadable_face(face: dict) -> bool:
     -----
     Deterministic, fontTools-derived check (no LaTeX, no luaotfload-tool).
     Conservative: only flags faces that claim ok=True but have missing tables.
+
+    The check is limited to table-presence heuristics and does not prove
+    that a face is otherwise valid or renderable.
     """
     if face.get("ok") is not True:
         return False
