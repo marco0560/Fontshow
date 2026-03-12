@@ -88,6 +88,9 @@ def generate_test_output(
 
     Parameters
     ----------
+    inventory_fonts : list[dict]
+        Inventory font descriptors used to derive family-level test
+        output and associated file paths.
     limit : int | None, optional
         If positive, keep the first N items; if negative, keep the last |N|
         items; if None, no limit is applied.
@@ -98,6 +101,12 @@ def generate_test_output(
     Returns
     -------
     None
+
+    Notes
+    -----
+    The generated file groups inventory data at the family level and
+    writes a compact diagnostic view intended for manual inspection.
+    Output filenames are generated via `get_unique_filename`.
     """
     details: list[_FontDetail] = []
 
@@ -192,6 +201,12 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
     Returns
     -------
     None
+
+    Notes
+    -----
+    This command supports diagnostic modes (`--test`,
+    `--list-test-fonts`) in addition to the normal catalog-generation
+    path.
     """
     parser.description = "Generate system font catalog in LaTeX"
     parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
@@ -330,6 +345,8 @@ def run_create_catalog(args) -> int:
     - Generate and write LaTeX output.
 
     Behavior is identical to the pre-refactor implementation.
+    I/O failures during final output writing are caught and converted to
+    exit code ``1``.
     """
     global TEST_FONTS
 

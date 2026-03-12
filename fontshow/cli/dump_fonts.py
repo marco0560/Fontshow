@@ -121,6 +121,11 @@ def register_cli(parser) -> None:
     Returns
     -------
     None
+
+    Notes
+    -----
+    Used by the top-level CLI dispatcher to bind the dump-fonts command
+    to `main`.
     """
     build_parser(parser)
     parser.set_defaults(func=main)
@@ -144,8 +149,7 @@ def run_dump_fonts(args) -> int:
     -----
     This function performs the full dump pipeline and returns an exit code.
     It MUST NOT call sys.exit() and SHOULD NOT print directly.
-
-        It orchestrates the full dump pipeline:
+    It orchestrates the full dump pipeline:
 
     1. Discover installed font files for the current platform.
     2. Extract per-face metadata using ``fontTools``.
@@ -155,6 +159,8 @@ def run_dump_fonts(args) -> int:
 
     All heavy lifting is delegated to dedicated helpers; this function is
     intentionally linear and side-effect driven (filesystem I/O).
+    Best-effort Fontconfig enrichment failures are logged and downgraded
+    to an empty enrichment map instead of aborting the command.
     """
     platform_name = platform.system().lower()
     cache_dir = args.cache_dir
@@ -373,6 +379,11 @@ def main(args) -> int:
     -------
     int
         Process exit code.
+
+    Notes
+    -----
+    Unexpected `TypeError` exceptions are treated as non-fatal to
+    preserve the command's legacy wrapper semantics.
     """
     set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
 

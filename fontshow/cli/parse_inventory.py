@@ -69,10 +69,37 @@ def parse_inventory(
     """
     Parse and enrich a font inventory structure.
 
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Raw inventory structure to validate, enrich, and update in place.
+    level : str
+        Inference aggressiveness level forwarded to metadata processing.
+    strict_bcp47 : bool, optional
+        Whether language-tag normalization must reject non-compliant
+        BCP-47 values.
+
+    Returns
+    -------
+    dict[str, Any]
+        Enriched inventory structure with updated metadata and per-font
+        inferred fields.
+
+    Raises
+    ------
+    ValueError
+        Propagated when schema validation or downstream metadata helpers
+        reject the input inventory.
+
+    Notes
+    -----
     Refactored version:
     - reduced complexity
     - separated concerns
     - behavior unchanged
+    The function validates the input first, then processes charset,
+    inference, language metadata, and specimen generation for each font
+    before updating top-level inventory metadata.
     """
 
     _apply_schema_validation(data)
@@ -137,6 +164,15 @@ def parse_inventory(
 def build_parser(parser: argparse.ArgumentParser) -> None:
     """
     Register parse-inventory CLI arguments on an existing parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Parser instance to configure for the parse-inventory command.
+
+    Returns
+    -------
+    None
     """
     parser.description = (
         "Parse and enrich a Fontshow font_inventory.json with deterministic inference."
@@ -180,6 +216,17 @@ def register_cli(parser) -> None:
     """
     Register parse-inventory CLI arguments.
 
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Parser instance configured by the top-level dispatcher.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
     This function is used by the top-level fontshow dispatcher.
     """
     build_parser(parser)
@@ -192,12 +239,37 @@ def register_cli(parser) -> None:
 
 
 def _default_read_text(p: Path) -> str:
-    """Default file reader used when no injectable I/O is provided."""
+    """
+    Read text from a path using the default CLI encoding policy.
+
+    Parameters
+    ----------
+    p : Path
+        Path to the input text file.
+
+    Returns
+    -------
+    str
+        File contents decoded as UTF-8.
+    """
     return p.read_text(encoding="utf-8")
 
 
 def _default_write_text(p: Path, s: str) -> None:
-    """Default file writer used when no injectable I/O is provided."""
+    """
+    Write text to a path using the default CLI encoding policy.
+
+    Parameters
+    ----------
+    p : Path
+        Destination path for the text payload.
+    s : str
+        Text content to write.
+
+    Returns
+    -------
+    None
+    """
     p.write_text(s, encoding="utf-8")
 
 
@@ -217,10 +289,40 @@ def run_parse_font_inventory(
     """
     Internal runner for parse-font-inventory CLI.
 
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments controlling input, output, validation-only
+        mode, and inference strictness.
+    parse_inventory_fn : callable, optional
+        Injectable inventory enrichment function used for testing.
+    validate_inventory_fn : callable, optional
+        Injectable validation function used in validate-only mode.
+    read_text_fn : callable | None, optional
+        Optional file-reading adapter. Defaults to `_default_read_text`.
+    write_text_fn : callable | None, optional
+        Optional file-writing adapter. Defaults to `_default_write_text`.
+
+    Returns
+    -------
+    int
+        Process exit code for the parse-inventory workflow.
+
+    Raises
+    ------
+    json.JSONDecodeError
+        May propagate indirectly from the injected read/parse path if
+        malformed JSON is not intercepted by the caller.
+
+    Notes
+    -----
     Refactored version:
     - reduced complexity
     - helpers extracted
     - behavior unchanged
+    The runner validates platform compatibility and schema integrity
+    before either executing validate-only mode or producing an enriched
+    inventory and writing it to disk.
     """
     strict_bcp47 = bool(getattr(args, "strict_bcp47", False))
 
@@ -374,6 +476,18 @@ def _run_parse_inventory(args) -> int:
     """
     Indirection layer for CLI testing.
 
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments forwarded to the injectable runner.
+
+    Returns
+    -------
+    int
+        Exit code returned by `run_parse_font_inventory`.
+
+    Notes
+    -----
     This function exists so CLI tests can monkeypatch it
     without touching the core implementation.
     """
@@ -383,6 +497,19 @@ def _run_parse_inventory(args) -> int:
 def run(args):
     """
     Public CLI entrypoint (kept stable).
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments forwarded to `main`.
+
+    Returns
+    -------
+    int
+        Exit code returned by `main`.
+
+    Notes
+    -----
     Thin wrapper around the injectable runner.
     Needed for tests via the top-level dispatcher.
     """
@@ -392,7 +519,22 @@ def run(args):
 def main(args) -> int:
     """
     Public CLI entrypoint (kept stable).
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments controlling parse-inventory execution.
+
+    Returns
+    -------
+    int
+        Process exit code returned by the CLI workflow.
+
+    Notes
+    -----
     Thin wrapper around the injectable runner.
+    Unexpected `TypeError` exceptions are converted into exit code ``2``
+    after user-facing error reporting and performance tracing.
     """
 
     set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))

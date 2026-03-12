@@ -40,6 +40,24 @@ from fontshow.inventory.semantic_validation import validate_language_codes
 
 
 def build_parser(parser: argparse.ArgumentParser) -> None:
+    """
+    Register validate-inventory CLI arguments on a parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Parser instance to configure for the validation command.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The function replaces the local parser variable with a dedicated
+    `ArgumentParser` configuration for the standalone validation CLI.
+    The incoming parser object is therefore not mutated in place.
+    """
     parser = argparse.ArgumentParser(
         prog="fontshow-validate",
         description="Validate a Fontshow inventory file against the JSON Schema.",
@@ -56,7 +74,9 @@ def run(args) -> int:
 
     Parameters
     ----------
-    None
+    args : argparse.Namespace
+        Parsed CLI arguments containing the inventory path and common
+        verbosity flags.
 
     Returns
     -------
@@ -72,6 +92,8 @@ def run(args) -> int:
     - Performs JSON schema validation.
     - Performs semantic validation of language codes.
     - Emits CLI output according to severity and current CLI mode.
+    - `jsonschema.exceptions.ValidationError` is handled internally and
+      converted into exit code ``1``.
     """
     set_cli_mode(args.quiet, args.verbose)
     inventory_path = Path(args.path)
