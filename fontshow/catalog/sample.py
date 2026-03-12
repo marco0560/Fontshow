@@ -56,6 +56,12 @@ def choose_sample_language(font: dict) -> str | None:
     str | None
         First inferred language if available; otherwise the first
         declared coverage language; otherwise None.
+
+    Notes
+    -----
+    Language selection is deterministic. The function prefers
+    ``font["inference"]["languages"]`` and falls back to declared
+    coverage languages only when inference data is absent or empty.
     """
     inf = font.get("inference", {}) or {}
     langs = inf.get("languages", []) or []
@@ -174,6 +180,8 @@ def render_sample_code(font: dict, fam: str) -> str:
     - Do not propagate inferred weight/width/style metadata.
     - For RTL scripts use `TestNonLatin` (polyglossia + harfbuzz).
     - For LTR scripts use a minimal, NFSS-safe `fontspec` invocation.
+    - When a non-Latin specimen is required but no text is available,
+      the function requests a fallback language sample before rendering.
     """
     log_trace_cat(
         log,

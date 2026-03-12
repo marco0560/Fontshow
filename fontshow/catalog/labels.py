@@ -136,6 +136,12 @@ def language_label(font: dict) -> str:
     -------
     str
         Uppercase language code if available, otherwise "N/A".
+
+    Notes
+    -----
+    This function delegates representative language selection to
+    `choose_sample_language()` so the label stays aligned with specimen
+    selection behavior used elsewhere in the catalog pipeline.
     """
     lang = choose_sample_language(font)
     return lang.upper() if lang else "N/A"
@@ -160,7 +166,8 @@ def render_badges(font: dict[str, object]) -> str:
     Notes
     -----
     Badges are ASCII-only and typeset in monospace to avoid bidi and
-    script-direction issues.
+    script-direction issues. Badge fields are emitted in a stable order:
+    scripts, language, then font type.
     """
     scripts = script_label(font)
     languages = language_label(font)

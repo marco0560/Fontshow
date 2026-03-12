@@ -85,6 +85,9 @@ def _handle_list_test_fonts(test_fonts: set[str], inventory_fonts: list[dict]) -
     -----
     - Must ignore --quiet by contract.
     - Lists configured TEST_FONTS and matching inventory fonts (JSON is the single source of truth).
+    - Matching is performed against exact family names after trimming the
+      inventory-side `family` field to avoid false negatives caused by
+      surrounding whitespace.
     """
     log_info("TEST_FONTS configuration:")
 
@@ -137,6 +140,9 @@ def _run_inventory_diagnostics(fonts: list) -> None:
     Applies only when inventory mode is active and CLI is not in quiet mode.
     Emits informational or warning messages if language coverage is missing
     for a significant fraction of fonts.
+    Thresholds are severity-based: below 10 percent logs as info, from
+    10 to below 50 percent logs as warning, and 50 percent or above
+    emits the strongest warning message.
     """
     missing_lang_count = 0
     total_fonts = 0
@@ -200,6 +206,9 @@ def _filter_and_prepare_fonts(
     The helper does not mutate descriptors by adding non-schema keys.
     Display-name fallbacks are derived transiently to remain compliant
     with schema v1.2.
+    Processing order is deterministic: optional test-font filtering,
+    optional count limiting, normalization, family sorting, and final
+    family grouping.
     """
     log_trace_cat(
         log,

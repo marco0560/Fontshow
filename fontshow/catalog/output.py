@@ -78,6 +78,13 @@ def _prepare_output_filename() -> tuple[int, str | None]:
         A pair (exit_code, filename):
         - exit_code == 0 → success, filename contains the generated name.
         - exit_code == 1 → error already logged, filename is None.
+
+    Notes
+    -----
+    The filename stem follows the pattern
+    ``fontshow_<platform>_<DATE_STR>`` and delegates collision handling
+    to `get_unique_filename`. Failures are converted into a logged
+    non-zero exit code instead of being propagated.
     """
     base_name = f"fontshow_{platform.system()}_{DATE_STR}"
 

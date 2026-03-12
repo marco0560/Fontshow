@@ -37,6 +37,20 @@ from typing import TypedDict
 
 
 class _FontDetail(TypedDict):
+    """
+    Structured representation of a parsed font-detail record.
+
+    Parameters
+    ----------
+    None
+
+    Notes
+    -----
+    This typed dictionary captures the normalized outcome of parsing a
+    raw font-detail line. It is used internally by the catalog domain to
+    keep extracted names and their cleaned base-name variants together.
+    """
+
     raw_line: str
     extracted_names: list[str]
     base_names: list[str]

@@ -163,6 +163,8 @@ def _render_font_entry(
     The rendering path depends on the selected script policy. Latin
     entries use a direct ``\\fontspec`` block, while eligible non-Latin
     entries may use ``\\TestNonLatin`` with language and script options.
+    The helper also returns a plain-text option string so the caller can
+    include debugging information alongside the rendered specimen block.
     """
 
     path = str(font.get("path", "")).lower()
@@ -240,6 +242,10 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     The function first normalizes the input list, deduplicates entries
     by family name, injects auxiliary Polyglossia language declarations,
     and then renders one catalog block per surviving font entry.
+    Each entry includes debugging metadata about inferred scripts,
+    inferred languages, and the effective fontspec options used for
+    rendering. Fonts with unsupported file extensions produce an empty
+    render block while still contributing to the itemized catalog list.
     """
     font_list = as_font_desc_list(font_list)
 

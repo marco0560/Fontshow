@@ -48,6 +48,8 @@ def clean_font_name(name: str) -> str:
     removes terminal parenthetical format markers such as ``(TrueType)``
     and ``(OpenType)``. The second strips a broad set of style, weight,
     and width suffixes, including both English and Italian variants.
+    The result is intended for family-like grouping in the catalog
+    domain rather than for preserving the original display name.
     """
     clean_name = re.sub(r"\s*\((TrueType|OpenType|True Type|Type 1)\)\s*$", "", name)
 
