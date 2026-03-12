@@ -43,6 +43,28 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class UnicodeTablesData:
+    """
+    Container for Unicode-derived data used to generate ontology tables.
+
+    This structure aggregates the normalized information extracted from
+    Unicode source files before it is rendered into the generated Python
+    module.
+
+    Attributes
+    ----------
+    block_ranges : dict[str, tuple[int, int]]
+        Mapping of Unicode block names to their inclusive codepoint ranges
+        ``(start, end)``.
+
+    script_ranges : dict[str, list[tuple[int, int]]]
+        Mapping of script identifiers to lists of inclusive Unicode ranges
+        describing where characters of that script occur.
+
+    non_writing_scripts : frozenset[str]
+        Set of script identifiers representing scripts that are considered
+        non-writing (for example symbols or control-related scripts).
+    """
+
     block_ranges: dict[str, tuple[int, int]]
     script_ranges: dict[str, list[tuple[int, int]]]
     non_writing_scripts: frozenset[str]
@@ -50,6 +72,18 @@ class UnicodeTablesData:
 
 @dataclass(frozen=True)
 class GeneratorOptions:
+    """
+    Options controlling the structure of the generated Unicode tables.
+
+    Attributes
+    ----------
+    script_keys : {"tag", "iso"}
+        Determines the type used as keys for script-related tables.
+
+        - ``"tag"`` produces tables keyed by plain script tags (``str``).
+        - ``"iso"`` produces tables keyed by :class:`ScriptISO` objects.
+    """
+
     script_keys: Literal["tag", "iso"]
 
 
@@ -91,10 +125,24 @@ _SCRIPTS_LINE_RE = re.compile(
 
 def _parse_ucd_blocks(blocks_path: Path) -> dict[str, tuple[int, int]]:
     """
-    Parse UCD Blocks.txt.
+    Parse the Unicode Character Database ``Blocks.txt`` file.
 
-    Returns:
-        Mapping block name -> (start, end) inclusive.
+    Parameters
+    ----------
+    blocks_path : pathlib.Path
+        Path to the ``Blocks.txt`` file.
+
+    Returns
+    -------
+    dict[str, tuple[int, int]]
+        Mapping from block name to inclusive Unicode codepoint range
+        ``(start, end)``.
+
+    Raises
+    ------
+    ValueError
+        Raised if a line in the file does not match the expected format
+        or if a parsed range is invalid.
     """
     out: dict[str, tuple[int, int]] = {}
     for raw in blocks_path.read_text(encoding="utf-8").splitlines():
@@ -117,10 +165,24 @@ def _parse_ucd_blocks(blocks_path: Path) -> dict[str, tuple[int, int]]:
 
 def _parse_ucd_scripts(scripts_path: Path) -> list[tuple[int, int, str]]:
     """
-    Parse UCD Scripts.txt.
+    Parse the Unicode Character Database ``Scripts.txt`` file.
 
-    Returns:
-        List of (start, end, script_property) inclusive.
+    Parameters
+    ----------
+    scripts_path : pathlib.Path
+        Path to the ``Scripts.txt`` file.
+
+    Returns
+    -------
+    list[tuple[int, int, str]]
+        List of tuples ``(start, end, script_property)`` describing
+        inclusive Unicode codepoint ranges and their associated script.
+
+    Raises
+    ------
+    ValueError
+        Raised if a line does not match the expected format or if an
+        invalid range is encountered.
     """
     out: list[tuple[int, int, str]] = []
     for raw in scripts_path.read_text(encoding="utf-8").splitlines():
@@ -147,14 +209,23 @@ def _parse_ucd_scripts(scripts_path: Path) -> list[tuple[int, int, str]]:
 
 def _parse_iso15924_registry(path: Path) -> dict[str, str]:
     """
-    Parse iso15924.txt registry.
+    Parse the ISO 15924 registry snapshot.
 
-    Returns:
-        Mapping Unicode Script name -> ISO15924 lowercase code.
+    Parameters
+    ----------
+    path : pathlib.Path
+        Path to the ISO15924 registry file.
 
-    Example:
-        "Latin" -> "latn"
-        "Hebrew" -> "hebr"
+    Returns
+    -------
+    dict[str, str]
+        Mapping from Unicode script property name to ISO15924 code
+        (lowercase).
+
+    Examples
+    --------
+    ``"Latin" -> "latn"``
+    ``"Hebrew" -> "hebr"``
     """
     mapping: dict[str, str] = {}
 
@@ -189,7 +260,22 @@ def _merge_contiguous_ranges(
 ) -> list[tuple[int, int]]:
     """
     Merge overlapping or contiguous inclusive ranges.
-    Input must be (start, end) inclusive.
+
+    Parameters
+    ----------
+    ranges : Iterable[tuple[int, int]]
+        Iterable of inclusive codepoint ranges ``(start, end)``.
+
+    Returns
+    -------
+    list[tuple[int, int]]
+        List of merged inclusive ranges with overlaps and adjacent
+        intervals collapsed.
+
+    Notes
+    -----
+    The input ranges are first sorted by start and end positions to
+    ensure deterministic merging.
     """
     sorted_ranges = sorted(ranges, key=lambda r: (r[0], r[1]))
     if not sorted_ranges:
@@ -210,9 +296,30 @@ def _aggregate_scripts_to_ranges(
     iso_map: dict[str, str],
 ) -> tuple[dict[str, list[tuple[int, int]]], frozenset[str]]:
     """
-    Convert per-span script assignments into merged contiguous ranges per script key.
+    Aggregate script spans into merged contiguous ranges per ISO script code.
 
-    Keys are normalized to lowercase for now.
+    Parameters
+    ----------
+    script_spans : list[tuple[int, int, str]]
+        List of tuples ``(start, end, script_property)`` describing
+        inclusive Unicode codepoint ranges associated with script
+        properties from ``Scripts.txt``.
+    iso_map : dict[str, str]
+        Mapping from Unicode script property names to ISO15924 script
+        codes (lowercase).
+
+    Returns
+    -------
+    tuple[dict[str, list[tuple[int, int]]], frozenset[str]]
+        Two values:
+
+        - Mapping from ISO15924 script code to merged contiguous
+          codepoint ranges.
+        - Frozen set of ISO15924 codes representing non-writing scripts.
+
+    Notes
+    -----
+    Scripts not present in the ISO15924 registry are ignored.
     """
     buckets: dict[str, list[tuple[int, int]]] = {}
     non_writing_scripts: set[str] = set()
@@ -245,6 +352,22 @@ def _aggregate_scripts_to_ranges(
 
 
 def _format_py_dict_block_ranges(block_ranges: dict[str, tuple[int, int]]) -> str:
+    """
+    Format Unicode block ranges as a Python dictionary literal.
+
+    Parameters
+    ----------
+    block_ranges : dict[str, tuple[int, int]]
+        Mapping of Unicode block names to inclusive codepoint ranges
+        represented as ``(start, end)``.
+
+    Returns
+    -------
+    str
+        A string containing Python source code that defines the
+        ``UNICODE_BLOCK_RANGES`` dictionary with deterministically
+        ordered entries.
+    """
     lines: list[str] = []
     lines.append("UNICODE_BLOCK_RANGES: dict[str, tuple[int, int]] = {")
     for name in sorted(block_ranges.keys()):
@@ -259,6 +382,26 @@ def _format_py_dict_script_ranges(
     *,
     script_keys: Literal["tag", "iso"],
 ) -> str:
+    """
+    Format Unicode script ranges as a Python dictionary literal.
+
+    Parameters
+    ----------
+    script_ranges : dict[str, list[tuple[int, int]]]
+        Mapping of script identifiers to lists of inclusive Unicode
+        codepoint ranges ``(start, end)``.
+    script_keys : {"tag", "iso"}
+        Determines the type used as keys in the generated dictionary.
+
+        - ``"tag"`` produces keys as plain script tags (``str``).
+        - ``"iso"`` produces keys as :class:`ScriptISO` objects.
+
+    Returns
+    -------
+    str
+        A string containing Python source code defining the
+        ``UNICODE_SCRIPT_RANGES`` dictionary.
+    """
     lines: list[str] = []
 
     if script_keys == "iso":
@@ -281,6 +424,24 @@ def _format_py_dict_script_ranges(
 def _format_block_ranges_section(
     block_ranges: dict[str, tuple[int, int]],
 ) -> str:
+    """
+    Generate the formatted section describing Unicode block ranges.
+
+    This function wraps the block range dictionary with a descriptive
+    comment header explaining the role of the table within the generated
+    module.
+
+    Parameters
+    ----------
+    block_ranges : dict[str, tuple[int, int]]
+        Mapping of Unicode block names to inclusive codepoint ranges.
+
+    Returns
+    -------
+    str
+        A formatted text block containing the explanatory header followed
+        by the Python dictionary definition for ``UNICODE_BLOCK_RANGES``.
+    """
     header = """# ------------------------------------------------------------------
 # Unicode block ranges (authoritative ontology)
 #
@@ -297,6 +458,23 @@ def _format_block_ranges_section(
 def _format_py_dict_block_sizes(
     block_ranges: dict[str, tuple[int, int]],
 ) -> str:
+    """
+    Generate a dictionary mapping Unicode blocks to their sizes.
+
+    The size of each block is computed as ``end - start + 1`` using the
+    inclusive codepoint ranges provided in ``block_ranges``.
+
+    Parameters
+    ----------
+    block_ranges : dict[str, tuple[int, int]]
+        Mapping of Unicode block names to inclusive codepoint ranges.
+
+    Returns
+    -------
+    str
+        A string containing Python source code that defines the
+        ``UNICODE_BLOCK_SIZES`` dictionary.
+    """
     lines: list[str] = []
     lines.append("UNICODE_BLOCK_SIZES: dict[str, int] = {")
     for name in sorted(block_ranges.keys()):
@@ -314,6 +492,30 @@ def _generate_module_text(
     data: UnicodeTablesData,
     options: GeneratorOptions,
 ) -> str:
+    """
+    Generate the complete Python module containing Unicode-derived tables.
+
+    The produced text corresponds to the auto-generated module used by
+    Fontshow to provide deterministic Unicode block and script metadata.
+
+    Parameters
+    ----------
+    unicode_version : str
+        Unicode version used to derive the tables.
+    sources : tuple[pathlib.Path, pathlib.Path, pathlib.Path]
+        Paths to the Unicode data source files used to build the tables
+        (blocks file, scripts file, and ISO mapping file).
+    data : UnicodeTablesData
+        Parsed Unicode data required to build the module tables.
+    options : GeneratorOptions
+        Generation options controlling details such as the type used for
+        script keys.
+
+    Returns
+    -------
+    str
+        The complete Python source code of the generated module.
+    """
     blocks_path, scripts_path, iso_path = sources
     now = _dt.datetime.now(tz=_dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     header = f"""# AUTO-GENERATED FILE — DO NOT EDIT
@@ -377,6 +579,30 @@ def _generate_module_text(
 
 
 def main() -> int:
+    """
+    Generate the Fontshow Unicode tables module from vendored Unicode data files.
+
+    This command-line entry point reads Unicode Character Database (UCD)
+    source files and the ISO15924 registry snapshot, derives normalized
+    block and script range tables, and writes the generated module
+    ``fontshow/ontology/unicode_tables.py``.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    int
+        Exit status code. Returns ``0`` when the generation completes
+        successfully.
+
+    Raises
+    ------
+    SystemExit
+        Raised if required input files are missing or if argument parsing
+        fails.
+    """
     parser = argparse.ArgumentParser(
         description="Generate Fontshow Unicode tables from vendored UCD files."
     )

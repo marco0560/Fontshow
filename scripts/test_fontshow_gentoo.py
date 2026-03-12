@@ -36,11 +36,53 @@ from pathlib import Path
 
 
 def fail(msg: str, *, exit_code: int = 1) -> None:
+    """
+    Print an error message and terminate the test script.
+
+    Parameters
+    ----------
+    msg : str
+        Error message describing the failure.
+    exit_code : int, optional
+        Exit code used when terminating the program (default is ``1``).
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SystemExit
+        Always raised with the specified exit code.
+    """
     print(f"ERROR: {msg}", file=sys.stderr)
     raise SystemExit(exit_code)
 
 
 def run(cmd: list[str], *, cwd: Path | None = None) -> None:
+    """
+    Execute a subprocess command and terminate on failure.
+
+    The command is printed before execution to provide a simple execution
+    trace during the test run.
+
+    Parameters
+    ----------
+    cmd : list[str]
+        Command and arguments to execute.
+    cwd : pathlib.Path or None, optional
+        Working directory in which the command should be executed.
+        If ``None``, the current process working directory is used.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SystemExit
+        Raised if the command exits with a non-zero status code.
+    """
     print("+", " ".join(cmd))
     try:
         subprocess.run(cmd, check=True, cwd=cwd)
@@ -49,11 +91,63 @@ def run(cmd: list[str], *, cwd: Path | None = None) -> None:
 
 
 def check_executable(name: str) -> None:
+    """
+    Verify that an executable is available in the system ``PATH``.
+
+    Parameters
+    ----------
+    name : str
+        Name of the executable to locate.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SystemExit
+        Raised if the executable cannot be found in ``PATH``.
+    """
     if shutil.which(name) is None:
         fail(f"Required executable not found in PATH: {name}")
 
 
 def main(argv: list[str] | None = None) -> int:
+    """
+    Run a local end-to-end Fontshow workflow test.
+
+    This command performs a simplified workflow similar to what a
+    distribution build environment (such as Gentoo) would execute. It
+    validates that the main CLI commands run successfully and that the
+    expected output artifacts are produced.
+
+    The test performs the following steps:
+
+    * Verify required executables are available.
+    * Run basic CLI checks.
+    * Execute the ``preflight`` command.
+    * Generate a font inventory using ``dump-fonts``.
+    * Enrich the inventory with ``parse-inventory``.
+    * Validate the resulting dataset with ``fontshow-validate``.
+
+    Parameters
+    ----------
+    argv : list[str] or None, optional
+        Command-line arguments passed to the parser. If ``None``,
+        arguments are read from ``sys.argv``.
+
+    Returns
+    -------
+    int
+        Exit status code. Returns ``0`` when the workflow completes
+        successfully.
+
+    Raises
+    ------
+    SystemExit
+        Raised if required executables are missing or if any command
+        invoked during the workflow fails.
+    """
     parser = argparse.ArgumentParser(
         prog="test-fontshow-gentoo",
         description="Local end-to-end Fontshow test (Gentoo-style workflow).",

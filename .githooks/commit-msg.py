@@ -1,4 +1,31 @@
 #!python
+"""
+Git commit-msg hook enforcing Conventional Commit formatting.
+
+This hook validates the first line of the commit message against a
+restricted Conventional Commit format and ensures that the optional
+scope belongs to a predefined list of allowed scopes.
+
+The expected commit message format is:
+
+    type(scope): summary
+
+where:
+
+- ``type`` must be one of the allowed commit types
+- ``scope`` is optional but, if present, must belong to ``ALLOWED_SCOPES``
+- the summary must be between 1 and 72 characters
+
+If the message does not comply with the rules, the hook prints an
+error message and aborts the commit by exiting with a non-zero status.
+
+Notes
+-----
+The hook is executed automatically by Git during the ``commit-msg``
+hook phase. The path to the temporary commit message file is provided
+as the first command-line argument.
+"""
+
 import re
 import sys
 from pathlib import Path

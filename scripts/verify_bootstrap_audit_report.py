@@ -71,6 +71,24 @@ def compute_text_sha256(text: str) -> str:
 
 
 def git_commit(repo_root: Path) -> str:
+    """
+    Return the current Git commit hash for the repository.
+
+    Parameters
+    ----------
+    repo_root : pathlib.Path
+        Path to the root directory of the Git repository.
+
+    Returns
+    -------
+    str
+        The full commit hash of ``HEAD``.
+
+    Raises
+    ------
+    subprocess.CalledProcessError
+        Raised if the Git command fails.
+    """
     result = subprocess.run(
         ["git", "rev-parse", "HEAD"],  # noqa: S607
         cwd=repo_root,
@@ -82,6 +100,25 @@ def git_commit(repo_root: Path) -> str:
 
 
 def git_clean(repo_root: Path) -> bool:
+    """
+    Determine whether the Git working tree is clean.
+
+    Parameters
+    ----------
+    repo_root : pathlib.Path
+        Path to the root directory of the Git repository.
+
+    Returns
+    -------
+    bool
+        ``True`` if the working tree has no uncommitted changes,
+        otherwise ``False``.
+
+    Raises
+    ------
+    subprocess.CalledProcessError
+        Raised if the Git command fails.
+    """
     result = subprocess.run(
         ["git", "status", "--porcelain"],  # noqa: S607
         cwd=repo_root,
@@ -94,7 +131,26 @@ def git_clean(repo_root: Path) -> bool:
 
 def verify_report_checksum(report_text: str) -> None:
     """
-    Validate bootstrap report checksum.
+    Verify the integrity checksum of the bootstrap audit report.
+
+    The report contains a ``BOOTSTRAP CHECKSUM`` section with a stored
+    SHA256 hash of the report body. This function recomputes the hash
+    and ensures it matches the stored value.
+
+    Parameters
+    ----------
+    report_text : str
+        Full textual contents of the bootstrap audit report.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    RuntimeError
+        If the checksum section is missing, the stored checksum line
+        cannot be found, or the computed checksum does not match.
     """
     marker = "\nBOOTSTRAP CHECKSUM\n"
     idx = report_text.find(marker)
@@ -152,7 +208,24 @@ def parse_sha256_section(report_lines: list[str]) -> dict[str, str]:
 
 def verify_file_hashes(repo_root: Path, hashes: dict[str, str]) -> None:
     """
-    Verify SHA256 for each Python file.
+    Verify recorded SHA256 hashes for repository files.
+
+    Parameters
+    ----------
+    repo_root : pathlib.Path
+        Root directory of the repository.
+    hashes : dict[str, str]
+        Mapping from relative file paths to expected SHA256 hashes.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    RuntimeError
+        If a file listed in the hash table is missing or if its
+        computed SHA256 digest does not match the expected value.
     """
     for path_str, expected in hashes.items():
         path = repo_root / path_str
@@ -169,6 +242,27 @@ def verify_file_hashes(repo_root: Path, hashes: dict[str, str]) -> None:
 
 
 def main() -> None:
+    """
+    Verify the integrity of the bootstrap audit report and repository state.
+
+    This command-line entry point performs several validation steps:
+
+    * ensure the bootstrap audit report exists
+    * verify the report checksum
+    * confirm the Git working tree is clean
+    * validate recorded file hashes against repository contents
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SystemExit
+        Raised if the bootstrap report file is missing.
+    RuntimeError
+        Raised if the repository working tree is not clean.
+    """
     repo_root = Path.cwd()
     report_path = repo_root / REPORT_FILE
 

@@ -37,16 +37,71 @@ DEFAULT_CONFIG = ".releaserc.json"
 
 
 def fail(msg: str, *, exit_code: int = 1) -> None:
+    """
+    Print an error message and terminate the program.
+
+    Parameters
+    ----------
+    msg : str
+        Human-readable error message to print to standard error.
+    exit_code : int, optional
+        Process exit code used when terminating (default is ``1``).
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SystemExit
+        Always raised with the provided exit code.
+    """
     print(f"ERROR: {msg}", file=sys.stderr)
     raise SystemExit(exit_code)
 
 
 def check_executable(name: str) -> None:
+    """
+    Verify that an executable is available in the system ``PATH``.
+
+    Parameters
+    ----------
+    name : str
+        Name of the executable to locate.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SystemExit
+        Raised if the executable cannot be found in ``PATH``.
+    """
     if shutil.which(name) is None:
         fail(f"Required executable not found in PATH: {name}")
 
 
 def run(cmd: list[str], *, verbose: bool = False) -> None:
+    """
+    Execute a subprocess command with optional logging.
+
+    Parameters
+    ----------
+    cmd : list[str]
+        Command and arguments to execute.
+    verbose : bool, optional
+        If ``True``, print the command before executing it.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SystemExit
+        Raised if the subprocess exits with a non-zero status code.
+    """
     if verbose:
         print("+", " ".join(cmd))
 
@@ -57,6 +112,32 @@ def run(cmd: list[str], *, verbose: bool = False) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """
+    Run a local preview of semantic-release in dry-run mode.
+
+    This command verifies the presence of required executables and a valid
+    semantic-release configuration file, then executes semantic-release
+    using ``--dry-run`` to show what would be released without publishing
+    anything.
+
+    Parameters
+    ----------
+    argv : list[str] or None, optional
+        Command-line arguments to parse. If ``None``, arguments are read
+        from ``sys.argv``.
+
+    Returns
+    -------
+    int
+        Exit status code. Returns ``0`` when the preview completes
+        successfully.
+
+    Raises
+    ------
+    SystemExit
+        Raised if required executables or configuration files are missing,
+        or if semantic-release is not installed locally.
+    """
     parser = argparse.ArgumentParser(
         prog="release-preview",
         description="Run semantic-release in dry-run mode (local preview only).",

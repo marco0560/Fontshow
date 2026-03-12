@@ -73,13 +73,31 @@ _STOPWORDS = {
 
 def slugify(text: str) -> str:
     """
-    Convert a human-readable sentence into a filesystem-friendly slug.
+    Convert a human-readable string into a filesystem-friendly slug.
 
-    - lowercases
-    - removes accents
-    - strips punctuation
-    - removes common stopwords
-    - replaces spaces with hyphens
+    The transformation performs several normalization steps:
+
+    - convert text to lowercase
+    - remove accents and diacritics
+    - strip punctuation and non-alphanumeric characters
+    - remove common stopwords
+    - join remaining tokens with hyphens
+
+    Parameters
+    ----------
+    text : str
+        Input text to convert into a slug.
+
+    Returns
+    -------
+    str
+        Hyphen-separated slug suitable for filenames.
+
+    Raises
+    ------
+    ValueError
+        Raised if the input is empty or if the resulting slug would
+        contain only stopwords.
     """
 
     if not text.strip():
@@ -108,7 +126,23 @@ def slugify(text: str) -> str:
 
 def next_decision_number(decisions_dir: Path) -> int:
     """
-    Scan decisions directory and return next available numeric prefix.
+    Determine the next available decision number.
+
+    The function scans Markdown files in the decisions directory and
+    extracts numeric prefixes from filenames matching the pattern
+    ``NNNN-title.md``. The next decision number is computed as the
+    maximum existing number plus one.
+
+    Parameters
+    ----------
+    decisions_dir : pathlib.Path
+        Directory containing decision note files.
+
+    Returns
+    -------
+    int
+        Next available decision number. Returns ``1`` if no decision
+        files are present.
     """
     numbers: list[int] = []
 
@@ -121,11 +155,54 @@ def next_decision_number(decisions_dir: Path) -> int:
 
 
 def fail(msg: str) -> None:
+    """
+    Print an error message and terminate the program.
+
+    Parameters
+    ----------
+    msg : str
+        Human-readable error message to be printed to standard error.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SystemExit
+        Always raised with exit code ``1`` after printing the message.
+    """
     print(f"ERROR: {msg}", file=sys.stderr)
     sys.exit(1)
 
 
 def main(argv: list[str] | None = None) -> int:
+    """
+    Create a new decision note in the project decision log.
+
+    This command-line tool interactively creates a new Markdown file in the
+    decisions directory and appends a corresponding entry to the decision
+    index file. The decision number is determined automatically from the
+    existing notes.
+
+    Parameters
+    ----------
+    argv : list[str] or None, optional
+        Command-line arguments passed to the parser. If ``None``, arguments
+        are read from ``sys.argv``.
+
+    Returns
+    -------
+    int
+        Exit status code. Returns ``0`` when the decision note is created
+        successfully or when running in dry-run mode.
+
+    Raises
+    ------
+    SystemExit
+        Raised when required directories or files are missing, when the
+        description is invalid, or when argument parsing fails.
+    """
     parser = argparse.ArgumentParser(
         prog="new-decision",
         description="Create a new decision note in docs/decisions/",
