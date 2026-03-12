@@ -1,3 +1,9 @@
+## [0.52.0](https://github.com/marco0560/Fontshow/compare/v0.51.2...v0.52.0) (2026-03-12)
+
+### Features
+
+* **dev:** added a tool to extract the functions to document better ([096a402](https://github.com/marco0560/Fontshow/commit/096a402799431c617ad86e67de39ea2def5795bc))
+
 ## [0.51.2](https://github.com/marco0560/Fontshow/compare/v0.51.1...v0.51.2) (2026-03-09)
 
 ### Bug Fixes
