@@ -70,6 +70,23 @@ def _select_checks(
     enabled: set[str] | None,
     disabled: set[str] | None,
 ) -> list[type[BaseCheck]]:
+    """
+    Filter candidate checks according to enabled and disabled sets.
+
+    Parameters
+    ----------
+    checks : list[type[BaseCheck]]
+        Candidate check classes to filter.
+    enabled : set[str] | None
+        Optional whitelist of check identifiers.
+    disabled : set[str] | None
+        Optional blacklist of check identifiers.
+
+    Returns
+    -------
+    list[type[BaseCheck]]
+        Ordered list of selected check classes.
+    """
     selected: list[type[BaseCheck]] = []
 
     for check_cls in checks:
@@ -89,9 +106,21 @@ def _resolve_checks() -> list[type[BaseCheck]]:
     """
     Resolve the effective list of checks to execute.
 
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[type[BaseCheck]]
+        Registered checks if the registry is non-empty, otherwise the
+        built-in `CHECKS` list.
+
+    Notes
+    -----
     Priority:
-    1. Registered checks (if any)
-    2. Built-in CHECKS fallback
+    1. Registered checks (if any).
+    2. Built-in `CHECKS` fallback.
     """
     registered = get_registered_checks()
     return registered if registered else CHECKS

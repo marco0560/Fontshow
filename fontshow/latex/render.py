@@ -69,8 +69,21 @@ def _strip_ascii_control_chars(text: str) -> str:
     """
     Remove ASCII control characters from text before LaTeX insertion.
 
-    Keeps newline (\\n) and tab (\\t); strips other chars in:
-        U+0000–U+001F and U+007F
+    Parameters
+    ----------
+    text : str
+        Input text that may contain ASCII control characters.
+
+    Returns
+    -------
+    str
+        Text with control characters removed, except for newline and
+        tab.
+
+    Notes
+    -----
+    Keeps newline (``\\n``) and tab (``\\t``); strips other characters
+    in the ranges ``U+0000–U+001F`` and ``U+007F``.
     """
     return "".join(
         ch for ch in text if ch in {"\n", "\t"} or (ord(ch) >= 0x20 and ord(ch) != 0x7F)
@@ -81,8 +94,20 @@ def _latex_detokenize_safe(text: str) -> str:
     """
     Prepare text for safe inclusion inside \\detokenize{...}.
 
-    Removes ASCII control characters and escapes closing braces,
-    which would otherwise terminate the TeX group.
+    Parameters
+    ----------
+    text : str
+        Input text to sanitize.
+
+    Returns
+    -------
+    str
+        Sanitized text safe for placement inside ``\\detokenize{...}``.
+
+    Notes
+    -----
+    Removes ASCII control characters and escapes closing braces, which
+    would otherwise terminate the TeX group.
     """
     text = _strip_ascii_control_chars(text)
     return text.replace("}", r"\}")

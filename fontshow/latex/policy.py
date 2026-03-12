@@ -35,8 +35,21 @@ def _format_script_display(script_iso: str) -> str:
     """
     Convert ISO script code to human-readable display form.
 
-    Example:
-        "TAML" -> "Tamil (TAML)"
+    Parameters
+    ----------
+    script_iso : str
+        ISO-15924 script code to format.
+
+    Returns
+    -------
+    str
+        Human-readable display label including the canonical script
+        name when available.
+
+    Notes
+    -----
+    Example: ``"TAML" -> "Tamil (TAML)"``.
+    Unknown script codes are returned in their normalized uppercase form.
     """
     iso = ScriptISO(script_iso.upper())
     info = SCRIPT_INFO.get(iso)
@@ -48,11 +61,23 @@ def _format_script_display(script_iso: str) -> str:
 
 def _get_render_policy(script_iso: ScriptISO) -> tuple[str, str]:
     """
-    Return (polyglossia_language, fontspec_options).
+    Return Polyglossia language and fontspec options for a script.
 
+    Parameters
+    ----------
+    script_iso : ScriptISO
+        Canonical script code used to look up rendering policy.
+
+    Returns
+    -------
+    tuple[str, str]
+        Two-element tuple ``(polyglossia_language, fontspec_options)``.
+
+    Notes
+    -----
     Invariant:
-        Non-Latin scripts must always receive an explicit Script= option
-        to enable HarfBuzz shaping.
+    Non-Latin scripts must always receive an explicit ``Script=``
+    option to enable HarfBuzz shaping.
     """
     info = SCRIPT_INFO.get(script_iso)
 
@@ -71,12 +96,26 @@ def _get_render_policy(script_iso: ScriptISO) -> tuple[str, str]:
 
 def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -> str:
     """
-    Collect the set of polyglossia languages required by this run and generate
-    corresponding \\setotherlanguage{...} lines for the LaTeX preamble.
+    Collect secondary Polyglossia languages required by the font list.
 
-    Deterministic:
+    Parameters
+    ----------
+    font_list : list[CatalogFontEntryV12]
+        Catalog font entries whose inferred scripts determine required
+        Polyglossia declarations.
+
+    Returns
+    -------
+    str
+        Concatenated ``\\setotherlanguage{...}`` declarations for the
+        LaTeX preamble.
+
+    Notes
+    -----
+    Deterministic behavior:
     - stable ordering (sorted)
     - never fails rendering if a mapping is missing
+    - always includes ``latin`` to preserve legacy template assumptions
     """
     # Always include latin to preserve legacy template assumptions
     langs: set[str] = {"latin"}  # preserve previous template behavior

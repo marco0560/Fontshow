@@ -32,6 +32,15 @@ from fontshow.preflight.model import CheckResult, Severity
 def has_lualatex() -> bool:
     """
     Detect availability of the LuaLaTeX engine.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    bool
+        True if `lualatex` is discoverable in `PATH`.
     """
     return shutil.which("lualatex") is not None
 
@@ -44,6 +53,19 @@ class LuaLatexCheck(BaseCheck):
     check_id = "latex.capability"
 
     def run(self) -> CheckResult:
+        """
+        Execute the LuaLaTeX capability check.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        CheckResult
+            Structured result describing whether the `lualatex` engine is
+            available and supported in the current environment.
+        """
         os_name = environment.detect_os()
         execution_mode = environment.detect_execution_mode()
 

@@ -32,6 +32,16 @@ from .model import CheckResult, PreflightResult
 def preflight_exit_code(result: PreflightResult) -> int:
     """
     Compute process exit code from preflight result severity.
+
+    Parameters
+    ----------
+    result : PreflightResult
+        Aggregate preflight result to evaluate.
+
+    Returns
+    -------
+    int
+        `1` when any check has error severity, otherwise `0`.
     """
     if result.overall_severity is Severity.ERROR:
         return 1
@@ -44,6 +54,18 @@ def render_preflight_results(
 ) -> list[str]:
     """
     Render preflight results into human-readable lines.
+
+    Parameters
+    ----------
+    results : Iterable[CheckResult]
+        Check results to render.
+    verbose : bool, optional
+        Reserved verbosity flag for future rendering variants.
+
+    Returns
+    -------
+    list[str]
+        Formatted output lines suitable for CLI presentation.
     """
     _ = verbose  # reserved for future verbosity-aware rendering
     lines: list[str] = []

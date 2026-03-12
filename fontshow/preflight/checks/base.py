@@ -47,6 +47,23 @@ class BaseCheck(ABC):
     executable: bool = True
 
     def __init_subclass__(cls, **kwargs):
+        """
+        Register concrete subclasses automatically when they are defined.
+
+        Parameters
+        ----------
+        **kwargs : object
+            Keyword arguments forwarded to the superclass hook.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        Abstract subclasses are not registered. Only concrete check
+        classes are appended to `BaseCheck.registry`.
+        """
         super().__init_subclass__(**kwargs)
 
         # Register only concrete (non-abstract) checks
@@ -55,5 +72,16 @@ class BaseCheck(ABC):
 
     @abstractmethod
     def run(self) -> CheckResult:
-        """Execute the check and return a CheckResult."""
+        """
+        Execute the check and return a structured result.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        CheckResult
+            Result object describing the outcome of the check.
+        """
         raise NotImplementedError

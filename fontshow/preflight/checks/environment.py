@@ -29,6 +29,19 @@ from fontshow.preflight.model import CheckResult, Severity
 
 
 def detect_os() -> str:
+    """
+    Detect the normalized operating-system identifier for the host.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    str
+        One of ``"linux"``, ``"windows"``, ``"macos"``, or
+        ``"unknown"``.
+    """
     import platform
 
     system = platform.system().lower()
@@ -42,6 +55,19 @@ def detect_os() -> str:
 
 
 def detect_execution_mode() -> str:
+    """
+    Detect the high-level execution mode of the current environment.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    str
+        One of ``"ci"``, ``"wsl"``, ``"container"``, or
+        ``"bare-metal"``.
+    """
     import os
     from pathlib import Path
 
@@ -55,9 +81,31 @@ def detect_execution_mode() -> str:
 
 
 class EnvironmentSupportCheck(BaseCheck):
+    """
+    Preflight check evaluating whether the runtime environment is supported.
+
+    Parameters
+    ----------
+    None
+    """
+
     check_id = "environment.support"
 
     def run(self) -> CheckResult:
+        """
+        Execute the environment support check.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        CheckResult
+            Structured result describing whether the detected OS and
+            execution mode are fully supported, partially supported, or
+            unsupported.
+        """
         os_name = detect_os()
         execution_mode = detect_execution_mode()
 

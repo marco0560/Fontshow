@@ -1,25 +1,24 @@
 """
-Inventory subsystem package.
+JSON support package.
 
-This package contains the modules responsible for constructing,
-enriching, validating, and manipulating Fontshow inventory data.
+This package is reserved for helpers related to JSON-facing concerns in
+Fontshow.
 
 Responsibilities
 ----------------
-- Define the normalized inventory data model.
-- Extract and normalize font metadata.
-- Perform metadata enrichment such as script and language inference.
-- Validate inventory structures and semantic consistency.
+- Provide a namespace for JSON-specific utilities when such helpers are
+  split out from other subsystems.
+- Keep JSON-boundary concerns isolated from domain logic when dedicated
+  modules are introduced.
 
 Design principles
 -----------------
-The inventory subsystem transforms raw font metadata into the
-normalized inventory structures used throughout the Fontshow pipeline.
-Modules in this package operate on in-memory data structures and avoid
-CLI orchestration or rendering logic.
+The package should remain lightweight and focused on JSON-facing
+infrastructure rather than inventory, catalog, or CLI orchestration
+logic. It currently serves primarily as package scaffolding.
 
 Architectural role
 ------------------
-This package belongs to the **inventory subsystem** and implements the
-core pipeline stages that build and validate Fontshow inventory data.
+This package belongs to the **core JSON/support layer** and exists as a
+dedicated namespace for JSON-related helpers.
 """

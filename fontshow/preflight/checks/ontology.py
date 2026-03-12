@@ -76,6 +76,23 @@ class OntologyCheck(BaseCheck):
     check_id = "ontology"
 
     def _check_language_scripts(self, LANGUAGE_INFO, SCRIPT_INFO) -> list[str]:
+        """
+        Validate that language profiles reference known scripts.
+
+        Parameters
+        ----------
+        LANGUAGE_INFO : Mapping
+            Language metadata table to validate.
+        SCRIPT_INFO : Mapping
+            Script metadata table used as the source of valid script
+            identifiers.
+
+        Returns
+        -------
+        list[str]
+            Validation errors describing missing canonical names,
+            missing script assignments, or unknown referenced scripts.
+        """
         scripts = set(SCRIPT_INFO.keys())
         errors: list[str] = []
 
@@ -100,6 +117,19 @@ class OntologyCheck(BaseCheck):
         return errors
 
     def _check_script_fields(self, SCRIPT_INFO) -> list[str]:
+        """
+        Validate that each script entry defines the required metadata fields.
+
+        Parameters
+        ----------
+        SCRIPT_INFO : Mapping
+            Script metadata table to validate.
+
+        Returns
+        -------
+        list[str]
+            Validation errors for script entries missing required fields.
+        """
         required_fields = {
             "canonical_name",
             "display_language",
@@ -123,6 +153,22 @@ class OntologyCheck(BaseCheck):
         return errors
 
     def _check_script_display_language(self, LANGUAGE_INFO, SCRIPT_INFO) -> list[str]:
+        """
+        Validate that each script points to a known representative language.
+
+        Parameters
+        ----------
+        LANGUAGE_INFO : Mapping
+            Language metadata table containing valid language codes.
+        SCRIPT_INFO : Mapping
+            Script metadata table to validate.
+
+        Returns
+        -------
+        list[str]
+            Validation errors for unknown script display-language
+            references.
+        """
         languages = set(LANGUAGE_INFO.keys())
         errors: list[str] = []
 
@@ -137,6 +183,22 @@ class OntologyCheck(BaseCheck):
         return errors
 
     def _check_specimens(self, LANGUAGE_INFO, SCRIPT_INFO) -> list[str]:
+        """
+        Validate specimen availability for representative script languages.
+
+        Parameters
+        ----------
+        LANGUAGE_INFO : Mapping
+            Language metadata table containing specimen samples.
+        SCRIPT_INFO : Mapping
+            Script metadata table containing representative languages.
+
+        Returns
+        -------
+        list[str]
+            Validation errors for representative languages missing usable
+            specimen samples.
+        """
         errors: list[str] = []
 
         for script, script_info in SCRIPT_INFO.items():
@@ -157,6 +219,22 @@ class OntologyCheck(BaseCheck):
         return errors
 
     def _check_bidirectional_consistency(self, LANGUAGE_INFO, SCRIPT_INFO) -> list[str]:
+        """
+        Validate script-to-language references in both ontology directions.
+
+        Parameters
+        ----------
+        LANGUAGE_INFO : Mapping
+            Language metadata table to cross-check.
+        SCRIPT_INFO : Mapping
+            Script metadata table to cross-check.
+
+        Returns
+        -------
+        list[str]
+            Validation errors for representative language references that
+            are not reciprocated in the language profile's script list.
+        """
         errors: list[str] = []
 
         for script, script_info in SCRIPT_INFO.items():
@@ -181,10 +259,21 @@ class OntologyCheck(BaseCheck):
         """
         Validate that every script in SCRIPT_INFO has Unicode coverage.
 
-        Enforced invariant
-        ------------------
+        Parameters
+        ----------
+        SCRIPT_INFO : Mapping
+            Script metadata table to validate.
 
-        SCRIPT_INFO.keys() ⊆ UNICODE_SCRIPT_RANGES.keys()
+        Returns
+        -------
+        list[str]
+            Validation errors for scripts missing Unicode range
+            definitions.
+
+        Notes
+        -----
+        Enforced invariant:
+        ``SCRIPT_INFO.keys() ⊆ UNICODE_SCRIPT_RANGES.keys()``.
         """
         from fontshow.ontology.unicode_tables import UNICODE_SCRIPT_RANGES
 
@@ -203,6 +292,19 @@ class OntologyCheck(BaseCheck):
         return errors
 
     def run(self) -> CheckResult:
+        """
+        Execute the ontology consistency check.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        CheckResult
+            Structured result reporting whether the ontology tables pass
+            all enforced consistency invariants.
+        """
         from fontshow.ontology.language_tables import LANGUAGE_INFO, SCRIPT_INFO
 
         errors: list[str] = []

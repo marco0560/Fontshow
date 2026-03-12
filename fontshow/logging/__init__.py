@@ -1,24 +1,24 @@
 """
 Logging subsystem package.
 
-This package contains modules responsible for structured logging
-within the Fontshow codebase.
+This package is reserved as a namespace for logging-related helpers in
+Fontshow.
 
 Responsibilities
 ----------------
-- Provide logging infrastructure used across the pipeline.
-- Support structured and category-based TRACE logging.
-- Expose helpers used by CLI and pipeline modules for diagnostics.s
+- Provide a dedicated namespace for logging-facing utilities if they
+  are split out from other core modules.
+- Keep logging concerns isolated from domain-specific inventory,
+  catalog, or CLI logic when dedicated modules are introduced.
 
 Design principles
 -----------------
-Logging functionality is centralized to ensure consistent formatting
-and behavior across all subsystems. Modules in this package must remain
-safe to import from any layer of the architecture.
+The package should remain lightweight and focused on logging
+infrastructure rather than pipeline orchestration. It currently serves
+primarily as package scaffolding.
 
 Architectural role
 ------------------
-This package belongs to the **core infrastructure layer** and provides
-logging utilities used by inventory processing, catalog generation,
-and CLI commands.
+This package belongs to the **core logging/support layer** and exists as
+a dedicated namespace for logging-related helpers.
 """

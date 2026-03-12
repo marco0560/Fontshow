@@ -51,4 +51,16 @@ def run(args):
 
 
 def register_cli(parser):
+    """
+    Register the preflight command with the top-level CLI parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Parser or subparser object configured by the main dispatcher.
+
+    Returns
+    -------
+    None
+    """
     parser.set_defaults(command="preflight", func=run)

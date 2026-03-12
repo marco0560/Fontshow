@@ -48,8 +48,23 @@ def _run_preflight_cli(
     """
     Core preflight CLI logic.
 
-    This function is intentionally side-effect free (no sys.exit)
-    so it can be tested easily and supports dependency injection.
+    Parameters
+    ----------
+    args : object, optional
+        Parsed CLI arguments providing optional `verbose` and `output`
+        attributes.
+    run_preflight_fn : callable, optional
+        Injectable runner function used for testing and CLI indirection.
+
+    Returns
+    -------
+    int
+        Exit code derived from preflight execution and report rendering.
+
+    Notes
+    -----
+    This function is intentionally side-effect free (no `sys.exit`) so
+    it can be tested easily and supports dependency injection.
     """
     _ = args  # Placeholder for potential future use
     log_trace_cat(
@@ -112,6 +127,25 @@ def _run_preflight_cli(
 
 
 def main(args=None) -> int:
+    """
+    Execute the preflight CLI entrypoint.
+
+    Parameters
+    ----------
+    args : object, optional
+        Parsed CLI arguments with optional `quiet` and `verbose`
+        attributes.
+
+    Returns
+    -------
+    int
+        Process exit code produced by the preflight CLI workflow.
+
+    Notes
+    -----
+    Unexpected internal exceptions are converted into exit code ``2``
+    after user-facing error reporting.
+    """
 
     set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
     try:

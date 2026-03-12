@@ -32,6 +32,15 @@ from fontshow.preflight.model import CheckResult, Severity
 def has_fontconfig() -> bool:
     """
     Detect availability of fontconfig (fc-list).
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    bool
+        True if `fc-list` is discoverable in `PATH`.
     """
 
     return shutil.which("fc-list") is not None
@@ -45,6 +54,19 @@ class FontDiscoveryCheck(BaseCheck):
     check_id = "font_discovery.capability"
 
     def run(self) -> CheckResult:
+        """
+        Execute the font-discovery capability check.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        CheckResult
+            Structured result describing whether platform font discovery
+            requirements are satisfied for the current environment.
+        """
         os_name = environment.detect_os()
         execution_mode = environment.detect_execution_mode()
 

@@ -35,8 +35,24 @@ def register_check(check_cls: type[BaseCheck]) -> None:
     """
     Register a preflight check class.
 
-    The class must be a subclass of BaseCheck.
-    Registration order is preserved.
+    Parameters
+    ----------
+    check_cls : type[BaseCheck]
+        Check class to register.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    TypeError
+        If `check_cls` is not a subclass of `BaseCheck`.
+
+    Notes
+    -----
+    Registration order is preserved and duplicate registrations are
+    ignored.
     """
     # The type check is performed at runtime to ensure that only valid check classes are registered.
     if not issubclass(check_cls, BaseCheck):
@@ -51,6 +67,17 @@ def get_registered_checks() -> list[type[BaseCheck]]:
     """
     Return the list of registered preflight check classes.
 
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[type[BaseCheck]]
+        Shallow copy of the registered check classes.
+
+    Notes
+    -----
     A shallow copy is returned to prevent external mutation.
     """
     return list(_CHECK_REGISTRY)
@@ -60,6 +87,16 @@ def clear_registry() -> None:
     """
     Clear the registry.
 
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
     This function is intended for test isolation only.
     """
     _CHECK_REGISTRY.clear()
