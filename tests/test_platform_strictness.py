@@ -35,6 +35,23 @@ from fontshow.inventory.platform_metadata import collect_platform_metadata
 
 
 def test_cli_rejects_platform_mismatch(tmp_path):
+    """
+    Verify that create-catalog rejects inventories from a mismatched platform.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Pytest temporary directory fixture used to store the inventory file.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The test clones the current runtime metadata and changes only the
+    machine identifier so the mismatch is controlled and deterministic.
+    """
     runtime = collect_platform_metadata()
 
     # Force mismatch in a controlled way

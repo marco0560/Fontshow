@@ -21,6 +21,13 @@ from fontshow.core.json_format import dumps_pretty
 
 
 def test_dumps_pretty_compacts_short_numeric_lists():
+    """
+    Verify that short numeric sublists remain compact inside pretty-printed JSON.
+
+    Returns
+    -------
+    None
+    """
     data = {"ranges": [[32, 95], [97, 127]]}
     s = dumps_pretty(data, indent=2, ensure_ascii=False)
 
@@ -30,6 +37,13 @@ def test_dumps_pretty_compacts_short_numeric_lists():
 
 
 def test_dumps_pretty_does_not_compact_long_numeric_lists():
+    """
+    Verify that long numeric lists remain expanded for readability.
+
+    Returns
+    -------
+    None
+    """
     data = {"nums": list(range(20))}
     s = dumps_pretty(data, indent=2, ensure_ascii=False)
 

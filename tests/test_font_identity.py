@@ -21,6 +21,13 @@ from fontshow.inventory.utils import make_font_id
 
 
 def test_font_identity_id_stable():
+    """
+    Verify that font identifiers are stable for identical inputs and differ otherwise.
+
+    Returns
+    -------
+    None
+    """
     id1 = make_font_id("/path/font.ttc", 0)
     id2 = make_font_id("/path/font.ttc", 0)
     id3 = make_font_id("/path/font.ttc", 1)

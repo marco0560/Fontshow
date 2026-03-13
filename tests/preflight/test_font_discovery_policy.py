@@ -47,6 +47,26 @@ def test_font_discovery_capability_policy(
     has_fc,
     expected_severity,
 ):
+    """
+    Verify the font-discovery severity matrix across platform combinations.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to override environment and Fontconfig capability checks.
+    os_name : str
+        Parameterized operating-system classification under test.
+    execution_mode : str
+        Parameterized execution-mode classification under test.
+    has_fc : bool
+        Parameterized Fontconfig availability flag.
+    expected_severity : Severity
+        Expected preflight severity for the parameter set.
+
+    Returns
+    -------
+    None
+    """
     monkeypatch.setattr(runner.environment, "detect_os", lambda: os_name)
     monkeypatch.setattr(
         runner.environment, "detect_execution_mode", lambda: execution_mode

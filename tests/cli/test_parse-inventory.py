@@ -30,6 +30,21 @@ import pytest
 
 
 def _valid_inventory_from_cli(tmp_path, *_ignored):
+    """
+    Build a schema-valid inventory payload using runtime platform metadata.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the metadata probe file.
+    *_ignored : object
+        Ignored positional arguments retained for caller compatibility.
+
+    Returns
+    -------
+    dict
+        Minimal inventory payload suitable for CLI parse-inventory tests.
+    """
     probe = tmp_path / "probe_env.json"
 
     subprocess.run(
@@ -66,6 +81,22 @@ def _valid_inventory_from_cli(tmp_path, *_ignored):
 
 @pytest.mark.parametrize("stub_parse_inventory", ["ok"], indirect=True)
 def test_parse_inventory_success(cli_runner, stub_parse_inventory, tmp_path):
+    """
+    Verify that the parse-inventory CLI succeeds with the success stub.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_parse_inventory : object
+        Indirect fixture configuring the parse-inventory stub to succeed.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for input and output files.
+
+    Returns
+    -------
+    None
+    """
     inp = tmp_path / "in.json"
     outp = tmp_path / "out.json"
 
@@ -85,11 +116,41 @@ def test_parse_inventory_success(cli_runner, stub_parse_inventory, tmp_path):
     indirect=["stub_parse_inventory"],
 )
 def test_parse_inventory_failure(cli_runner, stub_parse_inventory, expected_code):
+    """
+    Verify that parse-inventory propagates stubbed failure exit codes.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_parse_inventory : object
+        Indirect fixture configuring the parse-inventory stub to fail or crash.
+    expected_code : int
+        Parameterized exit code expected from the stubbed behavior.
+
+    Returns
+    -------
+    None
+    """
     code, out = cli_runner(["fontshow", "parse-inventory", "--input", "inv.json"])
     assert code == expected_code
 
 
 def test_parse_inventory_accepts_strict_bcp47_flag(cli_runner, tmp_path):
+    """
+    Verify that parse-inventory accepts the ``--strict-bcp47`` flag.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for input and output files.
+
+    Returns
+    -------
+    None
+    """
     input_file = tmp_path / "in.json"
     output_file = tmp_path / "out.json"
 

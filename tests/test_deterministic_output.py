@@ -36,6 +36,21 @@ from fontshow.inventory.platform_metadata import collect_platform_metadata
 
 
 def _run(tmp_path, inventory):
+    """
+    Run create-catalog in an isolated temporary directory and return the TEX bytes.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory used for the inventory input and generated output.
+    inventory : dict
+        Inventory payload written to disk and passed to the CLI.
+
+    Returns
+    -------
+    bytes
+        Raw bytes of the generated ``.tex`` artifact.
+    """
     tmp_path.mkdir(parents=True, exist_ok=True)
 
     inv = tmp_path / "inv.json"
@@ -66,6 +81,18 @@ def _run(tmp_path, inventory):
 
 
 def test_deterministic_catalog_output(tmp_path):
+    """
+    Verify that repeated catalog generation with identical input is byte-stable.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Base temporary directory fixture used to create two isolated runs.
+
+    Returns
+    -------
+    None
+    """
     inventory = {
         "metadata": {
             "schema_version": "1.2",

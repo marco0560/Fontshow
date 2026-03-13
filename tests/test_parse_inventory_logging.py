@@ -33,6 +33,20 @@ def test_inventory_parsing_emits_global_logs(
     enable_fontshow_logging,
     capture_fontshow_logs,
 ):
+    """
+    Verify that parse_inventory emits the expected start and completion logs.
+
+    Parameters
+    ----------
+    enable_fontshow_logging : object
+        Fixture that enables the Fontshow logging subsystem for the test.
+    capture_fontshow_logs : object
+        Fixture used to capture records from the ``fontshow`` logger.
+
+    Returns
+    -------
+    None
+    """
     importlib.reload(fontshow.core.logging_utils)
     importlib.reload(fontshow.cli.parse_inventory)
 
@@ -54,6 +68,20 @@ def test_schema_validation_logging(
     enable_fontshow_logging,
     capture_fontshow_logs,
 ):
+    """
+    Verify that schema validation logging is emitted during parsing.
+
+    Parameters
+    ----------
+    enable_fontshow_logging : object
+        Fixture that enables the Fontshow logging subsystem for the test.
+    capture_fontshow_logs : object
+        Fixture used to capture records from the ``fontshow`` logger.
+
+    Returns
+    -------
+    None
+    """
     importlib.reload(fontshow.core.logging_utils)
     importlib.reload(fontshow.cli.parse_inventory)
 
@@ -78,6 +106,17 @@ def test_parse_inventory_verbosity_levels(capsys, tmp_path):
     quiet   -> silent
     default -> limited output
     verbose -> detailed output
+
+    Parameters
+    ----------
+    capsys : pytest.CaptureFixture[str]
+        Capture fixture used to compare output across verbosity modes.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for input and output inventory files.
+
+    Returns
+    -------
+    None
     """
 
     from fontshow.cli.parse_inventory import main
@@ -92,6 +131,15 @@ def test_parse_inventory_verbosity_levels(capsys, tmp_path):
     input_path.write_text(json.dumps(inventory), encoding="utf-8")
 
     class Args:
+        """
+        Minimal argparse-like namespace used for verbosity mode checks.
+
+        Notes
+        -----
+        The class provides mutable class attributes so each instantiated
+        object starts from the same baseline CLI configuration.
+        """
+
         input = Path(input_path)
         validate_inventory = True
         quiet = False
@@ -135,6 +183,25 @@ def test_parse_inventory_verbosity_levels(capsys, tmp_path):
 
 
 def test_parse_inventory_verbose_emits_schema_aware_identity(capsys, tmp_path):
+    """
+    Verify that verbose parse-inventory output includes schema-aware font identity.
+
+    Parameters
+    ----------
+    capsys : pytest.CaptureFixture[str]
+        Capture fixture used to inspect combined stdout and stderr.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for input and output inventory files.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The test injects per-font warnings so the verbose path has content
+    to format and emit.
+    """
     inventory = minimal_inventory_v12()
 
     font_a = minimal_font_entry_v12()

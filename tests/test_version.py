@@ -23,6 +23,16 @@ from fontshow import __version__
 
 
 def test_version_is_defined():
+    """
+    Verify that the package exposes a PEP 440-compatible version string.
+
+    The test asserts both the presence of ``fontshow.__version__`` and
+    that the value parses as a three-part release version.
+
+    Returns
+    -------
+    None
+    """
     assert isinstance(__version__, str)
 
     v = Version(__version__)  # PEP 440 parsing

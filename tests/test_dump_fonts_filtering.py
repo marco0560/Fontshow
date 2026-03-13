@@ -28,6 +28,17 @@ def test_dump_fonts_excludes_non_opentype(tmp_path, monkeypatch):
     """
     Ensure that dump-fonts excludes non-OpenType fonts
     without depending on the system font installation.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the emitted inventory file.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace discovery and extraction helpers.
+
+    Returns
+    -------
+    None
     """
     # --- Mock font discovery ---
     fake_fonts = [
@@ -42,6 +53,21 @@ def test_dump_fonts_excludes_non_opentype(tmp_path, monkeypatch):
 
     # --- Mock fonttools extraction ---
     def fake_fonttools_extract_all(path, **kwargs):
+        """
+        Emulate fontTools extraction for one valid OpenType face and one bitmap face.
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            Discovered font path being inspected.
+        **kwargs : object
+            Ignored extraction options preserved for signature compatibility.
+
+        Returns
+        -------
+        list[dict]
+            Minimal extraction payload matching the expected dump-fonts contract.
+        """
         if path.name.endswith(".ttf"):
             return [
                 {
@@ -94,6 +120,17 @@ def test_parse_inventory_after_dump(tmp_path, monkeypatch):
 
     This test must not depend on system font installation or subprocess CLI
     calls (determinism + performance).
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for intermediate inventory files.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace discovery and extraction helpers.
+
+    Returns
+    -------
+    None
     """
 
     # --- Mock font discovery ---
@@ -109,6 +146,21 @@ def test_parse_inventory_after_dump(tmp_path, monkeypatch):
 
     # --- Mock fonttools extraction ---
     def fake_fonttools_extract_all(path, **kwargs):
+        """
+        Emulate fontTools extraction for one valid OpenType face and one bitmap face.
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            Discovered font path being inspected.
+        **kwargs : object
+            Ignored extraction options preserved for signature compatibility.
+
+        Returns
+        -------
+        list[dict]
+            Minimal extraction payload matching the expected dump-fonts contract.
+        """
         if path.name.endswith(".ttf"):
             return [
                 {

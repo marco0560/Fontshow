@@ -43,10 +43,31 @@ def test_debug_vs_trace_logging(
     expect_trace,
 ):
     """
-    Verify that:
-    - DEBUG level emits DEBUG logs but not TRACE logs
-    - TRACE level emits both DEBUG and TRACE logs
-    - TRACE logs report the real caller (not logging_utils internals)
+    Verify the difference between DEBUG and TRACE logging behavior.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to set the log-level environment variable and patch
+        the Fontconfig subprocess wrapper.
+    caplog : pytest.LogCaptureFixture
+        Fixture used to capture emitted log records from the ``fontshow`` logger.
+    log_level : str
+        Parameterized logging level under test.
+    expect_trace : bool
+        Whether TRACE records are expected for the parameter set.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    Assertions cover three behaviors:
+    - DEBUG level emits DEBUG logs but not TRACE logs.
+    - TRACE level emits both DEBUG and TRACE logs.
+    - TRACE logs report the real caller rather than
+      `logging_utils` internals.
     """
 
     # 1. Enable requested log level BEFORE importing consumers
@@ -57,6 +78,19 @@ def test_debug_vs_trace_logging(
 
     # 2. Fake fc-query execution
     def fake_run_command(cmd):
+        """
+        Emulate a successful `fc-query` subprocess call for TRACE tests.
+
+        Parameters
+        ----------
+        cmd : list[str]
+            Command arguments passed to the subprocess wrapper.
+
+        Returns
+        -------
+        types.SimpleNamespace
+            Fake completed-process object with successful output.
+        """
         return SimpleNamespace(
             stdout="lang: en\n",
             stderr="",
@@ -111,8 +145,25 @@ def test_trace_logging_emitted_with_correct_caller(
     caplog,
 ):
     """
-    TRACE logs must be emitted when FONTSHOW_LOG_LEVEL=TRACE
-    and must report the *real* caller (not logging_utils internals).
+    Verify that TRACE logging emits the expected messages and caller metadata.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to force TRACE logging and patch the Fontconfig
+        subprocess wrapper.
+    caplog : pytest.LogCaptureFixture
+        Fixture used to capture emitted TRACE records.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The test asserts both message content and the edge case that TRACE
+    records are attributed to real fontconfig execution layers rather
+    than logging facade internals.
     """
 
     # 1. Enable TRACE before importing consumers
@@ -123,6 +174,19 @@ def test_trace_logging_emitted_with_correct_caller(
 
     # 2. Fake fc-query execution
     def fake_run_command(cmd):
+        """
+        Emulate a successful `fc-query` subprocess call for TRACE tests.
+
+        Parameters
+        ----------
+        cmd : list[str]
+            Command arguments passed to the subprocess wrapper.
+
+        Returns
+        -------
+        types.SimpleNamespace
+            Fake completed-process object with successful output.
+        """
         return SimpleNamespace(
             stdout="lang: en\n",
             stderr="",

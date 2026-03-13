@@ -25,6 +25,18 @@ from fontshow.preflight.render import render_preflight_results
 
 
 def test_render_hides_ok_and_info_by_default():
+    """
+    Verify that the renderer formats all severities consistently in default mode.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This test documents the current contract that visibility filtering is
+    handled later by the CLI layer, not by `render_preflight_results`.
+    """
     results = [
         CheckResult("a", Severity.OK, "ok"),
         CheckResult("b", Severity.INFO, "info"),
@@ -43,6 +55,13 @@ def test_render_hides_ok_and_info_by_default():
 
 
 def test_render_shows_all_with_verbose():
+    """
+    Verify that verbose mode preserves the full rendered result set.
+
+    Returns
+    -------
+    None
+    """
     results = [
         CheckResult("a", Severity.OK, "ok"),
         CheckResult("b", Severity.INFO, "info"),

@@ -39,6 +39,10 @@ def test_real_inventory_regression_no_errors():
     Ensures:
     - schema validation does not raise
     - no error-level warnings are emitted
+
+    Returns
+    -------
+    None
     """
 
     fixture = (

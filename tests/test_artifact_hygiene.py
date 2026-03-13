@@ -37,6 +37,26 @@ from fontshow.inventory.platform_metadata import collect_platform_metadata
 
 
 def test_only_tex_artifact_created(tmp_path):
+    """
+    Verify that create-catalog leaves only the expected JSON and TEX artifacts.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Pytest temporary directory fixture used both for the input
+        inventory and for the generated catalog artifact.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The test changes the current working directory to the temporary
+    directory so generated files are isolated and easy to enumerate.
+    It asserts the edge case that no unexpected side artifacts are
+    created alongside the expected ``.tex`` output.
+    """
     inventory = {
         "metadata": {
             "schema_version": "1.2",

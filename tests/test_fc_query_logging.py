@@ -32,10 +32,37 @@ def test_fc_query_extract_emits_basic_logs(
     enable_fontshow_logging,
     capture_fontshow_logs,
 ):
+    """
+    Verify that a successful Fontconfig query emits expected debug logs.
+
+    Parameters
+    ----------
+    enable_fontshow_logging : object
+        Fixture that enables the Fontshow logging subsystem for the test.
+    capture_fontshow_logs : object
+        Fixture used to capture emitted log records from the ``fontshow`` logger.
+
+    Returns
+    -------
+    None
+    """
     # reload consumer after logging is enabled
     importlib.reload(fontconfig)
 
     def fake_run_command(cmd):
+        """
+        Emulate a successful `fc-query` subprocess invocation.
+
+        Parameters
+        ----------
+        cmd : list[str]
+            Command arguments passed to the subprocess wrapper.
+
+        Returns
+        -------
+        types.SimpleNamespace
+            Fake completed-process object with successful output.
+        """
         return SimpleNamespace(
             stdout="lang: en\n",
             stderr="",
@@ -61,9 +88,36 @@ def test_fc_query_extract_logs_warning_on_failure(
     enable_fontshow_logging,
     capture_fontshow_logs,
 ):
+    """
+    Verify that a failing Fontconfig query emits a warning log record.
+
+    Parameters
+    ----------
+    enable_fontshow_logging : object
+        Fixture that enables the Fontshow logging subsystem for the test.
+    capture_fontshow_logs : object
+        Fixture used to capture emitted log records from the ``fontshow`` logger.
+
+    Returns
+    -------
+    None
+    """
     importlib.reload(fontconfig)
 
     def fake_run_command(cmd):
+        """
+        Emulate a failing `fc-query` subprocess invocation.
+
+        Parameters
+        ----------
+        cmd : list[str]
+            Command arguments passed to the subprocess wrapper.
+
+        Returns
+        -------
+        types.SimpleNamespace
+            Fake completed-process object with failing status and stderr.
+        """
         return SimpleNamespace(
             stdout="",
             stderr="fc-query failed",

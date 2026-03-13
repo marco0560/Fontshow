@@ -21,6 +21,13 @@ from fontshow.inventory.infer_languages import infer_languages
 
 
 def test_infer_languages_latn():
+    """
+    Verify that Basic Latin coverage yields at least English as a candidate.
+
+    Returns
+    -------
+    None
+    """
     coverage = {
         "unicode_blocks": {
             "Basic Latin": 95,
@@ -34,6 +41,13 @@ def test_infer_languages_latn():
 
 
 def test_infer_languages_cyrillic():
+    """
+    Verify that Cyrillic coverage yields Russian as a candidate language.
+
+    Returns
+    -------
+    None
+    """
     coverage = {
         "unicode_blocks": {
             "Cyrillic": 128,
@@ -47,6 +61,13 @@ def test_infer_languages_cyrillic():
 
 
 def test_infer_languages_mixed_scripts():
+    """
+    Verify that mixed Latin and Greek coverage yields both language families.
+
+    Returns
+    -------
+    None
+    """
     coverage = {
         "unicode_blocks": {
             "Basic Latin": 95,
@@ -62,6 +83,13 @@ def test_infer_languages_mixed_scripts():
 
 
 def test_infer_languages_unknown_script():
+    """
+    Verify that an empty Unicode block map yields no inferred languages.
+
+    Returns
+    -------
+    None
+    """
     coverage = {"unicode_blocks": {}}
 
     result = infer_languages(coverage)
@@ -70,6 +98,13 @@ def test_infer_languages_unknown_script():
 
 
 def test_infer_languages_empty_input():
+    """
+    Verify that completely empty input yields no inferred languages.
+
+    Returns
+    -------
+    None
+    """
     result = infer_languages({})
 
     assert result == {}

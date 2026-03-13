@@ -35,6 +35,14 @@ from fontshow.inventory.schema_validation import (
 
 
 def _valid_v12_inventory():
+    """
+    Build a minimal schema-valid v1.2 inventory payload.
+
+    Returns
+    -------
+    dict
+        Inventory structure suitable for schema validation tests.
+    """
     return {
         "metadata": {
             "schema_version": "1.2",
@@ -66,6 +74,13 @@ def _valid_v12_inventory():
 
 
 def test_raw_inventory_without_metadata_emits_deprecation_warning():
+    """
+    Verify that inventories without metadata emit the legacy deprecation warning.
+
+    Returns
+    -------
+    None
+    """
     data = {"fonts": []}
 
     warnings = validate_inventory_schema(data)
@@ -76,6 +91,13 @@ def test_raw_inventory_without_metadata_emits_deprecation_warning():
 
 
 def test_valid_v1_2_inventory_is_ok():
+    """
+    Verify that a minimal valid v1.2 inventory produces no warnings.
+
+    Returns
+    -------
+    None
+    """
     data = _valid_v12_inventory()
 
     warnings = validate_inventory_schema(data)
@@ -84,6 +106,13 @@ def test_valid_v1_2_inventory_is_ok():
 
 
 def test_unknown_schema_version_emits_warning():
+    """
+    Verify that an unknown schema version produces an error-severity warning.
+
+    Returns
+    -------
+    None
+    """
     data = {"metadata": {"schema_version": "9.9"}, "fonts": []}
 
     warnings = validate_inventory_schema(data)
@@ -94,6 +123,13 @@ def test_unknown_schema_version_emits_warning():
 
 
 def test_legacy_schema_is_reported_as_unknown():
+    """
+    Verify the current behavior for legacy schema versions treated as unknown.
+
+    Returns
+    -------
+    None
+    """
     # Current validator behavior: legacy versions are not treated as "deprecated",
     # they are treated as "unknown" schema versions.
     data = {"metadata": {"schema_version": "1.0"}, "fonts": []}
@@ -111,6 +147,13 @@ def test_legacy_schema_is_reported_as_unknown():
 
 
 def test_invalid_inventory_structure_raises():
+    """
+    Verify that strict validation raises on inventories missing required structure.
+
+    Returns
+    -------
+    None
+    """
     data = {
         "metadata": {"schema_version": "1.2"}
         # missing "fonts"
@@ -121,6 +164,13 @@ def test_invalid_inventory_structure_raises():
 
 
 def test_invalid_schema_raises_validation_error():
+    """
+    Verify that strict validation raises on inventories missing metadata details.
+
+    Returns
+    -------
+    None
+    """
     data = {
         "metadata": {"schema_version": "1.2"},
         "fonts": [],

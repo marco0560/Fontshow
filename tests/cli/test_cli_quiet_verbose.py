@@ -27,7 +27,19 @@ import tempfile
 
 
 def run_cli(args):
-    """Helper to run fontshow CLI and capture output."""
+    """
+    Run the Fontshow module CLI in a temporary working directory.
+
+    Parameters
+    ----------
+    args : list[str]
+        Command-line arguments appended after ``python -m fontshow``.
+
+    Returns
+    -------
+    subprocess.CompletedProcess[str]
+        Completed subprocess result with captured output streams.
+    """
     cmd = [sys.executable, "-m", "fontshow"] + args
     with tempfile.TemporaryDirectory() as tmp:
         return subprocess.run(
@@ -39,7 +51,13 @@ def run_cli(args):
 
 
 def test_cli_default_output():
-    """Default run should produce stdout output and no stderr."""
+    """
+    Verify that a default help-style invocation writes stdout but not stderr.
+
+    Returns
+    -------
+    None
+    """
     result = run_cli(["create-catalog", "--help"])
 
     assert result.returncode == 0
@@ -48,7 +66,13 @@ def test_cli_default_output():
 
 
 def test_cli_quiet_suppresses_stdout():
-    """--quiet must suppress stdout ; missing inventory must still fail."""
+    """
+    Verify that ``--quiet`` suppresses stdout even when execution fails.
+
+    Returns
+    -------
+    None
+    """
     result = run_cli(["create-catalog", "--quiet"])
 
     # create-catalog now requires a valid v1.2 inventory
@@ -58,7 +82,13 @@ def test_cli_quiet_suppresses_stdout():
 
 
 def test_cli_verbose_enables_output():
-    """--verbose should produce stdout output when execution succeeds."""
+    """
+    Verify that ``--verbose`` does not suppress failure diagnostics.
+
+    Returns
+    -------
+    None
+    """
     result = run_cli(["create-catalog", "--verbose"])
 
     # Without inventory the command must fail
@@ -68,7 +98,13 @@ def test_cli_verbose_enables_output():
 
 
 def test_cli_quiet_and_verbose_quiet_wins():
-    """--quiet and --verbose generate parsing error."""
+    """
+    Verify that passing ``--quiet`` and ``--verbose`` together is rejected.
+
+    Returns
+    -------
+    None
+    """
     result = run_cli(["create-catalog", "--quiet", "--verbose"])
 
     assert result.returncode != 0
@@ -77,7 +113,13 @@ def test_cli_quiet_and_verbose_quiet_wins():
 
 
 def test_cli_inventory_fallback_does_not_crash():
-    """Missing inventory must fail with non-zero exit and no stdout."""
+    """
+    Verify that an explicit missing inventory path fails cleanly without stdout.
+
+    Returns
+    -------
+    None
+    """
     result = run_cli(["create-catalog", "--inventory", "nonexistent_file.json"])
 
     assert result.returncode != 0

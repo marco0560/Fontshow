@@ -21,6 +21,13 @@ from fontshow.inventory.script_analysis import script_coverage_from_unicode_bloc
 
 
 def test_script_coverage_basic_latin_only():
+    """
+    Verify that Basic Latin coverage maps entirely to the Latin script.
+
+    Returns
+    -------
+    None
+    """
     unicode_blocks = {"Basic Latin": 95}
 
     script_ranges = {
@@ -38,6 +45,18 @@ def test_script_coverage_basic_latin_only():
 
 
 def test_parse_inventory_adds_script_coverage_from_charset(enable_fontshow_logging):
+    """
+    Verify that parse-inventory derives script coverage from charset ranges.
+
+    Parameters
+    ----------
+    enable_fontshow_logging : object
+        Logging fixture used by the parse-inventory execution path.
+
+    Returns
+    -------
+    None
+    """
     import importlib
 
     import fontshow.cli.parse_inventory

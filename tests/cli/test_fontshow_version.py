@@ -24,6 +24,20 @@ import pytest
 
 
 def test_fontshow_root_version(capsys, monkeypatch):
+    """
+    Verify that the root CLI version flag exits cleanly and prints a version.
+
+    Parameters
+    ----------
+    capsys : pytest.CaptureFixture[str]
+        Capture fixture used to inspect version output.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to override ``sys.argv`` for the CLI entry point.
+
+    Returns
+    -------
+    None
+    """
     from fontshow.__main__ import main
 
     monkeypatch.setattr("sys.argv", ["fontshow", "-V"])
@@ -39,6 +53,20 @@ def test_fontshow_root_version(capsys, monkeypatch):
 
 
 def test_fontshow_preflight_version(capsys, monkeypatch):
+    """
+    Verify that the preflight subcommand exposes its own version output.
+
+    Parameters
+    ----------
+    capsys : pytest.CaptureFixture[str]
+        Capture fixture used to inspect version output.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to override ``sys.argv`` for the CLI entry point.
+
+    Returns
+    -------
+    None
+    """
     from fontshow.__main__ import main
 
     monkeypatch.setattr("sys.argv", ["fontshow", "preflight", "-V"])

@@ -31,6 +31,20 @@ import pytest
 
 @pytest.mark.parametrize("stub_preflight", ["fail"], indirect=True)
 def test_preflight_failure_propagates(cli_runner, stub_preflight):
+    """
+    Verify that a failing stubbed preflight run propagates exit code and message.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_preflight : object
+        Indirect fixture configuring the preflight stub to fail.
+
+    Returns
+    -------
+    None
+    """
     code, out = cli_runner(["fontshow", "preflight"])
 
     assert "Preflight failed." in out
@@ -39,6 +53,20 @@ def test_preflight_failure_propagates(cli_runner, stub_preflight):
 
 @pytest.mark.parametrize("stub_preflight", ["ok"], indirect=True)
 def test_preflight_success(cli_runner, stub_preflight):
+    """
+    Verify that a successful stubbed preflight run reports success cleanly.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_preflight : object
+        Indirect fixture configuring the preflight stub to succeed.
+
+    Returns
+    -------
+    None
+    """
     code, out = cli_runner(["fontshow", "preflight"])
 
     assert "Preflight passed." in out
@@ -51,6 +79,17 @@ def test_preflight_verbose_outputs_details(cli_runner, stub_preflight):
 
     Note: the stubbed runner does not emit real verbose output,
     so this test only checks command wiring, not rendering.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_preflight : object
+        Fixture providing the stubbed successful preflight implementation.
+
+    Returns
+    -------
+    None
     """
     code, out = cli_runner(["fontshow", "preflight", "-v"])
 
@@ -74,6 +113,17 @@ def test_preflight_quiet_outputs_nothing(cli_runner, stub_preflight):
 
     Full quiet-mode behavior is tested only in integration tests
     using the real preflight runner.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_preflight : object
+        Fixture providing the stubbed successful preflight implementation.
+
+    Returns
+    -------
+    None
     """
     code, out = cli_runner(["fontshow", "preflight", "-q"])
 
@@ -84,6 +134,15 @@ def test_preflight_quiet_outputs_nothing(cli_runner, stub_preflight):
 def test_preflight_help(cli_runner):
     """
     Help output must be available and exit cleanly.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+
+    Returns
+    -------
+    None
     """
     code, out = cli_runner(["fontshow", "preflight", "-h"])
 
@@ -98,6 +157,15 @@ def test_preflight_real_runner_does_not_crash(cli_runner):
     This test uses the REAL preflight runner (no stubbing)
     and ensures that the CLI does not crash due to
     invalid unpacking assumptions.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+
+    Returns
+    -------
+    None
     """
     code, out = cli_runner(["fontshow", "preflight"])
 
@@ -115,6 +183,10 @@ def test_preflight_module_entrypoint_runs():
 
     This test bypasses cli_runner on purpose, because
     cli_runner is scoped to the `fontshow` console script.
+
+    Returns
+    -------
+    None
     """
     proc = subprocess.run(
         [sys.executable, "-m", "fontshow.preflight"],

@@ -21,6 +21,17 @@ from fontshow.inventory.infer_languages import infer_languages
 
 
 def test_greek_not_inferred_from_symbolic_coverage():
+    """
+    Verify that symbolic Greek coverage does not trigger Greek inference.
+
+    The setup mixes strong Basic Latin coverage with only two Greek code
+    points so the test exercises the low-coverage threshold guard
+    against false positives.
+
+    Returns
+    -------
+    None
+    """
     coverage = {
         "unicode_blocks": {
             "Greek and Coptic": 2,  # presenza simbolica
@@ -35,6 +46,16 @@ def test_greek_not_inferred_from_symbolic_coverage():
 
 
 def test_greek_inferred_with_sufficient_block_coverage():
+    """
+    Verify that substantial Greek block coverage enables Greek inference.
+
+    This edge case checks the threshold crossover where Greek coverage
+    becomes high enough to infer ``el`` confidently.
+
+    Returns
+    -------
+    None
+    """
     # Greek and Coptic size ≈ 135
     # 72 / 135 ≈ 0.53 > 0.40
     coverage = {
@@ -50,6 +71,16 @@ def test_greek_inferred_with_sufficient_block_coverage():
 
 
 def test_latin_languages_not_regressed():
+    """
+    Verify that stronger threshold rules do not regress Latin inference.
+
+    The setup provides broad Latin block coverage and asserts that the
+    core Western language candidates remain inferred.
+
+    Returns
+    -------
+    None
+    """
     coverage = {
         "unicode_blocks": {
             "Basic Latin": 95,  # 95 / 128 ≈ 0.74

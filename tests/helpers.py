@@ -40,6 +40,12 @@ def minimal_font_entry_v12() -> dict[str, Any]:
     Canonical minimal VALID font entry for schema 1.2.
 
     Deterministic and schema-compliant.
+
+    Returns
+    -------
+    dict[str, Any]
+        Minimal schema-valid font descriptor used by structural and
+        integration tests.
     """
 
     return {
@@ -93,6 +99,12 @@ def minimal_font_entry_v12() -> dict[str, Any]:
 def minimal_inventory_v12() -> dict[str, Any]:
     """
     Canonical minimal VALID inventory for schema 1.2.
+
+    Returns
+    -------
+    dict[str, Any]
+        Minimal schema-valid inventory containing one font entry and
+        runtime metadata.
     """
 
     return {
@@ -128,8 +140,26 @@ def make_fc_query_output(
     """
     Factory helper for mocking fc-query output.
 
-    Returns an object compatible with the result of run_command(),
-    exposing a 'stdout' attribute.
+    Parameters
+    ----------
+    lang : str | None, optional
+        Language string emitted in the fake ``lang:`` field.
+    scripts : list[str] | None, optional
+        Script tags converted into fake ``capability`` entries.
+    decorative : bool | None, optional
+        Decorative flag emitted when provided.
+    color : bool | None, optional
+        Color-font flag emitted when provided.
+    variable : bool | None, optional
+        Variable-font flag emitted when provided.
+    returncode : int, optional
+        Return code exposed by the fake subprocess result.
+
+    Returns
+    -------
+    types.SimpleNamespace
+        Object compatible with the result of `run_command()`, exposing
+        ``stdout``, ``stderr``, and ``returncode`` attributes.
     """
     lines: list[str] = []
 
@@ -153,6 +183,19 @@ def make_fc_query_output(
 
 
 def _ok_result(check_id: str):
+    """
+    Build a minimal successful `CheckResult` for preflight test doubles.
+
+    Parameters
+    ----------
+    check_id : str
+        Identifier assigned to the fake check result.
+
+    Returns
+    -------
+    CheckResult
+        Successful check result with stubbed message text.
+    """
     return CheckResult(
         check_id=check_id,
         severity=Severity.OK,
@@ -167,6 +210,29 @@ def run_preflight_with_environment(
     os_name: str,
     execution_mode: str,
 ):
+    """
+    Run preflight with environment detection forced to a specific matrix cell.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to patch environment detection and disable
+        capability-dependent checks.
+    os_name : str
+        Operating-system classification to force.
+    execution_mode : str
+        Execution-mode classification to force.
+
+    Returns
+    -------
+    PreflightResult
+        Result returned by `run_preflight` for the patched environment.
+
+    Notes
+    -----
+    LuaLaTeX and Fontconfig capability checks are removed so the result
+    depends only on environment-support policy.
+    """
     # Environment detection
     monkeypatch.setattr(
         "fontshow.preflight.checks.environment.detect_os",
@@ -205,14 +271,32 @@ def run_preflight_with_environment(
 
 def run_cli(main_func, argv):
     """
-    Invoke a CLI entrypoint capturing exit code and stdout.
+    Invoke a CLI entrypoint and capture normalized exit code plus combined output.
 
-    Args:
-        main_func: CLI main function (e.g. fontshow.__main__.main)
-        argv: argument vector, including program name
+    Parameters
+    ----------
+    main_func : collections.abc.Callable
+        CLI main function, for example `fontshow.__main__.main`.
+    argv : list[str]
+        Argument vector including the program name.
 
-    Returns:
-        (exit_code, stdout)
+    Returns
+    -------
+    tuple[int, str]
+        Pair ``(exit_code, stdout)`` capturing normalized CLI semantics
+        and combined output.
+
+    Raises
+    ------
+    None
+        Unexpected exceptions from the entrypoint are intentionally
+        converted into exit code ``2`` instead of being re-raised.
+
+    Notes
+    -----
+    Output from both stdout and stderr is redirected into the returned
+    text buffer so tests can assert user-visible CLI behavior through a
+    single string.
     """
     old_argv = sys.argv
     sys.argv = argv[:]  # important: copy argv exactly as CLI would receive it

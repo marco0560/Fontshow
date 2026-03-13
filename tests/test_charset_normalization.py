@@ -24,6 +24,13 @@ from fontshow.unicode.charset_ranges import (
 
 
 def test_normalize_charset_merges_and_sorts():
+    """
+    Verify that overlapping and adjacent ranges are merged after sorting.
+
+    Returns
+    -------
+    None
+    """
     ranges = [
         [10, 20],
         [1, 5],
@@ -38,6 +45,13 @@ def test_normalize_charset_merges_and_sorts():
 
 
 def test_normalize_charset_disjoint_ranges():
+    """
+    Verify that disjoint charset ranges remain separate after normalization.
+
+    Returns
+    -------
+    None
+    """
     ranges = [
         [1, 3],
         [10, 12],
@@ -50,6 +64,13 @@ def test_normalize_charset_disjoint_ranges():
 
 
 def test_normalize_charset_empty():
+    """
+    Verify that normalizing an empty range list yields an empty result.
+
+    Returns
+    -------
+    None
+    """
     result = normalize_charset_ranges([])
 
     assert result["ranges"] == []
@@ -57,6 +78,23 @@ def test_normalize_charset_empty():
 
 
 def test_parse_inventory_adds_normalized_charset(enable_fontshow_logging):
+    """
+    Verify that parse-inventory adds normalized charset coverage data.
+
+    Parameters
+    ----------
+    enable_fontshow_logging : object
+        Logging fixture enabling the parse-inventory path used by this test.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The test builds a minimal inventory and asserts that adjacent ranges
+    are merged into a single normalized charset block.
+    """
     import importlib
 
     import fontshow.cli.parse_inventory
@@ -82,6 +120,13 @@ def test_parse_inventory_adds_normalized_charset(enable_fontshow_logging):
 
 
 def test_unicode_blocks_from_charset_basic_latin():
+    """
+    Verify that Basic Latin coverage is counted correctly from ranges.
+
+    Returns
+    -------
+    None
+    """
     ranges = [[0x0020, 0x007E]]
     blocks = unicode_blocks_from_charset_ranges(ranges)
 
@@ -89,6 +134,18 @@ def test_unicode_blocks_from_charset_basic_latin():
 
 
 def test_parse_inventory_adds_unicode_blocks_from_charset(enable_fontshow_logging):
+    """
+    Verify that parse-inventory derives Unicode block coverage from charset ranges.
+
+    Parameters
+    ----------
+    enable_fontshow_logging : object
+        Logging fixture enabling the parse-inventory path used by this test.
+
+    Returns
+    -------
+    None
+    """
     import importlib
 
     import fontshow.cli.parse_inventory

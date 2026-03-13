@@ -47,6 +47,26 @@ def test_lualatex_capability_policy(
     has_lua,
     expected_severity,
 ):
+    """
+    Verify the LuaLaTeX severity matrix across platform combinations.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to override environment and LuaLaTeX capability checks.
+    os_name : str
+        Parameterized operating-system classification under test.
+    execution_mode : str
+        Parameterized execution-mode classification under test.
+    has_lua : bool
+        Parameterized LuaLaTeX availability flag.
+    expected_severity : Severity
+        Expected preflight severity for the parameter set.
+
+    Returns
+    -------
+    None
+    """
     monkeypatch.setattr(runner.environment, "detect_os", lambda: os_name)
     monkeypatch.setattr(
         runner.environment, "detect_execution_mode", lambda: execution_mode

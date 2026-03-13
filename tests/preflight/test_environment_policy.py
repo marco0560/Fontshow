@@ -29,6 +29,18 @@ from fontshow.preflight.runner import run_preflight
 
 
 def test_macos_is_error(monkeypatch):
+    """
+    Verify that macOS is classified as an error by environment policy.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to override environment detection helpers.
+
+    Returns
+    -------
+    None
+    """
     monkeypatch.setattr(environment, "detect_os", lambda: "macos")
     monkeypatch.setattr(environment, "detect_execution_mode", lambda: "bare-metal")
 
@@ -60,6 +72,24 @@ def test_environment_policy(
     execution_mode,
     expected_severity,
 ):
+    """
+    Verify the environment severity matrix for supported and unsupported modes.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to override environment detection helpers.
+    os_name : str
+        Parameterized operating-system classification under test.
+    execution_mode : str
+        Parameterized execution-mode classification under test.
+    expected_severity : Severity
+        Expected environment-support severity for the parameter set.
+
+    Returns
+    -------
+    None
+    """
     monkeypatch.setattr(environment, "detect_os", lambda: os_name)
     monkeypatch.setattr(
         environment,

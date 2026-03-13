@@ -26,6 +26,21 @@ from fontshow.inventory.io import load_font_inventory
 
 
 def _write_inventory(tmp_path: Path, content: bytes | str) -> Path:
+    """
+    Write an inventory payload to the temporary test directory.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        Pytest temporary directory fixture used to isolate the inventory file.
+    content : bytes | str
+        Inventory payload written either as raw bytes or as UTF-8 text.
+
+    Returns
+    -------
+    Path
+        Path to the materialized inventory file.
+    """
     path = tmp_path / "inventory.json"
     if isinstance(content, bytes):
         path.write_bytes(content)
@@ -35,6 +50,18 @@ def _write_inventory(tmp_path: Path, content: bytes | str) -> Path:
 
 
 def test_utf8_inventory_ok(tmp_path):
+    """
+    Verify that a UTF-8 encoded inventory loads successfully.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        Pytest temporary directory fixture used by `_write_inventory`.
+
+    Returns
+    -------
+    None
+    """
     data = {
         "metadata": {"schema_version": "1.2"},
         "fonts": [
@@ -50,6 +77,18 @@ def test_utf8_inventory_ok(tmp_path):
 
 
 def test_non_latin_characters_ok(tmp_path):
+    """
+    Verify that non-Latin font names survive inventory loading unchanged.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        Pytest temporary directory fixture used by `_write_inventory`.
+
+    Returns
+    -------
+    None
+    """
     data = {
         "metadata": {"schema_version": "1.2"},
         "fonts": [
@@ -64,6 +103,23 @@ def test_non_latin_characters_ok(tmp_path):
 
 
 def test_invalid_utf8_bytes_fail(tmp_path):
+    """
+    Verify that invalid UTF-8 bytes trigger a load failure.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        Pytest temporary directory fixture used by `_write_inventory`.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    None
+        The asserted exception is part of the expected test behavior.
+    """
     raw = b'{"fonts": ["\xff"]}'
     p = _write_inventory(tmp_path, raw)
 
@@ -72,6 +128,23 @@ def test_invalid_utf8_bytes_fail(tmp_path):
 
 
 def test_mixed_invalid_unicode_fails(tmp_path):
+    """
+    Verify that surrogate-containing JSON text round-trips through loading.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        Pytest temporary directory fixture used by `_write_inventory`.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This test covers the edge case of a string containing an unpaired
+    surrogate escape in JSON content.
+    """
     data = {
         "metadata": {"schema_version": "1.2"},
         "fonts": [
@@ -87,6 +160,18 @@ def test_mixed_invalid_unicode_fails(tmp_path):
 
 
 def test_empty_string_fields_ok(tmp_path):
+    """
+    Verify that empty string fields are preserved during loading.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        Pytest temporary directory fixture used by `_write_inventory`.
+
+    Returns
+    -------
+    None
+    """
     data = {
         "metadata": {"schema_version": "1.2"},
         "fonts": [

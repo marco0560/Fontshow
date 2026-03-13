@@ -22,8 +22,14 @@ from fontshow.inventory.semantic_validation import validate_language_codes
 
 def test_raw_languages_are_not_validated():
     """
-    Raw language tags (coverage.languages_raw) must NOT be validated
-    and must NOT produce warnings.
+    Verify that raw language tags are not validated prematurely.
+
+    The test asserts that ``coverage.languages_raw`` is ignored by
+    `validate_language_codes` and therefore does not emit warnings.
+
+    Returns
+    -------
+    None
     """
     inventory = {
         "fonts": [
@@ -41,7 +47,11 @@ def test_raw_languages_are_not_validated():
 
 def test_valid_language_passes():
     """
-    Valid ISO language codes must not produce warnings.
+    Verify that valid normalized ISO language codes produce no warnings.
+
+    Returns
+    -------
+    None
     """
     inventory = {"fonts": [{"path": "dummy.ttf", "coverage": {"languages": ["en"]}}]}
 
@@ -52,7 +62,11 @@ def test_valid_language_passes():
 
 def test_invalid_language_triggers_warning():
     """
-    Invalid ISO language codes must generate a warning.
+    Verify that an invalid normalized language code emits a warning.
+
+    Returns
+    -------
+    None
     """
     inventory = {"fonts": [{"path": "dummy.ttf", "coverage": {"languages": ["xx"]}}]}
 
@@ -65,8 +79,15 @@ def test_invalid_language_triggers_warning():
 
 def test_raw_and_normalized_languages_mixed():
     """
-    Raw languages must be ignored.
-    Normalized languages must be validated.
+    Verify that raw languages are ignored while normalized languages are validated.
+
+    This edge case mixes a raw language variant with one valid and one
+    invalid normalized language to ensure only the normalized invalid
+    entry is reported.
+
+    Returns
+    -------
+    None
     """
     inventory = {
         "fonts": [

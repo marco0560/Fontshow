@@ -28,6 +28,14 @@ from fontshow.core.types import Severity
 
 
 def _build_sample_inventory():
+    """
+    Build a minimal inventory payload containing enum-backed warnings.
+
+    Returns
+    -------
+    dict
+        Inventory structure used by the JSON boundary tests.
+    """
     return {
         "metadata": {"schema_version": "1.0"},
         "warnings": [
@@ -38,6 +46,13 @@ def _build_sample_inventory():
 
 
 def test_enum_written_as_string():
+    """
+    Verify that enum severities serialize to JSON strings.
+
+    Returns
+    -------
+    None
+    """
     inv = _build_sample_inventory()
 
     s = dumps_pretty(inv)
@@ -50,6 +65,13 @@ def test_enum_written_as_string():
 
 
 def test_enum_restored_after_load():
+    """
+    Verify that JSON-loaded severity strings are normalized back to enums.
+
+    Returns
+    -------
+    None
+    """
     inv = _build_sample_inventory()
     s = dumps_pretty(inv)
 
@@ -63,6 +85,13 @@ def test_enum_restored_after_load():
 
 
 def test_no_string_severity_after_normalization():
+    """
+    Verify that normalization leaves no string severities in warnings.
+
+    Returns
+    -------
+    None
+    """
     inv = _build_sample_inventory()
     s = dumps_pretty(inv)
 
@@ -74,6 +103,16 @@ def test_no_string_severity_after_normalization():
 
 
 def test_roundtrip_stability():
+    """
+    Verify that serialize-normalize-serialize preserves JSON semantics.
+
+    This edge case checks round-trip stability across the enum JSON
+    boundary rather than object identity.
+
+    Returns
+    -------
+    None
+    """
     inv = _build_sample_inventory()
 
     s1 = dumps_pretty(inv)

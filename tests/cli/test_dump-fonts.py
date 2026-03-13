@@ -27,6 +27,22 @@ import pytest
 
 @pytest.mark.parametrize("stub_dump_fonts", ["ok"], indirect=True)
 def test_dump_fonts_success(cli_runner, stub_dump_fonts, tmp_path):
+    """
+    Verify that the dump-fonts CLI succeeds with the success stub.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_dump_fonts : object
+        Indirect fixture configuring the dump-fonts stub to succeed.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build the output file path.
+
+    Returns
+    -------
+    None
+    """
     code, out = cli_runner(["fontshow", "dump-fonts", "-o", str(tmp_path / "inv.json")])
 
     assert code == 0
@@ -41,5 +57,21 @@ def test_dump_fonts_success(cli_runner, stub_dump_fonts, tmp_path):
     indirect=["stub_dump_fonts"],
 )
 def test_dump_fonts_failure(cli_runner, stub_dump_fonts, expected_code):
+    """
+    Verify that dump-fonts propagates stubbed failure exit codes.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_dump_fonts : object
+        Indirect fixture configuring the dump-fonts stub to fail or crash.
+    expected_code : int
+        Parameterized exit code expected from the stubbed behavior.
+
+    Returns
+    -------
+    None
+    """
     code, out = cli_runner(["fontshow", "dump-fonts", "--output", "out.json"])
     assert code == expected_code

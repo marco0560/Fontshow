@@ -30,6 +30,21 @@ from fontshow.inventory.schema_validation import (
 
 
 def make_inventory(schema_version="1.2", with_fonts=True):
+    """
+    Build a minimal inventory payload for schema validation tests.
+
+    Parameters
+    ----------
+    schema_version : str, optional
+        Schema version inserted into the inventory metadata.
+    with_fonts : bool, optional
+        Whether to include the top-level ``fonts`` container.
+
+    Returns
+    -------
+    dict
+        Minimal inventory payload used by the tests in this module.
+    """
     data = {
         "metadata": {
             "schema_version": schema_version,
@@ -49,12 +64,26 @@ def make_inventory(schema_version="1.2", with_fonts=True):
 
 
 def test_strict_validation_rejects_v1():
+    """
+    Verify that strict schema validation rejects legacy v1.0 inventories.
+
+    Returns
+    -------
+    None
+    """
     data = make_inventory("1.0")
     with pytest.raises(ValueError):
         _validate_inventory_schema_strict(data)
 
 
 def test_strict_validation_rejects_unknown_version():
+    """
+    Verify that strict schema validation rejects unknown schema versions.
+
+    Returns
+    -------
+    None
+    """
     data = make_inventory("9.9")
 
     with pytest.raises(ValueError, match="Unsupported inventory schema"):
@@ -62,13 +91,66 @@ def test_strict_validation_rejects_unknown_version():
 
 
 def test_strict_validation_missing_schema_file(monkeypatch):
+    """
+    Verify that a missing bundled schema file is surfaced as a validation error.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the schema resource loader.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The test replaces the schema resource loader with a fake path-like
+    object that raises `FileNotFoundError` when the schema text is read.
+    """
     data = make_inventory("1.2")
 
     class FakeSchemaPath:
+        """
+        Minimal path-like test double used to emulate a missing schema resource.
+        """
+
         def __truediv__(self, name):
+            """
+            Preserve chained path joining while keeping the fake object unchanged.
+
+            Parameters
+            ----------
+            name : str
+                Ignored path component requested by the code under test.
+
+            Returns
+            -------
+            FakeSchemaPath
+                The same fake path object.
+            """
             return self
 
         def read_text(self, *args, **kwargs):
+            """
+            Emulate schema resource reading failure.
+
+            Parameters
+            ----------
+            *args : object
+                Ignored positional arguments preserved for interface compatibility.
+            **kwargs : object
+                Ignored keyword arguments preserved for interface compatibility.
+
+            Returns
+            -------
+            None
+
+            Raises
+            ------
+            FileNotFoundError
+                Always raised to simulate a missing bundled schema file.
+            """
             raise FileNotFoundError
 
     monkeypatch.setattr(
@@ -81,6 +163,13 @@ def test_strict_validation_missing_schema_file(monkeypatch):
 
 
 def test_strict_validation_schema_error():
+    """
+    Verify that strict validation rejects inventories missing required schema fields.
+
+    Returns
+    -------
+    None
+    """
     # Missing required metadata fields AND fonts
     data = {
         "metadata": {
@@ -98,6 +187,14 @@ def test_strict_validation_schema_error():
 
 
 def _valid_metadata_block():
+    """
+    Build a complete metadata block for public schema validation tests.
+
+    Returns
+    -------
+    dict
+        Schema-valid metadata mapping.
+    """
     return {
         "schema_version": "1.2",
         "input_inventory_tool": "test",
@@ -121,6 +218,13 @@ def _valid_metadata_block():
 
 
 def test_public_validation_ok_returns_no_warnings():
+    """
+    Verify that public schema validation returns no warnings for valid input.
+
+    Returns
+    -------
+    None
+    """
     data = {
         "metadata": _valid_metadata_block(),
         "fonts": [],
@@ -132,6 +236,13 @@ def test_public_validation_ok_returns_no_warnings():
 
 
 def test_public_validation_returns_warning_on_invalid_schema():
+    """
+    Verify that public schema validation converts invalid schema into warnings.
+
+    Returns
+    -------
+    None
+    """
     data = {
         "metadata": _valid_metadata_block(),
         # missing fonts
@@ -145,6 +256,13 @@ def test_public_validation_returns_warning_on_invalid_schema():
 
 
 def test_public_validation_handles_unknown_schema_version():
+    """
+    Verify that public schema validation reports unknown schema versions.
+
+    Returns
+    -------
+    None
+    """
     data = make_inventory("9.9")
 
     warnings = validate_inventory_schema(data)

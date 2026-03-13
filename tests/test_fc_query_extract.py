@@ -24,6 +24,19 @@ from tests.helpers import make_fc_query_output
 
 
 def test_fc_query_extract_basic(monkeypatch):
+    """
+    Verify that `fc_query_extract` parses basic language, script, and flag fields.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the Fontconfig subprocess layer with a
+        deterministic synthetic response.
+
+    Returns
+    -------
+    None
+    """
     monkeypatch.setattr(
         "fontshow.platform.fontconfig.run_command",
         lambda cmd: make_fc_query_output(
@@ -45,6 +58,18 @@ def test_fc_query_extract_basic(monkeypatch):
 
 
 def test_fc_query_extract_no_capability(monkeypatch):
+    """
+    Verify that missing capability data yields an empty script list.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the Fontconfig subprocess layer.
+
+    Returns
+    -------
+    None
+    """
     monkeypatch.setattr(
         "fontshow.platform.fontconfig.run_command",
         lambda cmd: make_fc_query_output(lang="en"),
@@ -57,6 +82,18 @@ def test_fc_query_extract_no_capability(monkeypatch):
 
 
 def test_fc_query_extract_empty_output(monkeypatch):
+    """
+    Verify that empty Fontconfig output falls back to empty/default metadata.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the Fontconfig subprocess layer.
+
+    Returns
+    -------
+    None
+    """
     monkeypatch.setattr(
         "fontshow.platform.fontconfig.run_command",
         lambda cmd: make_fc_query_output(),

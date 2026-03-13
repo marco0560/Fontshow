@@ -27,6 +27,22 @@ import pytest
 
 @pytest.mark.parametrize("stub_create_catalog", ["ok"], indirect=True)
 def test_create_catalog_success(cli_runner, stub_create_catalog, tmp_path):
+    """
+    Verify that the create-catalog CLI succeeds with the success stub.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_create_catalog : object
+        Indirect fixture configuring the create-catalog stub to succeed.
+    tmp_path : pathlib.Path
+        Temporary directory fixture present in the test signature.
+
+    Returns
+    -------
+    None
+    """
     code, out = cli_runner(["fontshow", "create-catalog", "--inventory", "inv.json"])
 
     assert code == 0
@@ -36,6 +52,22 @@ def test_create_catalog_success(cli_runner, stub_create_catalog, tmp_path):
 def test_create_catalog_accepts_output_option(
     cli_runner, stub_create_catalog, tmp_path
 ):
+    """
+    Verify that create-catalog accepts an explicit output path option.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_create_catalog : object
+        Indirect fixture configuring the create-catalog stub to succeed.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build the output file path.
+
+    Returns
+    -------
+    None
+    """
     out_tex = tmp_path / "out.tex"
     code, out = cli_runner(
         ["fontshow", "create-catalog", "--inventory", "inv.json", "-o", str(out_tex)]
@@ -53,5 +85,21 @@ def test_create_catalog_accepts_output_option(
     indirect=["stub_create_catalog"],
 )
 def test_create_catalog_failure(cli_runner, stub_create_catalog, expected_code):
+    """
+    Verify that create-catalog propagates stubbed failure exit codes.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_create_catalog : object
+        Indirect fixture configuring the create-catalog stub to fail or crash.
+    expected_code : int
+        Parameterized exit code expected from the stubbed behavior.
+
+    Returns
+    -------
+    None
+    """
     code, out = cli_runner(["fontshow", "create-catalog", "--inventory", "inv.json"])
     assert code == expected_code

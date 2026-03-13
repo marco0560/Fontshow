@@ -31,12 +31,34 @@ from fontshow.preflight.model import CheckResult, PreflightResult, Severity
 
 
 def test_preflight_output_writes_file(tmp_path, capsys):
+    """
+    Verify that the preflight CLI writes the rendered report to the output file.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the output report path.
+    capsys : pytest.CaptureFixture[str]
+        Capture fixture used to inspect CLI stdout.
+
+    Returns
+    -------
+    None
+    """
     set_cli_mode(False, False)
 
     out_path = tmp_path / "preflight_report.txt"
     args = Namespace(output=out_path, quiet=False, verbose=False)
 
     def fake_run_preflight():
+        """
+        Return a deterministic one-warning preflight result for file-output testing.
+
+        Returns
+        -------
+        PreflightResult
+            Minimal preflight result containing a single warning entry.
+        """
         return PreflightResult(
             [
                 CheckResult(

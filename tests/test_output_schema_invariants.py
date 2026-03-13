@@ -32,6 +32,11 @@ def _minimal_inventory():
     """
     Minimal inventory structure that is schema-valid for v1.2.
     Used to verify output invariants.
+
+    Returns
+    -------
+    dict
+        Minimal schema-valid inventory payload for parse-inventory tests.
     """
     return {
         "metadata": {
@@ -97,6 +102,10 @@ def _minimal_inventory():
 def test_enriched_inventory_is_schema_valid():
     """
     Output MUST conform to schema v1.2.
+
+    Returns
+    -------
+    None
     """
     data = _minimal_inventory()
     enriched = parse_inventory(data, level="medium")
@@ -116,6 +125,10 @@ def test_enriched_inventory_is_schema_valid():
 def test_catalog_json_roundtrip_preserves_validity():
     """
     JSON serialization must not corrupt schema validity.
+
+    Returns
+    -------
+    None
     """
     data = _minimal_inventory()
     enriched = parse_inventory(data, level="medium")
@@ -132,6 +145,10 @@ def test_catalog_json_roundtrip_preserves_validity():
 def test_language_codes_have_no_warnings_for_minimal_case():
     """
     Semantic validation should emit no warnings for minimal valid inventory.
+
+    Returns
+    -------
+    None
     """
     data = _minimal_inventory()
     enriched = parse_inventory(data, level="medium")

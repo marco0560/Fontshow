@@ -21,6 +21,13 @@ from fontshow.inventory.script_analysis import infer_scripts
 
 
 def test_infer_scripts_latn_from_unicode_blocks():
+    """
+    Verify that Latin block coverage infers the ``latn`` script.
+
+    Returns
+    -------
+    None
+    """
     coverage = {
         "unicode_blocks": {
             "Latin Extended-A": 100,
@@ -33,6 +40,13 @@ def test_infer_scripts_latn_from_unicode_blocks():
 
 
 def test_infer_scripts_arabic_from_unicode_blocks():
+    """
+    Verify that Arabic block coverage infers the ``arab`` script.
+
+    Returns
+    -------
+    None
+    """
     coverage = {
         "unicode_blocks": {
             "Arabic": 150,
@@ -44,6 +58,13 @@ def test_infer_scripts_arabic_from_unicode_blocks():
 
 
 def test_infer_scripts_mixed_latin_greek():
+    """
+    Verify that mixed Latin and Greek coverage reports both scripts.
+
+    Returns
+    -------
+    None
+    """
     coverage = {
         "unicode_blocks": {
             "Latin Extended-A": 120,
@@ -56,6 +77,13 @@ def test_infer_scripts_mixed_latin_greek():
 
 
 def test_infer_scripts_cjk_japanese_disambiguation():
+    """
+    Verify that Hiragana and Katakana disambiguate Han coverage to Japanese.
+
+    Returns
+    -------
+    None
+    """
     coverage = {
         "unicode_blocks": {
             "Hiragana": 80,
@@ -69,6 +97,13 @@ def test_infer_scripts_cjk_japanese_disambiguation():
 
 
 def test_infer_scripts_unknown_when_no_coverage():
+    """
+    Verify that missing coverage yields the ``unknown`` sentinel.
+
+    Returns
+    -------
+    None
+    """
     coverage = {}
 
     scripts = infer_scripts(coverage)
@@ -76,6 +111,13 @@ def test_infer_scripts_unknown_when_no_coverage():
 
 
 def test_infer_scripts_cyrillic():
+    """
+    Verify that Cyrillic block coverage infers the ``cyrl`` script.
+
+    Returns
+    -------
+    None
+    """
     coverage = {
         "unicode_blocks": {
             "Cyrillic": 150,
@@ -87,6 +129,13 @@ def test_infer_scripts_cyrillic():
 
 
 def test_coverage_scripts_never_unknown():
+    """
+    Verify that the public coverage script list itself never contains ``unknown``.
+
+    Returns
+    -------
+    None
+    """
     coverage = {}
     scripts = coverage.get("scripts", [])
     assert "unknown" not in scripts

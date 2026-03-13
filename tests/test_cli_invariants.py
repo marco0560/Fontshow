@@ -30,6 +30,22 @@ from fontshow.cli.create_catalog import build_parser, run_create_catalog
 
 
 def _run(tmp_path, inventory):
+    """
+    Execute ``create-catalog`` against a temporary inventory file.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Pytest temporary directory fixture used to materialize the input
+        inventory JSON file.
+    inventory : dict
+        Inventory payload written to disk and passed to the CLI parser.
+
+    Returns
+    -------
+    int
+        Exit code returned by `run_create_catalog`.
+    """
     p = tmp_path / "inv.json"
     p.write_text(json.dumps(inventory), encoding="utf-8")
 
@@ -48,6 +64,18 @@ def _run(tmp_path, inventory):
 
 
 def test_cli_invalid_schema(tmp_path):
+    """
+    Verify that create-catalog rejects inventories with an unsupported schema.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Pytest temporary directory fixture used by `_run`.
+
+    Returns
+    -------
+    None
+    """
     inv = {
         "metadata": {"schema_version": "1.1"},
         "fonts": [{"name": "A", "coverage": {"languages": ["en"]}}],
@@ -58,6 +86,18 @@ def test_cli_invalid_schema(tmp_path):
 
 
 def test_cli_missing_run_environment(tmp_path):
+    """
+    Verify that schema v1.2 inventories missing ``run_environment`` fail.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Pytest temporary directory fixture used by `_run`.
+
+    Returns
+    -------
+    None
+    """
     inv = {
         "metadata": {"schema_version": "1.2"},
         "fonts": [{"name": "A", "coverage": {"languages": ["en"]}}],
@@ -68,6 +108,20 @@ def test_cli_missing_run_environment(tmp_path):
 
 
 def test_cli_platform_mismatch(tmp_path, monkeypatch):
+    """
+    Verify that create-catalog rejects inventories from a mismatched platform.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Pytest temporary directory fixture used by `_run`.
+    monkeypatch : pytest.MonkeyPatch
+        Present as a pytest fixture in this test signature.
+
+    Returns
+    -------
+    None
+    """
     inv = {
         "metadata": {
             "schema_version": "1.2",
@@ -85,6 +139,18 @@ def test_cli_platform_mismatch(tmp_path, monkeypatch):
 
 
 def test_cli_missing_fonts(tmp_path):
+    """
+    Verify that inventories missing the ``fonts`` container fail fast.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Pytest temporary directory fixture used by `_run`.
+
+    Returns
+    -------
+    None
+    """
     inv = {
         "metadata": {
             "schema_version": "1.2",
@@ -101,6 +167,18 @@ def test_cli_missing_fonts(tmp_path):
 
 
 def test_cli_malformed_font_descriptor(tmp_path):
+    """
+    Verify that non-dictionary font entries are rejected by the CLI path.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Pytest temporary directory fixture used by `_run`.
+
+    Returns
+    -------
+    None
+    """
     inv = {
         "metadata": {
             "schema_version": "1.2",

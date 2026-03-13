@@ -37,6 +37,13 @@ from tests.helpers import run_cli
 
 @pytest.fixture(scope="session", autouse=True)
 def add_project_root_to_syspath():
+    """
+    Ensure the project root is importable for the duration of the test session.
+
+    Returns
+    -------
+    None
+    """
     root = (Path(__file__).parent / "..").resolve()
     root_str = str(root)
     if root_str not in sys.path:
@@ -45,6 +52,13 @@ def add_project_root_to_syspath():
 
 @pytest.fixture(scope="session", autouse=True)
 def ensure_fontshow_import_is_clean():
+    """
+    Clear cached `fontshow` modules after the session to avoid import leakage.
+
+    Returns
+    -------
+    None
+    """
     yield
     for name in list(sys.modules):
         if name.startswith("fontshow"):
@@ -58,6 +72,18 @@ def ensure_fontshow_import_is_clean():
 
 @pytest.fixture
 def enable_fontshow_logging(monkeypatch):
+    """
+    Enable DEBUG-level Fontshow logging for a test.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to set the logging environment variable.
+
+    Returns
+    -------
+    None
+    """
     monkeypatch.setenv("FONTSHOW_LOG_LEVEL", "DEBUG")
     import fontshow.core.logging_utils
 
@@ -66,6 +92,13 @@ def enable_fontshow_logging(monkeypatch):
 
 @pytest.fixture
 def disable_fontshow_logging():
+    """
+    Temporarily disable Python logging during a test.
+
+    Returns
+    -------
+    None
+    """
     logging.disable(logging.CRITICAL)
     yield
     logging.disable(logging.NOTSET)
@@ -73,6 +106,13 @@ def disable_fontshow_logging():
 
 @pytest.fixture
 def silence_root_logger():
+    """
+    Remove root logger handlers temporarily to keep test output isolated.
+
+    Returns
+    -------
+    None
+    """
     root = logging.getLogger()
     old_handlers = root.handlers[:]
     root.handlers.clear()
@@ -82,6 +122,18 @@ def silence_root_logger():
 
 @pytest.fixture
 def capture_fontshow_logs(caplog):
+    """
+    Capture records from the non-propagating ``fontshow`` logger.
+
+    Parameters
+    ----------
+    caplog : pytest.LogCaptureFixture
+        Fixture used to collect log records during the test.
+
+    Returns
+    -------
+    None
+    """
     logger = logging.getLogger("fontshow")
 
     # 🔴 mandatory
@@ -101,7 +153,30 @@ def capture_fontshow_logs(caplog):
 
 @pytest.fixture
 def cli_runner():
+    """
+    Provide a small helper for invoking the Fontshow top-level CLI in tests.
+
+    Returns
+    -------
+    collections.abc.Callable
+        Callable that accepts an argv list and returns the normalized
+        ``(exit_code, output)`` pair from `tests.helpers.run_cli`.
+    """
+
     def _run(argv):
+        """
+        Execute the shared Fontshow CLI entrypoint with a provided argv vector.
+
+        Parameters
+        ----------
+        argv : list[str]
+            Argument vector passed to the top-level CLI entrypoint.
+
+        Returns
+        -------
+        tuple[int, str]
+            Pair ``(exit_code, output)`` returned by `tests.helpers.run_cli`.
+        """
         return run_cli(fontshow_main, argv)
 
     return _run
@@ -114,7 +189,20 @@ def cli_runner():
 
 def patch_cli_func(monkeypatch, module, fake_func):
     """
-    Patch the command entrypoint AFTER argparse parsing.
+    Patch a CLI module entrypoint after argparse parsing.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the module entrypoint.
+    module : module
+        Imported CLI module whose ``main`` function is patched.
+    fake_func : collections.abc.Callable
+        Replacement callable invoked by the CLI dispatcher.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(module, "main", fake_func)
 
@@ -126,22 +214,76 @@ def patch_cli_func(monkeypatch, module, fake_func):
 
 @dataclass
 class _FakeSeverity:
+    """
+    Minimal severity stand-in used by preflight CLI test doubles.
+
+    Parameters
+    ----------
+    name : str
+        Severity label exposed by the fake result object.
+    """
+
     name: str
 
 
 class _FakePreflightResult:
+    """
+    Minimal stand-in for a preflight result object used by CLI stubs.
+
+    Parameters
+    ----------
+    ok : bool
+        Whether the fake result should expose overall severity ``OK``
+        or ``ERROR``.
+    """
+
     def __init__(self, ok: bool):
+        """
+        Initialize a fake preflight result with no per-check entries.
+
+        Parameters
+        ----------
+        ok : bool
+            Whether the aggregate fake severity should be ``OK`` or ``ERROR``.
+        """
         self.results = []
         self.overall_severity = _FakeSeverity("OK" if ok else "ERROR")
 
 
 @pytest.fixture
 def stub_preflight(monkeypatch, request):
+    """
+    Stub the preflight CLI callback with parametrized success or failure behavior.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the real preflight entrypoint.
+    request : pytest.FixtureRequest
+        Fixture request carrying the optional parametrized stub mode.
+
+    Returns
+    -------
+    None
+    """
     # Default behavior if fixture is not parametrized
     mode = getattr(request, "param", "ok")
     ok = mode == "ok"
 
     def fake_run(args):
+        """
+        Emulate the argparse callback used by the preflight subcommand.
+
+        Parameters
+        ----------
+        args : object
+            Parsed CLI arguments passed by argparse.
+
+        Returns
+        -------
+        int
+            Stubbed success or failure exit code.
+        """
         if ok:
             print("Preflight passed.")
             return 0
@@ -166,9 +308,47 @@ def stub_preflight(monkeypatch, request):
 
 @pytest.fixture
 def stub_dump_fonts(monkeypatch, request):
+    """
+    Stub the dump-fonts CLI entrypoint with parametrized behavior.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the dump-fonts entrypoint.
+    request : pytest.FixtureRequest
+        Fixture request carrying the parametrized stub mode.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The fixture provides a success path and a crashing path so CLI
+    wrapper tests can verify exit-code normalization without running the
+    real dump-fonts implementation.
+    """
     mode = request.param
 
     def fake_run(_args):
+        """
+        Emulate the dump-fonts CLI callback with parametrized behavior.
+
+        Parameters
+        ----------
+        _args : object
+            Parsed CLI arguments, unused by the stub.
+
+        Returns
+        -------
+        int
+            Zero for the success mode.
+
+        Raises
+        ------
+        RuntimeError
+            Raised for non-success modes to emulate command failure.
+        """
         if mode == "ok":
             return 0
         msg = "dump failed"
@@ -186,6 +366,27 @@ def stub_dump_fonts(monkeypatch, request):
 
 @pytest.fixture
 def stub_parse_inventory(monkeypatch, request):
+    """
+    Stub the parse-inventory pipeline while preserving CLI wrapper behavior.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the injected parse function and runner.
+    request : pytest.FixtureRequest
+        Fixture request carrying the parametrized stub mode.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The fixture keeps the real CLI runner in place and swaps only the
+    parsing implementation so command wiring remains under test.
+    Parametrized modes cover successful parsing, expected validation
+    failure, and unexpected internal failure.
+    """
     import copy
 
     import fontshow.cli.parse_inventory as mod
@@ -193,6 +394,30 @@ def stub_parse_inventory(monkeypatch, request):
     mode = request.param
 
     def fake_parse_inventory(data, *_args, **_kwargs):
+        """
+        Emulate the parse step used by the parse-inventory CLI runner.
+
+        Parameters
+        ----------
+        data : dict
+            Inventory payload received by the injected parser.
+        *_args : object
+            Ignored positional arguments preserved for signature compatibility.
+        **_kwargs : object
+            Ignored keyword arguments preserved for signature compatibility.
+
+        Returns
+        -------
+        dict
+            Deep-copied inventory payload in the success mode.
+
+        Raises
+        ------
+        ValueError
+            Raised in the ``fail`` mode to emulate validation failure.
+        RuntimeError
+            Raised in the ``boom`` mode to emulate unexpected internal failure.
+        """
         if mode == "fail":
             msg = "parse failed"
             raise ValueError(msg)
@@ -207,6 +432,21 @@ def stub_parse_inventory(monkeypatch, request):
     original_runner = mod.run_parse_font_inventory
 
     def patched_runner(args, **kwargs):
+        """
+        Invoke the real CLI runner with the fake parser injected.
+
+        Parameters
+        ----------
+        args : object
+            Parsed CLI arguments forwarded to the real runner.
+        **kwargs : object
+            Additional injected runner arguments.
+
+        Returns
+        -------
+        int
+            Exit code returned by the real CLI runner.
+        """
         return original_runner(
             args,
             parse_inventory_fn=fake_parse_inventory,
@@ -223,9 +463,46 @@ def stub_parse_inventory(monkeypatch, request):
 
 @pytest.fixture
 def stub_create_catalog(monkeypatch, request):
+    """
+    Stub the create-catalog CLI entrypoint with parametrized behavior.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the create-catalog entrypoint.
+    request : pytest.FixtureRequest
+        Fixture request carrying the parametrized stub mode.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The fixture exposes success, controlled failure, and crash modes so
+    CLI tests can verify top-level dispatch semantics deterministically.
+    """
     mode = request.param
 
     def fake_run(args):
+        """
+        Emulate the create-catalog CLI callback with parametrized outcomes.
+
+        Parameters
+        ----------
+        args : object
+            Parsed CLI arguments accepted for interface compatibility.
+
+        Returns
+        -------
+        int
+            Stubbed exit code for the configured mode.
+
+        Raises
+        ------
+        RuntimeError
+            Raised in the ``boom`` mode to emulate an unexpected internal crash.
+        """
         if mode == "ok":
             return 0
         if mode == "fail":
@@ -246,6 +523,13 @@ def stub_create_catalog(monkeypatch, request):
 
 @pytest.fixture(autouse=True)
 def _reset_cli_state():
+    """
+    Reset shared CLI verbosity state between tests.
+
+    Returns
+    -------
+    None
+    """
     from fontshow.core.cli_utils import set_cli_mode
 
     set_cli_mode(False, False)

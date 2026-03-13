@@ -51,6 +51,25 @@ def test_environment_matrix(
     execution_mode,
     expected_severity,
 ):
+    """
+    Verify the environment compatibility matrix across OS and execution modes.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used by `run_preflight_with_environment` to override
+        environment detection.
+    os_name : str
+        Parameterized operating-system classification under test.
+    execution_mode : str
+        Parameterized execution-mode classification under test.
+    expected_severity : Severity
+        Expected overall preflight severity for the parameter set.
+
+    Returns
+    -------
+    None
+    """
     result = run_preflight_with_environment(
         monkeypatch,
         os_name=os_name,

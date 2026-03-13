@@ -26,6 +26,16 @@ from tests.helpers import minimal_font_entry_v12, minimal_inventory_v12
 
 
 def test_validate_inventory_valid_minimal():
+    """
+    Verify that a minimal valid inventory passes validation.
+
+    Important setup assumption: `minimal_inventory_v12()` returns a
+    structurally valid schema v1.2 inventory.
+
+    Returns
+    -------
+    None
+    """
     data = minimal_inventory_v12()
 
     result = validate_inventory(data)
@@ -38,6 +48,13 @@ def test_validate_inventory_valid_minimal():
 
 
 def test_validate_inventory_invalid_root():
+    """
+    Verify that a non-mapping inventory root is rejected.
+
+    Returns
+    -------
+    None
+    """
     result = validate_inventory([])
     assert result > 0
 
@@ -48,6 +65,13 @@ def test_validate_inventory_invalid_root():
 
 
 def test_validate_inventory_missing_fonts():
+    """
+    Verify that inventories missing the ``fonts`` container fail.
+
+    Returns
+    -------
+    None
+    """
     data = {"metadata": {"schema_version": "1.2"}}
 
     result = validate_inventory(data)
@@ -60,6 +84,16 @@ def test_validate_inventory_missing_fonts():
 
 
 def test_validate_inventory_with_invalid_entry():
+    """
+    Verify that a structurally invalid font entry makes validation fail.
+
+    This test exercises the edge case where the inventory root is valid
+    but an individual font descriptor is incomplete.
+
+    Returns
+    -------
+    None
+    """
     data = minimal_inventory_v12()
     data["fonts"] = [
         {
@@ -78,6 +112,13 @@ def test_validate_inventory_with_invalid_entry():
 
 
 def test_validate_inventory_missing_family_is_fatal():
+    """
+    Verify that a font entry with a missing required family field is fatal.
+
+    Returns
+    -------
+    None
+    """
     entry = minimal_font_entry_v12()
     entry["family"] = None
 
@@ -94,6 +135,13 @@ def test_validate_inventory_missing_family_is_fatal():
 
 
 def test_validate_inventory_missing_schema_version_is_fatal():
+    """
+    Verify that removing ``metadata.schema_version`` makes validation fail.
+
+    Returns
+    -------
+    None
+    """
     data = minimal_inventory_v12()
     del data["metadata"]["schema_version"]
 
@@ -107,6 +155,18 @@ def test_validate_inventory_missing_schema_version_is_fatal():
 
 
 def test_quiet_suppresses_output(capsys):
+    """
+    Verify that quiet CLI mode suppresses validator stdout output.
+
+    Parameters
+    ----------
+    capsys : pytest.CaptureFixture[str]
+        Pytest capture fixture used to inspect emitted output.
+
+    Returns
+    -------
+    None
+    """
     from fontshow.core.cli_utils import set_cli_mode
 
     set_cli_mode(quiet=True, verbose=False)

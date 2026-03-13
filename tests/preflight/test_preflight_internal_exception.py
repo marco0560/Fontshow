@@ -28,11 +28,26 @@ from fontshow.preflight.__main__ import _run_preflight_cli
 
 def test_preflight_internal_exception_returns_exit_2():
     """
-    If a check raises an unexpected exception, preflight must
-    signal infrastructure failure (exit code 2).
+    Verify that an unexpected preflight exception is converted into exit code ``2``.
+
+    Returns
+    -------
+    None
     """
 
     def failing_run_preflight():
+        """
+        Emulate a crashing preflight runner for CLI failure-path testing.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        RuntimeError
+            Always raised to simulate an unexpected internal failure.
+        """
         msg = "internal failure"
         raise RuntimeError(msg)
 

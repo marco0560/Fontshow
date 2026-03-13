@@ -29,6 +29,14 @@ from fontshow.inventory.schema_validation import validate_inventory_schema
 
 
 def _base_inventory_with_charset():
+    """
+    Build a minimal schema-valid inventory that includes charset enrichment fields.
+
+    Returns
+    -------
+    dict
+        Charset-enriched inventory payload for schema validation tests.
+    """
     return {
         "metadata": {
             "schema_version": "1.2",
@@ -98,6 +106,13 @@ def _base_inventory_with_charset():
 
 
 def test_schema_validation_with_charset_enrichment():
+    """
+    Verify that charset-enriched inventories do not emit error-severity warnings.
+
+    Returns
+    -------
+    None
+    """
     inventory = _base_inventory_with_charset()
 
     warnings = validate_inventory_schema(inventory)
@@ -107,6 +122,13 @@ def test_schema_validation_with_charset_enrichment():
 
 
 def test_schema_validation_no_spurious_warnings():
+    """
+    Verify that a valid charset-enriched inventory produces no warnings at all.
+
+    Returns
+    -------
+    None
+    """
     inventory = _base_inventory_with_charset()
 
     warnings = validate_inventory_schema(inventory)

@@ -30,7 +30,11 @@ from fontshow.preflight.model import CheckResult
 
 def test_all_checks_are_subclasses_of_basecheck():
     """
-    All registered checks must subclass BaseCheck.
+    Verify that all registered checks subclass `BaseCheck`.
+
+    Returns
+    -------
+    None
     """
     for check_cls in BaseCheck.registry:
         assert issubclass(
@@ -40,7 +44,11 @@ def test_all_checks_are_subclasses_of_basecheck():
 
 def test_all_checks_define_check_id():
     """
-    Each check must define a non-empty string check_id.
+    Verify that every registered check defines a non-empty string ``check_id``.
+
+    Returns
+    -------
+    None
     """
     for check_cls in BaseCheck.registry:
         assert hasattr(check_cls, "check_id"), f"{check_cls.__name__} missing check_id"
@@ -52,7 +60,11 @@ def test_all_checks_define_check_id():
 
 def test_check_ids_are_unique():
     """
-    check_id values must be unique across all registered checks.
+    Verify that ``check_id`` values are unique across registered checks.
+
+    Returns
+    -------
+    None
     """
     check_ids = [check_cls.check_id for check_cls in BaseCheck.registry]
     assert len(check_ids) == len(
@@ -62,7 +74,11 @@ def test_check_ids_are_unique():
 
 def test_all_checks_implement_run_method():
     """
-    All checks must implement a callable run() method.
+    Verify that all registered checks expose a callable `run()` method.
+
+    Returns
+    -------
+    None
     """
     for check_cls in BaseCheck.registry:
         assert hasattr(check_cls, "run"), f"{check_cls.__name__} missing run()"
@@ -74,6 +90,15 @@ def test_run_returns_checkresult(monkeypatch):
     Calling run() on each *concrete* check must return a CheckResult instance.
 
     Environment-dependent behavior is neutralized via monkeypatching.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to stabilize environment-dependent preflight checks.
+
+    Returns
+    -------
+    None
     """
     try:
         from fontshow.preflight import runner

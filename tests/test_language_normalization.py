@@ -21,6 +21,13 @@ from fontshow.inventory.semantic_validation import normalize_languages
 
 
 def test_empty_input():
+    """
+    Verify that empty language input normalizes to empty result collections.
+
+    Returns
+    -------
+    None
+    """
     result = normalize_languages([])
     assert result["normalized"] == []
     assert result["deprecated"] == []
@@ -28,6 +35,13 @@ def test_empty_input():
 
 
 def test_basic_normalization():
+    """
+    Verify that already-normalized language tags are preserved.
+
+    Returns
+    -------
+    None
+    """
     result = normalize_languages(["en", "fr"])
     assert result["normalized"] == ["en", "fr"]
     assert result["deprecated"] == []
@@ -35,6 +49,13 @@ def test_basic_normalization():
 
 
 def test_case_normalization():
+    """
+    Verify that mixed-case language tags are lowercased.
+
+    Returns
+    -------
+    None
+    """
     result = normalize_languages(["EN", "Fr"])
     assert result["normalized"] == ["en", "fr"]
     assert result["deprecated"] == []
@@ -42,6 +63,13 @@ def test_case_normalization():
 
 
 def test_deprecated_language_mapping():
+    """
+    Verify that deprecated language tags are remapped and recorded.
+
+    Returns
+    -------
+    None
+    """
     result = normalize_languages(["mo"])
     assert result["normalized"] == ["ro"]
     assert result["deprecated"] == [{"raw": "mo", "from_": "mo", "to": "ro"}]
@@ -49,6 +77,13 @@ def test_deprecated_language_mapping():
 
 
 def test_variant_stripping():
+    """
+    Verify that region and variant suffixes are stripped to base tags.
+
+    Returns
+    -------
+    None
+    """
     result = normalize_languages(["zh-hk", "pt_BR"])
     assert result["normalized"] == ["zh", "pt"]
     assert result["deprecated"] == []
@@ -59,6 +94,13 @@ def test_variant_stripping():
 
 
 def test_duplicate_languages():
+    """
+    Verify that duplicates after normalization are dropped with reasons.
+
+    Returns
+    -------
+    None
+    """
     result = normalize_languages(["en", "EN", "en"])
     assert result["normalized"] == ["en"]
     assert result["deprecated"] == []
@@ -69,6 +111,13 @@ def test_duplicate_languages():
 
 
 def test_unknown_language():
+    """
+    Verify that unknown language codes are dropped as unsupported.
+
+    Returns
+    -------
+    None
+    """
     result = normalize_languages(["xx"])
     assert result["normalized"] == []
     assert result["deprecated"] == []
@@ -78,6 +127,18 @@ def test_unknown_language():
 
 
 def test_mixed_case():
+    """
+    Verify that repeated regional variants collapse to one normalized base tag.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This test covers the edge case where the first value is recorded as a
+    stripped variant and later values become duplicate-normalized drops.
+    """
     result = normalize_languages(["ar_IN", "ar_IQ", "ar_JO"])
     assert result["normalized"] == ["ar"]
     assert result["deprecated"] == []

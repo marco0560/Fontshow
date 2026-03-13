@@ -33,6 +33,18 @@ from fontshow.preflight.model import CheckResult
 
 @pytest.mark.parametrize("check_cls", BaseCheck.registry)
 def test_preflight_checks_respect_contract(check_cls: type[BaseCheck]) -> None:
+    """
+    Verify that each registered preflight check respects the BaseCheck contract.
+
+    Parameters
+    ----------
+    check_cls : type[BaseCheck]
+        Parameterized registered check class under inspection.
+
+    Returns
+    -------
+    None
+    """
     # 1) Must inherit from BaseCheck
     assert issubclass(
         check_cls, BaseCheck

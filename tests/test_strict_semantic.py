@@ -29,6 +29,18 @@ from fontshow.cli.create_catalog import build_parser, run_create_catalog
 
 
 def test_semantic_validaion_fails(tmp_path):
+    """
+    Verify that strict semantic validation fails on invalid language metadata.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Pytest temporary directory fixture used to write the inventory file.
+
+    Returns
+    -------
+    None
+    """
     inv = {
         "metadata": {"schema_version": "1.2"},
         "fonts": [
@@ -59,6 +71,23 @@ def test_semantic_validaion_fails(tmp_path):
 
 
 def test_semantic_validation_fails_on_non_language_issue(tmp_path):
+    """
+    Verify that strict semantic validation also fails on non-language warnings.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Pytest temporary directory fixture used to write the inventory file.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The setup injects a top-level semantic warning to confirm that
+    strict mode is not limited to language-related issues.
+    """
     inv = {
         "metadata": {"schema_version": "1.2"},
         "fonts": [
