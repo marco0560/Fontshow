@@ -27,10 +27,13 @@ import argparse
 import ast
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+TargetNode: TypeAlias = ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef
+SelectableNode: TypeAlias = ast.Module | TargetNode
 
 BATCH_SIZE = 8
 
@@ -140,7 +143,7 @@ def build_parent_map(tree: ast.AST) -> dict[int, ast.AST]:
     return parents
 
 
-def build_qualname(node: ast.AST, parents: dict[int, ast.AST]) -> str:
+def build_qualname(node: TargetNode, parents: dict[int, ast.AST]) -> str:
     """
     Construct the qualified name of a function or class node.
 
@@ -159,9 +162,9 @@ def build_qualname(node: ast.AST, parents: dict[int, ast.AST]) -> str:
     str
         Fully qualified name using ``"."`` as the separator.
     """
-    parts: list[str] = [node.name]  # type: ignore
+    parts: list[str] = [node.name]
 
-    current = node
+    current: ast.AST = node
 
     while id(current) in parents:
         current = parents[id(current)]
@@ -174,7 +177,7 @@ def build_qualname(node: ast.AST, parents: dict[int, ast.AST]) -> str:
     return ".".join(parts)
 
 
-def iter_targets(tree: ast.AST) -> Iterator[ast.AST]:
+def iter_targets(tree: ast.AST) -> Iterator[TargetNode]:
     """
     Yield function and class definition nodes in deterministic order.
 
@@ -188,7 +191,7 @@ def iter_targets(tree: ast.AST) -> Iterator[ast.AST]:
     ast.AST
         Function or class definition nodes sorted by source location.
     """
-    nodes: list[ast.AST] = []
+    nodes: list[TargetNode] = []
 
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
@@ -199,7 +202,9 @@ def iter_targets(tree: ast.AST) -> Iterator[ast.AST]:
     yield from nodes
 
 
-def should_select(node: ast.AST, doc: str | None, args: argparse.Namespace) -> bool:
+def should_select(
+    node: SelectableNode, doc: str | None, args: argparse.Namespace
+) -> bool:
     """
     Determine whether a node should be selected for docstring auditing.
 
@@ -312,6 +317,7 @@ def extract_targets(path: Path, args: argparse.Namespace) -> Iterator[dict]:
         if not should_select(node, doc, args):
             continue
 
+        assert node.end_lineno is not None
         start = node.lineno - 1
         end = node.end_lineno
 
