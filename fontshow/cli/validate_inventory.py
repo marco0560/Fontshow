@@ -31,6 +31,7 @@ from jsonschema.exceptions import ValidationError
 
 from fontshow.core.cli_utils import (
     _log_by_severity,
+    add_common_arguments,
     log_err,
     log_ok,
     set_cli_mode,
@@ -65,6 +66,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         "path",
         help="Path to the inventory JSON file to validate",
     )
+    add_common_arguments(parser)
 
 
 def register_cli(parser: argparse.ArgumentParser) -> None:

@@ -517,6 +517,61 @@ def stub_create_catalog(monkeypatch, request):
 
 
 # ---------------------------------------------------------------------------
+# VALIDATE INVENTORY
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def stub_validate_inventory(monkeypatch, request):
+    """
+    Stub the validate-inventory CLI entrypoint with parametrized behavior.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the validate-inventory entrypoint.
+    request : pytest.FixtureRequest
+        Fixture request carrying the parametrized stub mode.
+
+    Returns
+    -------
+    None
+    """
+    mode = request.param
+
+    def fake_run(args):
+        """
+        Emulate the validate-inventory CLI callback.
+
+        Parameters
+        ----------
+        args : object
+            Parsed CLI arguments accepted for interface compatibility.
+
+        Returns
+        -------
+        int
+            Stubbed exit code for the configured mode.
+
+        Raises
+        ------
+        RuntimeError
+            Raised in the ``boom`` mode to emulate an unexpected internal crash.
+        """
+        if mode == "ok":
+            return 0
+        if mode == "fail":
+            return 1
+        if mode == "boom":
+            raise RuntimeError(mode)
+        return 2
+
+    from fontshow import validate_inventory
+
+    monkeypatch.setattr(validate_inventory, "main", fake_run)
+
+
+# ---------------------------------------------------------------------------
 # Clean verbosity state between tests
 # ---------------------------------------------------------------------------
 
