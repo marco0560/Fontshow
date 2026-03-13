@@ -208,9 +208,7 @@ def main() -> int:
         "validate-inventory",
         help="Validate a Fontshow inventory file against the JSON schema",
     )
-    validate_inventory.build_parser(validate_parser)
-    validate_parser.set_defaults(func=validate_inventory.run)
-    # ------------------------------------------------------------------
+    validate_inventory.register_cli(validate_parser)
 
     # ------------------------------------------------------------------
     # create-catalog
@@ -219,6 +217,7 @@ def main() -> int:
         help="Generate output artifacts from an inventory",
     )
     create_catalog.register_cli(catalog_parser)
+
     # ------------------------------------------------------------------
 
     args = parser.parse_args()

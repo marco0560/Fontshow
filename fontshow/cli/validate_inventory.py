@@ -24,6 +24,7 @@ inventory validation entry point for the Fontshow CLI.
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from jsonschema.exceptions import ValidationError
@@ -54,22 +55,38 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
 
     Notes
     -----
-    The function replaces the local parser variable with a dedicated
-    `ArgumentParser` configuration for the standalone validation CLI.
-    The incoming parser object is therefore not mutated in place.
-
-    This preserves the current implementation behavior exactly, even
-    though it differs from the in-place mutation pattern used by other
-    CLI modules.
+    The parser is configured in place so the command can be registered
+    both under the top-level dispatcher and under a standalone
+    module-local ``__main__`` block.
     """
-    parser = argparse.ArgumentParser(
-        prog="fontshow-validate",
-        description="Validate a Fontshow inventory file against the JSON Schema.",
-    )
+    parser.prog = "validate-inventory"
+    parser.description = "Validate a Fontshow inventory file against the JSON Schema."
     parser.add_argument(
         "path",
         help="Path to the inventory JSON file to validate",
     )
+
+
+def register_cli(parser: argparse.ArgumentParser) -> None:
+    """
+    Register validate-inventory CLI arguments on an existing parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Parser instance configured by the top-level dispatcher.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    Used by the top-level Fontshow dispatcher to bind the
+    ``validate-inventory`` command to the shared validation entrypoint.
+    """
+    build_parser(parser)
+    parser.set_defaults(func=main)
 
 
 def run(args) -> int:
@@ -137,3 +154,33 @@ def run(args) -> int:
 
     log_ok("Schema validation passed.")
     return 0
+
+
+def main(args) -> int:
+    """
+    Public CLI entrypoint for validate-inventory.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments containing the inventory path and common
+        verbosity flags.
+
+    Returns
+    -------
+    int
+        Process exit code returned by ``run(args)``.
+
+    Notes
+    -----
+    Thin wrapper around ``run`` kept consistent with the other top-level
+    CLI modules so the command can be used uniformly through the
+    dispatcher and through module-local execution.
+    """
+    return run(args)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="validate-inventory")
+    build_parser(parser)
+    sys.exit(main(parser.parse_args()))
