@@ -1,3 +1,9 @@
+## [0.53.1](https://github.com/marco0560/Fontshow/compare/v0.53.0...v0.53.1) (2026-03-13)
+
+### Bug Fixes
+
+* **core:** complete architectural layering ([e94cf51](https://github.com/marco0560/Fontshow/commit/e94cf51618c58c4eb0a17fd3c333a78c5ff77ca4)), closes [#63](https://github.com/marco0560/Fontshow/issues/63)
+
 ## [0.53.0](https://github.com/marco0560/Fontshow/compare/v0.52.2...v0.53.0) (2026-03-13)
 
 ### Features
