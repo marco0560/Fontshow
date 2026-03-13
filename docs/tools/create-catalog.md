@@ -1,4 +1,4 @@
-# create_catalog
+# create-catalog
 
 This module generates a printable LaTeX catalog from a normalized
 Fontshow font inventory.

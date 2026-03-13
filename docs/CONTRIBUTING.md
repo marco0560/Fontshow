@@ -56,7 +56,7 @@ This design ensures that:
 For local release previews, contributors can run:
 
 ```bash
-python scripts/release-preview.py
+python scripts/release_preview.py
 ```
 
 or use a convenience alias that injects a temporary `GH_TOKEN`.

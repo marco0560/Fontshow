@@ -47,6 +47,10 @@ fontshow create-catalog
 Each step consumes the output of the previous one and produces a
 well-defined artifact.
 
+If you want an explicit validation pass between parsing and catalog
+generation, run `fontshow validate-inventory <inventory.json>` on the
+parsed inventory before `create-catalog`.
+
 ---
 
 ## Output files
@@ -55,6 +59,8 @@ By default:
 
 - `dump-fonts` produces a **raw inventory** JSON file
 - `parse-inventory` produces an **enriched inventory** JSON file
+- `validate-inventory` validates an existing inventory and does not
+  create a new output file
 - `create-catalog` produces **output artifacts** (e.g. PDF catalog)
 
 Output file names and locations can be customized via command options.

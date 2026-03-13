@@ -17,11 +17,14 @@ The authoritative command documentation is located under:
 - Preflight checks
   → `tools/preflight.md`
 
+- Font inspection and metadata extraction
+  → `tools/dump-fonts.md`
+
 - Inventory parsing and validation
   → `tools/parse-inventory.md`
 
-- Font inspection and metadata extraction
-  → `tools/dump-fonts.md`
+- Inventory validation
+  → `tools/validate-inventory.md`
 
 - Catalog generation
   → `tools/create-catalog.md`

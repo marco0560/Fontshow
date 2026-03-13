@@ -364,13 +364,13 @@ For further details on individual components:
   [`data_dictionary.md`](data_dictionary.md)
 
 - Font dump:
-  [`dump-fonts`](tools/dump_fonts.md)
+  [`dump-fonts`](tools/dump-fonts.md)
 
 - Inventory parsing:
-  [`parse-inventory`](tools/parse_font_inventory.md)
+  [`parse-inventory`](tools/parse-inventory.md)
 
 - Catalog creation:
-  [`create-catalog`](tools/create_catalog.md)
+  [`create-catalog`](tools/create-catalog.md)
 
 ## Pipeline status
 

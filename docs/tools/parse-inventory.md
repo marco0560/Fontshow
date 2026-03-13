@@ -1,4 +1,4 @@
-# parse_font_inventory
+# parse-inventory
 
 This module enriches the raw font inventory produced by `dump_fonts`
 by performing script, language, and writing-system inference.
@@ -152,7 +152,7 @@ The following sources are checked:
 - `coverage.languages` (declared languages)
 - `inference.languages` (inferred languages)
 
-Semantic validation is performed by the `fontshow-validate` command and
+Semantic validation is performed by the `fontshow validate-inventory` command and
 emits structured warnings without failing the validation process.
 
 ---

@@ -148,7 +148,7 @@ Semantic validation:
 
 ## Related Documentation
 
-- `docs/tools/parse-inventory.md`
+- `docs/tools/parse_inventory.md`
 - `docs/pipeline.md`
 - `docs/schema/inventory-1.1.md`
 

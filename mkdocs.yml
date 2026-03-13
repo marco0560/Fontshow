@@ -60,9 +60,10 @@ nav:
 
   - Commands:
     - Preflight: tools/preflight.md
-    - Dump fonts: tools/dump_fonts.md
-    - Parse inventory: tools/parse_font_inventory.md
-    - Create catalog: tools/create_catalog.md
+    - Dump fonts: tools/dump-fonts.md
+    - Parse inventory: tools/parse-inventory.md
+    - Validate inventory: tools/validate-inventory.md
+    - Create catalog: tools/create-catalog.md
 
   - Data model:
     - Data dictionary: data_dictionary.md

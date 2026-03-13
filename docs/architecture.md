@@ -248,13 +248,13 @@ The Fontshow pipeline is strictly linear:
 Installed fonts
       │
       ▼
-dump_fonts.py
+fontshow dump-fonts
       │   (raw inventory JSON)
       ▼
-parse_font_inventory.py
+fontshow parse-inventory
       │   (enriched inventory JSON)
       ▼
-create_catalog.py
+fontshow create-catalog
       │
       ▼
 LaTeX catalog
@@ -281,15 +281,15 @@ as informative and non-authoritative.
 
 Each stage respects the following contract:
 
-- **dump_fonts**
+- **fontshow dump-fonts**
   Produces *raw*, low-level metadata directly extracted from font files
   and system tools.
 
-- **parse_font_inventory**
+- **fontshow parse-inventory**
   Adds semantic interpretation (scripts, languages, coverage inference)
   without modifying raw fields.
 
-- **create_catalog**
+- **fontshow create-catalog**
   Treats the inventory as read-only input and performs rendering only.
 
 Downstream stages must never assume the presence of optional fields unless
@@ -395,7 +395,7 @@ It does **not**:
 - group fonts,
 - make rendering decisions.
 
-### parse_font_inventory
+### fontshow parse-inventory
 
 Responsible for:
 
@@ -441,7 +441,9 @@ that clearly separates:
 - core business logic
 
 This design guarantees correct exit codes, stable CLI tests, and preservation
-of all official entrypoints (including `python -m fontshow.<command>`).
+of all official entrypoints (including `python -m fontshow`,
+`python -m fontshow.preflight`, and module-backed commands such as
+`python -m fontshow.cli.dump_fonts`).
 
 ---
 

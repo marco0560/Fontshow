@@ -69,7 +69,7 @@ CLI tests test the CLI.
 
 ## Gentoo validation: Fontconfig language codes vs ISO 639
 
-During full pipeline testing on Gentoo Linux, the `fontshow-validate` step
+During full pipeline testing on Gentoo Linux, the `fontshow validate-inventory` step
 may emit a large number of `invalid_language_code` warnings.
 
 This behavior is **expected** and **does not indicate a pipeline failure**.
@@ -351,23 +351,13 @@ fontshow preflight
 
 ### Observed behavior
 
-- The command **fails immediately** with the following error:
-
-  ```text
-  No module named fontshow.preflight.__main__;
-  'fontshow.preflight' is a package and cannot be directly executed
-  ```
+- The command is implemented as a regular CLI subcommand and also has a
+  dedicated module entrypoint via `python -m fontshow.preflight`.
 
 ### Outcome
 
-- **Preflight check could not be executed**
-- Failure occurs **before any runtime capability checks**
-- The issue is related to Python module invocation semantics, not to
-  external dependencies (fontconfig / LuaLaTeX)
-
-### Notes
-
-- This is a deterministic and reproducible failure on Gentoo
+- Preflight should execute normally and report runtime capability checks
+  according to the current environment.
 - No workaround was attempted at this stage
 - Further investigation is deferred until after test documentation is completed
 
@@ -1186,7 +1176,7 @@ fontshow parse-inventory \
 
 When running inventory validation on inventories generated with
 extended Fontconfig data (e.g. using `--include-fc-charset` in
-`dump_fonts.py`), the inventory may contain entries that do not represent
+`fontshow dump-fonts`), the inventory may contain entries that do not represent
 individual fonts but rather Unicode charset information.
 
 Such entries typically lack both:
