@@ -1,3 +1,9 @@
+## [0.53.0](https://github.com/marco0560/Fontshow/compare/v0.52.2...v0.53.0) (2026-03-13)
+
+### Features
+
+* **dev:** add Codex prompt library for repository audits and maintenance ([536030b](https://github.com/marco0560/Fontshow/commit/536030b71add45820eac8ee4ec615b433644d456))
+
 ## [0.52.2](https://github.com/marco0560/Fontshow/compare/v0.52.1...v0.52.2) (2026-03-13)
 
 ### Bug Fixes
