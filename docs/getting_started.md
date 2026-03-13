@@ -11,19 +11,23 @@ Fontshow can be installed via pip.
 
 ### Standard installation
 
+<!-- cheatsheet:start -->
 ```bash
 pip install fontshow
 ```
+<!-- cheatsheet:end -->
 
 ### Editable / development installation
 
 For contributors or local development:
 
+<!-- cheatsheet:start -->
 ```bash
 git clone https://github.com/marco0560/Fontshow.git
 cd Fontshow
 pip install -e .
 ```
+<!-- cheatsheet:end -->
 
 ---
 
@@ -31,12 +35,14 @@ pip install -e .
 
 A typical workflow consists of four steps:
 
+<!-- cheatsheet:start -->
 ```bash
 fontshow preflight
 fontshow dump-fonts
 fontshow parse-inventory
 fontshow create-catalog
 ```
+<!-- cheatsheet:end -->
 
 Each step consumes the output of the previous one and produces a
 well-defined artifact.

@@ -71,7 +71,8 @@ def main(args) -> int
 This guarantees consistent behavior across all commands and simplifies
 testing and automation.
 
-For a detailed rationale, see `decisions.md`.
+For the decision history behind these conventions, see
+`docs/decisions/index.md`.
 
 ## Notes on direct module execution
 
@@ -94,6 +95,13 @@ dump_fonts → parse_font_inventory → create_catalog
 
 Each stage consumes structured data produced by the previous one and
 does not re-inspect font binaries unnecessarily.
+
+## Developer documentation
+
+For contributors and maintainers:
+
+- [Repository architecture](docs/architecture.md)
+- [Codebase map](docs/codebase-map.md)
 
 ---
 <!-- cheatsheet:start -->

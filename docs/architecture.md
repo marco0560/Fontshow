@@ -51,6 +51,174 @@ The Fontshow repository is organized as follows:
 For details about development-only tooling, see
 [Development scripts](scripts.md).
 
+## Python package subdivision
+
+The `fontshow/` package is intentionally subdivided by responsibility.
+
+This subdivision mirrors the pipeline stages and the project's
+cross-cutting infrastructure. The goal is to keep orchestration,
+domain logic, platform integration, and rendering concerns clearly
+separated.
+
+### `fontshow.cli`
+
+Contains command orchestration for the public CLI.
+
+Responsibilities:
+
+- parse and validate command arguments;
+- coordinate workflow stages;
+- return deterministic process exit codes;
+- delegate business logic to lower-level subsystems.
+
+This package is the boundary between the user-facing CLI and the
+internal pipeline implementation.
+
+### `fontshow.preflight`
+
+Contains the environment validation subsystem executed before the main
+pipeline.
+
+Responsibilities:
+
+- detect runtime environment characteristics;
+- check availability of required external tools;
+- aggregate check results;
+- render preflight output for CLI consumption.
+
+This package is intentionally isolated from inventory and catalog logic.
+
+### `fontshow.platform`
+
+Contains platform- and tool-specific integration code.
+
+Responsibilities:
+
+- discover installed fonts on supported operating systems;
+- query system font metadata providers such as Fontconfig;
+- compare stored and current runtime platform metadata.
+
+This package is the main boundary for environment-dependent behavior.
+
+### `fontshow.inventory`
+
+Contains the inventory domain model and all inventory-side processing.
+
+Responsibilities:
+
+- construct canonical raw font descriptors;
+- load and validate inventory structures;
+- normalize charset data;
+- infer scripts and languages;
+- attach semantic warnings;
+- generate specimen metadata.
+
+This package is the core of the data pipeline and acts on JSON-like
+inventory structures rather than user-facing CLI state.
+
+### `fontshow.catalog`
+
+Contains catalog-domain helpers used to transform enriched inventory
+entries into catalog-ready records and LaTeX document fragments.
+
+Responsibilities:
+
+- group and filter font entries for catalog generation;
+- choose sample text and labels for display;
+- assemble the final catalog document.
+
+This package is concerned with presentation-oriented transformation,
+not discovery or inference.
+
+### `fontshow.latex`
+
+Contains low-level LaTeX rendering support.
+
+Responsibilities:
+
+- escape and sanitize LaTeX content;
+- define rendering policies for different scripts;
+- provide reusable LaTeX templates and formatting helpers.
+
+This package isolates rendering mechanics from catalog orchestration.
+
+### `fontshow.core`
+
+Contains shared infrastructure reused across multiple subsystems.
+
+Responsibilities:
+
+- shared CLI utilities;
+- logging facade and TRACE support;
+- JSON formatting and enum boundary helpers;
+- structured warning helpers;
+- shared type definitions and global constants.
+
+This package must remain broadly reusable and avoid subsystem-specific
+business logic.
+
+### `fontshow.constants`
+
+Contains grouped constant sets used across the project.
+
+Responsibilities:
+
+- runtime-wide constant values;
+- catalog-specific constants;
+- OpenType-related identifiers.
+
+This package exists to make stable constant sources explicit and
+centralized.
+
+### `fontshow.ontology`
+
+Contains authoritative static knowledge tables used by inference and
+rendering logic.
+
+Responsibilities:
+
+- language metadata profiles;
+- script metadata profiles;
+- Unicode-derived ontology tables.
+
+This package is read-only reference data, not workflow orchestration.
+
+### `fontshow.unicode`
+
+Contains Unicode-specific transformation helpers.
+
+Responsibilities:
+
+- normalize charset ranges;
+- derive Unicode block coverage;
+- decode compact charset representations from external sources.
+
+This package provides foundational Unicode utilities used by the
+inventory subsystem.
+
+### `fontshow.common`
+
+Contains small reusable domain helpers shared across higher-level
+packages.
+
+At present this package mainly hosts specimen-related helpers that are
+shared between the inventory and catalog domains without belonging
+entirely to either one.
+
+### Lightweight namespace packages
+
+Some packages currently act mainly as namespace and layering markers,
+including:
+
+- `fontshow.discovery`
+- `fontshow.json`
+- `fontshow.logging`
+- `fontshow.schema`
+
+These packages still serve an architectural purpose: they preserve
+explicit subsystem boundaries and provide stable import locations for
+future growth.
+
 ## Design principles
 
 Fontshow follows a small set of explicit design principles:

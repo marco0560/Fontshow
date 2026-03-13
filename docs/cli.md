@@ -14,12 +14,14 @@ debugging purposes, but the dispatcher is the authoritative CLI.
 
 ## Available commands
 
+<!-- cheatsheet:start -->
 ```text
 fontshow preflight
 fontshow dump-fonts
 fontshow parse-inventory
 fontshow create-catalog
 ```
+<!-- cheatsheet:end -->
 
 Typical pipeline:
 
@@ -34,12 +36,14 @@ fontshow create-catalog
 
 The following flags are available on **all commands** via the dispatcher:
 
+<!-- cheatsheet:start -->
 | Flag | Description |
 | ------ | ------------- |
 | `--help` | Show usage information |
 | `--version`, `-V` | Show Fontshow version |
 | `--verbose`, `-v` | Enable verbose output |
 | `--quiet`, `-q` | Suppress non-essential output |
+<!-- cheatsheet:end -->
 
 Argument parsing is centralized in the dispatcher. Individual command
 implementations **must not** perform their own argument parsing.
@@ -65,11 +69,13 @@ This guarantees identical behavior across all supported entrypoints.
 
 Fontshow uses a consistent exit code contract across all commands:
 
+<!-- cheatsheet:start -->
 | Code | Meaning |
 | ------ | -------- |
 | `0` | Successful execution |
 | `1` | Unrecoverable execution failure |
 | `2` | CLI usage error (argument parsing) |
+<!-- cheatsheet:end -->
 
 Warnings do **not** affect the exit code unless explicitly promoted by
 command logic.

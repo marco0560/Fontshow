@@ -24,9 +24,11 @@ When enabled, this option instructs Fontshow to query Fontconfig for
 declared Unicode charset information and include it in the generated
 inventory.
 
+<!-- cheatsheet:start -->
 ```bash
 python -m fontshow.cli.dump_fonts --include-fc-charset
 ```
+<!-- cheatsheet:end -->
 
 The resulting data is stored in the optional `charset` field of each
 font entry.

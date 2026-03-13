@@ -39,11 +39,17 @@ documentation describes *how the stages relate to each other*.
 ## Development and maintenance
 
 - [Repository architecture](architecture.md)
+- [Codebase map](codebase-map.md)
 - [Development environment](dev-environment.md)
 - [Development scripts](scripts.md)
 - [Logging system](logging.md)
 - [Contributing guidelines](CONTRIBUTING.md)
 - [CLI Contract](cli-contract.md)
+
+The architecture document explains the main structural boundaries of the
+project. The codebase map complements it with a developer-oriented guide
+to package responsibilities, data flow, change points, and bug triage
+entrypoints.
 
 ## Engineering Notes (internal)
 

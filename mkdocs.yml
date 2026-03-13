@@ -72,6 +72,7 @@ nav:
 
   - Development:
     - Architecture: architecture.md
+    - Codebase map: codebase-map.md
     - Dev environment: dev-environment.md
     - Environment matrix: environment-matrix.md
     - Logging system: logging.md

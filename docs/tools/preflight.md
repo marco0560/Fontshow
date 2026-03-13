@@ -22,9 +22,11 @@ No files are created or modified.
 
 ## Invocation
 
+<!-- cheatsheet:start -->
 ```bash
 fontshow preflight
 ```
+<!-- cheatsheet:end -->
 
 ---
 
@@ -64,10 +66,12 @@ When `--quiet` is specified, no output is produced.
 
 ## Exit codes
 
+<!-- cheatsheet:start -->
 | Code | Meaning |
 | ------ | -------- |
 | `0` | All required checks passed |
 | `1` | One or more blocking checks failed |
+<!-- cheatsheet:end -->
 
 Warnings do not affect the exit code unless explicitly promoted.
 
