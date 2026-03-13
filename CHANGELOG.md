@@ -1,3 +1,10 @@
+## [0.52.1](https://github.com/marco0560/Fontshow/compare/v0.52.0...v0.52.1) (2026-03-13)
+
+### Bug Fixes
+
+* **dev:** fixed bug in docstring audit extractor that was giving false positives ([1cbee74](https://github.com/marco0560/Fontshow/commit/1cbee7461cad74f09cc4556186057a87a3b6fde6))
+* **dev:** fixed typing of docstring audit generator script ([f2c3518](https://github.com/marco0560/Fontshow/commit/f2c3518865fd42b493235fa68dc29daa29362ee6))
+
 ## [0.52.0](https://github.com/marco0560/Fontshow/compare/v0.51.2...v0.52.0) (2026-03-12)
 
 ### Features
