@@ -1,3 +1,9 @@
+## [0.52.2](https://github.com/marco0560/Fontshow/compare/v0.52.1...v0.52.2) (2026-03-13)
+
+### Bug Fixes
+
+* **cli:** fixed the validate-inventory call syntax ([4e2cf26](https://github.com/marco0560/Fontshow/commit/4e2cf26be44aa4e24d7f0a4eab992312f9f57e9c))
+
 ## [0.52.1](https://github.com/marco0560/Fontshow/compare/v0.52.0...v0.52.1) (2026-03-13)
 
 ### Bug Fixes
