@@ -212,10 +212,12 @@ This mode prioritizes compatibility with real-world font metadata.
 
 When enabled:
 
+<!-- cheatsheet:start -->
 - Only RFC-compliant BCP-47 language tags are accepted
 - Deprecated or malformed tags cause a hard failure
 - No silent normalization is applied
 - Inventory generation stops on first violation
+<!-- cheatsheet:end -->
 
 Strict mode:
 

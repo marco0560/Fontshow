@@ -51,6 +51,7 @@ enriched inventory.
 
 By default:
 
+<!-- cheatsheet:start -->
 - semantic issues are reported as warnings
 - catalog generation continues
 
@@ -59,6 +60,7 @@ When `--strict-semantic` is enabled:
 - semantic warnings are treated as errors
 - catalog generation aborts
 - a non-zero exit code is returned
+<!-- cheatsheet:end -->
 
 This mode does not affect:
 
