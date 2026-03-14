@@ -36,8 +36,50 @@ import sys
 from pathlib import Path
 
 from fontshow.constants.catalog import IS_LINUX, IS_WINDOWS
+from fontshow.constants.discovery import LEGACY_FONT_EXTENSIONS
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.inventory.utils import run_command
+
+_LAST_DISCOVERY_STATS = {"skipped_legacy_extension": 0}
+
+
+def _has_legacy_font_extension(path: Path) -> bool:
+    """
+    Return whether the path uses a legacy font extension.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Candidate font path produced by the discovery backend.
+
+    Returns
+    -------
+    bool
+        True when the filename matches a known legacy extension.
+
+    Notes
+    -----
+    Matching is case-insensitive and supports compound extensions such
+    as ``.pcf.gz``.
+    """
+    name = path.name.lower()
+    return any(name.endswith(ext) for ext in LEGACY_FONT_EXTENSIONS)
+
+
+def get_last_discovery_stats() -> dict[str, int]:
+    """
+    Return metrics captured by the most recent discovery run.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    dict[str, int]
+        Copy of the latest discovery counters.
+    """
+    return dict(_LAST_DISCOVERY_STATS)
 
 
 def get_installed_font_files() -> list[Path]:
@@ -114,14 +156,25 @@ def get_installed_font_files_linux() -> list[Path]:
         msg = f"fc-list failed:\n{proc.stdout}"
         raise RuntimeError(msg)
 
+    global _LAST_DISCOVERY_STATS
+
     files: list[Path] = []
+    skipped_legacy_extension = 0
     for line in proc.stdout.splitlines():
         p = line.strip()
         if p:
-            files.append(Path(p))
+            path = Path(p)
+            if _has_legacy_font_extension(path):
+                skipped_legacy_extension += 1
+                continue
+            files.append(path)
 
     # Resolve + unique
-    return sorted({p.resolve() for p in files if p.exists()})
+    discovered = sorted({p.resolve() for p in files if p.exists()})
+    _LAST_DISCOVERY_STATS = {
+        "skipped_legacy_extension": skipped_legacy_extension,
+    }
+    return discovered
 
 
 def _windows_font_dirs() -> list[Path]:
@@ -176,14 +229,23 @@ def get_installed_font_files_windows() -> list[Path]:
     Recognized extensions include: .ttf, .otf, .ttc, .otc, .woff, .woff2.
     Permission errors during directory traversal are ignored.
     """
+    global _LAST_DISCOVERY_STATS
+
     exts = {".ttf", ".otf", ".ttc", ".otc", ".woff", ".woff2"}
     found: set[Path] = set()
+    skipped_legacy_extension = 0
     for d in _windows_font_dirs():
         try:
             for p in d.rglob("*"):
+                if p.is_file() and _has_legacy_font_extension(p):
+                    skipped_legacy_extension += 1
+                    continue
                 if p.is_file() and p.suffix.lower() in exts:
                     found.add(p.resolve())
         except (PermissionError, OSError):
             # ignore permission issues etc.
             continue
+    _LAST_DISCOVERY_STATS = {
+        "skipped_legacy_extension": skipped_legacy_extension,
+    }
     return sorted(found)

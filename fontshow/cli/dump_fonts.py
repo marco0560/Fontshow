@@ -61,7 +61,10 @@ from fontshow.inventory.validation import (
     is_non_opentype_face,
     is_structurally_unloadable_face,
 )
-from fontshow.platform.font_discovery import get_installed_font_files
+from fontshow.platform.font_discovery import (
+    get_installed_font_files,
+    get_last_discovery_stats,
+)
 from fontshow.platform.fontconfig import fc_query_extract_many
 
 
@@ -213,10 +216,15 @@ def run_dump_fonts(args) -> int:
         },
     )
 
+    discovery_stats = get_last_discovery_stats()
+
     # --- GLOBAL COUNTERS (must not reset per font file) ---
     total_faces = 0
     skipped_non_opentype = 0
+    skipped_legacy_extension = discovery_stats.get("skipped_legacy_extension", 0)
+    skipped_structurally_unloadable = 0
     style_leak_suspected = 0
+    warned_unloadable_fonts: set[Path] = set()
 
     fontconfig_by_path: dict[Path, dict[str, Any]] = {}
     if IS_LINUX:
@@ -267,7 +275,10 @@ def run_dump_fonts(args) -> int:
 
             # Skip structurally unloadable faces (missing mandatory tables)
             if is_structurally_unloadable_face(face):
-                log_warn(f"skipping structurally-unloadable font: {font_path}")
+                skipped_structurally_unloadable += 1
+                if font_path not in warned_unloadable_fonts:
+                    log_warn(f"skipping structurally-unloadable font: {font_path}")
+                    warned_unloadable_fonts.add(font_path)
                 continue
 
             try:
@@ -312,6 +323,9 @@ def run_dump_fonts(args) -> int:
             "total_font_files": len(font_files),
             "total_faces_seen": total_faces,
             "skipped_non_opentype_faces": skipped_non_opentype,
+            "skipped_legacy_extension": skipped_legacy_extension,
+            "skipped_structurally_unloadable": skipped_structurally_unloadable,
+            "style_leak_suspected": style_leak_suspected,
             "include_fc_charset": bool(args.include_fc_charset and IS_LINUX),
         },
     )
@@ -325,11 +339,26 @@ def run_dump_fonts(args) -> int:
     )
 
     log_info(
+        "dump-fonts summary",
+        extra={
+            "total_faces_seen": total_faces,
+            "total_font_files": len(font_files),
+            "total_fonts": len(inventory.get("fonts", [])),
+            "skipped_legacy_extension": skipped_legacy_extension,
+            "skipped_structurally_unloadable": skipped_structurally_unloadable,
+            "skipped_non_opentype_faces": skipped_non_opentype,
+            "style_leak_suspected": style_leak_suspected,
+        },
+    )
+
+    log_info(
         f"Processed {total_faces} - {skipped_non_opentype} skipped"
         f"- {style_leak_suspected} style-leak suspected",
         verbose=(
             f"Processed {total_faces} font faces — "
             f"{skipped_non_opentype} skipped (non-OpenType), "
+            f"{skipped_legacy_extension} skipped (legacy extension), "
+            f"{skipped_structurally_unloadable} skipped (structurally unloadable), "
             f"- {style_leak_suspected} style-leak suspected"
             f"{len(inventory.get('fonts', []))} kept"
         ),
