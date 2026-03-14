@@ -108,7 +108,7 @@ def get_installed_font_files() -> list[Path]:
     if IS_LINUX:
         return get_installed_font_files_linux()
     if IS_WINDOWS:
-        return get_installed_font_files_windows()
+        return _get_installed_font_files_windows()
     msg = f"Unsupported platform: {sys.platform}"
     raise RuntimeError(msg)
 
@@ -211,7 +211,7 @@ def _windows_font_dirs() -> list[Path]:
     return [d for d in dirs if d.exists()]
 
 
-def get_installed_font_files_windows() -> list[Path]:
+def _get_installed_font_files_windows() -> list[Path]:
     """
     Discover installed font files on Windows by scanning known font directories.
 

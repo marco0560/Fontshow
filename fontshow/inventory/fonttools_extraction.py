@@ -361,7 +361,7 @@ def _best_name(names: dict[str, list[str]], name_id: int) -> str | None:
     return None
 
 
-def extract_name_table(tt: TTFont) -> dict[str, list[str]]:
+def _extract_name_table(tt: TTFont) -> dict[str, list[str]]:
     """
     Extract the OpenType/TrueType name table as a JSON-friendly mapping.
 
@@ -409,7 +409,7 @@ def extract_name_table(tt: TTFont) -> dict[str, list[str]]:
     return out
 
 
-def extract_os2_table(tt: TTFont) -> dict[str, Any]:
+def _extract_os2_table(tt: TTFont) -> dict[str, Any]:
     """Extract a small subset of OS/2 fields, best-effort.
 
      The OS/2 table is frequently present but can be malformed. This function
@@ -463,7 +463,7 @@ def extract_os2_table(tt: TTFont) -> dict[str, Any]:
     return out
 
 
-def detect_color_tables(tt: TTFont) -> list[str]:
+def _detect_color_tables(tt: TTFont) -> list[str]:
     """
     Detect presence of color-related OpenType tables.
 
@@ -481,7 +481,7 @@ def detect_color_tables(tt: TTFont) -> list[str]:
     return [t for t in candidates if t in tt]
 
 
-def compute_unicode_blocks(codepoints: set[int]) -> dict[str, int]:
+def _compute_unicode_blocks(codepoints: set[int]) -> dict[str, int]:
     """
     Count how many code points fall into each configured Unicode block.
 
@@ -505,7 +505,7 @@ def compute_unicode_blocks(codepoints: set[int]) -> dict[str, int]:
     return blocks
 
 
-def extract_unicode_coverage(tt: TTFont, limit: int = 200_000) -> dict[str, Any]:
+def _extract_unicode_coverage(tt: TTFont, limit: int = 200_000) -> dict[str, Any]:
     """
     Compute a lightweight Unicode coverage summary from the cmap table.
 
@@ -544,7 +544,7 @@ def extract_unicode_coverage(tt: TTFont, limit: int = 200_000) -> dict[str, Any]
     return {"count": len(cps), "min": min(cps), "max": max(cps)}
 
 
-def extract_opentype_features(tt: TTFont) -> list[str]:
+def _extract_opentype_features(tt: TTFont) -> list[str]:
     """
     Extract OpenType GSUB/GPOS feature tags (best-effort).
 
@@ -638,12 +638,12 @@ def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
         data["font_type"] = "Unknown"
 
     try:
-        data["names"] = extract_name_table(tt)
+        data["names"] = _extract_name_table(tt)
     except (ValueError, TypeError) as e:
         data["names"] = {"error": f"name: {e}"}
 
     try:
-        data["os2"] = extract_os2_table(tt)
+        data["os2"] = _extract_os2_table(tt)
     except (ValueError, TypeError, AttributeError) as e:
         data["os2"] = {"error": f"OS/2: {e}"}
 
@@ -651,7 +651,7 @@ def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
     # Unicode coverage (min/max/count)
     # -------------------------------
     try:
-        data["unicode"] = extract_unicode_coverage(tt)
+        data["unicode"] = _extract_unicode_coverage(tt)
     except (ValueError, TypeError) as e:
         data["unicode"] = {"error": f"unicode: {e}"}
 
@@ -677,7 +677,7 @@ def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
                     break
 
         data["unicode_blocks"] = (
-            compute_unicode_blocks(codepoints) if codepoints else {}
+            _compute_unicode_blocks(codepoints) if codepoints else {}
         )
     except (AttributeError, TypeError, ValueError) as e:
         data["unicode_blocks"] = {"error": f"unicode_blocks: {e}"}
@@ -688,12 +688,12 @@ def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
         data["variable"] = {"fvar": False, "STAT": False}
 
     try:
-        data["color_tables"] = detect_color_tables(tt)
+        data["color_tables"] = _detect_color_tables(tt)
     except (ValueError, TypeError, AttributeError):
         data["color_tables"] = []
 
     try:
-        data["opentype_features"] = extract_opentype_features(tt)
+        data["opentype_features"] = _extract_opentype_features(tt)
     except (ValueError, TypeError, AttributeError):
         data["opentype_features"] = []
 
