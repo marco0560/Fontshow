@@ -224,6 +224,7 @@ def run_dump_fonts(args) -> int:
     skipped_legacy_extension = discovery_stats.get("skipped_legacy_extension", 0)
     skipped_structurally_unloadable = 0
     style_leak_suspected = 0
+    style_leak_details: list[str] = []
     warned_unloadable_fonts: set[Path] = set()
 
     fontconfig_by_path: dict[Path, dict[str, Any]] = {}
@@ -293,6 +294,18 @@ def run_dump_fonts(args) -> int:
 
                 if has_style_leak_in_family(desc):
                     style_leak_suspected += 1
+                    style_leak_details.append(
+                        " | ".join(
+                            [
+                                desc["path"],
+                                desc["family"],
+                                desc["subfamily"],
+                                f"weight_class={desc['weight_class']}",
+                                f"width_class={desc['width_class']}",
+                                f"italic_angle={desc['italic_angle']}",
+                            ]
+                        )
+                    )
                 inventory["fonts"].append(desc)
             except (ValueError, TypeError, KeyError) as e:
                 log_err(f"Descriptor build failed for {font_path}: {e}")
@@ -331,6 +344,17 @@ def run_dump_fonts(args) -> int:
     )
 
     log_info("dump-fonts summary", extra=summary)
+
+    if style_leak_details:
+        log_info(
+            f"{style_leak_suspected} entries flagged for possible style leak",
+            verbose="\n".join(
+                [
+                    "Possible style-leak entries:",
+                    *style_leak_details,
+                ]
+            ),
+        )
 
     log_info(
         f"Processed {total_faces} - {skipped_non_opentype} skipped"

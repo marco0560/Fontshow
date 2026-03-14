@@ -22,6 +22,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from fontshow.cli.dump_fonts import run_dump_fonts
+from fontshow.core.cli_utils import set_cli_mode
 
 
 def test_dump_fonts_excludes_non_opentype(tmp_path, monkeypatch):
@@ -246,3 +247,85 @@ def test_dump_fonts_fails_instead_of_writing_non_schema_fallback(tmp_path, monke
 
     assert ret == 1
     assert not output.exists()
+
+
+def test_dump_fonts_verbose_reports_style_leak_details(tmp_path, monkeypatch):
+    """
+    Ensure style-leak details are attached only via the verbose log variant.
+    """
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.get_installed_font_files",
+        lambda: [Path("/fake/arial-black.ttf")],
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.get_last_discovery_stats",
+        lambda: {"skipped_legacy_extension": 0},
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.fc_query_extract_many",
+        lambda *_args, **_kwargs: {},
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.fonttools_extract_all",
+        lambda path, **kwargs: [{"ok": True, "ttc_index": None}],
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.build_font_descriptor",
+        lambda _ctx: {
+            "path": "/fake/arial-black.ttf",
+            "family": "Arial Black",
+            "subfamily": "Regular",
+            "typographic_subfamily": "Regular",
+            "full_name": "Arial Black Regular",
+            "postscript_name": "ArialBlack-Regular",
+            "version_string": "1.0",
+            "unique_font_id": "arial-black-regular-1.0",
+            "units_per_em": 1000,
+            "ascent": 800,
+            "descent": -200,
+            "weight_class": 400,
+            "width_class": 5,
+            "italic_angle": 0.0,
+            "is_fixed_pitch": False,
+            "glyph_count": 1,
+            "coverage": {},
+            "inference": {},
+            "charset": {},
+            "sample_text": {"source": "font", "text": "A"},
+            "specimen_text": "A",
+            "specimen_strategy": "cmap",
+            "specimen_glyph_count": 1,
+        },
+    )
+
+    infos: list[tuple[str, str | None]] = []
+
+    def fake_log_info(message, verbose=None, **kwargs):
+        infos.append((message, verbose))
+
+    monkeypatch.setattr("fontshow.cli.dump_fonts.log_info", fake_log_info)
+    set_cli_mode(False, True)
+
+    output = tmp_path / "fonts.json"
+    args = SimpleNamespace(
+        output=output,
+        cache_dir=tmp_path,
+        include_fc_charset=False,
+        no_cache=True,
+        verbose=True,
+    )
+
+    ret = run_dump_fonts(args)
+
+    assert ret == 0
+    detail = next(
+        verbose
+        for message, verbose in infos
+        if message == "1 entries flagged for possible style leak"
+    )
+    assert detail is not None
+    assert "Possible style-leak entries:" in detail
+    assert (
+        "/fake/arial-black.ttf | Arial Black | Regular | "
+        "weight_class=400 | width_class=5 | italic_angle=0.0"
+    ) in detail
