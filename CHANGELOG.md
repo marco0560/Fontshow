@@ -1,3 +1,9 @@
+## [0.55.0](https://github.com/marco0560/Fontshow/compare/v0.54.0...v0.55.0) (2026-03-14)
+
+### Features
+
+* **cli:** improve dump-fonts summary readability and stabilize discovery tests ([6d82037](https://github.com/marco0560/Fontshow/commit/6d820371fe0ace234237b379b14254c5303da344))
+
 ## [0.54.0](https://github.com/marco0560/Fontshow/compare/v0.53.1...v0.54.0) (2026-03-14)
 
 ### Features
