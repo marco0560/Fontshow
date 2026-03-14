@@ -1,3 +1,9 @@
+## [0.56.1](https://github.com/marco0560/Fontshow/compare/v0.56.0...v0.56.1) (2026-03-14)
+
+### Bug Fixes
+
+* **parser:** summarize fallback outcomes in validation mode ([cbcb32a](https://github.com/marco0560/Fontshow/commit/cbcb32ae624608bcb5a096d4973449737e14b950))
+
 ## [0.56.0](https://github.com/marco0560/Fontshow/compare/v0.55.5...v0.56.0) (2026-03-14)
 
 ### Features
