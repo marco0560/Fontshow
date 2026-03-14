@@ -509,28 +509,6 @@ def _run_parse_inventory(args) -> int:
     return run_parse_font_inventory(args)
 
 
-def run(args):
-    """
-    Public CLI entrypoint (kept stable).
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        Parsed CLI arguments forwarded to `main`.
-
-    Returns
-    -------
-    int
-        Exit code returned by `main`.
-
-    Notes
-    -----
-    Thin wrapper around the injectable runner.
-    Needed for tests via the top-level dispatcher.
-    """
-    return main(args)
-
-
 def main(args) -> int:
     """
     Public CLI entrypoint (kept stable).

@@ -78,7 +78,7 @@ TEST_FONTS: set[str] = set()
 DEFAULT_INVENTORY = "font_inventory_enriched.json"
 
 
-def generate_test_output(
+def _generate_test_output(
     inventory_fonts: list[dict],
     limit: int | None = None,
     filter_test: bool = False,
@@ -398,7 +398,7 @@ def run_create_catalog(args) -> int:
         return 1
 
     if args.test:
-        generate_test_output(fonts, args.number, bool(TEST_FONTS))
+        _generate_test_output(fonts, args.number, bool(TEST_FONTS))
 
     if args.list_test_fonts:
         return _handle_list_test_fonts(TEST_FONTS, fonts)
@@ -471,28 +471,6 @@ def _run_create_catalog(args) -> int:
     modifying the core implementation.
     """
     return run_create_catalog(args)
-
-
-def run(args):
-    """
-    Public CLI entrypoint for create-catalog.
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        Parsed CLI arguments.
-
-    Returns
-    -------
-    int
-        Exit code returned by `main`.
-
-    Notes
-    -----
-    Thin wrapper around `main` kept stable for compatibility with
-    the top-level dispatcher and tests.
-    """
-    return main(args)
 
 
 def main(args) -> int:

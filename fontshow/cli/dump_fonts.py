@@ -383,28 +383,6 @@ def _run_dump_fonts(args) -> int:
     return run_dump_fonts(args)
 
 
-def run(args):
-    """
-    Public CLI entrypoint delegating to the main runner.
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        Parsed CLI arguments.
-
-    Returns
-    -------
-    int
-        Process exit code.
-
-    Notes
-    -----
-    Thin compatibility wrapper kept for the top-level dispatcher and
-    tests.
-    """
-    return main(args)
-
-
 def main(args) -> int:
     """
     CLI wrapper for dump-fonts.
