@@ -1,3 +1,9 @@
+## [0.55.1](https://github.com/marco0560/Fontshow/compare/v0.55.0...v0.55.1) (2026-03-14)
+
+### Bug Fixes
+
+* **core:** edge-case handling in script and specimen helpers ([e8cb0bb](https://github.com/marco0560/Fontshow/commit/e8cb0bba2a02b959d530bd5e360fd60ee46970bd))
+
 ## [0.55.0](https://github.com/marco0560/Fontshow/compare/v0.54.0...v0.55.0) (2026-03-14)
 
 ### Features
