@@ -236,13 +236,13 @@ def infer_scripts(  # noqa: C901, PLR0912
             elif block.startswith("CJK Unified Ideographs"):
                 add_script("hani", count)
 
-            # --- CJK disambiguation (kept as a single-script outcome)
-            if "hani" in scripts_score:
-                if "jpan" in scripts_score:
-                    return ["jpan"]
-                if "hang" in scripts_score:
-                    return ["hang"]
-                return ["hani"]
+        # --- CJK disambiguation (kept as a single-script outcome)
+        if "hani" in scripts_score:
+            if "jpan" in scripts_score:
+                return ["jpan"]
+            if "hang" in scripts_score:
+                return ["hang"]
+            return ["hani"]
 
         normalized_scores: list[tuple[str, int]] = []
         for name, score in scripts_score.items():
