@@ -40,6 +40,7 @@ from fontshow.core.json_boundary import normalize_loaded_enums
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.core.types import Severity
 from fontshow.inventory.metadata_processing import font_family
+from fontshow.inventory.schema_validation import _validate_inventory_schema_strict
 from fontshow.inventory.semantic_validation import enforce_semantic_validation
 from fontshow.platform.runtime import _enforce_platform
 
@@ -194,43 +195,6 @@ def load_font_inventory(path: Path) -> list[dict]:
     return fonts
 
 
-def _normalize_inventory_paths(inventory: dict) -> None:
-    """
-    Normalize inventory font entries so that `identity.file` is present when
-    a file path is available.
-
-    Parameters
-    ----------
-    inventory : dict
-        Inventory dictionary expected to contain a `fonts` list with font
-        descriptor mappings.
-
-    Returns
-    -------
-    None
-
-    Notes
-    -----
-    - Does not modify the schema version.
-    - Does not delete fields.
-    - Does not emit warnings.
-    - Operation is idempotent.
-    """
-
-    fonts = inventory.get("fonts", [])
-    for font in fonts:
-        identity = font.get("identity")
-
-        if not isinstance(identity, dict):
-            continue
-
-        if "file" in identity:
-            continue
-
-        if "path" in font:
-            identity["file"] = font["path"]
-
-
 def _validate_fonts_structure(inventory: dict) -> tuple[bool, list]:
     """
     Validate the structure of the `fonts` section in an inventory.
@@ -329,6 +293,8 @@ def _load_inventory(
             )
             return 1, []
 
+        _validate_inventory_schema_strict(inventory)
+
         inv_env = metadata.get("run_environment")
         if require_platform and not isinstance(inv_env, dict):
             log_err("Inventory missing required metadata.run_environment (schema v1.2)")
@@ -356,8 +322,6 @@ def _load_inventory(
         if not ok_fonts:
             log_err("Invalid inventory JSON: malformed or empty 'fonts' section.")
             return 1, []
-
-        _normalize_inventory_paths(inventory)
 
         ok, semantic_warnings = enforce_semantic_validation(
             inventory,

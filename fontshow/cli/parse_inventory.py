@@ -113,10 +113,9 @@ def parse_inventory(
     )
 
     for font in data.get("fonts", []):
-        identity = font.get("identity", {})
         font_path = font.get("path")
-        family = identity.get("family")
-        style = identity.get("style")
+        family = font.get("family")
+        style = font.get("subfamily")
 
         log.debug(
             "font entry parsing started",

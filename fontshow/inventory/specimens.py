@@ -537,10 +537,7 @@ def _specimen_generate_for_font(
     The function always leaves a visible specimen in the font record,
     even when curated and cmap-derived samples are both unusable.
     """
-    identity = font.get("identity", {})
-    ttc_index = identity.get("ttc_index")
-
-    cps = _specimen_collect_cmap(font_path, ttc_index)
+    cps = _specimen_collect_cmap(font_path, None)
 
     specimen_text: str | None = None
     strategy: str | None = None

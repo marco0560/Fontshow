@@ -67,12 +67,12 @@ def test_collect_polyglossia_other_languages_is_sorted_and_filtered(monkeypatch)
     )
 
 
-def test_nfss_family_id_is_stable_and_uses_ttc_index():
+def test_nfss_family_id_is_stable_and_uses_path():
     """
-    Ensure NFSS ids are deterministic and vary across TTC faces.
+    Ensure NFSS ids are deterministic and vary across file paths.
     """
-    base = {"identity": {"file": "/tmp/font.ttc", "ttc_index": 0}}
-    other = {"identity": {"file": "/tmp/font.ttc", "ttc_index": 1}}
+    base = {"path": "/tmp/font-a.ttf"}
+    other = {"path": "/tmp/font-b.ttf"}
 
     assert policy.nfss_family_id(base) == policy.nfss_family_id(base)
     assert policy.nfss_family_id(base) != policy.nfss_family_id(other)

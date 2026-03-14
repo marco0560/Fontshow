@@ -213,12 +213,11 @@ def _debug_dump_inference(
     if os.environ.get("FONTSHOW_DEBUG_INFERENCE") != "1":
         return
 
-    identity = font.get("identity", {})
     inferred_scripts = font.get("inference", {}).get("scripts", [])
     font_scripts = set(inferred_scripts)
 
     log_info("\n[DEBUG] Font inference diagnostics")
-    log_info(f"  font identity: {identity.get('family')}, {identity.get('style')}")
+    log_info(f"  font identity: {font.get('family')}, {font.get('subfamily')}")
 
     log_info("  unicode blocks:")
     for block, count in coverage.get("unicode_blocks", {}).items():
@@ -427,9 +426,8 @@ def _infer_and_attach_metadata(
     the final inference block, and optionally emits debug diagnostics.
     """
 
-    identity = font.get("identity", {})
-    family = identity.get("family")
-    style = identity.get("style")
+    family = font.get("family")
+    style = font.get("subfamily")
 
     log_trace_cat(
         log,

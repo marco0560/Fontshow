@@ -120,7 +120,7 @@ def test_specimen_generate_for_font_uses_visible_replacement_and_semantic_fallba
     """
     Ensure generation never leaves whitespace-only output and records fallback reasons.
     """
-    font = {"identity": {"ttc_index": 0}, "sample_text": "   ", "inference": {}}
+    font = {"path": "/tmp/font.ttf", "sample_text": "   ", "inference": {}}
     coverage = {"scripts": []}
 
     monkeypatch.setattr(

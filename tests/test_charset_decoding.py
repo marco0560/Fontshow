@@ -23,6 +23,7 @@ from pathlib import Path
 import pytest
 
 from fontshow.inventory.io import load_font_inventory
+from tests.helpers import minimal_inventory_v12
 
 
 def _write_inventory(tmp_path: Path, content: bytes | str) -> Path:
@@ -62,18 +63,17 @@ def test_utf8_inventory_ok(tmp_path):
     -------
     None
     """
-    data = {
-        "metadata": {"schema_version": "1.2"},
-        "fonts": [
-            {"name": "Café Sans", "coverage": {"languages": ["fr"]}},
-        ],
-    }
+    data = minimal_inventory_v12()
+    data["fonts"][0]["family"] = "Cafe Sans"
+    data["fonts"][0]["full_name"] = "Café Sans"
+    data["fonts"][0]["postscript_name"] = "CafeSans-Regular"
+    data["fonts"][0]["unique_font_id"] = "cafe-sans-regular-1.0"
 
     p = _write_inventory(tmp_path, json.dumps(data))
     fonts = load_font_inventory(p)
 
     assert isinstance(fonts, list)
-    assert fonts[0]["name"] == "Café Sans"
+    assert fonts[0]["full_name"] == "Café Sans"
 
 
 def test_non_latin_characters_ok(tmp_path):
@@ -89,17 +89,17 @@ def test_non_latin_characters_ok(tmp_path):
     -------
     None
     """
-    data = {
-        "metadata": {"schema_version": "1.2"},
-        "fonts": [
-            {"name": "東京ゴシック", "coverage": {"languages": ["ja"]}},
-        ],
-    }
+    data = minimal_inventory_v12()
+    data["fonts"][0]["family"] = "Tokyo Gothic"
+    data["fonts"][0]["full_name"] = "東京ゴシック"
+    data["fonts"][0]["postscript_name"] = "TokyoGothic-Regular"
+    data["fonts"][0]["unique_font_id"] = "tokyo-gothic-regular-1.0"
+    data["fonts"][0]["coverage"]["languages"] = ["ja"]
 
     p = _write_inventory(tmp_path, json.dumps(data))
     fonts = load_font_inventory(p)
 
-    assert fonts[0]["name"] == "東京ゴシック"
+    assert fonts[0]["full_name"] == "東京ゴシック"
 
 
 def test_invalid_utf8_bytes_fail(tmp_path):
@@ -145,18 +145,17 @@ def test_mixed_invalid_unicode_fails(tmp_path):
     This test covers the edge case of a string containing an unpaired
     surrogate escape in JSON content.
     """
-    data = {
-        "metadata": {"schema_version": "1.2"},
-        "fonts": [
-            {"name": "Bad\udc00Name", "coverage": {"languages": ["en"]}},
-        ],
-    }
+    data = minimal_inventory_v12()
+    data["fonts"][0]["family"] = "Bad"
+    data["fonts"][0]["full_name"] = "Bad\udc00Name"
+    data["fonts"][0]["postscript_name"] = "Bad-Regular"
+    data["fonts"][0]["unique_font_id"] = "bad-regular-1.0"
 
     p = _write_inventory(tmp_path, json.dumps(data))
 
     fonts = load_font_inventory(p)
 
-    assert fonts[0]["name"] == "Bad\udc00Name"
+    assert fonts[0]["full_name"] == "Bad\udc00Name"
 
 
 def test_empty_string_fields_ok(tmp_path):
@@ -172,14 +171,10 @@ def test_empty_string_fields_ok(tmp_path):
     -------
     None
     """
-    data = {
-        "metadata": {"schema_version": "1.2"},
-        "fonts": [
-            {"name": "", "coverage": {"languages": []}},
-        ],
-    }
+    data = minimal_inventory_v12()
+    data["fonts"][0]["sample_text"]["text"] = ""
 
     p = _write_inventory(tmp_path, json.dumps(data))
     fonts = load_font_inventory(p)
 
-    assert fonts[0]["name"] == ""
+    assert fonts[0]["sample_text"]["text"] == ""

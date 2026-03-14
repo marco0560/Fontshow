@@ -71,7 +71,7 @@ def test_validate_font_entry_missing_required_fields():
     Verify that missing required structural fields produce fatal errors.
 
     This test exercises the edge case of a partially populated mapping
-    that contains only a path and omits required identity fields.
+    that contains only a path and omits required schema 1.2 fields.
 
     Returns
     -------
@@ -84,12 +84,6 @@ def test_validate_font_entry_missing_required_fields():
 
     errors = validate_font_entry(entry, index=0)
     assert errors  # fatal structural error expected
-
-
-# ============================================================
-# BASE_NAMES PRESENT → IDENTITY NOT REQUIRED
-# (validator logic)
-# ============================================================
 
 
 def test_validate_font_entry_missing_family_is_fatal():
@@ -106,49 +100,3 @@ def test_validate_font_entry_missing_family_is_fatal():
     errors = validate_font_entry(entry, index=0)
     assert errors
     assert "Missing or invalid 'family'" in errors
-
-
-# ============================================================
-# IDENTITY PRESENT → BASE_NAMES NOT REQUIRED
-# ============================================================
-
-
-def test_validate_font_entry_identity_allows_missing_base_names():
-    """
-    Verify that missing ``base_names`` does not fail when identity is present.
-
-    Important setup assumption: the minimal entry already contains the
-    identity information required by the validator.
-
-    Returns
-    -------
-    None
-    """
-    entry = minimal_font_entry_v12()
-    entry.pop("base_names", None)
-
-    errors = validate_font_entry(entry, index=0)
-    assert errors == []
-
-
-# ============================================================
-# IDENTITY WRONG TYPE
-# ============================================================
-
-
-def test_validate_font_entry_extra_unknown_field_is_ignored():
-    """
-    Verify that an unrelated unknown field shape is ignored by validation.
-
-    This edge case confirms that the validator remains tolerant of
-    unsupported fields that are outside the enforced schema contract.
-
-    Returns
-    -------
-    None
-    """
-    entry = minimal_font_entry_v12()
-    entry["identity"] = "not a dict"  # unknown field under schema 1.2
-
-    errors = validate_font_entry(entry, index=0)
-    assert errors == []

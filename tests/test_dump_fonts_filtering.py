@@ -214,3 +214,35 @@ def test_parse_inventory_after_dump(tmp_path, monkeypatch):
     ret = run_parse_font_inventory(parse_args)
     assert ret == 0
     assert output.exists()
+
+
+def test_dump_fonts_fails_instead_of_writing_non_schema_fallback(tmp_path, monkeypatch):
+    """
+    Ensure dump-fonts aborts when it cannot build a schema-1.2 descriptor.
+    """
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.get_installed_font_files",
+        lambda: [Path("/fake/font-valid.ttf")],
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.fonttools_extract_all",
+        lambda path, **kwargs: [{"ok": True, "ttc_index": None}],
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.build_font_descriptor",
+        lambda _ctx: (_ for _ in ()).throw(ValueError("broken descriptor")),
+    )
+
+    output = tmp_path / "fonts.json"
+    args = SimpleNamespace(
+        output=output,
+        cache_dir=tmp_path,
+        include_fc_charset=False,
+        no_cache=True,
+        verbose=False,
+    )
+
+    ret = run_dump_fonts(args)
+
+    assert ret == 1
+    assert not output.exists()

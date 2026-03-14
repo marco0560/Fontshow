@@ -304,7 +304,7 @@ def has_style_leak_in_family(desc: dict) -> bool:
     Parameters
     ----------
     desc : dict
-        Font descriptor whose identity block is inspected.
+        Font descriptor whose family field is inspected.
 
     Returns
     -------
@@ -316,7 +316,7 @@ def has_style_leak_in_family(desc: dict) -> bool:
     This helper is used as a conservative signal that style information
     may have leaked into the normalized family field.
     """
-    fam = desc.get("identity", {}).get("family", "")
+    fam = desc.get("family", "")
     if not isinstance(fam, str):
         return False
     return bool(_STYLE_LEAK_RE.search(fam))

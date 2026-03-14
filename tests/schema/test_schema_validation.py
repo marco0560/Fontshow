@@ -73,9 +73,9 @@ def _valid_v12_inventory():
 # ---------------------------------------------------------------------------
 
 
-def test_raw_inventory_without_metadata_emits_deprecation_warning():
+def test_raw_inventory_without_metadata_emits_error():
     """
-    Verify that inventories without metadata emit the legacy deprecation warning.
+    Verify that inventories without metadata are rejected.
 
     Returns
     -------
@@ -86,8 +86,8 @@ def test_raw_inventory_without_metadata_emits_deprecation_warning():
     warnings = validate_inventory_schema(data)
 
     assert len(warnings) == 1
-    assert warnings[0]["code"] == "schema_version_deprecated"
-    assert warnings[0]["severity"] == Severity.WARN
+    assert warnings[0]["code"] == "schema_version_missing"
+    assert warnings[0]["severity"] == Severity.ERROR
 
 
 def test_valid_v1_2_inventory_is_ok():

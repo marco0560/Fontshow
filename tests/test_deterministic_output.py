@@ -32,7 +32,7 @@ from fontshow.cli.create_catalog import (
     build_parser,
     run_create_catalog,
 )
-from fontshow.inventory.platform_metadata import collect_platform_metadata
+from tests.helpers import minimal_inventory_v12
 
 
 def _run(tmp_path, inventory):
@@ -93,16 +93,25 @@ def test_deterministic_catalog_output(tmp_path):
     -------
     None
     """
-    inventory = {
-        "metadata": {
-            "schema_version": "1.2",
-            "run_environment": collect_platform_metadata(),
-        },
-        "fonts": [
-            {"name": "Alpha", "coverage": {"languages": ["en"]}},
-            {"name": "Beta", "coverage": {"languages": ["fr"]}},
-        ],
-    }
+    inventory = minimal_inventory_v12()
+
+    font_a = inventory["fonts"][0]
+    font_a["family"] = "Alpha"
+    font_a["full_name"] = "Alpha Regular"
+    font_a["postscript_name"] = "Alpha-Regular"
+    font_a["unique_font_id"] = "alpha-regular-1.0"
+    font_a["coverage"]["languages"] = ["en"]
+
+    font_b = dict(font_a)
+    font_b["path"] = "/fake/beta.ttf"
+    font_b["family"] = "Beta"
+    font_b["full_name"] = "Beta Regular"
+    font_b["postscript_name"] = "Beta-Regular"
+    font_b["unique_font_id"] = "beta-regular-1.0"
+    font_b["coverage"] = dict(font_a["coverage"])
+    font_b["coverage"]["languages"] = ["fr"]
+
+    inventory["fonts"] = [font_a, font_b]
 
     out1 = _run(tmp_path / "run1", inventory)
     out2 = _run(tmp_path / "run2", inventory)

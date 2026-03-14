@@ -57,7 +57,7 @@ def _format_font_identity(font: dict, index: int) -> str:
 
     Notes
     -----
-    - Compatible with schema 1.0 and 1.1 layouts.
+    - Uses only the schema 1.2 layout.
     - Intended for diagnostics and CLI output only.
     - Does not modify the font entry.
     """
@@ -91,25 +91,17 @@ def _get_font_path_for_diagnostics(font: dict) -> str | None:
     Returns
     -------
     str | None
-        Resolved path string according to preference order:
-        1. font["path"] (schema >= 1.1)
-        2. font["identity"]["file"] (schema 1.0)
+        Resolved path string from ``font["path"]`` when present.
         Returns None if no usable path is found.
 
     Notes
     -----
     - This function is read-only and MUST NOT mutate the input.
     - Used exclusively for human-readable diagnostics.
-    - Preference order preserves compatibility across older and newer
-      inventory layouts.
+    - Legacy inventory layouts are not supported.
     """
-    if isinstance(font, dict):
-        if font.get("path"):
-            return font.get("path")
-
-        identity = font.get("identity")
-        if isinstance(identity, dict):
-            return identity.get("file")
+    if isinstance(font, dict) and font.get("path"):
+        return font.get("path")
 
     return None
 

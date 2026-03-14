@@ -146,13 +146,13 @@ def nfss_family_id(font: dict) -> str:
     Return a deterministic NFSS-safe identifier for a font.
 
     The identifier is derived from a stable SHA-256 digest of:
-        <identity.file>#<ttc_index>
+        <path>#0
 
     Parameters
     ----------
     font : dict
-        Font descriptor dictionary containing at least an `identity`
-        mapping with optional `file` and `ttc_index` fields.
+        Font descriptor dictionary containing the schema 1.2 `path`
+        field.
 
     Returns
     -------
@@ -162,14 +162,11 @@ def nfss_family_id(font: dict) -> str:
 
     Notes
     -----
-    The identifier is stable for a given ``identity.file`` and
-    ``ttc_index`` pair and is suitable for use as an internal NFSS
+    The identifier is stable for a given ``path`` and is suitable for use as an internal NFSS
     family token rather than a user-facing label.
     """
-    identity = font.get("identity", {}) or {}
-    file_path = identity.get("file", "")
-    ttc_index = identity.get("ttc_index", 0)
+    file_path = font.get("path", "")
 
-    key = f"{file_path}#{ttc_index}"
+    key = f"{file_path}#0"
     digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
     return "FS" + digest[:10]

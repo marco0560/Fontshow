@@ -3,7 +3,7 @@ Exercise inventory I/O helper branches.
 
 Responsibilities
 ----------------
-- Cover structural validation and path normalization helpers.
+- Cover structural validation and strict schema-1.2 inventory loading.
 - Verify inventory loading error conversion and semantic/platform gates.
 - Keep tests deterministic by patching platform and semantic validators.
 """
@@ -27,26 +27,6 @@ def test_validate_fonts_container_accepts_only_lists():
 
     assert io._validate_fonts_container({"fonts": fonts}) == fonts
     assert io._validate_fonts_container({"fonts": "nope"}) is None
-
-
-def test_normalize_inventory_paths_sets_identity_file_only_when_missing():
-    """
-    Ensure path normalization is idempotent and ignores malformed identities.
-    """
-    inventory = {
-        "fonts": [
-            {"path": "/tmp/alpha.ttf", "identity": {}},
-            {"path": "/tmp/beta.ttf", "identity": {"file": "/existing.ttf"}},
-            {"path": "/tmp/gamma.ttf", "identity": None},
-            {"identity": {}},
-        ]
-    }
-
-    io._normalize_inventory_paths(inventory)
-
-    assert inventory["fonts"][0]["identity"]["file"] == "/tmp/alpha.ttf"
-    assert inventory["fonts"][1]["identity"]["file"] == "/existing.ttf"
-    assert inventory["fonts"][3]["identity"] == {}
 
 
 @pytest.mark.parametrize(
@@ -114,8 +94,48 @@ def test_load_inventory_rejects_missing_run_environment_when_required(
 
     assert (rc, fonts) == (1, [])
     assert errors == [
-        "Inventory missing required metadata.run_environment (schema v1.2)"
+        "failed to load inventory: Inventory schema validation failed: 'run_environment' is a required property"
     ]
+
+
+def test_load_inventory_rejects_legacy_schema_version(tmp_path, monkeypatch):
+    """
+    Ensure legacy schema versions are rejected immediately.
+    """
+    path = tmp_path / "inventory.json"
+    path.write_text(
+        json.dumps({"metadata": {"schema_version": "1.0"}, "fonts": []}),
+        encoding="utf-8",
+    )
+    errors: list[str] = []
+
+    monkeypatch.setattr(io, "log_err", errors.append)
+
+    rc, fonts = io._load_inventory(path, require_platform=False)
+
+    assert (rc, fonts) == (1, [])
+    assert errors == ["Unsupported inventory schema_version: '1.0' (required 1.2)"]
+
+
+def test_load_inventory_rejects_mixed_shape_entry(tmp_path, monkeypatch):
+    """
+    Ensure entries carrying legacy-only fields are rejected by strict loading.
+    """
+    data = minimal_inventory_v12()
+    data["fonts"][0]["identity"] = {"file": data["fonts"][0]["path"]}
+    path = tmp_path / "inventory.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    errors: list[str] = []
+
+    monkeypatch.setattr(io, "log_err", errors.append)
+
+    rc, fonts = io._load_inventory(path, require_platform=False)
+
+    assert (rc, fonts) == (1, [])
+    assert len(errors) == 1
+    assert errors[0].startswith(
+        "failed to load inventory: Inventory schema validation failed:"
+    )
 
 
 def test_load_inventory_rejects_platform_mismatch(tmp_path, monkeypatch):
@@ -174,11 +194,9 @@ def test_load_inventory_returns_fonts_when_platform_check_is_disabled(
     tmp_path, monkeypatch
 ):
     """
-    Ensure non-platform mode skips run-environment enforcement and normalizes paths.
+    Ensure non-platform mode skips platform matching for valid schema-1.2 inventories.
     """
     data = minimal_inventory_v12()
-    data["fonts"][0]["identity"] = {}
-    del data["metadata"]["run_environment"]
     path = tmp_path / "inventory.json"
     path.write_text(json.dumps(data), encoding="utf-8")
     oks: list[str] = []
@@ -193,5 +211,5 @@ def test_load_inventory_returns_fonts_when_platform_check_is_disabled(
     rc, fonts = io._load_inventory(path, require_platform=False)
 
     assert rc == 0
-    assert fonts[0]["identity"]["file"] == fonts[0]["path"]
+    assert fonts[0]["path"] == data["fonts"][0]["path"]
     assert oks == [f"Inventory loaded: {path} (1 fonts)"]

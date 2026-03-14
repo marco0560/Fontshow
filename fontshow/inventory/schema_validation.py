@@ -155,7 +155,7 @@ def validate_inventory_schema(data: dict) -> list[dict]:
     Notes
     -----
     Missing or unknown schema versions are converted into structured
-    warning/error records instead of exceptions.
+    error records instead of exceptions.
     """
 
     warnings: list[dict] = []
@@ -177,17 +177,17 @@ def validate_inventory_schema(data: dict) -> list[dict]:
             "validate",
             "schema warning returned",
             extra={
-                "code": "schema_version_deprecated",
-                "severity": Severity.WARN,
-                "schema_version": "1.0",
+                "code": "schema_version_missing",
+                "severity": Severity.ERROR,
+                "schema_version": None,
             },
         )
         return [
             {
-                "severity": Severity.WARN,
-                "code": "schema_version_deprecated",
-                "message": "Missing metadata.schema_version; assuming legacy schema 1.0",
-                "schema_version": "1.0",
+                "severity": Severity.ERROR,
+                "code": "schema_version_missing",
+                "message": "Missing metadata.schema_version; required schema version is 1.2",
+                "schema_version": None,
             }
         ]
 

@@ -26,13 +26,11 @@ This file is NOT intended to be exhaustive nor representative
 of the full inventory.
 """
 
-import json
-from pathlib import Path
-
 from fontshow.inventory.schema_validation import validate_inventory_schema
+from tests.helpers import minimal_inventory_v12
 
 
-def test_real_inventory_regression_no_errors():
+def test_schema_v1_2_inventory_regression_no_errors():
     """
     Regression test using a real-world inventory file.
 
@@ -45,13 +43,7 @@ def test_real_inventory_regression_no_errors():
     None
     """
 
-    fixture = (
-        Path(__file__).parent.parent
-        / "fixtures"
-        / "schema"
-        / "inventory_real_minimal.json"
-    )
-    data = json.loads(fixture.read_text(encoding="utf-8"))
+    data = minimal_inventory_v12()
 
     warnings = validate_inventory_schema(data)
 

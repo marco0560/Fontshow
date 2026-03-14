@@ -291,25 +291,12 @@ def run_dump_fonts(args) -> int:
                     )
                 )
 
-                # Normalize missing style for single-style fonts
-                if desc.get("identity", {}).get("family") and not desc.get(
-                    "identity", {}
-                ).get("style"):
-                    desc["identity"]["style"] = "Regular"
-
                 if has_style_leak_in_family(desc):
                     style_leak_suspected += 1
                 inventory["fonts"].append(desc)
             except (ValueError, TypeError, KeyError) as e:
-                inventory["fonts"].append(
-                    {
-                        "identity": {
-                            "file": str(font_path),
-                            "ttc_index": face.get("ttc_index"),
-                        },
-                        "error": f"Descriptor build failed: {e}",
-                    }
-                )
+                log_err(f"Descriptor build failed for {font_path}: {e}")
+                return 1
 
     fonts_total = len(inventory.get("fonts", []))
 

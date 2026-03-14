@@ -33,7 +33,7 @@ from fontshow.cli.create_catalog import (
     build_parser,
     run_create_catalog,
 )
-from fontshow.inventory.platform_metadata import collect_platform_metadata
+from tests.helpers import minimal_inventory_v12
 
 
 def test_only_tex_artifact_created(tmp_path):
@@ -57,15 +57,7 @@ def test_only_tex_artifact_created(tmp_path):
     It asserts the edge case that no unexpected side artifacts are
     created alongside the expected ``.tex`` output.
     """
-    inventory = {
-        "metadata": {
-            "schema_version": "1.2",
-            "run_environment": collect_platform_metadata(),
-        },
-        "fonts": [
-            {"name": "Alpha", "coverage": {"languages": ["en"]}},
-        ],
-    }
+    inventory = minimal_inventory_v12()
 
     inv = tmp_path / "inv.json"
     inv.write_text(json.dumps(inventory), encoding="utf-8")

@@ -61,7 +61,8 @@ def test_debug_dump_inference_respects_env_and_handles_missing_profiles(
 
     mp._debug_dump_inference(
         {
-            "identity": {"family": "Alpha", "style": "Regular"},
+            "family": "Alpha",
+            "subfamily": "Regular",
             "inference": {"scripts": ["LATN"]},
         },
         {"unicode_blocks": {"Basic Latin": 10}},
