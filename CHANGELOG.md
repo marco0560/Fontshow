@@ -1,3 +1,9 @@
+## [0.56.0](https://github.com/marco0560/Fontshow/compare/v0.55.5...v0.56.0) (2026-03-14)
+
+### Features
+
+* **dump:** improve style-leak diagnostics in verbose mode ([12b7996](https://github.com/marco0560/Fontshow/commit/12b7996c8bf10028ee633859d7a09db7929aedf4))
+
 ## [0.55.5](https://github.com/marco0560/Fontshow/compare/v0.55.4...v0.55.5) (2026-03-14)
 
 ### Bug Fixes
