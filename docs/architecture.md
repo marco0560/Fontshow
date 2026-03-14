@@ -443,7 +443,10 @@ that clearly separates:
 This design guarantees correct exit codes, stable CLI tests, and preservation
 of all official entrypoints (including `python -m fontshow`,
 `python -m fontshow.preflight`, and module-backed commands such as
-`python -m fontshow.cli.dump_fonts`).
+`python -m fontshow.cli.dump_fonts`,
+`python -m fontshow.cli.parse_inventory`,
+`python -m fontshow.cli.validate_inventory`, and
+`python -m fontshow.cli.create_catalog`).
 
 ---
 

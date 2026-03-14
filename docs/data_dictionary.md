@@ -35,8 +35,8 @@ Metadata about how and when the inventory was generated or enriched.
 - `generated_at` (string, ISO 8601)
 
 - `tool` (string)
-  Name of the tool that produced the inventory (`dump_fonts`,
-  `parse_font_inventory`, `create_catalog`).
+  Name of the tool that produced the inventory (`dump-fonts`,
+  `parse-inventory`, `validate-inventory`, `create-catalog`).
 
 - `tool_version` (string)
   Fontshow version used by the tool.
@@ -231,7 +231,7 @@ Extraction diagnostics.
 
 ## inference
 
-Derived metadata computed by `parse_font_inventory`.
+Derived metadata computed by `parse-inventory`.
 
 Inference is deterministic and reproducible.
 
@@ -266,7 +266,7 @@ using **ISO 15924** script codes.
 
 #### Derivation rules
 
-The value is derived by `parse_font_inventory` using a best-effort strategy
+The value is derived by `parse-inventory` using a best-effort strategy
 based on Unicode coverage metadata:
 
 1. **Primary source**: `coverage.unicode_blocks`
