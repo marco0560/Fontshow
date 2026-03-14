@@ -1,3 +1,9 @@
+## [0.55.5](https://github.com/marco0560/Fontshow/compare/v0.55.4...v0.55.5) (2026-03-14)
+
+### Bug Fixes
+
+* **inventory:** tighten style-leak detection and centralize constants ([c9aaeae](https://github.com/marco0560/Fontshow/commit/c9aaeaec355ed85885f6c056ab5e34820a6d15a2))
+
 ## [0.55.4](https://github.com/marco0560/Fontshow/compare/v0.55.3...v0.55.4) (2026-03-14)
 
 ### Bug Fixes
