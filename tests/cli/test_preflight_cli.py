@@ -176,6 +176,25 @@ def test_preflight_real_runner_does_not_crash(cli_runner):
     assert out.strip() != ""
 
 
+def test_preflight_real_runner_quiet_suppresses_stdout(cli_runner):
+    """
+    Verify that quiet mode suppresses stdout for the real preflight runner.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+
+    Returns
+    -------
+    None
+    """
+    code, out = cli_runner(["fontshow", "preflight", "-q"])
+
+    assert code in (0, 1)
+    assert out.strip() == ""
+
+
 def test_preflight_module_entrypoint_runs():
     """
     Ensure that `python -m fontshow.preflight` executes

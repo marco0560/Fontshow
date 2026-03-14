@@ -79,3 +79,93 @@ def test_preflight_output_writes_file(tmp_path, capsys):
     assert "[WARN]" in text
     assert "unit-test" in text
     assert "hello" in text
+
+
+def test_preflight_default_mode_prints_only_summary(capsys):
+    """
+    Verify that default preflight console output is summary-only.
+
+    Parameters
+    ----------
+    capsys : pytest.CaptureFixture[str]
+        Capture fixture used to inspect CLI stdout.
+
+    Returns
+    -------
+    None
+    """
+    args = Namespace(output=None, quiet=False, verbose=False)
+
+    def fake_run_preflight():
+        return PreflightResult(
+            [
+                CheckResult("a", Severity.OK, "ok"),
+                CheckResult("b", Severity.INFO, "info"),
+            ]
+        )
+
+    code = run_preflight_cli(args=args, run_preflight_fn=fake_run_preflight)
+
+    captured = capsys.readouterr()
+    assert code == 0
+    assert captured.err == ""
+    assert captured.out.strip() == "[OK  ] Preflight passed."
+
+
+def test_preflight_verbose_mode_prints_detailed_results(capsys):
+    """
+    Verify that verbose preflight console output includes per-check lines.
+
+    Parameters
+    ----------
+    capsys : pytest.CaptureFixture[str]
+        Capture fixture used to inspect CLI stdout.
+
+    Returns
+    -------
+    None
+    """
+    args = Namespace(output=None, quiet=False, verbose=True)
+
+    def fake_run_preflight():
+        return PreflightResult(
+            [
+                CheckResult("a", Severity.OK, "ok"),
+                CheckResult("b", Severity.INFO, "info"),
+            ]
+        )
+
+    code = run_preflight_cli(args=args, run_preflight_fn=fake_run_preflight)
+
+    captured = capsys.readouterr()
+    assert code == 0
+    assert captured.err == ""
+    assert "[OK  ] a: ok" in captured.out
+    assert "[INFO] b: info" in captured.out
+    assert "[OK  ] Preflight passed." in captured.out
+
+
+def test_preflight_quiet_mode_suppresses_console_output(capsys):
+    """
+    Verify that quiet preflight mode suppresses non-error console output.
+
+    Parameters
+    ----------
+    capsys : pytest.CaptureFixture[str]
+        Capture fixture used to inspect CLI output.
+
+    Returns
+    -------
+    None
+    """
+    args = Namespace(output=None, quiet=True, verbose=False)
+
+    def fake_run_preflight():
+        return PreflightResult([CheckResult("a", Severity.OK, "ok")])
+
+    code = run_preflight_cli(args=args, run_preflight_fn=fake_run_preflight)
+
+    captured = capsys.readouterr()
+    assert code == 0
+    assert captured.out == ""
+    assert captured.err == ""

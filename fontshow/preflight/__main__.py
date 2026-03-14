@@ -72,7 +72,10 @@ def run_preflight_cli(
     This function is intentionally side-effect free (no `sys.exit`) so
     it can be tested easily and supports dependency injection.
     """
-    _ = args  # Placeholder for potential future use
+    quiet = getattr(args, "quiet", False)
+    verbose = getattr(args, "verbose", False)
+    set_cli_mode(quiet, verbose)
+
     log_trace_cat(
         log,
         "flow",
@@ -100,7 +103,7 @@ def run_preflight_cli(
     # render_preflight_results() returns formatted lines
     rendered_lines = render_preflight_results(
         result.results,
-        verbose=getattr(args, "verbose", False),
+        verbose=verbose,
     )
 
     output_path = getattr(args, "output", None)
@@ -114,15 +117,16 @@ def run_preflight_cli(
             log_err(f"Failed to write preflight report: {exc}")
             return 1
 
-    for line in rendered_lines:
-        if line.startswith("[OK"):
-            log_ok(line[7:])
-        elif line.startswith("[INFO"):
-            log_info(line[7:])
-        elif line.startswith("[WARN"):
-            log_warn(line[7:])
-        else:
-            log_err(line[7:])
+    if verbose:
+        for line in rendered_lines:
+            if line.startswith("[OK"):
+                log_ok(line[7:])
+            elif line.startswith("[INFO"):
+                log_info(line[7:])
+            elif line.startswith("[WARN"):
+                log_warn(line[7:])
+            else:
+                log_err(line[7:])
 
     if exit_code == 0:
         log_ok("Preflight passed.")
@@ -157,7 +161,6 @@ def main(args=None) -> int:
     contract.
     """
 
-    set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
     try:
         return run_preflight_cli(args=args)
     except Exception as exc:  # noqa: BLE001
