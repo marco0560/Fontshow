@@ -1,3 +1,9 @@
+## [0.55.3](https://github.com/marco0560/Fontshow/compare/v0.55.2...v0.55.3) (2026-03-14)
+
+### Bug Fixes
+
+* **diagnostics:** honor quiet and verbose CLI flags ([0c872d8](https://github.com/marco0560/Fontshow/commit/0c872d85814f123c1d463ecec48eb2498e99c67c))
+
 ## [0.55.2](https://github.com/marco0560/Fontshow/compare/v0.55.1...v0.55.2) (2026-03-14)
 
 ### Bug Fixes
