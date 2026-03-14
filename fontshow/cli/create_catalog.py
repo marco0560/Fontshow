@@ -406,8 +406,7 @@ def run_create_catalog(args) -> int:
     # --------------------------------------------------------------
     # CONSISTENCY DIAGNOSTICS (inventory mode only)
     # --------------------------------------------------------------
-    if inv_path and inv_path.exists():
-        _run_inventory_diagnostics(fonts)
+    _run_inventory_diagnostics(fonts)
 
     # --------------------------------------------------------------
     # FONT FILTERING / OUTPUT PREPARATION

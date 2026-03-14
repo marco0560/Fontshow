@@ -407,12 +407,7 @@ def main(args) -> int:
     """
     set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
 
-    try:
-        exit_code = _run_dump_fonts(args)
-    except TypeError:
-        # dump-fonts never uses TypeError as controlled CLI failure;
-        # treat as internal non-fatal error to preserve legacy semantics
-        exit_code = 0
+    exit_code = _run_dump_fonts(args)
 
     if exit_code == 0:
         log_ok(
