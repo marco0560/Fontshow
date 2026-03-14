@@ -1,3 +1,9 @@
+## [0.54.0](https://github.com/marco0560/Fontshow/compare/v0.53.1...v0.54.0) (2026-03-14)
+
+### Features
+
+* **discovery:** skip legacy font formats and improve dump summary accounting ([5a078be](https://github.com/marco0560/Fontshow/commit/5a078bec41931e507aaa8648d7011e74618d6d3c))
+
 ## [0.53.1](https://github.com/marco0560/Fontshow/compare/v0.53.0...v0.53.1) (2026-03-13)
 
 ### Bug Fixes
