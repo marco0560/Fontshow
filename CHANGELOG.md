@@ -1,3 +1,9 @@
+## [0.55.2](https://github.com/marco0560/Fontshow/compare/v0.55.1...v0.55.2) (2026-03-14)
+
+### Bug Fixes
+
+* add edge-case coverage for metadata and logging paths ([de43e86](https://github.com/marco0560/Fontshow/commit/de43e86a192599ae08c9a1c5a855bc322f75754c))
+
 ## [0.55.1](https://github.com/marco0560/Fontshow/compare/v0.55.0...v0.55.1) (2026-03-14)
 
 ### Bug Fixes
