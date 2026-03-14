@@ -40,27 +40,6 @@ ScriptISO = NewType("ScriptISO", str)
 ScriptTag = NewType("ScriptTag", str)
 
 
-def iso_to_tag(script: ScriptISO | str) -> ScriptTag:
-    """
-    Convert ISO15924 uppercase identifier to lowercase tag form.
-
-    Parameters
-    ----------
-    script : ScriptISO | str
-        Canonical ISO-15924 script identifier or equivalent string.
-
-    Returns
-    -------
-    ScriptTag
-        Lowercase tag representation of the input script.
-
-    Notes
-    -----
-    Example: ``LATN`` -> ``latn``.
-    """
-    return ScriptTag(str(script).lower())
-
-
 def tag_to_iso(tag: ScriptTag | str) -> ScriptISO:
     """
     Convert lowercase tag to ISO15924 uppercase identifier.
@@ -113,29 +92,6 @@ def normalize_script_iso(value: ScriptISO | ScriptTag | str | None) -> ScriptISO
     if value is None:
         return None
     return ScriptISO(str(value).upper())
-
-
-def normalize_script_tag(value: ScriptISO | ScriptTag | str | None) -> ScriptTag | None:
-    """
-    Normalize any script identifier to canonical ScriptTag.
-
-    Parameters
-    ----------
-    value : ScriptISO | ScriptTag | str | None
-        Script identifier to normalize.
-
-    Returns
-    -------
-    ScriptTag | None
-        Canonical lowercase script tag, or None if the input is None.
-
-    Notes
-    -----
-    Behavior-preserving helper mirroring historical `.lower()` usage.
-    """
-    if value is None:
-        return None
-    return ScriptTag(str(value).lower())
 
 
 # ------------------------------------------------------------------

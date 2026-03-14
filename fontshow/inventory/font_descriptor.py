@@ -42,54 +42,6 @@ from fontshow.inventory.types import FontBuildContext
 from fontshow.inventory.utils import make_font_id
 
 
-def classify_font(
-    format_block: dict[str, Any], unicode_max: int | None
-) -> dict[str, Any]:
-    """
-    Classify a font using simple, format-based heuristics.
-
-    This classification is intentionally coarse and conservative.
-    Richer semantic inference (scripts, languages, writing systems)
-    is performed downstream by ``parse_font_inventory.py``.
-
-    Parameters
-    ----------
-    format_block : dict[str, Any]
-        Dictionary describing container and format properties
-        (e.g. container, font_type, color, decorative, variable).
-    unicode_max : int | None
-        Maximum Unicode code point supported by the font, or None if unknown.
-
-    Returns
-    -------
-    dict[str, Any]
-        Dictionary containing boolean classification flags and format hints.
-
-    Notes
-    -----
-    Emoji classification is intentionally heuristic and currently
-    depends on the combination of color-font support and a Unicode
-    maximum reaching the emoji range.
-    """
-    container = format_block.get("container")
-    font_type = format_block.get("font_type")
-    color = bool(format_block.get("color"))
-    decorative = bool(format_block.get("decorative"))
-    variable = bool(format_block.get("variable"))
-
-    # Emoji heuristic: color font reaching emoji Unicode range
-    is_emoji = bool(color and unicode_max and unicode_max >= 0x1F300)
-
-    return {
-        "is_variable": variable,
-        "is_color": color,
-        "is_decorative": decorative,
-        "is_emoji": is_emoji,
-        "container": container,
-        "font_type": font_type,
-    }
-
-
 def _normalize_metrics(
     fonttools,
     typography,
