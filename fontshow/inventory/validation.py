@@ -25,9 +25,14 @@ validation stage used during inventory parsing and validation workflows.
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
+from fontshow.constants.inventory import (
+    STYLE_LEAK_RE,
+    STYLE_SLANT_TOKENS,
+    STYLE_WEIGHT_RANGES,
+    STYLE_WIDTH_TOKENS,
+)
 from fontshow.core.cli_utils import (
     log_err,
     log_info,
@@ -287,16 +292,6 @@ def is_structurally_unloadable_face(face: dict) -> bool:
     )
 
 
-_STYLE_LEAK_RE = re.compile(
-    r"\b("
-    r"bold|italic|oblique|light|regular|medium|"
-    r"semibold|extrabold|black|thin|"
-    r"condensed|narrow|extended"
-    r")\b",
-    re.IGNORECASE,
-)
-
-
 def has_style_leak_in_family(desc: dict) -> bool:
     """
     Detect whether a family name appears to contain style qualifiers.
@@ -309,14 +304,53 @@ def has_style_leak_in_family(desc: dict) -> bool:
     Returns
     -------
     bool
-        True if the family name matches the style-leak heuristic regex.
+        True if the family name contains a style token not supported by
+        the entry's own weight, width, or slant metadata.
 
     Notes
     -----
-    This helper is used as a conservative signal that style information
-    may have leaked into the normalized family field.
+    This helper is intentionally heuristic. It suppresses common false
+    positives where family names legitimately embed weight/width/slant
+    qualifiers that agree with the font metadata.
     """
     fam = desc.get("family", "")
     if not isinstance(fam, str):
         return False
-    return bool(_STYLE_LEAK_RE.search(fam))
+
+    subfamily = desc.get("subfamily", "")
+    subfamily_lc = subfamily.lower() if isinstance(subfamily, str) else ""
+    weight_class = desc.get("weight_class")
+    width_class = desc.get("width_class")
+    italic_angle = desc.get("italic_angle")
+
+    for match in STYLE_LEAK_RE.finditer(fam):
+        token = match.group(1).lower()
+
+        if token in STYLE_WEIGHT_RANGES:
+            lo, hi = STYLE_WEIGHT_RANGES[token]
+            if isinstance(weight_class, int) and lo <= weight_class <= hi:
+                continue
+            if token == "regular" and subfamily_lc == "regular":
+                continue
+            if token == "bold" and "semi bold" in subfamily_lc:
+                continue
+            return True
+
+        if token in STYLE_WIDTH_TOKENS:
+            if token in {"condensed", "narrow"}:
+                if isinstance(width_class, int) and width_class < 5:
+                    continue
+            elif (
+                token == "extended" and isinstance(width_class, int) and width_class > 5
+            ):
+                continue
+            return True
+
+        if token in STYLE_SLANT_TOKENS:
+            if isinstance(italic_angle, (int, float)) and italic_angle != 0:
+                continue
+            if token in subfamily_lc:
+                continue
+            return True
+
+    return False
