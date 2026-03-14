@@ -1,3 +1,9 @@
+## [0.55.4](https://github.com/marco0560/Fontshow/compare/v0.55.3...v0.55.4) (2026-03-14)
+
+### Bug Fixes
+
+* **schema:** enforce inventory schema 1.2 only in production code and in tests ([fd958c8](https://github.com/marco0560/Fontshow/commit/fd958c8c8990b5b7931cb0d68d148d7e17fcdbd9))
+
 ## [0.55.3](https://github.com/marco0560/Fontshow/compare/v0.55.2...v0.55.3) (2026-03-14)
 
 ### Bug Fixes
