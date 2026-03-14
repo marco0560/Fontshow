@@ -261,12 +261,20 @@ def _specimen_collect_cmap(path: str | None, ttc_index: int | None) -> set[int]:
     if "cmap" not in tt:
         return cps
     for sub in tt["cmap"].tables:
-        if not sub.isUnicode():
+        try:
+            is_unicode = sub.isUnicode()
+            cmap = sub.cmap
+        except (AttributeError, TypeError, ValueError):
             continue
-        for cp in sub.cmap:
-            cps.add(int(cp))
-            if len(cps) >= 200_000:
-                return cps
+        if not is_unicode:
+            continue
+        try:
+            for cp in cmap:
+                cps.add(int(cp))
+                if len(cps) >= 200_000:
+                    return cps
+        except (TypeError, ValueError):
+            continue
     return cps
 
 

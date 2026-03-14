@@ -56,10 +56,13 @@ def primary_script(font: Mapping[str, object]) -> str | None:
             filtered = {
                 str(script): value
                 for script, value in script_cov.items()
-                if str(script).lower() not in NON_WRITING_SCRIPTS
+                if isinstance(script, str)
+                and script.strip()
+                and isinstance(value, int | float)
+                and str(script).lower() not in NON_WRITING_SCRIPTS
             }
-            source = filtered or script_cov
-            return str(max(source.items(), key=lambda kv: kv[1])[0])
+            if filtered:
+                return str(max(filtered.items(), key=lambda kv: kv[1])[0])
         except (TypeError, ValueError):
             pass
 
@@ -67,8 +70,12 @@ def primary_script(font: Mapping[str, object]) -> str | None:
     inference = inference_raw if isinstance(inference_raw, Mapping) else {}
     scripts_raw = inference.get("scripts")
     scripts = scripts_raw if isinstance(scripts_raw, list) else []
-    if scripts:
-        return str(scripts[0])
+    for script in scripts:
+        if isinstance(script, str) and script.strip():
+            return script
     cov_scripts_raw = coverage.get("scripts")
     cov_scripts = cov_scripts_raw if isinstance(cov_scripts_raw, list) else []
-    return str(cov_scripts[0]) if cov_scripts else None
+    for script in cov_scripts:
+        if isinstance(script, str) and script.strip():
+            return script
+    return None
