@@ -40,7 +40,7 @@ from .render import preflight_exit_code, render_preflight_results
 from .runner import run_preflight
 
 
-def _run_preflight_cli(
+def run_preflight_cli(
     *,
     args=None,
     run_preflight_fn=run_preflight,
@@ -159,7 +159,7 @@ def main(args=None) -> int:
 
     set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
     try:
-        return _run_preflight_cli(args=args)
+        return run_preflight_cli(args=args)
     except Exception as exc:  # noqa: BLE001
         log_err(f"Preflight internal error: {exc}")
         return 2

@@ -23,7 +23,7 @@ error-handling guarantees of the preflight CLI entry point.
 
 from argparse import Namespace
 
-from fontshow.preflight.__main__ import _run_preflight_cli
+from fontshow.preflight.__main__ import run_preflight_cli
 
 
 def test_preflight_internal_exception_returns_exit_2():
@@ -53,7 +53,7 @@ def test_preflight_internal_exception_returns_exit_2():
 
     args = Namespace(output=None, quiet=True, verbose=False)
 
-    code = _run_preflight_cli(
+    code = run_preflight_cli(
         args=args,
         run_preflight_fn=failing_run_preflight,
     )

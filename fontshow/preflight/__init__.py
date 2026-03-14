@@ -58,9 +58,9 @@ def run(args):
     - returns an int exit code (0 on success)
     """
     # Reuse the preflight CLI renderer used by `python -m fontshow.preflight`
-    from .__main__ import _run_preflight_cli
+    from .__main__ import run_preflight_cli
 
-    return _run_preflight_cli(args=args, run_preflight_fn=run_preflight)
+    return run_preflight_cli(args=args, run_preflight_fn=run_preflight)
 
 
 def register_cli(parser):

@@ -26,7 +26,7 @@ from argparse import Namespace
 from pathlib import Path
 
 from fontshow.core.cli_utils import set_cli_mode
-from fontshow.preflight.__main__ import _run_preflight_cli
+from fontshow.preflight.__main__ import run_preflight_cli
 from fontshow.preflight.model import CheckResult, PreflightResult, Severity
 
 
@@ -69,7 +69,7 @@ def test_preflight_output_writes_file(tmp_path, capsys):
             ]
         )
 
-    code = _run_preflight_cli(args=args, run_preflight_fn=fake_run_preflight)
+    code = run_preflight_cli(args=args, run_preflight_fn=fake_run_preflight)
 
     captured = capsys.readouterr().out
     assert code == 0
