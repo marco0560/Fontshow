@@ -76,9 +76,6 @@ Currently, semantic validation includes:
 
 Semantic validation may emit warnings.
 
-When strict semantic mode is enabled (see create-catalog),
-semantic warnings are treated as fatal errors.
-
 ---
 
 ## Design constraints

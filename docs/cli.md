@@ -153,6 +153,7 @@ python -m fontshow
 python -m fontshow.preflight
 python -m fontshow.cli.dump_fonts --help
 python -m fontshow.cli.parse_inventory --help
+python -m fontshow.cli.validate_inventory --help
 python -m fontshow.cli.create_catalog --help
 ```
 
@@ -161,7 +162,6 @@ This execution mode:
 - uses module-local argument parsing
 - is supported on a best-effort basis
 - may emit runtime warnings due to module re-imports
-- is not available for every dispatcher subcommand
 - is **not** the primary user-facing interface
 
 All user documentation assumes the dispatcher form.

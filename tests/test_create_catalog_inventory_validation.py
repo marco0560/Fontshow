@@ -1,25 +1,25 @@
 """
-Verify strict semantic validation.
+Verify create-catalog inventory validation failures.
 
-This module tests the semantic validation rules applied to catalog
-and inventory data structures produced by the Fontshow pipeline.
+This module tests the validation failures surfaced by the create-catalog
+pipeline when the input inventory is structurally or semantically
+unusable for rendering.
 
 Responsibilities
 ----------------
-- Ensure semantic validation rules are enforced.
-- Detect malformed or inconsistent catalog entries.
-- Verify correct error reporting when semantic violations occur.
+- Ensure invalid inventory data is rejected by create-catalog.
+- Detect malformed or inconsistent catalog input.
+- Verify correct failure reporting on invalid inventories.
 
 Design principles
 -----------------
-Semantic validation tests operate on controlled inputs so logical
-consistency of catalog structures can be verified deterministically
-without depending on external resources.
+These tests operate on controlled inventories so create-catalog failure
+paths can be verified deterministically without external dependencies.
 
 Architectural role
 ------------------
 This module belongs to the **test infrastructure layer** and verifies
-semantic correctness of internal Fontshow data representations.
+create-catalog's inventory validation behavior.
 """
 
 import argparse
@@ -28,9 +28,9 @@ import json
 from fontshow.cli.create_catalog import build_parser, run_create_catalog
 
 
-def test_semantic_validaion_fails(tmp_path):
+def test_create_catalog_fails_on_invalid_language_metadata(tmp_path):
     """
-    Verify that strict semantic validation fails on invalid language metadata.
+    Verify that create-catalog fails on invalid language metadata.
 
     Parameters
     ----------
@@ -70,9 +70,9 @@ def test_semantic_validaion_fails(tmp_path):
     assert rc == 1
 
 
-def test_semantic_validation_fails_on_non_language_issue(tmp_path):
+def test_create_catalog_fails_on_top_level_warning_issue(tmp_path):
     """
-    Verify that strict semantic validation also fails on non-language warnings.
+    Verify that create-catalog also fails on top-level inventory warnings.
 
     Parameters
     ----------
@@ -85,8 +85,8 @@ def test_semantic_validation_fails_on_non_language_issue(tmp_path):
 
     Notes
     -----
-    The setup injects a top-level semantic warning to confirm that
-    strict mode is not limited to language-related issues.
+    The setup injects a top-level warning to confirm that the command
+    rejects inventories with non-language warning conditions as well.
     """
     inv = {
         "metadata": {"schema_version": "1.2"},

@@ -343,7 +343,7 @@ A font face moves through these states:
 | Language normalization  | `fontshow/inventory/semantic_validation.py`,  | Normalization, dropped/deprecated    | `tests/test_language_normalization.py`,                |
 | and semantic language   | `fontshow/core/warnings.py`                   | handling, and structured warnings    | `tests/test_validate_language_codes.py`,               |
 | checks                  |                                               | are here.                            | `tests/test_semantic_validation.py`,                   |
-|                         |                                               |                                      | `tests/test_strict_semantic.py`                        |
+|                         |                                               |                                      | `tests/test_create_catalog_inventory_validation.py`    |
 | Inventory parsing flow  | `fontshow/cli/parse_inventory.py`,            | The parse CLI and in-place           | `tests/test_parse_inventory_integration.py`,           |
 |                         | `fontshow/inventory/metadata_processing.py`,  | enrichment path are coordinated      | `tests/test_parse_inventory_logging.py`,               |
 |                         | `fontshow/inventory/io.py`                    | here.                                | `tests/cli/test_parse-inventory.py`                    |

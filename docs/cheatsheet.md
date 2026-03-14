@@ -68,17 +68,6 @@ LuaLaTeX compilation (multi-pass)
 
 ---
 
-- semantic issues are reported as warnings
-- catalog generation continues
-
-When `--strict-semantic` is enabled:
-
-- semantic warnings are treated as errors
-- catalog generation aborts
-- a non-zero exit code is returned
-
----
-
 ```bash
 python -m fontshow.cli.dump_fonts --include-fc-charset
 ```

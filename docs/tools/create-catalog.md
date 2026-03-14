@@ -44,29 +44,18 @@ This separation ensures that:
 
 ---
 
-## Semantic Validation
+## Inventory Diagnostics
 
-During catalog generation, semantic validation is performed on the
-enriched inventory.
+During catalog generation, Fontshow may emit lightweight diagnostics
+about the input inventory before rendering begins.
 
-By default:
+These diagnostics are informational and help identify inventories with
+poor language coverage, but they do not introduce a separate strict-mode
+CLI contract for `create-catalog`.
 
-<!-- cheatsheet:start -->
-- semantic issues are reported as warnings
-- catalog generation continues
-
-When `--strict-semantic` is enabled:
-
-- semantic warnings are treated as errors
-- catalog generation aborts
-- a non-zero exit code is returned
-<!-- cheatsheet:end -->
-
-This mode does not affect:
-
-- schema validation
-- language normalization
-- parsing or discovery stages
+Validation of inventory structure and semantics remains the
+responsibility of upstream stages such as `parse-inventory` and
+`validate-inventory`.
 
 ## API reference
 
