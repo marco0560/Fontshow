@@ -26,6 +26,7 @@ document assembly stage between inventory-derived font metadata and the
 final LaTeX output written by the create-catalog pipeline.
 """
 
+from fontshow.catalog.labels import primary_script
 from fontshow.constants.catalog import EXCLUDED_FONTS
 from fontshow.core.cli_utils import (
     log_info,
@@ -33,7 +34,6 @@ from fontshow.core.cli_utils import (
 )
 from fontshow.core.types import (
     CatalogFontEntryV12,
-    InferenceV12,
     ScriptISO,
 )
 from fontshow.inventory.io import as_font_desc_list
@@ -54,7 +54,6 @@ from fontshow.latex.templates import (
     LATEX_END_CODE_2,
     LATEX_INITIAL_CODE,
 )
-from fontshow.ontology.unicode_tables import NON_WRITING_SCRIPTS
 
 
 def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
@@ -83,51 +82,6 @@ def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
         d = (d + "/") if d else "./"
         return d, f
     return "./", norm
-
-
-def _select_primary_script(inference: InferenceV12) -> str:
-    """
-    Deterministically select the primary script used for rendering.
-
-    Parameters
-    ----------
-    inference : InferenceV12
-        Inference mapping that may contain charset-derived script
-        coverage and ordered script guesses.
-
-    Returns
-    -------
-    str
-        Selected primary script identifier, or an empty string if no
-        usable script information is available.
-
-    Notes
-    -----
-    Selection priority is: dominant charset coverage excluding
-    ``NON_WRITING_SCRIPTS``, then the first inferred script. Any
-    malformed coverage data falls back safely to the remaining sources.
-    """
-    script0 = ""
-
-    script_cov = inference.get("script_coverage_from_charset")
-    if isinstance(script_cov, dict) and script_cov:
-        try:
-            filtered = {
-                k: v
-                for k, v in script_cov.items()
-                if k.lower() not in NON_WRITING_SCRIPTS
-            }
-            source = filtered or script_cov
-            script0 = max(source.items(), key=lambda kv: kv[1])[0]
-        except (TypeError, ValueError):
-            script0 = ""
-
-    if not script0:
-        scripts_raw = inference.get("scripts")
-        if isinstance(scripts_raw, list) and scripts_raw:
-            script0 = str(scripts_raw[0])
-
-    return script0
 
 
 def _render_font_entry(
@@ -320,7 +274,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
             scripts_raw_obj if isinstance(scripts_raw_obj, list) else []
         )
 
-        script0 = _select_primary_script(inference)
+        script0 = primary_script(font) or ""
 
         languages_raw_obj = inference.get("languages")
         inferred_languages: list[str] = (
