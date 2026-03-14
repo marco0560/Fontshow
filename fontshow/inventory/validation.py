@@ -25,6 +25,7 @@ validation stage used during inventory parsing and validation workflows.
 
 from __future__ import annotations
 
+from collections import Counter, defaultdict
 from typing import Any
 
 from fontshow.constants.inventory import (
@@ -37,7 +38,6 @@ from fontshow.core.cli_utils import (
     log_err,
     log_info,
     log_ok,
-    log_warn,
 )
 from fontshow.core.logging_utils import log
 from fontshow.core.types import Severity
@@ -48,6 +48,193 @@ from fontshow.diagnostics.inventory_warnings import (
 )
 from fontshow.inventory.entry_validation import validate_font_entry
 from fontshow.inventory.schema_validation import validate_inventory_schema
+
+_VALIDATION_SUMMARY_WARNING_CODES = frozenset(
+    {
+        "missing_weight_class",
+        "missing_width_class",
+        "missing_subfamily",
+    }
+)
+
+
+def _record_fatal_validation(
+    font: dict[str, Any],
+    *,
+    index: int,
+    fatal_categories: Counter[str],
+    fatal_examples: dict[str, list[str]],
+) -> int:
+    """
+    Validate one font entry and aggregate fatal error categories.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory font entry being validated.
+    index : int
+        Position of the entry within the inventory.
+    fatal_categories : collections.Counter[str]
+        Counter updated in place with fatal error messages.
+    fatal_examples : dict[str, list[str]]
+        Mapping updated in place with sample paths per fatal category.
+
+    Returns
+    -------
+    int
+        ``1`` when the entry has at least one fatal error, otherwise ``0``.
+    """
+    entry_errors = validate_font_entry(font, index=index)
+    if not entry_errors:
+        return 0
+
+    path = _get_font_path_for_diagnostics(font)
+    for err in entry_errors:
+        fatal_categories[err] += 1
+        if path is not None and len(fatal_examples[err]) < 5:
+            fatal_examples[err].append(path)
+
+    return 1
+
+
+def _record_validation_observations(
+    font: dict[str, Any],
+    *,
+    index: int,
+    observation_counts: Counter[str],
+    observation_examples: dict[str, list[str]],
+) -> None:
+    """
+    Aggregate non-fatal validation observations for one font entry.
+    """
+    ident = _format_font_identity(font, index=index)
+
+    sample_text = font.get("sample_text")
+    if isinstance(sample_text, dict) and not sample_text.get("text"):
+        observation_counts["missing_internal_sample_text"] += 1
+        if len(observation_examples["missing_internal_sample_text"]) < 5:
+            observation_examples["missing_internal_sample_text"].append(ident)
+
+    specimen_strategy = font.get("specimen_strategy")
+    strategy_map = {
+        "internal": "specimen_from_internal",
+        "script": "specimen_from_script",
+        "cmap": "specimen_from_cmap",
+    }
+    strategy_key = (
+        strategy_map[specimen_strategy]
+        if isinstance(specimen_strategy, str) and specimen_strategy in strategy_map
+        else None
+    )
+    if strategy_key is not None:
+        observation_counts[strategy_key] += 1
+        if len(observation_examples[strategy_key]) < 5:
+            observation_examples[strategy_key].append(ident)
+
+    coverage = font.get("coverage")
+    inference = font.get("inference")
+    declared_languages = (
+        coverage.get("languages") if isinstance(coverage, dict) else None
+    )
+    inferred_languages = (
+        inference.get("languages") if isinstance(inference, dict) else None
+    )
+
+    if not declared_languages:
+        observation_counts["missing_declared_languages"] += 1
+        if len(observation_examples["missing_declared_languages"]) < 5:
+            observation_examples["missing_declared_languages"].append(ident)
+        if inferred_languages:
+            observation_counts["inferred_languages_used"] += 1
+            if len(observation_examples["inferred_languages_used"]) < 5:
+                observation_examples["inferred_languages_used"].append(ident)
+
+
+def _record_validation_warnings(
+    font: dict[str, Any],
+    *,
+    index: int,
+    warning_categories: Counter[str],
+    warning_examples: dict[str, list[str]],
+) -> None:
+    """
+    Aggregate actionable warning codes embedded in one font entry.
+    """
+    ident = _format_font_identity(font, index=index)
+    raw_warnings = font.get("warnings", [])
+    warning_list = raw_warnings if isinstance(raw_warnings, list) else []
+
+    for warning in warning_list:
+        code = warning.get("code")
+        if not isinstance(code, str) or code not in _VALIDATION_SUMMARY_WARNING_CODES:
+            continue
+        warning_categories[code] += 1
+        if len(warning_examples[code]) < 5:
+            warning_examples[code].append(ident)
+
+
+def _emit_validation_summary(
+    *,
+    fatal_categories: Counter[str],
+    fatal_examples: dict[str, list[str]],
+    warning_categories: Counter[str],
+    warning_examples: dict[str, list[str]],
+    observation_summary: tuple[Counter[str], dict[str, list[str]]],
+) -> None:
+    """
+    Emit grouped validation summaries and verbose examples.
+    """
+    observation_counts, observation_examples = observation_summary
+
+    if fatal_categories:
+        summary = ", ".join(
+            f"{message} ({count})" for message, count in fatal_categories.most_common()
+        )
+        log_err(f"Fatal validation categories: {summary}")
+        fatal_details = ["Fatal validation examples:"]
+        for message, examples in fatal_examples.items():
+            if not examples:
+                continue
+            fatal_details.append(f"- {message}")
+            for example in examples:
+                fatal_details.append(f"  {example}")
+        log_info(
+            "Fatal validation examples available",
+            verbose="\n".join(fatal_details),
+        )
+
+    if warning_categories:
+        log_info(
+            "Validation warning summary",
+            extra=dict(sorted(warning_categories.items())),
+        )
+        warning_details = ["Validation warning examples:"]
+        for code, examples in warning_examples.items():
+            if not examples:
+                continue
+            warning_details.append(f"- {code}")
+            for example in examples:
+                warning_details.append(f"  {example}")
+        log_info(
+            "Validation warning examples available",
+            verbose="\n".join(warning_details),
+        )
+
+    if observation_counts:
+        log_info(
+            "Validation observations", extra=dict(sorted(observation_counts.items()))
+        )
+        observation_details = ["Validation observation examples:"]
+        for code, examples in observation_examples.items():
+            if not examples:
+                continue
+            observation_details.append(f"- {code}")
+            for example in examples:
+                observation_details.append(f"  {example}")
+        log_info(
+            "Validation observation examples available",
+            verbose="\n".join(observation_details),
+        )
 
 
 def validate_inventory(
@@ -88,7 +275,6 @@ def validate_inventory(
         Warnings do not cause validation failure.
     """
     fatal_errors = 0
-    warnings = 0
 
     from collections.abc import Mapping
 
@@ -116,22 +302,40 @@ def validate_inventory(
         return 1
 
     fonts: list[dict[str, Any]] = [f for f in raw_fonts if isinstance(f, dict)]
+    fatal_categories: Counter[str] = Counter()
+    fatal_examples: dict[str, list[str]] = defaultdict(list)
+    warning_categories: Counter[str] = Counter()
+    warning_examples: dict[str, list[str]] = defaultdict(list)
+    observation_counts: Counter[str] = Counter()
+    observation_examples: dict[str, list[str]] = defaultdict(list)
 
     for idx, font in enumerate(fonts):
-        # ---------- Fatal entry validation ----------
-        entry_errors = validate_font_entry(font, index=idx)
-        if entry_errors:
-            fatal_errors += 1
-            path = _get_font_path_for_diagnostics(font)
+        fatal_errors += _record_fatal_validation(
+            font,
+            index=idx,
+            fatal_categories=fatal_categories,
+            fatal_examples=fatal_examples,
+        )
+        _record_validation_observations(
+            font,
+            index=idx,
+            observation_counts=observation_counts,
+            observation_examples=observation_examples,
+        )
+        _record_validation_warnings(
+            font,
+            index=idx,
+            warning_categories=warning_categories,
+            warning_examples=warning_examples,
+        )
 
-            log_err(f"[ERR] font[{idx}]")
-            log_err(f"  path: {path}")
-            for err in entry_errors:
-                log_err(f"  - {err}")
-    for idx, font in enumerate(fonts):
-        ident = _format_font_identity(font, index=idx)
-        for warning in font.get("warnings", []):
-            log_warn(f"Warning [{ident}]: {warning['code']} - {warning['message']}")
+    _emit_validation_summary(
+        fatal_categories=fatal_categories,
+        fatal_examples=fatal_examples,
+        warning_categories=warning_categories,
+        warning_examples=warning_examples,
+        observation_summary=(observation_counts, observation_examples),
+    )
 
     if fatal_errors == 0:
         # NOTE:
@@ -149,7 +353,7 @@ def validate_inventory(
         log_info(
             "Inventory validation completed with fatal errors",
             f"Validation completed for {len(fonts)} font entries"
-            f" with {fatal_errors} fatal errors and {warnings} warnings",
+            f" with {fatal_errors} fatal errors",
         )
 
     return fatal_errors

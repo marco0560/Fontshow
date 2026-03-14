@@ -18,7 +18,6 @@ integration behavior of the inventory parsing pipeline.
 """
 
 from fontshow.cli.parse_inventory import parse_inventory
-from fontshow.core.types import Severity
 
 
 def test_parse_inventory_basic_latin_only():
@@ -153,7 +152,7 @@ def test_parse_inventory_no_coverage():
     -------
     None
     """
-    data = {"fonts": [{"coverage": {}}]}
+    data: dict[str, object] = {"fonts": [{"coverage": {}}]}
 
     result = parse_inventory(data, level="medium")
     inference = result["fonts"][0]["inference"]
@@ -161,23 +160,21 @@ def test_parse_inventory_no_coverage():
     assert inference["languages"] == []
 
 
-def test_missing_declared_languages_emits_info_warning():
+def test_missing_declared_languages_uses_inference_without_warning():
     """
-    Verify that missing declared languages emits an informational warning.
+    Verify that missing declared languages is handled via inference without warning noise.
 
-    The test checks the parsed font warning collection for the specific
-    ``missing_declared_languages`` code and INFO severity.
+    The enriched inventory should remain usable even when declared
+    languages are absent from the raw metadata.
 
     Returns
     -------
     None
     """
-    data = {"fonts": [{"coverage": {"unicode_blocks": {"Basic Latin": 95}}}]}
+    data: dict[str, object] = {
+        "fonts": [{"coverage": {"unicode_blocks": {"Basic Latin": 95}}}]
+    }
 
     result = parse_inventory(data, level="medium")
-    warnings = result["fonts"][0].get("warnings", [])
-
-    assert any(
-        w["code"] == "missing_declared_languages" and w["severity"] == Severity.INFO
-        for w in warnings
-    )
+    assert result["fonts"][0]["inference"]["languages"] == []
+    assert result["fonts"][0].get("warnings", []) == []

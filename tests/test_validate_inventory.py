@@ -129,6 +129,24 @@ def test_validate_inventory_missing_family_is_fatal():
     assert result > 0
 
 
+def test_validate_inventory_allows_empty_internal_sample_when_specimen_is_valid():
+    """
+    Verify that enriched inventories may keep an empty internal sample text.
+
+    Returns
+    -------
+    None
+    """
+    entry = minimal_font_entry_v12()
+    entry["sample_text"]["text"] = ""
+
+    data = minimal_inventory_v12()
+    data["fonts"] = [entry]
+
+    result = validate_inventory(data)
+    assert result == 0
+
+
 # ============================================================
 # MISSING SCHEMA VERSION
 # ============================================================
@@ -176,3 +194,50 @@ def test_quiet_suppresses_output(capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
+
+
+def test_validate_inventory_summarizes_observations_without_per_font_warning_spam(
+    capsys,
+):
+    """
+    Verify that validation emits grouped summaries instead of per-font warning lines.
+
+    Parameters
+    ----------
+    capsys : pytest.CaptureFixture[str]
+        Pytest capture fixture used to inspect emitted output.
+
+    Returns
+    -------
+    None
+    """
+    from fontshow.core.cli_utils import set_cli_mode
+
+    set_cli_mode(quiet=False, verbose=False)
+
+    entry = minimal_font_entry_v12()
+    entry["sample_text"]["text"] = ""
+    entry["specimen_strategy"] = "cmap"
+    entry["inference"]["languages"] = ["en"]
+    entry["warnings"] = [
+        {
+            "code": "missing_weight_class",
+            "message": "OS/2 weight_class missing",
+            "severity": "info",
+        }
+    ]
+
+    data = minimal_inventory_v12()
+    data["fonts"] = [entry]
+
+    result = validate_inventory(data)
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "Validation observations" in captured.out
+    assert "missing_internal_sample_text=1" in captured.out
+    assert "missing_declared_languages=1" in captured.out
+    assert "specimen_from_cmap=1" in captured.out
+    assert "Validation warning summary" in captured.out
+    assert "missing_weight_class=1" in captured.out
+    assert "Warning [" not in captured.err

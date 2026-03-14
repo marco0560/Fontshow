@@ -64,6 +64,8 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
     parser.description = "Validate a Fontshow inventory file against the JSON Schema."
     parser.add_argument(
         "path",
+        nargs="?",
+        default=Path("font_inventory.json"),
         help="Path to the inventory JSON file to validate",
     )
     add_common_arguments(parser)

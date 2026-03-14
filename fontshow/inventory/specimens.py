@@ -54,8 +54,7 @@ from fontTools.ttLib import TTFont, TTLibError
 
 from fontshow.common.specimens import choose_language_sample
 from fontshow.core.logging_utils import log, log_trace_cat
-from fontshow.core.types import ScriptISO, Severity, normalize_script_iso
-from fontshow.core.warnings import add_structured_warning
+from fontshow.core.types import ScriptISO, normalize_script_iso
 from fontshow.ontology.language_tables import SCRIPT_INFO
 
 # ============================================================
@@ -419,8 +418,7 @@ def _specimen_from_cmap(
     Notes
     -----
     Candidate codepoints are ordered with `_specimen_preference()` and
-    filtered through `_specimen_skip()`. The function also injects a
-    structured informational warning to record cmap-fallback usage.
+    filtered through `_specimen_skip()`.
     """
     ordered = sorted(cps, key=_specimen_preference)
     chosen: list[int] = []
@@ -431,13 +429,6 @@ def _specimen_from_cmap(
         chosen.append(cp)
         if len(chosen) >= CMAP_FALLBACK_GLYPHS:
             break
-
-    add_structured_warning(
-        font,
-        code="specimen_cmap_fallback",
-        message="Specimen generated via cmap fallback",
-        severity=Severity.INFO,
-    )
 
     return "".join(chr(cp) for cp in chosen), "cmap"
 

@@ -34,7 +34,6 @@ from fontshow.core.types import (
     Severity,
     normalize_script_iso,
 )
-from fontshow.core.warnings import add_structured_warning
 from fontshow.inventory.infer_languages import infer_languages
 from fontshow.inventory.script_analysis import (
     infer_scripts,
@@ -453,17 +452,6 @@ def _infer_and_attach_metadata(
             "declared_languages": declared_languages,
         },
     )
-
-    if not declared_languages:
-        add_structured_warning(
-            font,
-            code="missing_declared_languages",
-            message=(
-                "No declared languages available from FontConfig; "
-                "inference.languages will be derived solely from Unicode data"
-            ),
-            severity=Severity.INFO,
-        )
 
     inferred_scripts = list(infer_scripts(coverage, level) or [])
 

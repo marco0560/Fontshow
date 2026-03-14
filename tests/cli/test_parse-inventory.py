@@ -22,9 +22,11 @@ This module belongs to the **test infrastructure layer** and verifies
 the command-line interface responsible for parsing font inventories.
 """
 
+import argparse
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -168,3 +170,41 @@ def test_parse_inventory_accepts_strict_bcp47_flag(cli_runner, tmp_path):
     )
 
     assert code == 0
+
+
+def test_parse_inventory_defaults_to_raw_inventory_without_validate_flag():
+    """
+    Verify that parse-inventory defaults to ``font_inventory.json``.
+    """
+    from fontshow.cli.parse_inventory import build_parser
+
+    parser = argparse.ArgumentParser()
+    build_parser(parser)
+
+    args = parser.parse_args([])
+
+    resolved = (
+        Path("font_inventory_enriched.json")
+        if args.validate_inventory
+        else Path("font_inventory.json")
+    )
+    assert resolved == Path("font_inventory.json")
+
+
+def test_parse_inventory_validate_only_defaults_to_enriched_inventory():
+    """
+    Verify that parse-inventory validate-only mode defaults to the enriched inventory.
+    """
+    from fontshow.cli.parse_inventory import build_parser
+
+    parser = argparse.ArgumentParser()
+    build_parser(parser)
+
+    args = parser.parse_args(["-I"])
+
+    resolved = (
+        Path("font_inventory_enriched.json")
+        if args.validate_inventory and args.input is None
+        else args.input
+    )
+    assert resolved == Path("font_inventory_enriched.json")

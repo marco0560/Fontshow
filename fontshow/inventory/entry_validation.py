@@ -191,7 +191,8 @@ def _validate_sample_text(entry: dict, errors: list[str]) -> None:
     -----
     The helper enforces the schema v1.2 expectation that
     ``sample_text.source`` is ``"font"`` and that the embedded text is a
-    non-empty string.
+    string. The text may be empty in raw or enriched inventories when
+    no internal sample is available.
     """
     sample_text = entry.get("sample_text")
     if not isinstance(sample_text, dict):
@@ -202,7 +203,7 @@ def _validate_sample_text(entry: dict, errors: list[str]) -> None:
         errors.append("Invalid 'sample_text.source'")
 
     text = sample_text.get("text")
-    if not isinstance(text, str) or not text:
+    if not isinstance(text, str):
         errors.append("Missing or invalid 'sample_text.text'")
 
 

@@ -9,7 +9,6 @@ Responsibilities
 
 from __future__ import annotations
 
-from fontshow.core.types import Severity
 from fontshow.inventory import specimens
 
 
@@ -67,9 +66,9 @@ def test_specimen_from_script_prefers_charset_dominance_and_rejects_sparse(monke
     assert sparse == (None, "script_sample_no_supported_glyphs")
 
 
-def test_specimen_from_cmap_adds_structured_warning():
+def test_specimen_from_cmap_returns_fallback_without_warning_record():
     """
-    Ensure cmap fallback uses preference ordering and records a warning.
+    Ensure cmap fallback uses preference ordering without adding a warning record.
     """
     font: dict[str, object] = {}
     specimen, strategy = specimens._specimen_from_cmap(
@@ -79,13 +78,7 @@ def test_specimen_from_cmap_adds_structured_warning():
 
     assert specimen == "AB1!"
     assert strategy == "cmap"
-    assert font["warnings"] == [
-        {
-            "code": "specimen_cmap_fallback",
-            "message": "Specimen generated via cmap fallback",
-            "severity": Severity.INFO,
-        }
-    ]
+    assert "warnings" not in font
 
 
 def test_specimen_apply_semantic_validation_uses_language_sample_then_ascii(
@@ -121,7 +114,7 @@ def test_specimen_generate_for_font_uses_visible_replacement_and_semantic_fallba
     Ensure generation never leaves whitespace-only output and records fallback reasons.
     """
     font = {"path": "/tmp/font.ttf", "sample_text": "   ", "inference": {}}
-    coverage = {"scripts": []}
+    coverage: dict[str, object] = {"scripts": []}
 
     monkeypatch.setattr(
         specimens, "_specimen_collect_cmap", lambda path, idx: {ord("X")}

@@ -41,3 +41,4 @@ created before the adoption of the formal decision record system.
 - [0021 — Authoritative Unicode Ontology](0021-authoritative-unicode-ontology.md)
 - [0022 — Fontshow — Specimen Inference Inputs Matrix v1.0](0022-fontshow-specimen-inference-inputs-matrix-v1-0.md)
 - [0023 — Font skip accounting and legacy format filtering](0023-font-skip-accounting-legacy-format-filtering.md)
+- [0024 — Parse-inventory validation summary and fallback handling](0024-parse-inventory-validation-summary-fallback-handling.md)
