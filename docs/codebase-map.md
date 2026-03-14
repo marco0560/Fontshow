@@ -120,7 +120,6 @@ Important files:
 
 - `fontshow/catalog/pipeline.py`
 - `fontshow/catalog/document.py`
-- `fontshow/catalog/sample.py`
 - `fontshow/catalog/labels.py`
 
 ### `fontshow/latex/`
@@ -308,7 +307,6 @@ catalog helpers.
 Other important helpers:
 
 - `fontshow/catalog/pipeline.py`
-- `fontshow/catalog/sample.py`
 - `fontshow/latex/render.py`
 - `fontshow/latex/policy.py`
 - `fontshow/latex/templates.py`
@@ -355,8 +353,8 @@ A font face moves through these states:
 | General inventory       | `fontshow/inventory/validation.py`,           | Structural checks outside pure       | `tests/test_validate_font_entry.py`,                   |
 | validation              | `fontshow/inventory/entry_validation.py`      | JSON-schema validation live here.    | `tests/test_validate_inventory.py`                     |
 | Specimen generation     | `fontshow/inventory/specimens.py`,            | Inventory-level specimen fallback    | Indirectly covered by                                  |
-|                         | `fontshow/common/specimens.py`,               | and catalog-level sample selection   | `tests/test_parse_inventory_integration.py`,           |
-|                         | `fontshow/catalog/sample.py`                  | split across these modules.          | `tests/test_output_schema_invariants.py`               |
+|                         | `fontshow/common/specimens.py`                | and shared sample selection live     | `tests/test_parse_inventory_integration.py`,           |
+|                         |                                               | here.                                | `tests/test_output_schema_invariants.py`               |
 | Catalog filtering       | `fontshow/catalog/pipeline.py`,               | Input inventory loading, family      | `tests/test_cli_invariants.py`,                        |
 | and grouping            | `fontshow/inventory/io.py`,                   | grouping, test-font filtering, and   | `tests/test_artifact_hygiene.py`,                      |
 |                         | `fontshow/cli/create_catalog.py`              | orchestration happen here.           | `tests/test_deterministic_output.py`,                  |
@@ -413,7 +411,7 @@ A font face moves through these states:
 |                         |                                             |             | `fontshow/latex/policy.py`                    |
 | Language inference      | `fontshow/inventory/infer_languages.py`     | Medium      | `fontshow/inventory/metadata_processing.py`,  |
 | thresholds              |                                             |             | `fontshow/inventory/semantic_validation.py`,  |
-|                         |                                             |             | `fontshow/catalog/sample.py`                  |
+|                         |                                             |             | `fontshow/common/specimens.py`                |
 | Language normalization  | `fontshow/inventory/semantic_validation.py` | High        | `fontshow/core/warnings.py`,                  |
 | and semantic checks     |                                             |             | `fontshow/cli/parse_inventory.py`,            |
 |                         |                                             |             | `fontshow/cli/create_catalog.py`,             |
@@ -428,14 +426,12 @@ A font face moves through these states:
 | validation              |                                             |             | `fontshow/cli/create_catalog.py`,             |
 |                         |                                             |             | `fontshow/inventory/entry_validation.py`      |
 | Specimen generation     | `fontshow/inventory/specimens.py`           | Medium      | `fontshow/common/specimens.py`,               |
-|                         |                                             |             | `fontshow/catalog/sample.py`,                 |
 |                         |                                             |             | `fontshow/catalog/document.py`                |
 | Catalog filtering       | `fontshow/catalog/pipeline.py`              | Medium      | `fontshow/cli/create_catalog.py`,             |
 | and grouping            |                                             |             | `fontshow/inventory/io.py`,                   |
 |                         |                                             |             | `fontshow/catalog/document.py`                |
-| Catalog rendering       | `fontshow/catalog/document.py`              | High        | `fontshow/catalog/sample.py`,                 |
-| and LaTeX layout        |                                             |             | `fontshow/catalog/labels.py`,                 |
-|                         |                                             |             | `fontshow/latex/render.py`,                   |
+| Catalog rendering       | `fontshow/catalog/document.py`              | High        | `fontshow/catalog/labels.py`,                 |
+| and LaTeX layout        |                                             |             | `fontshow/latex/render.py`,                   |
 |                         |                                             |             | `fontshow/latex/policy.py`                    |
 | JSON serialization /    | `fontshow/core/json_boundary.py`            | Low         | `fontshow/core/json_format.py`,               |
 | enum boundary           |                                             |             | `fontshow/cli/parse_inventory.py`,            |
@@ -493,7 +489,7 @@ A font face moves through these states:
 | warned unexpectedly      |                           |                                                |
 | Specimen text is empty,  | Specimen selection        | `fontshow/inventory/specimens.py`,             |
 | ugly, or from the wrong  |                           | `fontshow/common/specimens.py`,                |
-| language                 |                           | `fontshow/catalog/sample.py`                   |
+| language                 |                           | `fontshow/catalog/document.py`                 |
 | `validate-inventory`     | Schema or semantic        | `fontshow/inventory/schema_validation.py`,     |
 | rejects data             | validation                | `fontshow/inventory/validation.py`,            |
 | unexpectedly             |                           | `fontshow/inventory/semantic_validation.py`    |
