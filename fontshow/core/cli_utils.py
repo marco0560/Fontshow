@@ -71,27 +71,29 @@ def _format_extra(extra: dict | None) -> str:
     """
     Deterministically format extra key/value pairs for CLI output.
 
-    Parameters
-    ----------
-    extra : dict | None
-        Optional dictionary of key/value pairs to append to the CLI
-        message. If None or empty, an empty string is returned.
+    For small payloads a single-line format is used:
 
-    Returns
-    -------
-    str
-        Formatted string in the form:
-            " | key=value | key=value"
-        Keys are sorted for deterministic output and values are
-        converted using `str()`.
+        | key=value | key=value
+
+    For larger payloads a multi-line aligned block is produced
+    to improve CLI readability.
+
+    Keys are always sorted to preserve deterministic output.
     """
     if not extra:
         return ""
 
-    parts = []
-    for k in sorted(extra):
-        parts.append(f"{k}={extra[k]}")
-    return " | " + " | ".join(parts)
+    keys = sorted(extra)
+
+    # Small payload → keep original compact format
+    if len(keys) <= 5:
+        return " | " + " | ".join(f"{k}={extra[k]}" for k in keys)
+
+    # Larger payload → aligned multi-line block
+    width = max(len(k) for k in keys)
+    lines = [f"\n       {k:<{width}} = {extra[k]}" for k in keys]
+
+    return "".join(lines)
 
 
 def _select_message(default: str, verbose: str | None) -> str:

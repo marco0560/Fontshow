@@ -25,10 +25,13 @@ import sys
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from types import SimpleNamespace
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fontshow.inventory.platform_metadata import collect_platform_metadata
 from fontshow.preflight.model import CheckResult, Severity
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 # ============================================================
 # Canonical minimal VALID schema-1.2 font entry
@@ -180,6 +183,145 @@ def make_fc_query_output(
         lines.append(f"variable: {'true' if variable else 'false'}")
 
     return SimpleNamespace(stdout="\n".join(lines), stderr="", returncode=returncode)
+
+
+def create_fake_font_file(tmp_path: Path, name: str) -> Path:
+    """
+    Create a deterministic fake font file for discovery or dump tests.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to host the fake file.
+    name : str
+        Filename to create under the temporary directory.
+
+    Returns
+    -------
+    pathlib.Path
+        Path to the created fake file.
+    """
+    path = tmp_path / name
+    path.write_bytes(b"")
+    return path
+
+
+def simulate_linux_discovery(monkeypatch, paths: list[Path]) -> None:
+    """
+    Patch Linux discovery to return the provided candidates via fc-list output.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the Fontconfig command wrapper.
+    paths : list[pathlib.Path]
+        Candidate filesystem paths to expose through the fake discovery output.
+
+    Returns
+    -------
+    None
+    """
+    stdout = "\n".join(str(path) for path in paths)
+    monkeypatch.setattr(
+        "fontshow.platform.font_discovery.run_command",
+        lambda _cmd: SimpleNamespace(returncode=0, stdout=stdout),
+    )
+
+
+def simulate_dump_discovery(
+    monkeypatch, paths: list[Path], *, skipped_legacy: int
+) -> None:
+    """
+    Patch dump-fonts discovery inputs and last-run discovery stats.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace dump-fonts discovery helpers.
+    paths : list[pathlib.Path]
+        Discovered font paths to feed into the dump pipeline.
+    skipped_legacy : int
+        Legacy-extension skip count to expose via discovery stats.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.get_installed_font_files",
+        lambda: paths,
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.get_last_discovery_stats",
+        lambda: {"skipped_legacy_extension": skipped_legacy},
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.fc_query_extract_many",
+        lambda *_args, **_kwargs: {},
+    )
+
+
+def simulate_unloadable_font(monkeypatch, faces: int = 1) -> None:
+    """
+    Patch fontTools extraction to return structurally unloadable faces.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace fontTools extraction in dump-fonts tests.
+    faces : int, optional
+        Number of unloadable faces emitted for the same file.
+
+    Returns
+    -------
+    None
+    """
+
+    def fake_fonttools_extract_all(path, **kwargs):
+        return [
+            {
+                "ok": True,
+                "container": "TTC",
+                "ttc_index": index,
+                "tables": ["name"],
+            }
+            for index in range(faces)
+        ]
+
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.fonttools_extract_all",
+        fake_fonttools_extract_all,
+    )
+
+
+def capture_dump_summary(
+    monkeypatch,
+) -> tuple[list[str], list[tuple[str, dict | None]]]:
+    """
+    Capture dump-fonts warning and info messages.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace CLI logging helpers.
+
+    Returns
+    -------
+    tuple[list[str], list[tuple[str, dict | None]]]
+        Captured warning messages and ``(message, extra)`` info records.
+    """
+    warnings: list[str] = []
+    infos: list[tuple[str, dict | None]] = []
+
+    def fake_log_warn(message, **kwargs):
+        warnings.append(message)
+
+    def fake_log_info(message, **kwargs):
+        infos.append((message, kwargs.get("extra")))
+
+    monkeypatch.setattr("fontshow.cli.dump_fonts.log_warn", fake_log_warn)
+    monkeypatch.setattr("fontshow.cli.dump_fonts.log_info", fake_log_info)
+    return warnings, infos
 
 
 def _ok_result(check_id: str):

@@ -311,6 +311,18 @@ def run_dump_fonts(args) -> int:
                     }
                 )
 
+    fonts_total = len(inventory.get("fonts", []))
+
+    summary = {
+        "total_fonts": fonts_total,
+        "total_font_files": len(font_files),
+        "total_faces_seen": total_faces,
+        "skipped_non_opentype_faces": skipped_non_opentype,
+        "skipped_legacy_extension": skipped_legacy_extension,
+        "skipped_structurally_unloadable": skipped_structurally_unloadable,
+        "style_leak_suspected": style_leak_suspected,
+    }
+
     args.output.write_text(
         dumps_pretty(inventory, indent=2, ensure_ascii=False),
         encoding="utf-8",
@@ -319,48 +331,30 @@ def run_dump_fonts(args) -> int:
     log_info(
         "font inventory generation completed",
         extra={
-            "total_fonts": len(inventory.get("fonts", [])),
-            "total_font_files": len(font_files),
-            "total_faces_seen": total_faces,
-            "skipped_non_opentype_faces": skipped_non_opentype,
-            "skipped_legacy_extension": skipped_legacy_extension,
-            "skipped_structurally_unloadable": skipped_structurally_unloadable,
-            "style_leak_suspected": style_leak_suspected,
             "include_fc_charset": bool(args.include_fc_charset and IS_LINUX),
+            "total_fonts": fonts_total,
         },
     )
+
     log_trace_cat(
         log,
         "perf",
         "inventory metrics",
-        extra={
-            "fonts_total": len(inventory.get("fonts", [])),
-        },
+        extra={"fonts_total": fonts_total},
     )
 
-    log_info(
-        "dump-fonts summary",
-        extra={
-            "total_faces_seen": total_faces,
-            "total_font_files": len(font_files),
-            "total_fonts": len(inventory.get("fonts", [])),
-            "skipped_legacy_extension": skipped_legacy_extension,
-            "skipped_structurally_unloadable": skipped_structurally_unloadable,
-            "skipped_non_opentype_faces": skipped_non_opentype,
-            "style_leak_suspected": style_leak_suspected,
-        },
-    )
+    log_info("dump-fonts summary", extra=summary)
 
     log_info(
         f"Processed {total_faces} - {skipped_non_opentype} skipped"
-        f"- {style_leak_suspected} style-leak suspected",
+        f" - {style_leak_suspected} style-leak suspected",
         verbose=(
             f"Processed {total_faces} font faces — "
             f"{skipped_non_opentype} skipped (non-OpenType), "
             f"{skipped_legacy_extension} skipped (legacy extension), "
             f"{skipped_structurally_unloadable} skipped (structurally unloadable), "
-            f"- {style_leak_suspected} style-leak suspected"
-            f"{len(inventory.get('fonts', []))} kept"
+            f"{style_leak_suspected} style-leak suspected, "
+            f"{fonts_total} kept"
         ),
     )
 
