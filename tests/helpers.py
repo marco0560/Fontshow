@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import sys
 from contextlib import redirect_stderr, redirect_stdout
+from dataclasses import dataclass
 from io import StringIO
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
@@ -32,6 +33,43 @@ from fontshow.preflight.model import CheckResult, Severity
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+@dataclass(frozen=True)
+class CliRunResult:
+    """
+    Captured CLI execution result with separated output streams.
+
+    Parameters
+    ----------
+    exit_code : int
+        Normalized process-style exit code returned by the CLI entrypoint.
+    stdout : str
+        Captured standard output stream.
+    stderr : str
+        Captured standard error stream.
+
+    Returns
+    -------
+    None
+    """
+
+    exit_code: int
+    stdout: str
+    stderr: str
+
+    def __iter__(self):
+        """
+        Preserve backward-compatible unpacking as ``(exit_code, stdout)``.
+
+        Returns
+        -------
+        collections.abc.Iterator[object]
+            Iterator yielding exit code first and stdout second.
+        """
+        yield self.exit_code
+        yield self.stdout
+
 
 # ============================================================
 # Canonical minimal VALID schema-1.2 font entry
@@ -413,7 +451,7 @@ def run_preflight_with_environment(
 
 def run_cli(main_func, argv):
     """
-    Invoke a CLI entrypoint and capture normalized exit code plus combined output.
+    Invoke a CLI entrypoint and capture normalized exit code plus separated output.
 
     Parameters
     ----------
@@ -424,9 +462,9 @@ def run_cli(main_func, argv):
 
     Returns
     -------
-    tuple[int, str]
-        Pair ``(exit_code, stdout)`` capturing normalized CLI semantics
-        and stdout output only.
+    CliRunResult
+        Result exposing ``exit_code``, ``stdout``, and ``stderr`` while
+        preserving backward-compatible unpacking as ``(exit_code, stdout)``.
 
     Raises
     ------
@@ -437,8 +475,7 @@ def run_cli(main_func, argv):
     Notes
     -----
     Stdout and stderr are redirected into separate buffers so tests can
-    assert stdout semantics without conflating them with diagnostics
-    emitted on stderr.
+    assert stream-specific CLI behavior.
     """
     old_argv = sys.argv
     sys.argv = argv[:]  # important: copy argv exactly as CLI would receive it
@@ -466,4 +503,4 @@ def run_cli(main_func, argv):
     finally:
         sys.argv = old_argv
 
-    return code, stdout.getvalue()
+    return CliRunResult(code, stdout.getvalue(), stderr.getvalue())

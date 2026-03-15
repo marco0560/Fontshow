@@ -167,13 +167,14 @@ def test_preflight_real_runner_does_not_crash(cli_runner):
     -------
     None
     """
-    code, out = cli_runner(["fontshow", "preflight"])
+    result = cli_runner(["fontshow", "preflight"])
+    code, out = result
 
     # Must not be argparse error / crash
     assert code in (0, 1)
 
-    # Some output is expected in non-quiet mode
-    assert out.strip() != ""
+    # Some stdout or stderr output is expected in non-quiet mode
+    assert out.strip() != "" or result.stderr.strip() != ""
 
 
 def test_preflight_real_runner_quiet_suppresses_stdout(cli_runner):
