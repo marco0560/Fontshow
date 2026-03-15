@@ -426,7 +426,7 @@ def run_cli(main_func, argv):
     -------
     tuple[int, str]
         Pair ``(exit_code, stdout)`` capturing normalized CLI semantics
-        and combined output.
+        and stdout output only.
 
     Raises
     ------
@@ -436,16 +436,17 @@ def run_cli(main_func, argv):
 
     Notes
     -----
-    Output from both stdout and stderr is redirected into the returned
-    text buffer so tests can assert user-visible CLI behavior through a
-    single string.
+    Stdout and stderr are redirected into separate buffers so tests can
+    assert stdout semantics without conflating them with diagnostics
+    emitted on stderr.
     """
     old_argv = sys.argv
     sys.argv = argv[:]  # important: copy argv exactly as CLI would receive it
 
     stdout = StringIO()
+    stderr = StringIO()
     try:
-        with redirect_stdout(stdout), redirect_stderr(stdout):
+        with redirect_stdout(stdout), redirect_stderr(stderr):
             try:
                 # Call the real CLI entrypoint.
                 # It is expected to read sys.argv[1:].
