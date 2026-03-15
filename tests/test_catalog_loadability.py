@@ -41,6 +41,7 @@ def test_validate_font_loadability_returns_subset_failure(monkeypatch, tmp_path)
     font_path = tmp_path / "Alpha.ttf"
     font_path.write_bytes(b"")
 
+    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
     monkeypatch.setattr(
         loadability.subprocess,
         "run",
@@ -131,6 +132,7 @@ def test_validate_font_loadability_returns_first_relevant_error_line(
     font_path = tmp_path / "Alpha.ttf"
     font_path.write_bytes(b"")
 
+    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
     monkeypatch.setattr(
         loadability.subprocess,
         "run",
@@ -152,6 +154,8 @@ def test_validate_font_loadability_handles_timeout(monkeypatch, tmp_path):
     """
     font_path = tmp_path / "Alpha.ttf"
     font_path.write_bytes(b"")
+
+    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
 
     def _timeout(*args, **kwargs):
         raise subprocess.TimeoutExpired(cmd=["lualatex"], timeout=1)
