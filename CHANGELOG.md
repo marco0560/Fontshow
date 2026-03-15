@@ -1,3 +1,9 @@
+## [0.56.3](https://github.com/marco0560/Fontshow/compare/v0.56.2...v0.56.3) (2026-03-15)
+
+### Bug Fixes
+
+* **catalog:** stabilize script rendering and make loadability validation opt-in ([1298152](https://github.com/marco0560/Fontshow/commit/1298152462c17831acf4726fb80269dd12566997)), closes [#55](https://github.com/marco0560/Fontshow/issues/55)
+
 ## [0.56.2](https://github.com/marco0560/Fontshow/compare/v0.56.1...v0.56.2) (2026-03-15)
 
 ### Bug Fixes
