@@ -1,11 +1,15 @@
-Work on GitHub issue #63.
+Work on a GitHub issue.
 
 Steps:
-1. Locate the code involved.
-2. Reproduce the problem by reading the issue description.
-3. Identify the minimal fix.
-4. Generate a patch implementing the fix.
-5. If tests are missing, add them.
+1. Ask the user for the issue number.
+2. Read in issues.json the issue description.
+3. Reproduce the problem. If not reproductible -> stop.
+4. Locate the code involved.
+5. Identify the minimal fix.
+6. Propose a plan and wait for confirmation.
+7. Generate a patch implementing the fix.
+8. If tests are missing, add them.
+9. Generate a commit block for the fix indicating the closing of the issue.
 
 Constraints:
 - Minimal changes

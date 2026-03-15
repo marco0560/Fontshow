@@ -21,21 +21,26 @@ def test_format_script_display_uses_canonical_name_when_available(monkeypatch):
     assert policy._format_script_display("zzzz") == "ZZZZ"
 
 
-def test_get_render_policy_supplies_non_latin_script_option(monkeypatch):
+def test_get_render_policy_uses_explicit_ontology_mapping_only(monkeypatch):
     """
-    Ensure missing fontspec options fall back to ``Script=...`` for non-Latin scripts.
+    Ensure render policy never fabricates `Script=` values from ISO codes.
     """
     monkeypatch.setattr(
         policy,
         "SCRIPT_INFO",
         {
             "LATN": {"polyglossia_language": "english", "fontspec_opts": ""},
-            "ARAB": {"polyglossia_language": "arabic", "fontspec_opts": ""},
+            "ARAB": {
+                "polyglossia_language": "arabic",
+                "fontspec_opts": "Script=Arabic",
+            },
+            "ARMN": {"polyglossia_language": "", "fontspec_opts": ""},
         },
     )
 
     assert policy._get_render_policy("LATN") == ("english", "")
-    assert policy._get_render_policy("ARAB") == ("arabic", "Script=Arab")
+    assert policy._get_render_policy("ARAB") == ("arabic", "Script=Arabic")
+    assert policy._get_render_policy("ARMN") == ("", "")
     assert policy._get_render_policy("ZZZZ") == ("", "")
 
 

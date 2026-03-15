@@ -198,6 +198,11 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         help="Validate inventory structure and exit (no output generation)",
     )
     parser.add_argument(
+        "--list-missing-language-coverage",
+        action="store_true",
+        help="List fonts whose coverage.languages is empty and exit",
+    )
+    parser.add_argument(
         "-s",
         "--strict-bcp47",
         action="store_true",
@@ -282,6 +287,55 @@ def _default_write_text(p: Path, s: str) -> None:
     p.write_text(s, encoding="utf-8")
 
 
+def _list_missing_language_coverage(data: dict[str, Any]) -> int:
+    """
+    List fonts whose declared language coverage is missing.
+
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Inventory root containing a `fonts` list.
+
+    Returns
+    -------
+    int
+        Exit code ``0`` after emitting the report.
+
+    Notes
+    -----
+    The report is deterministic:
+    - preserves input order,
+    - prints one line per matching font,
+    - uses family name plus path to disambiguate duplicates.
+    """
+    fonts = data.get("fonts", [])
+    if not isinstance(fonts, list):
+        log_err("invalid inventory: missing or invalid 'fonts' list")
+        return 1
+
+    missing: list[tuple[str, str]] = []
+    for font in fonts:
+        if not isinstance(font, dict):
+            continue
+        coverage = font.get("coverage")
+        coverage_dict = coverage if isinstance(coverage, dict) else {}
+        languages = coverage_dict.get("languages")
+        if isinstance(languages, list) and languages:
+            continue
+        family = str(font.get("family", "")).strip() or "Unknown"
+        path = str(font.get("path", "")).strip()
+        missing.append((family, path))
+
+    log_info(f"Fonts with missing declared language coverage: {len(missing)}")
+    for family, path in missing:
+        if path:
+            log_info(f"{family} | {path}")
+        else:
+            log_info(family)
+
+    return 0
+
+
 # ============================================================
 # REFACTORED MAIN RUNNER
 # ============================================================
@@ -350,6 +404,9 @@ def run_parse_font_inventory(
             "infer_level": getattr(args, "infer_level", None),
             "strict_bcp47": strict_bcp47,
             "validate_only": bool(getattr(args, "validate_inventory", False)),
+            "list_missing_language_coverage": bool(
+                getattr(args, "list_missing_language_coverage", False)
+            ),
         },
     )
 
@@ -424,6 +481,17 @@ def run_parse_font_inventory(
             log_info("Inventory validation failed with errors")
 
         return rc
+
+    if getattr(args, "list_missing_language_coverage", False):
+        log_trace_cat(
+            log,
+            "flow",
+            "list-missing-language-coverage mode",
+            extra={
+                "fonts": len(data.get("fonts", [])),
+            },
+        )
+        return _list_missing_language_coverage(data)
 
     enriched = parse_inventory_fn(
         data,

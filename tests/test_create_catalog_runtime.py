@@ -100,8 +100,11 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
     monkeypatch.setattr(
         create_catalog, "_load_inventory", lambda path: (0, [{"family": "Alpha"}])
     )
+    diagnostics_calls: list[list[dict]] = []
     monkeypatch.setattr(
-        create_catalog, "_run_inventory_diagnostics", lambda fonts: None
+        create_catalog,
+        "_run_inventory_diagnostics",
+        lambda fonts: diagnostics_calls.append(list(fonts)),
     )
 
     list_calls: list[tuple[set[str], list[dict]]] = []
@@ -116,6 +119,7 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
         inventory=str(inv),
         test=False,
         list_test_fonts=True,
+        validate_loadability=False,
         number=None,
         quiet=False,
         verbose=False,
@@ -143,6 +147,12 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
         "_filter_and_prepare_fonts",
         lambda fonts, args, test_fonts: [{"family": "Alpha"}],
     )
+    loadability_calls: list[list[dict]] = []
+    monkeypatch.setattr(
+        create_catalog,
+        "filter_loadable_catalog_fonts",
+        lambda fonts: loadability_calls.append(list(fonts)) or fonts,
+    )
     monkeypatch.setattr(create_catalog, "generate_latex", lambda fonts: "LATEX")
 
     def _boom(_path, _content):
@@ -151,6 +161,14 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
 
     monkeypatch.setattr(create_catalog, "_write_latex_output", _boom)
     assert create_catalog.run_create_catalog(args) == 1
+    assert diagnostics_calls == [[{"family": "Alpha"}]]
+    assert loadability_calls == []
+    assert errors[-1] == "Failed to write output file: disk full"
+
+    args.validate_loadability = True
+    assert create_catalog.run_create_catalog(args) == 1
+    assert diagnostics_calls == [[{"family": "Alpha"}], [{"family": "Alpha"}]]
+    assert loadability_calls == [[{"family": "Alpha"}]]
     assert errors[-1] == "Failed to write output file: disk full"
 
 

@@ -382,7 +382,10 @@ def _specimen_from_script(
     if glyphs == 0:
         return None, "script_sample_no_supported_glyphs"
 
-    # Reject weak script sample when density too low vs cmap
+    # Reject weak script sample when density too low vs cmap.
+    # Large-script fonts (e.g. Hangul) can have a very large cmap even
+    # when the curated specimen is perfectly representative, so a
+    # substantial sample must remain acceptable regardless of cmap size.
     if cps:
         try:
             density = glyphs / max(len(cps), 1)
@@ -390,7 +393,7 @@ def _specimen_from_script(
             density = 0.0
 
         # empirical safe floor — prevents misleading tiny samples
-        if density < 0.01:
+        if density < 0.01 and glyphs < MIN_SAMPLE_GLYPHS:
             return None, "script_sample_too_sparse"
 
     return filtered, "script"

@@ -75,9 +75,10 @@ def _get_render_policy(script_iso: ScriptISO) -> tuple[str, str]:
 
     Notes
     -----
-    Invariant:
-    Non-Latin scripts must always receive an explicit ``Script=``
-    option to enable HarfBuzz shaping.
+    The policy is driven entirely by the ontology table. This helper
+    must not synthesize `Script=` names from ISO-15924 codes because
+    those values are not guaranteed to match the names accepted by
+    `fontspec`.
     """
     info = SCRIPT_INFO.get(script_iso)
 
@@ -86,10 +87,6 @@ def _get_render_policy(script_iso: ScriptISO) -> tuple[str, str]:
 
     lang = info["polyglossia_language"]
     opts = info["fontspec_opts"] or ""
-
-    # --- ensure shaping for non-Latin scripts ---
-    if not opts and script_iso and script_iso != ScriptISO("LATN"):
-        opts = f"Script={script_iso.title()}"
 
     return lang, opts
 

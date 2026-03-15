@@ -76,6 +76,26 @@ def test_create_catalog_accepts_output_option(
     assert code == 0
 
 
+@pytest.mark.parametrize("stub_create_catalog", ["ok"], indirect=True)
+def test_create_catalog_accepts_validate_loadability_flag(
+    cli_runner, stub_create_catalog
+):
+    """
+    Verify that create-catalog accepts the ``--validate-loadability`` flag.
+    """
+    code, out = cli_runner(
+        [
+            "fontshow",
+            "create-catalog",
+            "--inventory",
+            "inv.json",
+            "--validate-loadability",
+        ]
+    )
+
+    assert code == 0
+
+
 @pytest.mark.parametrize(
     "stub_create_catalog, expected_code",
     [

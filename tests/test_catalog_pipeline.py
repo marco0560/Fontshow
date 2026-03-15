@@ -17,14 +17,50 @@ import pytest
 from fontshow.catalog import pipeline
 
 
-def test_configure_test_fonts_extends_defaults(monkeypatch):
+def test_configure_test_fonts_plain_catalog_has_no_filter(monkeypatch):
     """
-    Ensure explicit CLI fonts are unioned with default test fonts.
+    Ensure plain create-catalog does not silently restrict to test fonts.
     """
     monkeypatch.setattr(pipeline, "DEFAULT_TEST_FONTS", {"Default", "Shared"})
 
     configured = pipeline._configure_test_fonts(
-        SimpleNamespace(test_font=["CLI", "Shared"])
+        SimpleNamespace(test=False, list_test_fonts=False, test_font=None)
+    )
+
+    assert configured == set()
+
+
+def test_configure_test_fonts_extends_defaults_when_test_mode_is_active(monkeypatch):
+    """
+    Ensure test mode unions explicit CLI fonts with default test fonts.
+    """
+    monkeypatch.setattr(pipeline, "DEFAULT_TEST_FONTS", {"Default", "Shared"})
+
+    configured = pipeline._configure_test_fonts(
+        SimpleNamespace(
+            test=True,
+            list_test_fonts=False,
+            test_font=["CLI", "Shared"],
+        )
+    )
+
+    assert configured == {"Default", "Shared", "CLI"}
+
+
+def test_configure_test_fonts_default_sentinel_enables_defaults_without_test(
+    monkeypatch,
+):
+    """
+    Ensure bare `-T/--test-font` enables the default test font set.
+    """
+    monkeypatch.setattr(pipeline, "DEFAULT_TEST_FONTS", {"Default", "Shared"})
+
+    configured = pipeline._configure_test_fonts(
+        SimpleNamespace(
+            test=False,
+            list_test_fonts=False,
+            test_font=["__DEFAULT__", "CLI"],
+        )
     )
 
     assert configured == {"Default", "Shared", "CLI"}

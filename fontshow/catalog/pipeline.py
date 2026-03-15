@@ -47,21 +47,31 @@ def _configure_test_fonts(args) -> set[str]:
 
     Notes
     -----
-    When `args.test_font` is provided, explicit CLI values are unioned
-    with `DEFAULT_TEST_FONTS`. When `args.test_font` is absent, the
-    function returns `DEFAULT_TEST_FONTS` alone.
+    Activation rules:
+    - Plain `create-catalog` performs no test-font filtering.
+    - `--test` and `--list-test-fonts` use `DEFAULT_TEST_FONTS`.
+    - `--test-font` with no value (`__DEFAULT__`) enables
+      `DEFAULT_TEST_FONTS`.
+    - Explicit `--test-font NAME` values add named families to the
+      effective test set.
     """
     cli_fonts: set[str] = set()
+    use_defaults = bool(
+        getattr(args, "test", False) or getattr(args, "list_test_fonts", False)
+    )
 
     if args.test_font:
         for value in args.test_font:
-            cli_fonts.add(value)
+            if value == "__DEFAULT__":
+                use_defaults = True
+            else:
+                cli_fonts.add(value)
 
-        # Explicit CLI fonts extend defaults.
-        return set(DEFAULT_TEST_FONTS) | cli_fonts
+    effective: set[str] = set(cli_fonts)
+    if use_defaults:
+        effective |= set(DEFAULT_TEST_FONTS)
 
-    # No --test-font provided → use DEFAULT_TEST_FONTS.
-    return set(DEFAULT_TEST_FONTS)
+    return effective
 
 
 def _handle_list_test_fonts(test_fonts: set[str], inventory_fonts: list[dict]) -> int:

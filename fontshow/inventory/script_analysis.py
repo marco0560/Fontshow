@@ -211,6 +211,8 @@ def infer_scripts(  # noqa: C901, PLR0912
                 add_script("thai", count)
             elif block.startswith("Lao"):
                 add_script("laoo", count)
+            elif block.startswith("Myanmar"):
+                add_script("mymr", count)
             elif block in ("Hiragana", "Katakana"):
                 add_script("jpan", count)
             elif block == "Hangul Syllables":

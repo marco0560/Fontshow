@@ -128,6 +128,26 @@ def test_infer_scripts_cyrillic():
     assert scripts == ["cyrl"]
 
 
+def test_infer_scripts_myanmar():
+    """
+    Verify that Myanmar block coverage infers the ``mymr`` script.
+
+    Returns
+    -------
+    None
+    """
+    coverage = {
+        "unicode_blocks": {
+            "Myanmar": 160,
+            "Myanmar Extended-A": 32,
+            "Myanmar Extended-B": 31,
+        }
+    }
+
+    scripts = infer_scripts(coverage)
+    assert scripts == ["mymr"]
+
+
 def test_coverage_scripts_never_unknown():
     """
     Verify that the public coverage script list itself never contains ``unknown``.

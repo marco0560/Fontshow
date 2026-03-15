@@ -40,6 +40,25 @@ This separation ensures that:
 - validation rules are centralized
 - pipeline stages remain loosely coupled
 
+---
+
+## Inspection Mode
+
+`parse-inventory` also provides a lightweight reporting mode for
+already-generated inventories:
+
+```bash
+fontshow parse-inventory --list-missing-language-coverage
+```
+
+This mode:
+
+- reads the selected inventory file,
+- lists fonts whose `coverage.languages` field is empty,
+- exits without writing an output file.
+
+Output is deterministic and preserves inventory order.
+
 ## Structured warnings
 
 Fontshow uses **structured warnings** to report non-fatal issues detected
@@ -224,6 +243,26 @@ Strict mode:
 - affects validation only
 - does not alter schema structure
 - does not change output layout
+
+---
+
+## CLI Notes
+
+Common parse-inventory usage patterns:
+
+```bash
+# Enrich the raw inventory
+fontshow parse-inventory
+
+# Validate an enriched inventory only
+fontshow parse-inventory -I
+
+# List fonts missing declared language coverage
+fontshow parse-inventory --list-missing-language-coverage
+
+# Enforce strict BCP-47 validation while enriching
+fontshow parse-inventory --strict-bcp47
+```
 
 ---
 

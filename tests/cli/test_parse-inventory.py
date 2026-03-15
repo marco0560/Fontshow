@@ -208,3 +208,17 @@ def test_parse_inventory_validate_only_defaults_to_enriched_inventory():
         else args.input
     )
     assert resolved == Path("font_inventory_enriched.json")
+
+
+def test_parse_inventory_accepts_missing_language_coverage_listing_flag():
+    """
+    Verify that parse-inventory accepts the reporting flag.
+    """
+    from fontshow.cli.parse_inventory import build_parser
+
+    parser = argparse.ArgumentParser()
+    build_parser(parser)
+
+    args = parser.parse_args(["--list-missing-language-coverage"])
+
+    assert args.list_missing_language_coverage is True

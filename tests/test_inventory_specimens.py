@@ -66,6 +66,27 @@ def test_specimen_from_script_prefers_charset_dominance_and_rejects_sparse(monke
     assert sparse == (None, "script_sample_no_supported_glyphs")
 
 
+def test_specimen_from_script_keeps_substantial_sample_for_large_cmap(monkeypatch):
+    """
+    Ensure large cmaps do not force curated script samples to fall back spuriously.
+    """
+    hangul_specimen = "가나다라마바사아자차카타파하거너더러머버서어저처커터퍼허"
+    monkeypatch.setattr(
+        specimens,
+        "SCRIPT_INFO",
+        {
+            "HANG": {"specimen": hangul_specimen},
+        },
+    )
+
+    cps = {ord(ch) for ch in hangul_specimen}
+    cps.update(range(0xAC00, 0xAC00 + 12000))
+
+    result = specimens._specimen_from_script({"scripts": ["hang"]}, cps)
+
+    assert result == (hangul_specimen, "script")
+
+
 def test_specimen_from_cmap_returns_fallback_without_warning_record():
     """
     Ensure cmap fallback uses preference ordering without adding a warning record.
