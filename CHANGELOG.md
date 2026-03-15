@@ -1,3 +1,9 @@
+## [0.56.2](https://github.com/marco0560/Fontshow/compare/v0.56.1...v0.56.2) (2026-03-15)
+
+### Bug Fixes
+
+* **ci:** migrate workflows to Node 24 compatible action versions ([d8c9205](https://github.com/marco0560/Fontshow/commit/d8c9205483edda4df0ad025753121ffb8084290a))
+
 ## [0.56.1](https://github.com/marco0560/Fontshow/compare/v0.56.0...v0.56.1) (2026-03-14)
 
 ### Bug Fixes
