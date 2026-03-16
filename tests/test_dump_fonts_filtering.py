@@ -220,6 +220,17 @@ def test_parse_inventory_after_dump(tmp_path, monkeypatch):
 def test_dump_fonts_fails_instead_of_writing_non_schema_fallback(tmp_path, monkeypatch):
     """
     Ensure dump-fonts aborts when it cannot build a schema-1.2 descriptor.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the output inventory path.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace discovery, extraction, and descriptor building.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(
         "fontshow.cli.dump_fonts.get_installed_font_files",
@@ -252,6 +263,17 @@ def test_dump_fonts_fails_instead_of_writing_non_schema_fallback(tmp_path, monke
 def test_dump_fonts_verbose_reports_style_leak_details(tmp_path, monkeypatch):
     """
     Ensure style-leak details are attached only via the verbose log variant.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the output inventory path.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace discovery, extraction, and logging helpers.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(
         "fontshow.cli.dump_fonts.get_installed_font_files",

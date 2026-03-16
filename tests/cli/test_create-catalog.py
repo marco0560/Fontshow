@@ -82,6 +82,17 @@ def test_create_catalog_accepts_validate_loadability_flag(
 ):
     """
     Verify that create-catalog accepts the ``--validate-loadability`` flag.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_create_catalog : object
+        Indirect fixture configuring the create-catalog stub to succeed.
+
+    Returns
+    -------
+    None
     """
     code, out = cli_runner(
         [

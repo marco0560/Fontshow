@@ -18,6 +18,17 @@ from fontshow.cli import parse_inventory
 def test_run_parse_inventory_lists_missing_language_coverage(monkeypatch, tmp_path):
     """
     Ensure the reporting mode lists only fonts with empty coverage.languages.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace metadata, validation, and logging helpers.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage input and output files.
+
+    Returns
+    -------
+    None
     """
     input_file = tmp_path / "inventory.json"
     output_file = tmp_path / "out.json"

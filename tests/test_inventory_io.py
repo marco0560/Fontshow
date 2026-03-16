@@ -22,6 +22,10 @@ from tests.helpers import minimal_inventory_v12
 def test_validate_fonts_container_accepts_only_lists():
     """
     Ensure the helper returns the list unchanged and rejects non-lists.
+
+    Returns
+    -------
+    None
     """
     fonts = [{"family": "Alpha"}]
 
@@ -42,6 +46,17 @@ def test_validate_fonts_container_accepts_only_lists():
 def test_validate_fonts_structure_covers_boundary_shapes(inventory, expected):
     """
     Ensure malformed and valid ``fonts`` containers are classified correctly.
+
+    Parameters
+    ----------
+    inventory : dict[str, object]
+        Candidate inventory payload passed to the helper.
+    expected : tuple[bool, list[dict[str, object]]]
+        Expected validity flag and normalized font list.
+
+    Returns
+    -------
+    None
     """
     assert io._validate_fonts_structure(inventory) == expected
 
@@ -51,6 +66,17 @@ def test_load_font_inventory_raises_runtime_error_for_invalid_result(
 ):
     """
     Ensure the public loader preserves its exception-based contract.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the lower-level loader.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build a dummy input path.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(
         io, "_load_inventory", lambda _path, require_platform=False: (1, [])
@@ -63,6 +89,17 @@ def test_load_font_inventory_raises_runtime_error_for_invalid_result(
 def test_load_inventory_rejects_non_mapping_metadata(tmp_path, monkeypatch):
     """
     Ensure invalid ``metadata`` shapes are rejected early.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the test inventory file.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to capture emitted error messages.
+
+    Returns
+    -------
+    None
     """
     path = tmp_path / "inventory.json"
     path.write_text(json.dumps({"metadata": 1}), encoding="utf-8")
@@ -81,6 +118,17 @@ def test_load_inventory_rejects_missing_run_environment_when_required(
 ):
     """
     Ensure strict platform mode requires ``metadata.run_environment``.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the test inventory file.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to capture emitted error messages.
+
+    Returns
+    -------
+    None
     """
     data = minimal_inventory_v12()
     del data["metadata"]["run_environment"]
@@ -101,6 +149,17 @@ def test_load_inventory_rejects_missing_run_environment_when_required(
 def test_load_inventory_rejects_legacy_schema_version(tmp_path, monkeypatch):
     """
     Ensure legacy schema versions are rejected immediately.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the test inventory file.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to capture emitted error messages.
+
+    Returns
+    -------
+    None
     """
     path = tmp_path / "inventory.json"
     path.write_text(
@@ -120,6 +179,17 @@ def test_load_inventory_rejects_legacy_schema_version(tmp_path, monkeypatch):
 def test_load_inventory_rejects_mixed_shape_entry(tmp_path, monkeypatch):
     """
     Ensure entries carrying legacy-only fields are rejected by strict loading.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the test inventory file.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to capture emitted error messages.
+
+    Returns
+    -------
+    None
     """
     data = minimal_inventory_v12()
     data["fonts"][0]["identity"] = {"file": data["fonts"][0]["path"]}
@@ -141,6 +211,17 @@ def test_load_inventory_rejects_mixed_shape_entry(tmp_path, monkeypatch):
 def test_load_inventory_rejects_platform_mismatch(tmp_path, monkeypatch):
     """
     Ensure platform mismatches are logged and converted into rc=1.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the test inventory file.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace platform enforcement and capture logs.
+
+    Returns
+    -------
+    None
     """
     data = minimal_inventory_v12()
     path = tmp_path / "inventory.json"
@@ -161,6 +242,17 @@ def test_load_inventory_rejects_platform_mismatch(tmp_path, monkeypatch):
 def test_load_inventory_reports_semantic_errors(tmp_path, monkeypatch):
     """
     Ensure semantic validation failures surface only warning/error messages.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the test inventory file.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace validation helpers and capture logs.
+
+    Returns
+    -------
+    None
     """
     data = minimal_inventory_v12()
     path = tmp_path / "inventory.json"
@@ -195,6 +287,17 @@ def test_load_inventory_returns_fonts_when_platform_check_is_disabled(
 ):
     """
     Ensure non-platform mode skips platform matching for valid schema-1.2 inventories.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the test inventory file.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace validation helpers and capture success logs.
+
+    Returns
+    -------
+    None
     """
     data = minimal_inventory_v12()
     path = tmp_path / "inventory.json"

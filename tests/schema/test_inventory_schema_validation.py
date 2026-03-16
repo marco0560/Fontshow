@@ -103,6 +103,11 @@ def test_strict_validation_missing_schema_file(monkeypatch):
     -------
     None
 
+    Raises
+    ------
+    FileNotFoundError
+        Raised by the fake schema-path reader and converted into a validation error.
+
     Notes
     -----
     The test replaces the schema resource loader with a fake path-like
@@ -113,6 +118,10 @@ def test_strict_validation_missing_schema_file(monkeypatch):
     class FakeSchemaPath:
         """
         Minimal path-like test double used to emulate a missing schema resource.
+
+        Notes
+        -----
+        The instance preserves path-joining semantics while failing on reads.
         """
 
         def __truediv__(self, name):

@@ -21,6 +21,20 @@ from fontshow.platform import font_discovery
 def test_get_installed_font_files_dispatches_by_platform(monkeypatch):
     """
     Ensure the public dispatcher selects the active backend.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace platform flags and backend functions.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    PermissionError
+        Raised by the nested unreadable-directory stub and ignored by discovery.
     """
     monkeypatch.setattr(font_discovery, "IS_LINUX", True)
     monkeypatch.setattr(font_discovery, "IS_WINDOWS", False)
@@ -44,6 +58,20 @@ def test_get_installed_font_files_dispatches_by_platform(monkeypatch):
 def test_get_installed_font_files_raises_for_unsupported_platform(monkeypatch):
     """
     Ensure unsupported platforms fail with a clear runtime error.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace platform flags.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    PermissionError
+        Raised by the nested unreadable-directory stub and ignored by discovery.
     """
     monkeypatch.setattr(font_discovery, "IS_LINUX", False)
     monkeypatch.setattr(font_discovery, "IS_WINDOWS", False)
@@ -56,6 +84,20 @@ def test_get_installed_font_files_raises_for_unsupported_platform(monkeypatch):
 def test_linux_discovery_raises_when_fc_list_fails(monkeypatch):
     """
     Ensure `fc-list` failures propagate as runtime errors.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the command runner and trace logger.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    PermissionError
+        Raised by the nested unreadable-directory stub and ignored by discovery.
     """
     monkeypatch.setattr(
         font_discovery,
@@ -71,6 +113,22 @@ def test_linux_discovery_raises_when_fc_list_fails(monkeypatch):
 def test_windows_font_dirs_filters_missing_directories(monkeypatch, tmp_path):
     """
     Ensure only existing Windows font directories are returned.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace environment variables.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage Windows-like directories.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    PermissionError
+        Raised by the nested unreadable-directory stub and ignored by discovery.
     """
     windir = tmp_path / "WindowsRoot"
     system_fonts = windir / "Fonts"
@@ -89,6 +147,22 @@ def test_windows_font_dirs_filters_missing_directories(monkeypatch, tmp_path):
 def test_windows_discovery_skips_legacy_and_permission_errors(monkeypatch, tmp_path):
     """
     Ensure Windows scanning keeps modern fonts, skips legacy ones, and ignores bad dirs.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace Windows directory discovery.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage mock font files.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    PermissionError
+        Raised by the nested unreadable-directory stub and ignored by discovery.
     """
     good_dir = tmp_path / "good"
     good_dir.mkdir()
@@ -101,6 +175,23 @@ def test_windows_discovery_skips_legacy_and_permission_errors(monkeypatch, tmp_p
 
     class BadDir:
         def rglob(self, _pattern: str):
+            """
+            Raise a deterministic permission error for the test.
+
+            Parameters
+            ----------
+            _pattern : str
+                Glob pattern accepted for interface compatibility.
+
+            Returns
+            -------
+            None
+
+            Raises
+            ------
+            PermissionError
+                Always raised to emulate an unreadable directory.
+            """
             msg = "denied"
             raise PermissionError(msg)
 

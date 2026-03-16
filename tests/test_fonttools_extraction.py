@@ -19,6 +19,14 @@ from fontshow.inventory import fonttools_extraction as extraction
 
 
 class _FakeNameRecord:
+    """
+    Minimal ``name`` table record stand-in for extraction tests.
+
+    Notes
+    -----
+    Instances can return Unicode text, fall back to ``str()``, or raise.
+    """
+
     def __init__(
         self,
         name_id: int,
@@ -27,12 +35,43 @@ class _FakeNameRecord:
         exc: Exception | None = None,
         str_value: str | None = None,
     ) -> None:
+        """
+        Initialize the fake name record.
+
+        Parameters
+        ----------
+        name_id : int
+            Name ID exposed by the fake record.
+        text : str | None, optional
+            Unicode text returned by ``toUnicode`` when no exception is configured.
+        exc : Exception | None, optional
+            Exception raised by ``toUnicode`` when configured.
+        str_value : str | None, optional
+            String fallback returned by ``__str__``.
+
+        Returns
+        -------
+        None
+        """
         self.nameID = name_id
         self._text = text
         self._exc = exc
         self._str_value = str_value if str_value is not None else text or ""
 
     def toUnicode(self) -> str:
+        """
+        Return the configured Unicode string or raise the configured error.
+
+        Returns
+        -------
+        str
+            Stored Unicode string when no exception is configured.
+
+        Raises
+        ------
+        Exception
+            Re-raises the configured exception when present.
+        """
         if self._exc is not None:
             raise self._exc
         return self._text or ""
@@ -58,6 +97,20 @@ class _FakeTT(dict):
 def test_detect_font_container_prefers_header_bytes(tmp_path):
     """
     Ensure container detection handles magic bytes and extension fallbacks.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage fake font files.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    extraction.TTLibError
+        Raised by the nested fake font opener and converted into error payloads.
     """
     cases = [
         ("font.woff", b"wOFF", "WOFF"),
@@ -77,10 +130,33 @@ def test_detect_font_container_prefers_header_bytes(tmp_path):
 def test_extract_sample_text_filters_duplicates_and_decode_failures(monkeypatch):
     """
     Ensure sample-text extraction deduplicates values and ignores bad records.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ``TTFont`` with a deterministic fake.
+
+    Returns
+    -------
+    None
     """
 
     class FakeTTFont(dict):
         def __init__(self, _path, lazy=True) -> None:
+            """
+            Build a fake font containing duplicate and malformed sample-text records.
+
+            Parameters
+            ----------
+            _path : str
+                Font path accepted for interface compatibility.
+            lazy : bool, optional
+                Lazy-loading flag accepted for interface compatibility.
+
+            Returns
+            -------
+            None
+            """
             super().__init__(
                 name=SimpleNamespace(
                     names=[
@@ -97,6 +173,13 @@ def test_extract_sample_text_filters_duplicates_and_decode_failures(monkeypatch)
             self.closed = False
 
         def close(self) -> None:
+            """
+            Mark the fake font as closed.
+
+            Returns
+            -------
+            None
+            """
             self.closed = True
 
     monkeypatch.setattr(extraction, "TTFont", FakeTTFont)
@@ -107,6 +190,10 @@ def test_extract_sample_text_filters_duplicates_and_decode_failures(monkeypatch)
 def test_extract_name_table_falls_back_to_str_and_skips_unusable_records():
     """
     Ensure malformed name records use ``str()`` fallback when possible.
+
+    Returns
+    -------
+    None
     """
     tt = _FakeTT(
         name=SimpleNamespace(
@@ -128,6 +215,10 @@ def test_extract_name_table_falls_back_to_str_and_skips_unusable_records():
 def test_extract_os2_unicode_coverage_and_features_are_best_effort():
     """
     Ensure low-level helpers normalize values and tolerate malformed subtables.
+
+    Returns
+    -------
+    None
     """
     tt = _FakeTT(
         **{
@@ -176,6 +267,15 @@ def test_extract_os2_unicode_coverage_and_features_are_best_effort():
 def test_fonttools_extract_from_tt_wraps_helper_failures(monkeypatch):
     """
     Ensure face extraction converts helper failures into stable error payloads.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace low-level extraction helpers.
+
+    Returns
+    -------
+    None
     """
     cmap = SimpleNamespace(
         tables=[
@@ -246,6 +346,22 @@ def test_fonttools_extract_from_tt_wraps_helper_failures(monkeypatch):
 def test_fonttools_extract_all_handles_cache_and_open_failures(tmp_path, monkeypatch):
     """
     Ensure single-face extraction reuses cache and reports open failures deterministically.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage cache and font files.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace cache, logging, and font opening helpers.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    extraction.TTLibError
+        Raised by the nested fake font opener and converted into error payloads.
     """
     font_path = tmp_path / "font.ttf"
     font_path.write_bytes(b"\x00\x01\x00\x00")
@@ -266,6 +382,25 @@ def test_fonttools_extract_all_handles_cache_and_open_failures(tmp_path, monkeyp
 
     class BrokenTTFont:
         def __init__(self, *_args, **_kwargs) -> None:
+            """
+            Raise a deterministic font-open failure.
+
+            Parameters
+            ----------
+            *_args : object
+                Ignored positional arguments preserved for interface compatibility.
+            **_kwargs : object
+                Ignored keyword arguments preserved for interface compatibility.
+
+            Returns
+            -------
+            None
+
+            Raises
+            ------
+            extraction.TTLibError
+                Always raised with a fixed message.
+            """
             msg = "cannot open"
             raise extraction.TTLibError(msg)
 
@@ -289,6 +424,22 @@ def test_fonttools_extract_all_ttc_uses_cached_faces_and_reports_per_face_failur
 ):
     """
     Ensure TTC extraction mixes cached and freshly extracted faces deterministically.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage cache and TTC files.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace TTC loading, extraction, and tracing helpers.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    extraction.TTLibError
+        Raised by the nested face extractor and converted into per-face errors.
     """
     font_path = tmp_path / "font.ttc"
     font_path.write_bytes(b"ttcfrest")
@@ -314,6 +465,30 @@ def test_fonttools_extract_all_ttc_uses_cached_faces_and_reports_per_face_failur
     monkeypatch.setattr(extraction, "log_trace_cat", lambda *_args, **_kwargs: None)
 
     def fake_extract(*, _path, container, tt, ttc_index):
+        """
+        Return a face payload or raise for the failing TTC face.
+
+        Parameters
+        ----------
+        _path : pathlib.Path
+            Font path accepted for interface compatibility.
+        container : str
+            Container label accepted for interface compatibility.
+        tt : object
+            Face object accepted for interface compatibility.
+        ttc_index : int | None
+            TTC face index being extracted.
+
+        Returns
+        -------
+        dict[str, object]
+            Extracted payload for successful TTC faces.
+
+        Raises
+        ------
+        extraction.TTLibError
+            Raised for the sentinel failing face.
+        """
         if ttc_index == 1:
             msg = "face boom"
             raise extraction.TTLibError(msg)
@@ -338,6 +513,10 @@ def test_fonttools_extract_all_ttc_uses_cached_faces_and_reports_per_face_failur
 def test_extract_opentype_features_ignores_malformed_feature_records():
     """
     Ensure malformed feature records are ignored instead of raising.
+
+    Returns
+    -------
+    None
     """
     tt = _FakeTT(
         GSUB=SimpleNamespace(
@@ -351,6 +530,22 @@ def test_extract_opentype_features_ignores_malformed_feature_records():
 def test_fonttools_extract_all_propagates_cache_write_failures(tmp_path, monkeypatch):
     """
     Ensure cache write failures are not silently swallowed.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage cache and font files.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace extraction, font opening, and cache writing helpers.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    PermissionError
+        Raised by the cache write path under test.
     """
     font_path = tmp_path / "font.ttf"
     font_path.write_bytes(b"\x00\x01\x00\x00")

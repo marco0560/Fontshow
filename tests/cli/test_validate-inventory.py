@@ -86,6 +86,10 @@ def test_validate_inventory_accepts_quiet_flag(
 def test_validate_inventory_defaults_to_font_inventory_json():
     """
     Verify that validate-inventory defaults to ``font_inventory.json``.
+
+    Returns
+    -------
+    None
     """
     parser = argparse.ArgumentParser()
     build_parser(parser)

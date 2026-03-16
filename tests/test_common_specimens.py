@@ -13,6 +13,15 @@ from fontshow.common import specimens
 def test_choose_language_sample_prefers_first_language_with_sample(monkeypatch):
     """
     Ensure selection skips unusable language entries and returns the first valid sample.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ontology tables with deterministic test data.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(
         specimens,
@@ -30,6 +39,15 @@ def test_choose_language_sample_prefers_first_language_with_sample(monkeypatch):
 def test_choose_language_sample_falls_back_via_script_display_language(monkeypatch):
     """
     Ensure the first script tag can resolve a representative fallback sample.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace script and language tables.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(specimens, "tag_to_iso", lambda tag: "LATN")
     monkeypatch.setattr(specimens, "SCRIPT_INFO", {"LATN": {"display_language": "en"}})
@@ -43,6 +61,15 @@ def test_choose_language_sample_returns_none_for_unknown_or_malformed_entries(
 ):
     """
     Ensure malformed ontology rows are ignored cleanly.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace script normalization and ontology tables.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(specimens, "tag_to_iso", lambda tag: "ARAB")
     monkeypatch.setattr(specimens, "SCRIPT_INFO", {"ARAB": {"display_language": 7}})

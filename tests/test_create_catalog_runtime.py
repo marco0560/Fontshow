@@ -17,6 +17,22 @@ from fontshow.cli import create_catalog
 def test_generate_test_output_filters_limits_and_logs_error(monkeypatch, tmp_path):
     """
     Ensure diagnostic output honors filtering/limits and reports filename failures.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace catalog helpers and logging.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage output files.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    OSError
+        Raised by the nested write stub and handled by the runtime wrapper.
     """
     out_file = tmp_path / "report.txt"
     monkeypatch.setattr(create_catalog, "TEST_FONTS", {"Beta"})
@@ -59,6 +75,22 @@ def test_generate_test_output_filters_limits_and_logs_error(monkeypatch, tmp_pat
 def test_generate_test_output_treats_limit_zero_as_no_limit(monkeypatch, tmp_path):
     """
     Ensure the current ``limit=0`` behavior is pinned explicitly.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace catalog helpers.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage the output file.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    RuntimeError
+        Raised by the nested crash stub and normalized by the public entrypoint.
     """
     out_file = tmp_path / "report.txt"
     monkeypatch.setattr(
@@ -88,6 +120,22 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
 ):
     """
     Ensure runtime flow covers list mode, invariant failure, and output write errors.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace runtime helpers and logging.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage the inventory file.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    OSError
+        Raised by the nested write stub and handled by the runtime wrapper.
     """
     inv = tmp_path / "inventory.json"
     inv.write_text("{}", encoding="utf-8")
@@ -156,6 +204,25 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
     monkeypatch.setattr(create_catalog, "generate_latex", lambda fonts: "LATEX")
 
     def _boom(_path, _content):
+        """
+        Raise a deterministic output write failure.
+
+        Parameters
+        ----------
+        _path : object
+            Output path accepted for interface compatibility.
+        _content : object
+            Rendered content accepted for interface compatibility.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        OSError
+            Always raised with a fixed message.
+        """
         msg = "disk full"
         raise OSError(msg)
 
@@ -175,6 +242,20 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
 def test_main_logs_success_failure_and_exception(monkeypatch):
     """
     Ensure main() preserves exit codes and converts unexpected exceptions to rc=2.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace runtime and logging helpers.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    RuntimeError
+        Raised by the nested crash stub and normalized by the public entrypoint.
     """
     oks: list[str] = []
     errs: list[str] = []
@@ -205,6 +286,23 @@ def test_main_logs_success_failure_and_exception(monkeypatch):
     assert trace[-1] == {"exit_code": 5}
 
     def _crash(_args):
+        """
+        Raise a deterministic internal failure for the runtime wrapper test.
+
+        Parameters
+        ----------
+        _args : object
+            Parsed CLI arguments accepted for interface compatibility.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        RuntimeError
+            Always raised with a fixed message.
+        """
         msg = "boom"
         raise RuntimeError(msg)
 

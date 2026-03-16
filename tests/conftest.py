@@ -322,6 +322,11 @@ def stub_dump_fonts(monkeypatch, request):
     -------
     None
 
+    Raises
+    ------
+    RuntimeError
+        May be raised by the nested CLI stub in non-success modes.
+
     Notes
     -----
     The fixture provides a success path and a crashing path so CLI
@@ -379,6 +384,13 @@ def stub_parse_inventory(monkeypatch, request):
     Returns
     -------
     None
+
+    Raises
+    ------
+    ValueError
+        May be raised by the nested parser stub in validation-failure mode.
+    RuntimeError
+        May be raised by the nested parser stub in crash mode.
 
     Notes
     -----
@@ -477,6 +489,11 @@ def stub_create_catalog(monkeypatch, request):
     -------
     None
 
+    Raises
+    ------
+    RuntimeError
+        May be raised by the nested CLI stub in crash mode.
+
     Notes
     -----
     The fixture exposes success, controlled failure, and crash modes so
@@ -536,6 +553,11 @@ def stub_validate_inventory(monkeypatch, request):
     Returns
     -------
     None
+
+    Raises
+    ------
+    RuntimeError
+        May be raised by the nested CLI stub in crash mode.
     """
     mode = request.param
 

@@ -17,6 +17,10 @@ from fontshow.core.types import ScriptISO
 def test_normalize_path_for_latex_handles_windows_and_bare_filenames():
     """
     Ensure path normalization produces forward slashes and a default directory.
+
+    Returns
+    -------
+    None
     """
     assert document._normalize_path_for_latex(r"C:\Fonts\Alpha.ttf") == (
         "C:/Fonts/",
@@ -28,6 +32,10 @@ def test_normalize_path_for_latex_handles_windows_and_bare_filenames():
 def test_render_font_entry_returns_empty_for_unsupported_extension():
     """
     Ensure non-font paths do not render specimen blocks.
+
+    Returns
+    -------
+    None
     """
     render, options = document._render_font_entry(
         font={"path": "/tmp/alpha.txt"},
@@ -45,6 +53,15 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
 ):
     """
     Ensure non-Latin scripts with a language emit explicit per-entry font setup.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace LaTeX helper functions.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
     monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "Renderer=1,")
@@ -71,6 +88,15 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
 def test_render_font_entry_falls_back_to_fontspec_without_language(monkeypatch):
     """
     Ensure non-Latin scripts without a language still render through ``\\fontspec``.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace LaTeX helper functions.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
     monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
@@ -93,6 +119,15 @@ def test_render_font_entry_falls_back_to_fontspec_without_language(monkeypatch):
 def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkeypatch):
     """
     Ensure generation groups by family and emits one specimen block per file.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers and logging.
+
+    Returns
+    -------
+    None
     """
     infos: list[str] = []
     warnings: list[str] = []

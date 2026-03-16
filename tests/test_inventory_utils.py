@@ -20,10 +20,43 @@ from fontshow.inventory import utils
 def test_run_command_converts_timeout_to_runtime_error(monkeypatch):
     """
     Ensure subprocess timeouts are logged and normalized.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace subprocess execution and log capture.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    subprocess.TimeoutExpired
+        Raised by the nested subprocess stub and normalized by the helper.
     """
     errors: list[str] = []
 
     def _timeout(*_args, **_kwargs):
+        """
+        Raise the timeout error expected by the caller.
+
+        Parameters
+        ----------
+        *_args : object
+            Ignored positional arguments preserved for interface compatibility.
+        **_kwargs : object
+            Ignored keyword arguments preserved for interface compatibility.
+
+        Returns
+        -------
+        NoReturn
+
+        Raises
+        ------
+        subprocess.TimeoutExpired
+            Always raised with a fixed timeout payload.
+        """
         raise subprocess.TimeoutExpired(cmd=["fc-query"], timeout=1)
 
     monkeypatch.setattr(utils.subprocess, "run", _timeout)
@@ -40,6 +73,15 @@ def test_run_command_converts_timeout_to_runtime_error(monkeypatch):
 def test_run_command_propagates_command_not_found(monkeypatch):
     """
     Ensure missing executables are not silently converted.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace subprocess execution.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(
         utils.subprocess,
@@ -54,6 +96,17 @@ def test_run_command_propagates_command_not_found(monkeypatch):
 def test_font_cache_key_propagates_stat_failures(monkeypatch, tmp_path):
     """
     Ensure cache-key generation preserves filesystem failures.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ``Path.stat``.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to create a dummy font path.
+
+    Returns
+    -------
+    None
     """
     path = tmp_path / "font.ttf"
     path.write_text("", encoding="utf-8")

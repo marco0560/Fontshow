@@ -106,6 +106,10 @@ def test_validate_font_entry_missing_family_is_fatal():
 def test_style_leak_heuristic_ignores_justified_family_tokens():
     """
     Verify that family tokens matching width/weight metadata are not flagged.
+
+    Returns
+    -------
+    None
     """
     entry = minimal_font_entry_v12()
     entry["family"] = "Roboto Condensed"
@@ -119,6 +123,10 @@ def test_style_leak_heuristic_ignores_justified_family_tokens():
 def test_style_leak_heuristic_flags_unjustified_family_tokens():
     """
     Verify that family tokens contradicting metadata are still flagged.
+
+    Returns
+    -------
+    None
     """
     entry = minimal_font_entry_v12()
     entry["family"] = "Arial Black"

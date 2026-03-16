@@ -169,6 +169,11 @@ def build_stub_proposal(gap_report: dict[str, Any]) -> dict[str, Any]:
 def parse_args() -> argparse.Namespace:
     """
     Parse command-line arguments for stub proposal generation.
+
+    Returns
+    -------
+    argparse.Namespace
+        Parsed command-line arguments for the stub-proposal generator.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -189,6 +194,11 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     """
     Execute stub proposal generation from the current gap report.
+
+    Returns
+    -------
+    int
+        Process exit status code. Returns ``0`` on success.
     """
     args = parse_args()
     proposal = build_stub_proposal(load_gap_report(args.gap_report))

@@ -132,6 +132,11 @@ def build_local_tex_surface(
 def parse_args() -> argparse.Namespace:
     """
     Parse command-line arguments for the TeX surface audit.
+
+    Returns
+    -------
+    argparse.Namespace
+        Parsed command-line arguments for the audit command.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -158,6 +163,11 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     """
     Execute the local TeX audit and write the JSON report.
+
+    Returns
+    -------
+    int
+        Process exit status code. Returns ``0`` on success.
     """
     args = parse_args()
     report: dict[str, Any] = build_local_tex_surface(

@@ -228,6 +228,11 @@ def build_first_reviewed_batch(stub_proposal: dict[str, Any]) -> dict[str, Any]:
 def parse_args() -> argparse.Namespace:
     """
     Parse command-line arguments for reviewed batch generation.
+
+    Returns
+    -------
+    argparse.Namespace
+        Parsed command-line arguments for the reviewed-batch generator.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -248,6 +253,11 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     """
     Execute first reviewed-batch generation.
+
+    Returns
+    -------
+    int
+        Process exit status code. Returns ``0`` on success.
     """
     args = parse_args()
     batch = build_first_reviewed_batch(load_stub_proposal(args.stub_proposal))

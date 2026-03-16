@@ -79,6 +79,18 @@ def _format_extra(extra: dict | None) -> str:
     to improve CLI readability.
 
     Keys are always sorted to preserve deterministic output.
+
+    Parameters
+    ----------
+    extra : dict | None
+        Optional mapping of extra key/value pairs attached to a CLI
+        log event.
+
+    Returns
+    -------
+    str
+        Formatted suffix for CLI output. Returns an empty string when
+        no extra fields are present.
     """
     if not extra:
         return ""

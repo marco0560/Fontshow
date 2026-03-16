@@ -19,6 +19,20 @@ from fontshow.inventory import platform_metadata
 def test_detect_execution_context_prefers_wsl_environment(monkeypatch):
     """
     Ensure WSL environment variables take precedence over filesystem probes.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace environment variables.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    OSError
+        Raised by the nested fake path reader and ignored by context detection.
     """
     monkeypatch.setenv("WSL_DISTRO_NAME", "Ubuntu")
 
@@ -30,17 +44,56 @@ def test_detect_execution_context_falls_back_to_container_on_proc_read_error(
 ):
     """
     Ensure container detection still works when ``/proc/version`` cannot be read.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace environment variables and path probes.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    OSError
+        Raised by the nested fake path reader and ignored by context detection.
     """
     real_path = Path
 
     class FakePath:
         def __init__(self, value: str):
+            """
+            Store the fake path used by the container-fallback test.
+
+            Parameters
+            ----------
+            value : str
+                Path string to emulate.
+
+            Returns
+            -------
+            None
+            """
             self._path = value
 
         def exists(self) -> bool:
             return self._path in {"/proc/version", "/.dockerenv"}
 
         def read_text(self) -> str:
+            """
+            Read the fake proc file or raise the configured error.
+
+            Returns
+            -------
+            str
+                Empty string for readable fake files.
+
+            Raises
+            ------
+            OSError
+                Raised for the `/proc/version` sentinel path.
+            """
             if self._path == "/proc/version":
                 msg = "simulated read failure"
                 raise OSError(msg)
@@ -60,16 +113,45 @@ def test_detect_execution_context_falls_back_to_container_on_proc_read_error(
 def test_detect_execution_context_returns_native_without_markers(monkeypatch):
     """
     Ensure native execution is reported when no WSL or container markers exist.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace environment variables and path probes.
+
+    Returns
+    -------
+    None
     """
 
     class FakePath:
         def __init__(self, _value: str):
-            pass
+            """
+            Accept a path string for interface compatibility.
+
+            Parameters
+            ----------
+            _value : str
+                Ignored path string accepted by the fake constructor.
+
+            Returns
+            -------
+            None
+            """
+            self._value = _value
 
         def exists(self) -> bool:
             return False
 
         def read_text(self) -> str:
+            """
+            Return an empty proc-like payload for the native-path test.
+
+            Returns
+            -------
+            str
+                Empty string to emulate a readable file with no markers.
+            """
             return ""
 
     monkeypatch.delenv("WSL_DISTRO_NAME", raising=False)
@@ -81,6 +163,15 @@ def test_detect_execution_context_returns_native_without_markers(monkeypatch):
 def test_collect_platform_metadata_uses_unknown_for_empty_runtime_fields(monkeypatch):
     """
     Ensure empty platform providers are normalized to ``"unknown"`` fields.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace runtime metadata providers.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(
         platform_metadata, "_detect_execution_context", lambda: ExecutionContext.OTHER

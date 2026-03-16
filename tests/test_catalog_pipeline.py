@@ -20,6 +20,15 @@ from fontshow.catalog import pipeline
 def test_configure_test_fonts_plain_catalog_has_no_filter(monkeypatch):
     """
     Ensure plain create-catalog does not silently restrict to test fonts.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the default test-font set.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(pipeline, "DEFAULT_TEST_FONTS", {"Default", "Shared"})
 
@@ -33,6 +42,15 @@ def test_configure_test_fonts_plain_catalog_has_no_filter(monkeypatch):
 def test_configure_test_fonts_extends_defaults_when_test_mode_is_active(monkeypatch):
     """
     Ensure test mode unions explicit CLI fonts with default test fonts.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the default test-font set.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(pipeline, "DEFAULT_TEST_FONTS", {"Default", "Shared"})
 
@@ -52,6 +70,15 @@ def test_configure_test_fonts_default_sentinel_enables_defaults_without_test(
 ):
     """
     Ensure bare `-T/--test-font` enables the default test font set.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the default test-font set.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(pipeline, "DEFAULT_TEST_FONTS", {"Default", "Shared"})
 
@@ -69,6 +96,15 @@ def test_configure_test_fonts_default_sentinel_enables_defaults_without_test(
 def test_handle_list_test_fonts_reports_matches_and_missing(monkeypatch):
     """
     Ensure matching uses trimmed inventory family names and reports missing entries.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace logging helpers.
+
+    Returns
+    -------
+    None
     """
     messages: list[str] = []
     monkeypatch.setattr(pipeline, "log_info", messages.append)
@@ -117,6 +153,21 @@ def test_run_inventory_diagnostics_uses_ratio_thresholds(
 ):
     """
     Ensure missing-language ratios map to the intended severity buckets.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace logging helpers.
+    fonts : list[dict[str, object]]
+        Parametrized font list used to drive the diagnostic ratio.
+    expected_log : str
+        Severity bucket expected from the diagnostic logic.
+    expected_message : str
+        Exact user-facing summary expected for the given ratio.
+
+    Returns
+    -------
+    None
     """
     infos: list[str] = []
     warnings: list[str] = []
@@ -132,6 +183,15 @@ def test_run_inventory_diagnostics_uses_ratio_thresholds(
 def test_filter_and_prepare_fonts_filters_sorts_and_slices(monkeypatch):
     """
     Ensure filtering happens before slicing and final output preserves variants.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace tracing and normalization helpers.
+
+    Returns
+    -------
+    None
     """
     trace_calls: list[tuple[str, dict[str, object]]] = []
     monkeypatch.setattr(
@@ -162,6 +222,15 @@ def test_filter_and_prepare_fonts_filters_sorts_and_slices(monkeypatch):
 def test_filter_and_prepare_fonts_propagates_type_errors(monkeypatch):
     """
     Ensure invalid entries still surface the normalization TypeError.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace tracing helpers.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(
         pipeline,

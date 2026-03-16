@@ -8,6 +8,10 @@ from fontshow.core.cli_utils import _format_extra
 def test_format_extra_handles_empty_and_boundary_sizes():
     """
     Ensure empty, compact, and multiline boundaries are stable.
+
+    Returns
+    -------
+    None
     """
     assert _format_extra({}) == ""
     assert _format_extra({"b": 2, "a": 1}) == " | a=1 | b=2"

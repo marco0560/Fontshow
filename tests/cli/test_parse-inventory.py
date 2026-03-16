@@ -175,6 +175,10 @@ def test_parse_inventory_accepts_strict_bcp47_flag(cli_runner, tmp_path):
 def test_parse_inventory_defaults_to_raw_inventory_without_validate_flag():
     """
     Verify that parse-inventory defaults to ``font_inventory.json``.
+
+    Returns
+    -------
+    None
     """
     from fontshow.cli.parse_inventory import build_parser
 
@@ -194,6 +198,10 @@ def test_parse_inventory_defaults_to_raw_inventory_without_validate_flag():
 def test_parse_inventory_validate_only_defaults_to_enriched_inventory():
     """
     Verify that parse-inventory validate-only mode defaults to the enriched inventory.
+
+    Returns
+    -------
+    None
     """
     from fontshow.cli.parse_inventory import build_parser
 
@@ -213,6 +221,10 @@ def test_parse_inventory_validate_only_defaults_to_enriched_inventory():
 def test_parse_inventory_accepts_missing_language_coverage_listing_flag():
     """
     Verify that parse-inventory accepts the reporting flag.
+
+    Returns
+    -------
+    None
     """
     from fontshow.cli.parse_inventory import build_parser
 

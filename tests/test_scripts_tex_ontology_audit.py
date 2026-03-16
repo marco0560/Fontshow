@@ -47,6 +47,10 @@ generate_first_reviewed_tex_batch = _load_script_module(
 def test_extract_fontspec_scripts_normalizes_tilde_and_deduplicates():
     """
     Ensure fontspec script extraction returns stable normalized names.
+
+    Returns
+    -------
+    None
     """
     text = r"""
     \newfontscript{Arabic}{arab}
@@ -62,6 +66,15 @@ def test_extract_fontspec_scripts_normalizes_tilde_and_deduplicates():
 def test_extract_polyglossia_languages_discovers_modules(tmp_path):
     """
     Ensure language module discovery only includes gloss-*.ldf files.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage mock Polyglossia files.
+
+    Returns
+    -------
+    None
     """
     (tmp_path / "gloss-english.ldf").write_text("", encoding="utf-8")
     (tmp_path / "gloss-ar.ldf").write_text("", encoding="utf-8")
@@ -76,6 +89,10 @@ def test_extract_polyglossia_languages_discovers_modules(tmp_path):
 def test_build_gap_report_marks_missing_items_with_review_buckets():
     """
     Ensure gap analysis emits classified missing script/language entries.
+
+    Returns
+    -------
+    None
     """
     report = generate_tex_ontology_gap_report.build_gap_report(
         {
@@ -104,6 +121,10 @@ def test_build_gap_report_marks_missing_items_with_review_buckets():
 def test_build_stub_proposal_splits_canonical_languages_from_aliases():
     """
     Ensure stub proposal separates alias variants from canonical candidates.
+
+    Returns
+    -------
+    None
     """
     proposal = generate_tex_ontology_stubs.build_stub_proposal(
         {
@@ -137,6 +158,10 @@ def test_build_stub_proposal_splits_canonical_languages_from_aliases():
 def test_build_first_reviewed_batch_selects_only_low_risk_items():
     """
     Ensure the reviewed batch emits only configured low-risk candidates.
+
+    Returns
+    -------
+    None
     """
     batch = generate_first_reviewed_tex_batch.build_first_reviewed_batch(
         {

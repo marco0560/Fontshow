@@ -205,6 +205,11 @@ def build_gap_report(audit: dict[str, Any]) -> dict[str, Any]:
 def parse_args() -> argparse.Namespace:
     """
     Parse command-line arguments for gap report generation.
+
+    Returns
+    -------
+    argparse.Namespace
+        Parsed command-line arguments for the gap-report generator.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -225,6 +230,11 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     """
     Execute TeX-versus-ontology gap analysis.
+
+    Returns
+    -------
+    int
+        Process exit status code. Returns ``0`` on success.
     """
     args = parse_args()
     audit = load_audit_report(args.audit_report)

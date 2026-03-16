@@ -23,6 +23,22 @@ from tests.helpers import minimal_inventory_v12
 def test_run_reports_missing_inventory_file(monkeypatch, tmp_path):
     """
     Ensure missing files fail before any validation work runs.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace logging helpers.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build a missing file path.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    ValidationError
+        Raised by the nested validator stub and normalized by the CLI.
     """
     errors: list[str] = []
     monkeypatch.setattr(validate_inventory, "log_err", errors.append)
@@ -38,6 +54,22 @@ def test_run_reports_missing_inventory_file(monkeypatch, tmp_path):
 def test_run_reports_invalid_json(monkeypatch, tmp_path):
     """
     Ensure malformed JSON is converted into a CLI error and exit code 1.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace logging helpers.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build the malformed JSON file.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    ValidationError
+        Raised by the nested validator stub and normalized by the CLI.
     """
     path = tmp_path / "inventory.json"
     path.write_text("{", encoding="utf-8")
@@ -55,6 +87,22 @@ def test_run_reports_invalid_json(monkeypatch, tmp_path):
 def test_run_reports_schema_validation_failure(monkeypatch, tmp_path):
     """
     Ensure schema validation failures are logged and returned as rc=1.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace validation helpers and logging functions.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build the input file.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    ValidationError
+        Raised by the nested validator stub and normalized by the CLI.
     """
     path = tmp_path / "inventory.json"
     path.write_text(json.dumps({}), encoding="utf-8")
@@ -62,6 +110,23 @@ def test_run_reports_schema_validation_failure(monkeypatch, tmp_path):
     monkeypatch.setattr(validate_inventory, "normalize_loaded_enums", lambda data: None)
 
     def _fail(_data):
+        """
+        Raise a deterministic schema validation error for the test.
+
+        Parameters
+        ----------
+        _data : object
+            Parsed inventory payload accepted for signature compatibility.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ValidationError
+            Always raised with a fixed message for assertion stability.
+        """
         msg = "schema boom"
         raise ValidationError(msg)
 
@@ -78,6 +143,17 @@ def test_run_reports_schema_validation_failure(monkeypatch, tmp_path):
 def test_run_logs_semantic_and_inventory_warnings(monkeypatch, tmp_path):
     """
     Ensure both semantic warnings and pre-existing inventory warnings are emitted.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace validation and logging helpers.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build the test inventory path.
+
+    Returns
+    -------
+    None
     """
     data = minimal_inventory_v12()
     data["warnings"] = [
@@ -95,6 +171,18 @@ def test_run_logs_semantic_and_inventory_warnings(monkeypatch, tmp_path):
     oks: list[str] = []
 
     def _normalize(loaded):
+        """
+        Normalize the warning severity to the enum form expected by the CLI.
+
+        Parameters
+        ----------
+        loaded : dict[str, object]
+            Loaded inventory payload mutated in place for the test.
+
+        Returns
+        -------
+        None
+        """
         loaded["warnings"][0]["severity"] = Severity.WARN
 
     monkeypatch.setattr(validate_inventory, "normalize_loaded_enums", _normalize)
@@ -133,6 +221,15 @@ def test_run_logs_semantic_and_inventory_warnings(monkeypatch, tmp_path):
 def test_main_delegates_to_run(monkeypatch):
     """
     Ensure the public entrypoint is a thin wrapper around ``run``.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the runtime entrypoint.
+
+    Returns
+    -------
+    None
     """
     seen: list[object] = []
     args = SimpleNamespace(path="inventory.json", quiet=False, verbose=False)

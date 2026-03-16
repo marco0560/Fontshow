@@ -14,6 +14,15 @@ from fontshow.latex import policy, render
 def test_format_script_display_uses_canonical_name_when_available(monkeypatch):
     """
     Ensure known scripts render as ``Name (CODE)`` and unknown ones stay uppercase.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the script ontology table.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(policy, "SCRIPT_INFO", {"ARAB": {"canonical_name": "Arabic"}})
 
@@ -24,6 +33,15 @@ def test_format_script_display_uses_canonical_name_when_available(monkeypatch):
 def test_get_render_policy_uses_explicit_ontology_mapping_only(monkeypatch):
     """
     Ensure render policy never fabricates `Script=` values from ISO codes.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the script ontology table.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(
         policy,
@@ -47,6 +65,15 @@ def test_get_render_policy_uses_explicit_ontology_mapping_only(monkeypatch):
 def test_collect_polyglossia_other_languages_is_sorted_and_filtered(monkeypatch):
     """
     Ensure ``latin`` is always present and ``english`` is excluded from extras.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the script ontology table.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(
         policy,
@@ -75,6 +102,10 @@ def test_collect_polyglossia_other_languages_is_sorted_and_filtered(monkeypatch)
 def test_nfss_family_id_is_stable_and_uses_path():
     """
     Ensure NFSS ids are deterministic and vary across file paths.
+
+    Returns
+    -------
+    None
     """
     base = {"path": "/tmp/font-a.ttf"}
     other = {"path": "/tmp/font-b.ttf"}
@@ -86,6 +117,15 @@ def test_nfss_family_id_is_stable_and_uses_path():
 def test_render_helpers_strip_controls_and_toggle_renderer_prefix(monkeypatch):
     """
     Ensure control chars are removed and renderer prefix follows platform policy.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the Windows platform flag.
+
+    Returns
+    -------
+    None
     """
     assert render.escape_latex(r"\&_{}~^<>%$#") == (
         r"\textbackslash{}\&\_\{\}\textasciitilde{}\textasciicircum{}\textless{}\textgreater{}\%\$\#"

@@ -12,6 +12,15 @@ import fontshow.core.logging_utils as logging_utils
 def test_log_level_and_trace_selector_env_parsing(monkeypatch):
     """
     Ensure invalid or special env values fall back deterministically.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace environment variables.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setenv("FONTSHOW_LOG_LEVEL", "trace")
     assert logging_utils._get_log_level_from_env() == logging_utils.TRACE_LEVEL_NUM
@@ -35,6 +44,15 @@ def test_log_level_and_trace_selector_env_parsing(monkeypatch):
 def test_raw_truncation_and_human_format(monkeypatch):
     """
     Ensure raw truncation and human formatting hit their boundary paths.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace environment variables.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setenv("FONTSHOW_TRACE_RAW_MAXLEN", "0")
     logging_utils._raw_max_len.cache_clear()
@@ -57,6 +75,15 @@ def test_raw_truncation_and_human_format(monkeypatch):
 def test_configure_root_logger_disabled_and_trace_entrypoint_boundaries(monkeypatch):
     """
     Ensure disabled logging and invalid categories are harmless no-ops.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace environment variables.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.delenv("FONTSHOW_LOG_LEVEL", raising=False)
     importlib.reload(logging_utils)

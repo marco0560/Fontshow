@@ -16,6 +16,15 @@ from fontshow.inventory import metadata_processing as mp
 def test_process_language_metadata_emits_all_warning_kinds(monkeypatch):
     """
     Ensure deprecated, normalized, duplicate, and dropped warnings are attached.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace language normalization.
+
+    Returns
+    -------
+    None
     """
     font = {"inference": {"languages": ["en"], "scripts": ["latn"]}}
     coverage: dict[str, object] = {}
@@ -53,6 +62,15 @@ def test_debug_dump_inference_respects_env_and_handles_missing_profiles(
 ):
     """
     Ensure debug dumping is gated by env and tolerates missing script profiles.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace environment variables, logging, and language data.
+
+    Returns
+    -------
+    None
     """
     messages: list[str] = []
     monkeypatch.setenv("FONTSHOW_DEBUG_INFERENCE", "1")
@@ -81,6 +99,15 @@ def test_debug_dump_inference_respects_env_and_handles_missing_profiles(
 def test_process_charset_emits_warning_on_decode_failure(monkeypatch):
     """
     Ensure charset decode failures attach structured warnings and stop cleanly.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace charset decoding.
+
+    Returns
+    -------
+    None
     """
     font = {"charset": {"raw": "bad-bitmap"}}
     coverage: dict[str, object] = {}

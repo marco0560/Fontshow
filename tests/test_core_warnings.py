@@ -14,6 +14,10 @@ from fontshow.core.warnings import add_structured_warning
 def test_add_structured_warning_creates_warning_list_without_empty_extra():
     """
     Ensure an empty ``extra`` mapping does not produce an ``extra`` field.
+
+    Returns
+    -------
+    None
     """
     container: dict[str, object] = {}
 
@@ -39,6 +43,10 @@ def test_add_structured_warning_creates_warning_list_without_empty_extra():
 def test_add_structured_warning_appends_to_existing_warning_list():
     """
     Ensure subsequent warnings are appended rather than overwriting state.
+
+    Returns
+    -------
+    None
     """
     existing = {
         "warnings": [

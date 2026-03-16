@@ -172,6 +172,18 @@ def _collect_polyglossia_font_setup(font_list: list[CatalogFontEntryV12]) -> str
     Each language-specific ``\\<language>font`` command is declared once in the
     preamble so specimen entries can use a direct local ``\\renewfontfamily``
     without any TeX-side conditionals.
+
+    Parameters
+    ----------
+    font_list : list[CatalogFontEntryV12]
+        Catalog font entries whose inferred scripts may require
+        Polyglossia-aware placeholder font declarations.
+
+    Returns
+    -------
+    str
+        Concatenated LaTeX preamble declarations for the required
+        Polyglossia language font commands.
     """
 
     langs: set[str] = set()

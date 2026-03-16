@@ -23,6 +23,10 @@ _SPEC.loader.exec_module(generate_unicode_tables)
 def test_merge_contiguous_ranges_handles_empty_and_singleton():
     """
     Ensure the helper handles the documented lower-boundary inputs.
+
+    Returns
+    -------
+    None
     """
     assert generate_unicode_tables._merge_contiguous_ranges([]) == []
     assert generate_unicode_tables._merge_contiguous_ranges([(1, 2)]) == [(1, 2)]
@@ -31,6 +35,10 @@ def test_merge_contiguous_ranges_handles_empty_and_singleton():
 def test_merge_contiguous_ranges_rejects_malformed_tuples():
     """
     Ensure malformed tuple shapes fail clearly instead of merging silently.
+
+    Returns
+    -------
+    None
     """
     with pytest.raises(IndexError):
         generate_unicode_tables._merge_contiguous_ranges([(1, 2), (3,)])

@@ -13,6 +13,15 @@ from fontshow.platform import fontconfig
 def test_chunk_paths_for_fc_query_splits_large_argument_sets(monkeypatch):
     """
     Ensure very large path strings are chunked instead of emitted as one argv.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture present in the test signature for consistency.
+
+    Returns
+    -------
+    None
     """
     base = Path("/tmp") / ("a" * 150000)
     paths = [base, Path(str(base) + "b")]
@@ -25,6 +34,15 @@ def test_chunk_paths_for_fc_query_splits_large_argument_sets(monkeypatch):
 def test_run_fc_query_many_maps_missing_blocks_to_empty_strings(monkeypatch):
     """
     Ensure chunked query output preserves input keys even when blocks are absent.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace fontconfig helpers and logging.
+
+    Returns
+    -------
+    None
     """
     paths = [Path("/tmp/a.ttf"), Path("/tmp/b.ttf")]
     monkeypatch.setattr(
@@ -51,6 +69,15 @@ def test_run_fc_query_many_maps_missing_blocks_to_empty_strings(monkeypatch):
 def test_extract_fc_query_charset_handles_disabled_and_empty_blocks(monkeypatch):
     """
     Ensure charset extraction skips disabled mode and empty payloads.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture present in the test signature for consistency.
+
+    Returns
+    -------
+    None
     """
     path = Path("/tmp/font.ttf")
     assert (
@@ -70,6 +97,15 @@ def test_extract_fc_query_charset_handles_disabled_and_empty_blocks(monkeypatch)
 def test_parse_fc_query_output_includes_charset_when_requested(monkeypatch):
     """
     Ensure raw parsing combines core fields and charset extraction.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace parsing helpers and trace logging.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(
         fontconfig,

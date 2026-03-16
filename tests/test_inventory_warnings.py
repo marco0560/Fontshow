@@ -11,6 +11,10 @@ from fontshow.diagnostics import inventory_warnings as iw
 def test_collect_language_warnings_groups_and_filters_payloads():
     """
     Ensure grouping handles missing extras and filters info-only non-language warnings.
+
+    Returns
+    -------
+    None
     """
     font = {
         "warnings": [
@@ -47,6 +51,15 @@ def test_collect_language_warnings_groups_and_filters_payloads():
 def test_emit_verbose_warnings_handles_non_list_fonts_and_deduplicates(monkeypatch):
     """
     Ensure verbose emission tolerates malformed inventory roots and deduplicates entries.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to capture info and warning log messages.
+
+    Returns
+    -------
+    None
     """
     infos: list[str] = []
     warns: list[str] = []

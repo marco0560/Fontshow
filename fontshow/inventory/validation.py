@@ -106,6 +106,22 @@ def _record_validation_observations(
 ) -> None:
     """
     Aggregate non-fatal validation observations for one font entry.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Font entry currently being inspected by validation.
+    index : int
+        Zero-based position of the font within the validated inventory.
+    observation_counts : Counter[str]
+        Counter updated with aggregate observation categories.
+    observation_examples : dict[str, list[str]]
+        Per-category example store populated with a small number of
+        representative font identities.
+
+    Returns
+    -------
+    None
     """
     ident = _format_font_identity(font, index=index)
 
@@ -159,6 +175,22 @@ def _record_validation_warnings(
 ) -> None:
     """
     Aggregate actionable warning codes embedded in one font entry.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Font entry currently being inspected by validation.
+    index : int
+        Zero-based position of the font within the validated inventory.
+    warning_categories : Counter[str]
+        Counter updated with warning-code totals.
+    warning_examples : dict[str, list[str]]
+        Per-warning example store populated with representative font
+        identities.
+
+    Returns
+    -------
+    None
     """
     ident = _format_font_identity(font, index=index)
     raw_warnings = font.get("warnings", [])
@@ -183,6 +215,23 @@ def _emit_validation_summary(
 ) -> None:
     """
     Emit grouped validation summaries and verbose examples.
+
+    Parameters
+    ----------
+    fatal_categories : Counter[str]
+        Aggregated fatal validation categories.
+    fatal_examples : dict[str, list[str]]
+        Representative examples for fatal validation categories.
+    warning_categories : Counter[str]
+        Aggregated non-fatal warning categories.
+    warning_examples : dict[str, list[str]]
+        Representative examples for warning categories.
+    observation_summary : tuple[Counter[str], dict[str, list[str]]]
+        Aggregate counts and examples for non-fatal observations.
+
+    Returns
+    -------
+    None
     """
     observation_counts, observation_examples = observation_summary
 

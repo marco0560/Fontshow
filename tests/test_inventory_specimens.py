@@ -15,6 +15,10 @@ from fontshow.inventory import specimens
 def test_specimen_from_internal_reports_rejection_reasons():
     """
     Ensure internal samples report absent, unsupported, short, and success states.
+
+    Returns
+    -------
+    None
     """
     cps = {ord(ch) for ch in "AlphaBetaGammaDeltaOmega"}
 
@@ -39,6 +43,15 @@ def test_specimen_from_internal_reports_rejection_reasons():
 def test_specimen_from_script_prefers_charset_dominance_and_rejects_sparse(monkeypatch):
     """
     Ensure script-derived samples use dominant script coverage and density guards.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace script ontology entries.
+
+    Returns
+    -------
+    None
     """
     monkeypatch.setattr(
         specimens,
@@ -69,6 +82,15 @@ def test_specimen_from_script_prefers_charset_dominance_and_rejects_sparse(monke
 def test_specimen_from_script_keeps_substantial_sample_for_large_cmap(monkeypatch):
     """
     Ensure large cmaps do not force curated script samples to fall back spuriously.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace script ontology entries.
+
+    Returns
+    -------
+    None
     """
     hangul_specimen = "가나다라마바사아자차카타파하거너더러머버서어저처커터퍼허"
     monkeypatch.setattr(
@@ -90,6 +112,10 @@ def test_specimen_from_script_keeps_substantial_sample_for_large_cmap(monkeypatc
 def test_specimen_from_cmap_returns_fallback_without_warning_record():
     """
     Ensure cmap fallback uses preference ordering without adding a warning record.
+
+    Returns
+    -------
+    None
     """
     font: dict[str, object] = {}
     specimen, strategy = specimens._specimen_from_cmap(
@@ -107,6 +133,15 @@ def test_specimen_apply_semantic_validation_uses_language_sample_then_ascii(
 ):
     """
     Ensure semantic validation first tries language-aware replacement, then ASCII.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace language-sample lookup.
+
+    Returns
+    -------
+    None
     """
     cps = {ord("A"), ord("B"), ord("C")}
     font = {"inference": {"languages": ["en"], "scripts": ["latn"]}}
@@ -133,6 +168,15 @@ def test_specimen_generate_for_font_uses_visible_replacement_and_semantic_fallba
 ):
     """
     Ensure generation never leaves whitespace-only output and records fallback reasons.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace specimen-generation helpers and tracing.
+
+    Returns
+    -------
+    None
     """
     font = {"path": "/tmp/font.ttf", "sample_text": "   ", "inference": {}}
     coverage: dict[str, object] = {"scripts": []}
@@ -182,10 +226,26 @@ def test_specimen_generate_for_font_uses_visible_replacement_and_semantic_fallba
 def test_specimen_collect_cmap_returns_empty_for_malformed_subtables(monkeypatch):
     """
     Ensure malformed cmap subtables do not escape as attribute errors.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ``TTFont`` with a malformed test double.
+
+    Returns
+    -------
+    None
     """
 
     class FakeTTFont(dict):
         def __init__(self, *_args, **_kwargs) -> None:
+            """
+            Build a minimal cmap container with malformed subtables.
+
+            Returns
+            -------
+            None
+            """
             super().__init__(cmap=type("Cmap", (), {"tables": [object()]})())
 
     monkeypatch.setattr(specimens, "TTFont", FakeTTFont)
