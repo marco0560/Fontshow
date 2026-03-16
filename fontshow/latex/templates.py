@@ -112,22 +112,6 @@ LATEX_INITIAL_CODE: str = (
 %}
 \newenvironment{errorbox}[1]{}{}
 
-% --- MACRO FOR NON LATIN CHARACTERS (FIXED) ---
-% #1: Font Name, #2: Language Tag (polyglossia), #3: Font Options (e.g., Script=Arabic), #4: Sample Text
-\newcommand{\TestNonLatin}[4]{%
-    % polyglossia requires \<language>font (e.g. \arabicfont). Define it once.
-    \ifcsname #2font\endcsname\else
-        \expandafter\newfontfamily\csname #2font\endcsname[BoldFont={},ItalicFont={},BoldItalicFont={},#3]{#1}%
-    \fi
-    \foreignlanguage{#2}{%
-        \csname #2font\endcsname
-        \sloppy\emergencystretch=2em
-        \parbox{\linewidth}{#4}%
-    }%
-    \vspace{0.5em}
-}
-% --------------------------------------
-
 % --- Counters and Indices ---
 \newcounter{cntWorking}
 \newcounter{cntBroken}

@@ -115,8 +115,8 @@ class ScriptRenderPolicy:
     rtl : bool
         Whether the script must be rendered right-to-left.
     requires_polyglossia : bool
-        Whether rendering requires the ``TestNonLatin`` / Polyglossia
-        path instead of the default Latin-oriented template flow.
+        Whether rendering requires the Polyglossia-aware non-Latin path
+        instead of the default Latin-oriented template flow.
 
     Notes
     -----

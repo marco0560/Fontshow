@@ -148,6 +148,34 @@ def test_infer_scripts_myanmar():
     assert scripts == ["mymr"]
 
 
+def test_infer_scripts_dogra_and_dives_akuru_from_unicode_blocks():
+    """
+    Verify Dogra and Dives Akuru blocks infer dedicated script tags.
+
+    Returns
+    -------
+    None
+    """
+    assert infer_scripts({"unicode_blocks": {"Dogra": 60, "Basic Latin": 3}}) == [
+        "dogr"
+    ]
+    assert infer_scripts({"unicode_blocks": {"Dives Akuru": 50, "Basic Latin": 1}}) == [
+        "diak"
+    ]
+
+
+def test_infer_scripts_uses_unicode_max_for_dogra_and_dives_akuru():
+    """
+    Ensure unicode.max fallback covers Dogra and Dives Akuru ranges.
+
+    Returns
+    -------
+    None
+    """
+    assert infer_scripts({"unicode": {"max": 0x1183B}}) == ["dogr"]
+    assert infer_scripts({"unicode": {"max": 0x11946}}) == ["diak"]
+
+
 def test_coverage_scripts_never_unknown():
     """
     Verify that the public coverage script list itself never contains ``unknown``.

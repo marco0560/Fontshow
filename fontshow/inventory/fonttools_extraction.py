@@ -53,6 +53,7 @@ from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 # ------------------------------------------------------------
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
     from fontTools.misc import timeTools
@@ -573,11 +574,255 @@ def _extract_opentype_features(tt: TTFont) -> list[str]:
             continue
     return sorted(feats)
 
-    # TODO(#0): REFACTOR if touching
-    # Complex extractor, split if extraction logic grows
+
+_FONT_TYPE_RULES: tuple[tuple[str, str], ...] = (
+    ("CFF ", "OpenType CFF"),
+    ("glyf", "TrueType"),
+)
+
+_TABLE_EXTRACTORS: tuple[tuple[str, str, tuple[type[BaseException], ...], Any], ...] = (
+    ("names", "_extract_name_table", (ValueError, TypeError), "name"),
+    ("os2", "_extract_os2_table", (ValueError, TypeError, AttributeError), "OS/2"),
+    ("unicode", "_extract_unicode_coverage", (ValueError, TypeError), "unicode"),
+    (
+        "color_tables",
+        "_detect_color_tables",
+        (ValueError, TypeError, AttributeError),
+        [],
+    ),
+    (
+        "opentype_features",
+        "_extract_opentype_features",
+        (ValueError, TypeError, AttributeError),
+        [],
+    ),
+)
+
+_TECHNICAL_METRIC_RULES: tuple[
+    tuple[str, str, str, type, tuple[type[BaseException], ...], Any], ...
+] = (
+    (
+        "head",
+        "unitsPerEm",
+        "units_per_em",
+        int,
+        (KeyError, AttributeError, TypeError, ValueError),
+        None,
+    ),
+    (
+        "hhea",
+        "ascent",
+        "ascent",
+        int,
+        (KeyError, AttributeError, TypeError, ValueError),
+        None,
+    ),
+    (
+        "hhea",
+        "descent",
+        "descent",
+        int,
+        (KeyError, AttributeError, TypeError, ValueError),
+        None,
+    ),
+    (
+        "post",
+        "italicAngle",
+        "italic_angle",
+        float,
+        (KeyError, AttributeError, TypeError, ValueError),
+        0.0,
+    ),
+    (
+        "post",
+        "isFixedPitch",
+        "is_fixed_pitch",
+        bool,
+        (KeyError, AttributeError, TypeError, ValueError),
+        False,
+    ),
+    (
+        "maxp",
+        "numGlyphs",
+        "glyph_count",
+        int,
+        (KeyError, AttributeError, TypeError, ValueError),
+        None,
+    ),
+)
 
 
-def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
+def _extract_tt_tables(tt: TTFont) -> list[str]:
+    """
+    Extract sorted table tags from a font face.
+
+    Parameters
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
+
+    Returns
+    -------
+    list[str]
+        Sorted table tags, or an empty list when table discovery fails.
+    """
+    try:
+        return sorted(tt.keys())
+    except (AttributeError, TypeError):
+        return []
+
+
+def _classify_font_type(tt: TTFont) -> str:
+    """
+    Classify the coarse font type from available table tags.
+
+    Parameters
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
+
+    Returns
+    -------
+    str
+        Coarse font type label.
+    """
+    try:
+        return next(label for table_tag, label in _FONT_TYPE_RULES if table_tag in tt)
+    except (StopIteration, AttributeError, TypeError):
+        return "Unknown"
+
+
+def _run_table_extractors(tt: TTFont) -> dict[str, Any]:
+    """
+    Run best-effort structured table extractors for a font face.
+
+    Parameters
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
+
+    Returns
+    -------
+    dict[str, Any]
+        Extracted structured metadata keyed by output field name.
+    """
+    extracted: dict[str, Any] = {}
+    for key, extractor_name, handled_errors, error_label in _TABLE_EXTRACTORS:
+        extractor = globals()[extractor_name]
+        try:
+            extracted[key] = extractor(tt)
+        except handled_errors as e:
+            if isinstance(error_label, str):
+                extracted[key] = {"error": f"{error_label}: {e}"}
+            else:
+                extracted[key] = error_label
+    return extracted
+
+
+def _collect_unicode_codepoints(tt: TTFont, limit: int = 200_000) -> set[int]:
+    """
+    Collect Unicode cmap codepoints from a font face.
+
+    Parameters
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
+    limit : int, optional
+        Maximum number of distinct codepoints to collect.
+
+    Returns
+    -------
+    set[int]
+        Distinct Unicode codepoints found in the cmap.
+    """
+    codepoints: set[int] = set()
+    if "cmap" not in tt:
+        return codepoints
+
+    cmap = tt["cmap"]
+    for sub in cmap.tables:
+        if not sub.isUnicode():
+            continue
+        for cp in sub.cmap:
+            codepoints.add(int(cp))
+            if len(codepoints) >= limit:
+                return codepoints
+    return codepoints
+
+
+def _extract_unicode_blocks(tt: TTFont) -> dict[str, int] | dict[str, str]:
+    """
+    Extract per-block Unicode coverage from a font face.
+
+    Parameters
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
+
+    Returns
+    -------
+    dict[str, int] | dict[str, str]
+        Per-block coverage mapping, or an ``error`` payload when extraction fails.
+    """
+    try:
+        codepoints = _collect_unicode_codepoints(tt)
+        return _compute_unicode_blocks(codepoints) if codepoints else {}
+    except (AttributeError, TypeError, ValueError) as e:
+        return {"error": f"unicode_blocks: {e}"}
+
+
+def _extract_variable_flags(tt: TTFont) -> dict[str, bool]:
+    """
+    Extract variable-font presence flags from a font face.
+
+    Parameters
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
+
+    Returns
+    -------
+    dict[str, bool]
+        Presence flags for ``fvar`` and ``STAT`` tables.
+    """
+    try:
+        return {"fvar": ("fvar" in tt), "STAT": ("STAT" in tt)}
+    except (AttributeError, TypeError):
+        return {"fvar": False, "STAT": False}
+
+
+def _extract_technical_metrics(tt: TTFont) -> dict[str, Any]:
+    """
+    Extract core technical metrics for schema output.
+
+    Parameters
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
+
+    Returns
+    -------
+    dict[str, Any]
+        Core technical metrics keyed by schema field name.
+    """
+    metrics: dict[str, Any] = {}
+    for (
+        table_name,
+        attr_name,
+        out_key,
+        cast_fn,
+        handled_errors,
+        default,
+    ) in _TECHNICAL_METRIC_RULES:
+        try:
+            table = tt[table_name]
+            metrics[out_key] = cast_fn(getattr(table, attr_name))
+        except handled_errors:
+            metrics[out_key] = default
+    return metrics
+
+
+def _fonttools_extract_from_tt(
     *,
     _path: Path,
     container: str,
@@ -621,119 +866,273 @@ def _fonttools_extract_from_tt(  # noqa: C901, PLR0912
         JSON-serializable dictionary describing extracted metadata for the face.
     """
     data: dict[str, Any] = {"ok": True, "container": container, "ttc_index": ttc_index}
-
-    try:
-        data["tables"] = sorted(tt.keys())
-    except (AttributeError, TypeError):
-        data["tables"] = []
-
-    try:
-        if "CFF " in tt:
-            data["font_type"] = "OpenType CFF"
-        elif "glyf" in tt:
-            data["font_type"] = "TrueType"
-        else:
-            data["font_type"] = "Unknown"
-    except (AttributeError, TypeError):
-        data["font_type"] = "Unknown"
-
-    try:
-        data["names"] = _extract_name_table(tt)
-    except (ValueError, TypeError) as e:
-        data["names"] = {"error": f"name: {e}"}
-
-    try:
-        data["os2"] = _extract_os2_table(tt)
-    except (ValueError, TypeError, AttributeError) as e:
-        data["os2"] = {"error": f"OS/2: {e}"}
-
-    # -------------------------------
-    # Unicode coverage (min/max/count)
-    # -------------------------------
-    try:
-        data["unicode"] = _extract_unicode_coverage(tt)
-    except (ValueError, TypeError) as e:
-        data["unicode"] = {"error": f"unicode: {e}"}
-
-    # -------------------------------
-    # Unicode blocks
-    # -------------------------------
-    # We do not store the full cmap, but we can count coverage per Unicode block.
-    # This is essential for robust CJK/emoji/script inference later.
-    try:
-        codepoints: set[int] = set()
-        if "cmap" in tt:
-            cmap = tt["cmap"]
-            for sub in cmap.tables:
-                if not sub.isUnicode():
-                    continue
-                # sub.cmap is {codepoint:int -> glyphName:str}
-                for cp in sub.cmap:
-                    codepoints.add(int(cp))
-                    # Guard rail: avoid pathological fonts exploding memory
-                    if len(codepoints) >= 200_000:
-                        break
-                if len(codepoints) >= 200_000:
-                    break
-
-        data["unicode_blocks"] = (
-            _compute_unicode_blocks(codepoints) if codepoints else {}
-        )
-    except (AttributeError, TypeError, ValueError) as e:
-        data["unicode_blocks"] = {"error": f"unicode_blocks: {e}"}
-
-    try:
-        data["variable"] = {"fvar": ("fvar" in tt), "STAT": ("STAT" in tt)}
-    except (AttributeError, TypeError):
-        data["variable"] = {"fvar": False, "STAT": False}
-
-    try:
-        data["color_tables"] = _detect_color_tables(tt)
-    except (ValueError, TypeError, AttributeError):
-        data["color_tables"] = []
-
-    try:
-        data["opentype_features"] = _extract_opentype_features(tt)
-    except (ValueError, TypeError, AttributeError):
-        data["opentype_features"] = []
-
-    # -------------------------------
-    # Core technical metrics (schema v1.2)
-    # -------------------------------
-    try:
-        head = tt["head"]
-        data["units_per_em"] = int(head.unitsPerEm)
-    except (KeyError, AttributeError, TypeError, ValueError):
-        data["units_per_em"] = None
-
-    try:
-        hhea = tt["hhea"]
-        data["ascent"] = int(hhea.ascent)
-        data["descent"] = int(hhea.descent)
-    except (KeyError, AttributeError, TypeError, ValueError):
-        data["ascent"] = None
-        data["descent"] = None
-
-    try:
-        post = tt["post"]
-        data["italic_angle"] = float(post.italicAngle)
-        data["is_fixed_pitch"] = bool(post.isFixedPitch)
-    except (KeyError, AttributeError, TypeError, ValueError):
-        data["italic_angle"] = 0.0
-        data["is_fixed_pitch"] = False
-
-    try:
-        maxp = tt["maxp"]
-        data["glyph_count"] = int(maxp.numGlyphs)
-    except (KeyError, AttributeError, TypeError, ValueError):
-        data["glyph_count"] = None
-
+    data["tables"] = _extract_tt_tables(tt)
+    data["font_type"] = _classify_font_type(tt)
+    data.update(_run_table_extractors(tt))
+    data["unicode_blocks"] = _extract_unicode_blocks(tt)
+    data["variable"] = _extract_variable_flags(tt)
+    data.update(_extract_technical_metrics(tt))
     return data
 
 
-# TODO(#0): REFACTOR if touching:
-# Extraction pipeline; refactor if caching or TTC logic expands
-def fonttools_extract_all(  # noqa: C901
+def _load_cached_face(
+    cache_file: Path, *, defaults: dict[str, Any] | None = None
+) -> dict[str, Any] | None:
+    """
+    Load a cached face block, applying optional default keys.
+
+    Parameters
+    ----------
+    cache_file : pathlib.Path
+        Cache file expected to contain one serialized face block.
+    defaults : dict[str, Any] | None, optional
+        Default keys applied to the decoded mapping when present.
+
+    Returns
+    -------
+    dict[str, Any] | None
+        Decoded cached face mapping, or None when the cache file is
+        unreadable, malformed, or not a dictionary.
+    """
+    try:
+        cached = json.loads(cache_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+    if not isinstance(cached, dict):
+        return None
+
+    if defaults:
+        for key, value in defaults.items():
+            cached.setdefault(key, value)
+    return cached
+
+
+def _extract_single_face(
+    *,
+    path: Path,
+    cache_dir: Path,
+    container: str,
+    use_cache: bool,
+    t0_total: float,
+) -> list[dict[str, Any]]:
+    """
+    Extract one metadata block for a single-face container.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Font file path.
+    cache_dir : pathlib.Path
+        Cache directory for serialized extraction output.
+    container : str
+        Detected container type.
+    use_cache : bool
+        Whether cache reuse is enabled.
+    t0_total : float
+        Extraction start timestamp from ``perf_counter()``.
+
+    Returns
+    -------
+    list[dict[str, Any]]
+        One-element list containing the extracted face block.
+    """
+    from time import perf_counter
+
+    key = font_cache_key(path, None)
+    cache_file = cache_dir / f"{key}.json"
+    if use_cache and cache_file.exists():
+        log_trace_cat(
+            log,
+            "cache",
+            "cache hit",
+            extra={
+                "font_path": str(path),
+                "cache_file": str(cache_file),
+            },
+        )
+        cached = _load_cached_face(cache_file)
+        if cached is not None:
+            return [cached]
+
+    log_trace_cat(
+        log,
+        "cache",
+        "cache miss",
+        extra={
+            "font_path": str(path),
+        },
+    )
+
+    out: dict[str, Any] = {"ok": False, "container": container, "ttc_index": None}
+    try:
+        tt = TTFont(path, lazy=True, recalcBBoxes=False, recalcTimestamp=False)
+        out = _fonttools_extract_from_tt(
+            _path=path, container=container, tt=tt, ttc_index=None
+        )
+    except (OSError, ValueError, TTLibError) as e:
+        out["ok"] = False
+        out["error"] = f"Cannot open font: {e}"
+        log_trace_cat(
+            log,
+            "io",
+            "fonttools extraction failed",
+            extra={
+                "font_path": str(path),
+                "error": str(e),
+            },
+        )
+
+    cache_file.write_text(
+        dumps_pretty(out, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+    duration_ms = int((perf_counter() - t0_total) * 1000)
+    log_trace_cat(
+        log,
+        "perf",
+        "fonttools extraction timing",
+        extra={
+            "font_path": str(path),
+            "container": container,
+            "duration_ms": duration_ms,
+            "faces": 1,
+        },
+    )
+    return [out]
+
+
+def _extract_ttc_faces(
+    *,
+    path: Path,
+    cache_dir: Path,
+    use_cache: bool,
+    t0_total: float,
+) -> list[dict[str, Any]]:
+    """
+    Extract metadata blocks for all faces in a TTC container.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        TTC file path.
+    cache_dir : pathlib.Path
+        Cache directory for serialized face outputs.
+    use_cache : bool
+        Whether cache reuse is enabled.
+    t0_total : float
+        Extraction start timestamp from ``perf_counter()``.
+
+    Returns
+    -------
+    list[dict[str, Any]]
+        Extracted metadata blocks for all TTC faces, or a one-element
+        error block list when the TTC cannot be opened.
+    """
+    from time import perf_counter
+
+    results: list[dict[str, Any]] = []
+    try:
+        col = TTCollection(path)
+    except (OSError, ValueError, TTLibError) as e:
+        out = {
+            "ok": False,
+            "container": "TTC",
+            "ttc_index": None,
+            "error": f"Cannot open TTC: {e}",
+        }
+        log_trace_cat(
+            log,
+            "io",
+            "fonttools extraction failed",
+            extra={
+                "font_path": str(path),
+                "error": str(e),
+            },
+        )
+        key = font_cache_key(path, None)
+        (cache_dir / f"{key}.json").write_text(
+            dumps_pretty(out, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        return [out]
+
+    ttc_count = len(col.fonts)
+    for idx, tt in enumerate(col.fonts):
+        log_trace_cat(
+            log,
+            "io",
+            "TTC face extraction",
+            extra={
+                "font_path": str(path),
+                "face_index": idx,
+                "ttc_count": ttc_count,
+            },
+        )
+
+        key = font_cache_key(path, idx)
+        cache_file = cache_dir / f"{key}.json"
+        if use_cache and cache_file.exists():
+            cached = _load_cached_face(
+                cache_file,
+                defaults={"container": "TTC", "ttc_index": idx, "ttc_count": ttc_count},
+            )
+            if cached is not None:
+                results.append(cached)
+                continue
+
+        t0_face = perf_counter()
+        try:
+            out = _fonttools_extract_from_tt(
+                _path=path, container="TTC", tt=tt, ttc_index=idx
+            )
+            out["ttc_count"] = ttc_count
+        except (OSError, ValueError, TTLibError) as e:
+            out = {
+                "ok": False,
+                "container": "TTC",
+                "ttc_index": idx,
+                "ttc_count": ttc_count,
+                "error": f"TTC face extract failed: {e}",
+            }
+
+        duration_ms = int((perf_counter() - t0_face) * 1000)
+        log_trace_cat(
+            log,
+            "perf",
+            "fonttools face extraction timing",
+            extra={
+                "font_path": str(path),
+                "face_index": idx,
+                "duration_ms": duration_ms,
+            },
+        )
+
+        cache_file.write_text(
+            dumps_pretty(out, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        results.append(out)
+
+    duration_ms = int((perf_counter() - t0_total) * 1000)
+    log_trace_cat(
+        log,
+        "perf",
+        "fonttools extraction timing",
+        extra={
+            "font_path": str(path),
+            "container": "TTC",
+            "duration_ms": duration_ms,
+            "faces": ttc_count,
+        },
+    )
+    return results
+
+
+_CONTAINER_EXTRACTORS: dict[str, Callable[..., list[dict[str, Any]]]] = {
+    "TTC": _extract_ttc_faces,
+}
+
+
+def fonttools_extract_all(
     path: Path, cache_dir: Path, use_cache: bool = True
 ) -> list[dict[str, Any]]:
     """
@@ -787,169 +1186,19 @@ def fonttools_extract_all(  # noqa: C901
         },
     )
 
-    # Single-face formats
-    if container != "TTC":
-        key = font_cache_key(path, None)
-        cache_file = cache_dir / f"{key}.json"
-        if use_cache and cache_file.exists():
-            log_trace_cat(
-                log,
-                "cache",
-                "cache hit",
-                extra={
-                    "font_path": str(path),
-                    "cache_file": str(cache_file),
-                },
-            )
-            try:
-                return [json.loads(cache_file.read_text(encoding="utf-8"))]
-            except (OSError, json.JSONDecodeError):
-                pass
-
-        out: dict[str, Any] = {"ok": False, "container": container, "ttc_index": None}
-        log_trace_cat(
-            log,
-            "cache",
-            "cache miss",
-            extra={
-                "font_path": str(path),
-            },
+    extractor = _CONTAINER_EXTRACTORS.get(container)
+    if extractor is not None:
+        return extractor(
+            path=path,
+            cache_dir=cache_dir,
+            use_cache=use_cache,
+            t0_total=t0_total,
         )
 
-        try:
-            tt = TTFont(path, lazy=True, recalcBBoxes=False, recalcTimestamp=False)
-            out = _fonttools_extract_from_tt(
-                _path=path, container=container, tt=tt, ttc_index=None
-            )
-        except (OSError, ValueError, TTLibError) as e:
-            out["ok"] = False
-            out["error"] = f"Cannot open font: {e}"
-            log_trace_cat(
-                log,
-                "io",
-                "fonttools extraction failed",
-                extra={
-                    "font_path": str(path),
-                    "error": str(e),
-                },
-            )
-
-        cache_file.write_text(
-            dumps_pretty(out, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
-
-        duration_ms = int((perf_counter() - t0_total) * 1000)
-        log_trace_cat(
-            log,
-            "perf",
-            "fonttools extraction timing",
-            extra={
-                "font_path": str(path),
-                "container": container,
-                "duration_ms": duration_ms,
-                "faces": 1,
-            },
-        )
-
-        return [out]
-
-    # TTC formats (multi-face)
-    results: list[dict[str, Any]] = []
-    try:
-        col = TTCollection(path)
-    except (OSError, ValueError, TTLibError) as e:
-        out = {
-            "ok": False,
-            "container": "TTC",
-            "ttc_index": None,
-            "error": f"Cannot open TTC: {e}",
-        }
-        # cache file-level error
-        log_trace_cat(
-            log,
-            "io",
-            "fonttools extraction failed",
-            extra={
-                "font_path": str(path),
-                "error": str(e),
-            },
-        )
-        key = font_cache_key(path, None)
-        (cache_dir / f"{key}.json").write_text(
-            dumps_pretty(out, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
-        return [out]
-
-    ttc_count = len(col.fonts)
-    for idx, tt in enumerate(col.fonts):
-        log_trace_cat(
-            log,
-            "io",
-            "TTC face extraction",
-            extra={
-                "font_path": str(path),
-                "face_index": idx,
-                "ttc_count": ttc_count,
-            },
-        )
-
-        key = font_cache_key(path, idx)
-        cache_file = cache_dir / f"{key}.json"
-        if use_cache and cache_file.exists():
-            try:
-                cached = json.loads(cache_file.read_text(encoding="utf-8"))
-                if isinstance(cached, dict):
-                    cached.setdefault("container", "TTC")
-                    cached.setdefault("ttc_index", idx)
-                    cached.setdefault("ttc_count", ttc_count)
-                results.append(cached)
-                continue
-            except (OSError, json.JSONDecodeError):
-                pass
-
-        t0_face = perf_counter()
-        try:
-            out = _fonttools_extract_from_tt(
-                _path=path, container="TTC", tt=tt, ttc_index=idx
-            )
-            out["ttc_count"] = ttc_count
-        except (OSError, ValueError, TTLibError) as e:
-            out = {
-                "ok": False,
-                "container": "TTC",
-                "ttc_index": idx,
-                "ttc_count": ttc_count,
-                "error": f"TTC face extract failed: {e}",
-            }
-
-        duration_ms = int((perf_counter() - t0_face) * 1000)
-        log_trace_cat(
-            log,
-            "perf",
-            "fonttools face extraction timing",
-            extra={
-                "font_path": str(path),
-                "face_index": idx,
-                "duration_ms": duration_ms,
-            },
-        )
-
-        cache_file.write_text(
-            dumps_pretty(out, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
-        results.append(out)
-
-    duration_ms = int((perf_counter() - t0_total) * 1000)
-    log_trace_cat(
-        log,
-        "perf",
-        "fonttools extraction timing",
-        extra={
-            "font_path": str(path),
-            "container": "TTC",
-            "duration_ms": duration_ms,
-            "faces": ttc_count,
-        },
+    return _extract_single_face(
+        path=path,
+        cache_dir=cache_dir,
+        container=container,
+        use_cache=use_cache,
+        t0_total=t0_total,
     )
-
-    return results

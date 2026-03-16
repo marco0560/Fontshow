@@ -44,7 +44,7 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
     monkeypatch,
 ):
     """
-    Ensure non-Latin scripts with a language use the ``\\TestNonLatin`` path.
+    Ensure non-Latin scripts with a language emit explicit per-entry font setup.
     """
     monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
     monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "Renderer=1,")
@@ -59,8 +59,12 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
         fullpath="/tmp/arabic.ttf",
     )
 
-    assert "\\TestNonLatin" in render
-    assert "arabic" in render
+    assert "\\TestNonLatin" not in render
+    assert "\\ifcsname" not in render
+    assert "\\newfontfamily" not in render
+    assert "\\renewfontfamily\\arabicfont" in render
+    assert "\\foreignlanguage{arabic}" in render
+    assert "\\arabicfont" in render
     assert options == "Renderer=1,Path=/tmp/,File=arabic.ttf,Script=Arabic"
 
 
@@ -102,6 +106,9 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
     monkeypatch.setattr(
         document, "_collect_polyglossia_other_languages", lambda fonts: "LANGDEF"
+    )
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_font_setup", lambda fonts: "FONTDEF"
     )
     monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
     monkeypatch.setattr(document, "escape_latex", lambda value: value)
@@ -151,6 +158,8 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert warnings == ["LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found"]
     assert latex.count("\\item Alpha --- ") == 1
     assert latex.count("\\item Beta --- ") == 1
+    assert "LANGDEF" not in latex
+    assert "FONTDEF" not in latex
     assert "\\allowbreak{}" in latex
     assert "{[MISSING]}" in latex
     assert "\\LogExcluded{Zed}" in latex

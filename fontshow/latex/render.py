@@ -111,11 +111,11 @@ def _latex_detokenize_safe(text: str) -> str:
 
     Notes
     -----
-    Removes ASCII control characters and escapes closing braces, which
-    would otherwise terminate the TeX group.
+    Removes ASCII control characters and escapes braces, which would
+    otherwise terminate the TeX group inside ``\\detokenize{...}``.
     """
     text = _strip_ascii_control_chars(text)
-    return text.replace("}", r"\}")
+    return text.replace("\\", r"\\").replace("{", r"\{").replace("}", r"\}")
 
 
 def _renderer_option_prefix() -> str:

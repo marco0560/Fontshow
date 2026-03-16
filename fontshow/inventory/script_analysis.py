@@ -32,6 +32,276 @@ if TYPE_CHECKING:
     from fontshow.core.types import ScriptISO
 
 
+_UNICODE_BLOCK_SCRIPT_RULES: tuple[tuple[str, str, str], ...] = (
+    ("prefix", "Latin", "latn"),
+    ("exact", "Greek and Coptic", "grek"),
+    ("exact", "Cyrillic", "cyrl"),
+    ("exact", "Arabic", "arab"),
+    ("exact", "Hebrew", "hebr"),
+    ("exact", "Devanagari", "deva"),
+    ("exact", "Dives Akuru", "diak"),
+    ("exact", "Dogra", "dogr"),
+    ("exact", "Bengali", "beng"),
+    ("exact", "Tamil", "taml"),
+    ("exact", "Thai", "thai"),
+    ("prefix", "Lao", "laoo"),
+    ("prefix", "Myanmar", "mymr"),
+    ("exact", "Hiragana", "jpan"),
+    ("exact", "Katakana", "jpan"),
+    ("exact", "Hangul Syllables", "hang"),
+    ("exact", "Yi Syllables", "yiii"),
+    ("prefix", "Armenian", "armn"),
+    ("prefix", "Georgian", "geor"),
+    ("prefix", "Ethiopic", "ethi"),
+    ("prefix", "Cherokee", "cher"),
+    ("prefix", "Khmer", "khmr"),
+    ("prefix", "Buginese", "bugi"),
+    ("prefix", "Buhid", "buhd"),
+    ("prefix", "Kana", "jpan"),
+    ("prefix", "CJK Unified Ideographs", "hani"),
+)
+
+_UNICODE_MAX_FALLBACKS: tuple[tuple[int, int, str], ...] = (
+    (0x0000, 0x024F, "latn"),
+    (0x0370, 0x03FF, "grek"),
+    (0x0400, 0x04FF, "cyrl"),
+    (0x0590, 0x05FF, "hebr"),
+    (0x0600, 0x06FF, "arab"),
+    (0x0900, 0x097F, "deva"),
+    (0x11800, 0x1184F, "dogr"),
+    (0x11900, 0x1195F, "diak"),
+)
+
+_ISO_PRIORITY: dict[str, int] = {
+    "latn": 0,
+    "grek": 1,
+    "cyrl": 2,
+    "arab": 3,
+    "hebr": 4,
+    "deva": 5,
+    "diak": 6,
+    "dogr": 7,
+    "beng": 8,
+    "taml": 9,
+    "thai": 10,
+    "laoo": 11,
+    "mymr": 12,
+    "armn": 13,
+    "geor": 14,
+    "ethi": 15,
+    "cher": 16,
+    "khmr": 17,
+    "bugi": 18,
+    "buhd": 19,
+    "yiii": 20,
+    "jpan": 21,
+    "hang": 22,
+    "hani": 23,
+}
+
+
+def _is_significant_latin_block(count: int, total: int, level: str) -> bool:
+    """
+    Evaluate Latin-block significance for script inference.
+
+    Parameters
+    ----------
+    count : int
+        Covered codepoint count for the current Unicode block.
+    total : int
+        Total covered codepoint count across all Unicode blocks.
+    level : str
+        Inference aggressiveness level.
+
+    Returns
+    -------
+    bool
+        True when the Latin block should contribute to script inference.
+    """
+    if level == "conservative":
+        return count >= 50 or (count / total) >= 0.10
+    if level == "aggressive":
+        return count >= 5
+    return count >= 20 or (count / total) >= 0.05
+
+
+def _is_significant_non_latin_block(count: int, total: int, level: str) -> bool:
+    """
+    Evaluate non-Latin block significance for script inference.
+
+    Parameters
+    ----------
+    count : int
+        Covered codepoint count for the current Unicode block.
+    total : int
+        Total covered codepoint count across all Unicode blocks.
+    level : str
+        Inference aggressiveness level.
+
+    Returns
+    -------
+    bool
+        True when the non-Latin block should contribute to script inference.
+    """
+    if level == "conservative":
+        return count >= 20 or (count / total) >= 0.05
+    if level == "aggressive":
+        return count >= 2
+    return count >= 5 or (count / total) >= 0.01
+
+
+def _block_is_significant(block_name: str, count: int, total: int, level: str) -> bool:
+    """
+    Decide whether a Unicode block contributes evidence for script inference.
+
+    Parameters
+    ----------
+    block_name : str
+        Unicode block name as produced by coverage extraction.
+    count : int
+        Covered codepoint count for the current Unicode block.
+    total : int
+        Total covered codepoint count across all Unicode blocks.
+    level : str
+        Inference aggressiveness level.
+
+    Returns
+    -------
+    bool
+        True when the block count passes the level-dependent threshold.
+    """
+    if block_name.startswith("Latin"):
+        return _is_significant_latin_block(count, total, level)
+    return _is_significant_non_latin_block(count, total, level)
+
+
+def _match_block_script(block_name: str) -> str | None:
+    """
+    Resolve a Unicode block name to an inferred ISO-15924 script tag.
+
+    Parameters
+    ----------
+    block_name : str
+        Unicode block name as produced by coverage extraction.
+
+    Returns
+    -------
+    str | None
+        Matching lowercase ISO-15924 script tag, or None when the block
+        is not mapped by the inference table.
+    """
+    for match_kind, pattern, script in _UNICODE_BLOCK_SCRIPT_RULES:
+        if match_kind == "exact" and block_name == pattern:
+            return script
+        if match_kind == "prefix" and block_name.startswith(pattern):
+            return script
+    return None
+
+
+def _score_scripts_from_blocks(blocks: dict[str, int], level: str) -> dict[str, int]:
+    """
+    Score candidate scripts from Unicode block coverage.
+
+    Parameters
+    ----------
+    blocks : dict[str, int]
+        Mapping of Unicode block name to covered codepoint count.
+    level : str
+        Inference aggressiveness level.
+
+    Returns
+    -------
+    dict[str, int]
+        Weighted score per inferred script tag.
+    """
+    total = sum(blocks.values()) or 1
+    scripts_score: dict[str, int] = {}
+
+    for block, count in blocks.items():
+        if not _block_is_significant(block, count, total, level):
+            continue
+        script = _match_block_script(block)
+        if script is None:
+            continue
+        scripts_score[script] = scripts_score.get(script, 0) + count
+
+    return scripts_score
+
+
+def _collapse_cjk_scripts(scripts_score: dict[str, int]) -> list[str] | None:
+    """
+    Collapse CJK-related script evidence to a single preferred outcome.
+
+    Parameters
+    ----------
+    scripts_score : dict[str, int]
+        Weighted score per inferred script tag.
+
+    Returns
+    -------
+    list[str] | None
+        Single-item script result for CJK cases, or None when the scores
+        do not require CJK collapse.
+    """
+    if "hani" not in scripts_score:
+        return None
+    if "jpan" in scripts_score:
+        return ["jpan"]
+    if "hang" in scripts_score:
+        return ["hang"]
+    return ["hani"]
+
+
+def _sort_scored_scripts(scripts_score: dict[str, int]) -> list[str]:
+    """
+    Sort inferred scripts by confidence and deterministic tie-breakers.
+
+    Parameters
+    ----------
+    scripts_score : dict[str, int]
+        Weighted score per inferred script tag.
+
+    Returns
+    -------
+    list[str]
+        Sorted script tags, or ``["unknown"]`` when no scores are present.
+    """
+    if not scripts_score:
+        return ["unknown"]
+
+    normalized_scores = sorted(
+        scripts_score.items(),
+        key=lambda item: (-item[1], _ISO_PRIORITY.get(item[0], 999), item[0]),
+    )
+    return [iso for iso, _ in normalized_scores]
+
+
+def _infer_from_unicode_max(unicode_max: Any) -> list[str]:
+    """
+    Infer a fallback script from the maximum covered codepoint.
+
+    Parameters
+    ----------
+    unicode_max : Any
+        Candidate maximum Unicode codepoint from the coverage payload.
+
+    Returns
+    -------
+    list[str]
+        Single-item inferred script list, or ``["unknown"]`` when no
+        fallback mapping applies.
+    """
+    if not isinstance(unicode_max, int):
+        return ["unknown"]
+
+    for start, end, script in _UNICODE_MAX_FALLBACKS:
+        if start <= unicode_max <= end:
+            return [script]
+    if unicode_max >= 0x4E00:
+        return ["hani"]
+    return ["unknown"]
+
+
 def script_coverage_from_unicode_blocks(
     unicode_blocks: dict[str, int],
     script_ranges: dict[ScriptISO, list[tuple[int, int]]],
@@ -88,11 +358,7 @@ def script_coverage_from_unicode_blocks(
     }
 
 
-# TODO(#0): classification rule table will grow;
-# refactor to data-driven mapping when script set expands
-def infer_scripts(  # noqa: C901, PLR0912
-    coverage: dict[str, Any], level: str = "medium"
-) -> list[str]:
+def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
     """
     Infer writing scripts from Unicode coverage metadata.
 
@@ -126,181 +392,11 @@ def infer_scripts(  # noqa: C901, PLR0912
     inference.
     """
     blocks: dict[str, int] = coverage.get("unicode_blocks", {}) or {}
-
-    # -------------------------------
-    # 1. Primary path: unicode_blocks
-    # -------------------------------
     if blocks:
-        total = sum(blocks.values()) or 1
+        scripts_score = _score_scripts_from_blocks(blocks, level)
+        cjk_result = _collapse_cjk_scripts(scripts_score)
+        if cjk_result is not None:
+            return cjk_result
+        return _sort_scored_scripts(scripts_score)
 
-        def significant(count: int) -> bool:
-            """
-            Check whether a block count is significant for the current level.
-
-            Parameters
-            ----------
-            count : int
-                Covered codepoint count for the current Unicode block.
-
-            Returns
-            -------
-            bool
-                True when the block count passes the level-dependent
-                significance threshold.
-            """
-            if level == "conservative":
-                return count >= 50 or (count / total) >= 0.10
-            if level == "aggressive":
-                return count >= 5
-            # medium - default
-            return count >= 20 or (count / total) >= 0.05
-
-        scripts_score: dict[str, int] = {}
-
-        def add_script(name: str, weight: int) -> None:
-            """
-            Accumulate weighted evidence for a candidate script tag.
-
-            Parameters
-            ----------
-            name : str
-                Script tag receiving score credit.
-            weight : int
-                Weight to add to the accumulated script score.
-
-            Returns
-            -------
-            None
-            """
-            scripts_score[name] = scripts_score.get(name, 0) + weight
-
-        # --- block → script mapping (score-based)
-        for block, count in blocks.items():
-            # Latin needs strict significance (to avoid false multi-script noise),
-            # but non-Latin scripts must be more sensitive: their block counts are
-            # often smaller (or split across Extended/Supplement blocks).
-            if block.startswith("Latin"):
-                if not significant(count):
-                    continue
-            elif level == "conservative":
-                if not (count >= 20 or (count / total) >= 0.05):
-                    continue
-            elif level == "aggressive":
-                if count < 2:
-                    continue
-            elif not (count >= 5 or (count / total) >= 0.01):  # medium - default
-                continue
-
-            if block.startswith("Latin"):
-                add_script("latn", count)
-            elif block == "Greek and Coptic":
-                add_script("grek", count)
-            elif block == "Cyrillic":
-                add_script("cyrl", count)
-            elif block == "Arabic":
-                add_script("arab", count)
-            elif block == "Hebrew":
-                add_script("hebr", count)
-            elif block == "Devanagari":
-                add_script("deva", count)
-            elif block == "Bengali":
-                add_script("beng", count)
-            elif block == "Tamil":
-                add_script("taml", count)
-            elif block == "Thai":
-                add_script("thai", count)
-            elif block.startswith("Lao"):
-                add_script("laoo", count)
-            elif block.startswith("Myanmar"):
-                add_script("mymr", count)
-            elif block in ("Hiragana", "Katakana"):
-                add_script("jpan", count)
-            elif block == "Hangul Syllables":
-                add_script("hang", count)
-            elif block == "Yi Syllables":
-                add_script("yiii", count)
-            elif block.startswith("Armenian"):
-                add_script("armn", count)
-            elif block.startswith("Georgian"):
-                add_script("geor", count)
-            elif block.startswith("Ethiopic"):
-                add_script("ethi", count)
-            elif block.startswith("Cherokee"):
-                add_script("cher", count)
-            elif block.startswith("Khmer"):
-                add_script("khmr", count)
-            elif block.startswith("Buginese"):
-                add_script("bugi", count)
-            elif block.startswith("Buhid"):
-                add_script("buhd", count)
-            elif block.startswith("Kana"):
-                add_script("jpan", count)
-            elif block.startswith("CJK Unified Ideographs"):
-                add_script("hani", count)
-
-        # --- CJK disambiguation (kept as a single-script outcome)
-        if "hani" in scripts_score:
-            if "jpan" in scripts_score:
-                return ["jpan"]
-            if "hang" in scripts_score:
-                return ["hang"]
-            return ["hani"]
-
-        normalized_scores: list[tuple[str, int]] = []
-        for name, score in scripts_score.items():
-            iso = name
-            normalized_scores.append((iso, score))
-
-        if not normalized_scores:
-            return ["unknown"]
-
-        iso_priority: dict[str, int] = {
-            "latn": 0,
-            "grek": 1,
-            "cyrl": 2,
-            "arab": 3,
-            "hebr": 4,
-            "deva": 5,
-            "beng": 6,
-            "taml": 7,
-            "thai": 8,
-            "laoo": 9,
-            "mymr": 10,
-            "armn": 11,
-            "geor": 12,
-            "ethi": 13,
-            "cher": 14,
-            "khmr": 15,
-            "bugi": 16,
-            "buhd": 17,
-            "yiii": 18,
-            "jpan": 19,
-            "hang": 20,
-            "hani": 21,
-        }
-
-        normalized_scores.sort(key=lambda t: (-t[1], iso_priority.get(t[0], 999), t[0]))
-
-        return [iso for iso, _ in normalized_scores]
-
-    # -------------------------------
-    # 2. Fallback: unicode.max
-    # -------------------------------
-    unicode_max = coverage.get("unicode", {}).get("max")
-    if isinstance(unicode_max, int):
-        if unicode_max <= 0x024F:
-            return ["latn"]
-        if 0x0370 <= unicode_max <= 0x03FF:
-            return ["grek"]
-        if 0x0400 <= unicode_max <= 0x04FF:
-            return ["cyrl"]
-        if 0x0590 <= unicode_max <= 0x05FF:
-            return ["hebr"]
-        if 0x0600 <= unicode_max <= 0x06FF:
-            return ["arab"]
-        if 0x0900 <= unicode_max <= 0x097F:
-            return ["deva"]
-        if unicode_max >= 0x4E00:
-            return ["hani"]
-
-    return ["unknown"]
+    return _infer_from_unicode_max(coverage.get("unicode", {}).get("max"))

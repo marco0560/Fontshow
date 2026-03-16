@@ -39,6 +39,7 @@ from fontshow.core.types import (
 from fontshow.inventory.io import as_font_desc_list
 from fontshow.inventory.metadata_processing import font_family
 from fontshow.latex.policy import (
+    _collect_polyglossia_font_setup,
     _collect_polyglossia_other_languages,
     _format_script_display,
     _get_render_policy,
@@ -122,9 +123,10 @@ def _render_font_entry(
     -----
     The rendering path depends on the selected script policy. Latin
     entries use a direct ``\\fontspec`` block, while eligible non-Latin
-    entries may use ``\\TestNonLatin`` with language and script options.
-    The helper also returns a plain-text option string so the caller can
-    include debugging information alongside the rendered specimen block.
+    entries emit a fully expanded Polyglossia/fontspec block with a
+    per-entry font command generated in Python. The helper also returns
+    a plain-text option string so the caller can include debugging
+    information alongside the rendered specimen block.
     """
 
     path = str(font.get("path", "")).lower()
@@ -157,16 +159,24 @@ def _render_font_entry(
             + "}\\endgroup}"
         )
     elif lang:
+        font_cmd = "\\" + lang + "font"
         render = (
-            " {\\begingroup\\sloppy\\emergencystretch=2em\\TestNonLatin{"
+            " {\\begingroup\\sloppy\\emergencystretch=2em"
+            "\\renewfontfamily"
+            + font_cmd
+            + "[BoldFont={},ItalicFont={},BoldItalicFont={},"
+            + opts
+            + "]{"
             + detok_file
-            + "}{"
+            + "}"
+            "\\foreignlanguage{"
             + lang
             + "}{"
-            + opts
-            + "}{"
+            + font_cmd
+            + "\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{"
             + safe_specimen
-            + "}\\endgroup}"
+            + "}}"
+            + "\\endgroup}"
         )
     else:
         render = (
@@ -236,8 +246,14 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     other_langs = _strip_ascii_control_chars(
         _collect_polyglossia_other_languages(font_list)
     )
+    lang_font_setup = _strip_ascii_control_chars(
+        _collect_polyglossia_font_setup(font_list)
+    )
     if "%%FONTSHOW_OTHER_LANGUAGES%%" in latex_code:
-        latex_code = latex_code.replace("%%FONTSHOW_OTHER_LANGUAGES%%", other_langs)
+        latex_code = latex_code.replace(
+            "%%FONTSHOW_OTHER_LANGUAGES%%",
+            other_langs + lang_font_setup,
+        )
     else:
         log_warn("LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found")
 

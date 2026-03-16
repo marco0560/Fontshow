@@ -138,6 +138,40 @@ def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -
     return "".join(f"\\setotherlanguage{{{lang}}}\n" for lang in sorted(langs))
 
 
+def _collect_polyglossia_font_setup(font_list: list[CatalogFontEntryV12]) -> str:
+    """
+    Collect placeholder Polyglossia font-command declarations.
+
+    Each language-specific ``\\<language>font`` command is declared once in the
+    preamble so specimen entries can use a direct local ``\\renewfontfamily``
+    without any TeX-side conditionals.
+    """
+
+    langs: set[str] = set()
+
+    for font in font_list:
+        inf_raw = font.get("inference") or {}
+        inf = inf_raw if isinstance(inf_raw, dict) else {}
+        scripts_raw_obj = inf.get("scripts")
+        scripts_raw: list[str] = (
+            scripts_raw_obj if isinstance(scripts_raw_obj, list) else []
+        )
+
+        for s in scripts_raw:
+            if not isinstance(s, str) or not s:
+                continue
+            script_iso = ScriptISO(s.upper())
+            info = SCRIPT_INFO.get(script_iso)
+            if info:
+                lang = info["polyglossia_language"]
+                if lang and lang != "english":
+                    langs.add(lang)
+
+    return "".join(
+        f"\\newfontfamily\\{lang}font{{Latin Modern Roman}}\n" for lang in sorted(langs)
+    )
+
+
 def nfss_family_id(font: dict) -> str:
     """
     Return a deterministic NFSS-safe identifier for a font.

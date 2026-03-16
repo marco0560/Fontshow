@@ -91,7 +91,7 @@ def test_render_helpers_strip_controls_and_toggle_renderer_prefix(monkeypatch):
         r"\textbackslash{}\&\_\{\}\textasciitilde{}\textasciicircum{}\textless{}\textgreater{}\%\$\#"
     )
     assert render._strip_ascii_control_chars("A\x00B\x7f\n\tC") == "AB\n\tC"
-    assert render._latex_detokenize_safe("A}\x00B") == r"A\}B"
+    assert render._latex_detokenize_safe("A{\\}\x00B") == r"A\{\\\}B"
 
     monkeypatch.setattr(render, "IS_WINDOWS", True)
     assert render._renderer_option_prefix() == ""
