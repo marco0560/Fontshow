@@ -1,3 +1,9 @@
+## [0.57.0](https://github.com/marco0560/Fontshow/compare/v0.56.3...v0.57.0) (2026-03-16)
+
+### Features
+
+* **parser:** refactor script inference to be ontology-driven. ([94b302d](https://github.com/marco0560/Fontshow/commit/94b302df9b4581c06be1108ce582d98007ef74e6))
+
 ## [0.56.3](https://github.com/marco0560/Fontshow/compare/v0.56.2...v0.56.3) (2026-03-15)
 
 ### Bug Fixes
