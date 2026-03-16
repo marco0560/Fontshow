@@ -40,6 +40,8 @@ coverage.xml
 # --------------------------------------------------
 # Font inventory and workflow artifacts (generated)
 # --------------------------------------------------
+reports/
+TODF*
 .fontshow_cache/
 font_inventory.json
 font_inventory.txt

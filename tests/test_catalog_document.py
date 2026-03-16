@@ -92,7 +92,7 @@ def test_render_font_entry_falls_back_to_fontspec_without_language(monkeypatch):
 
 def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkeypatch):
     """
-    Ensure generation deduplicates by family and warns when the language marker is absent.
+    Ensure generation groups by family and emits one specimen block per file.
     """
     infos: list[str] = []
     warnings: list[str] = []
@@ -113,6 +113,9 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
     monkeypatch.setattr(document, "escape_latex", lambda value: value)
     monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
     monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
     monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
     monkeypatch.setattr(
@@ -158,9 +161,14 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert warnings == ["LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found"]
     assert latex.count("\\item Alpha --- ") == 1
     assert latex.count("\\item Beta --- ") == 1
+    assert "FILE  : alpha.ttf" in latex
+    assert "FILE  : ignored.ttf" in latex
     assert "LANGDEF" not in latex
     assert "FONTDEF" not in latex
+    assert "LANGS : EN" in latex
+    assert "OPTS  : \\detokenize{Path=/tmp/, File=alpha.ttf}" in latex
     assert "\\allowbreak{}" in latex
+    assert "FILE  : beta.bin" in latex
     assert "{[MISSING]}" in latex
     assert "\\LogExcluded{Zed}" in latex
     assert latex.endswith("\nEND:2:DONE")

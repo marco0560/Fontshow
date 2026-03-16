@@ -113,6 +113,15 @@ class OntologyCheck(BaseCheck):
                 errors.append(f"Language '{lang}' has no scripts defined")
                 continue
 
+            primary_script = lang_info.get("primary_script")
+            if primary_script is None:
+                errors.append(f"Language '{lang}' missing primary_script")
+            elif primary_script not in lang_scripts:
+                errors.append(
+                    f"Language '{lang}' primary_script '{primary_script}' "
+                    "is not present in its scripts list"
+                )
+
             for script in lang_scripts:
                 if script not in scripts:
                     errors.append(
@@ -143,6 +152,14 @@ class OntologyCheck(BaseCheck):
             "rtl",
             "requires_polyglossia",
             "specimen",
+            "required_blocks",
+            "optional_blocks",
+            "suppresses",
+            "inference_priority",
+            "unicode_max_ranges",
+            "block_match",
+            "collapse_group",
+            "preferred_over",
         }
 
         errors: list[str] = []
@@ -278,20 +295,21 @@ class OntologyCheck(BaseCheck):
         Notes
         -----
         Enforced invariant:
-        ``SCRIPT_INFO.keys() ⊆ UNICODE_SCRIPT_RANGES.keys()``.
+        each script must have either Unicode range coverage metadata or
+        explicit block-driven inference metadata.
         """
         from fontshow.ontology.unicode_tables import UNICODE_SCRIPT_RANGES
 
-        script_info_scripts = set(SCRIPT_INFO.keys())
-        unicode_range_scripts = set(UNICODE_SCRIPT_RANGES.keys())
-
-        missing_ranges = script_info_scripts - unicode_range_scripts
-
         errors: list[str] = []
 
-        if missing_ranges:
+        for script, script_info in SCRIPT_INFO.items():
+            if script in UNICODE_SCRIPT_RANGES:
+                continue
+            required_blocks = script_info.get("required_blocks") or []
+            if required_blocks:
+                continue
             errors.append(
-                "Scripts missing Unicode ranges: " + ", ".join(sorted(missing_ranges))
+                f"Script '{script}' has neither Unicode ranges nor required_blocks"
             )
 
         return errors

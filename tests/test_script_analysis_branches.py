@@ -51,3 +51,23 @@ def test_infer_scripts_uses_unicode_max_fallbacks():
     assert infer_scripts({"unicode": {"max": 0x024F}}) == ["latn"]
     assert infer_scripts({"unicode": {"max": 0x05FF}}) == ["hebr"]
     assert infer_scripts({"unicode": {"max": 0x4E00}}) == ["hani"]
+
+
+def test_infer_scripts_prefers_dedicated_blocks_over_broader_neighbors():
+    """
+    Ensure dedicated script blocks win over legacy neighboring scripts.
+    """
+    assert infer_scripts(
+        {"unicode_blocks": {"Coptic": 15, "Greek and Coptic": 10}}
+    ) == [
+        "copt",
+        "grek",
+    ]
+    assert infer_scripts({"unicode_blocks": {"Hanifi Rohingya": 12, "Arabic": 9}}) == [
+        "rohg",
+        "arab",
+    ]
+    assert infer_scripts({"unicode_blocks": {"Kaithi": 10, "Devanagari": 8}}) == [
+        "kthi",
+        "deva",
+    ]

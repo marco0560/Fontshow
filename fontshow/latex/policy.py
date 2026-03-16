@@ -28,7 +28,7 @@ generation pipeline.
 import hashlib
 
 from fontshow.core.types import CatalogFontEntryV12, ScriptISO
-from fontshow.ontology.language_tables import SCRIPT_INFO
+from fontshow.ontology.language_tables import LANGUAGE_INFO, SCRIPT_INFO
 
 
 def _format_script_display(script_iso: str) -> str:
@@ -57,6 +57,33 @@ def _format_script_display(script_iso: str) -> str:
         human = info["canonical_name"]
         return f"{human} ({iso})"
     return str(iso)
+
+
+def _format_language_display(language_code: str) -> str:
+    """
+    Convert a language code to a human-readable display form.
+
+    Parameters
+    ----------
+    language_code : str
+        ISO 639 language code to format.
+
+    Returns
+    -------
+    str
+        Human-readable display label including the canonical language
+        name when available.
+
+    Notes
+    -----
+    Example: ``"en" -> "English (en)"``.
+    Unknown language codes are returned as-is.
+    """
+    info = LANGUAGE_INFO.get(language_code)
+    if info:
+        human = info["canonical_name"]
+        return f"{human} ({language_code})"
+    return language_code
 
 
 def _get_render_policy(script_iso: ScriptISO) -> tuple[str, str]:

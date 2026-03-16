@@ -41,6 +41,7 @@ from fontshow.inventory.metadata_processing import font_family
 from fontshow.latex.policy import (
     _collect_polyglossia_font_setup,
     _collect_polyglossia_other_languages,
+    _format_language_display,
     _format_script_display,
     _get_render_policy,
 )
@@ -215,31 +216,30 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
 
     Notes
     -----
-    The function first normalizes the input list, deduplicates entries
-    by family name, injects auxiliary Polyglossia language declarations,
-    and then renders one catalog block per surviving font entry.
-    Each entry includes debugging metadata about inferred scripts,
-    inferred languages, and the effective fontspec options used for
-    rendering. Fonts with unsupported file extensions produce an empty
+    The function first normalizes the input list, groups entries by
+    family while preserving first-seen order, injects auxiliary
+    Polyglossia language declarations, and then renders one catalog
+    block per family. Each family entry includes one debugging metadata
+    header plus one specimen block per font file belonging to that
+    family. Fonts with unsupported file extensions produce an empty
     render block while still contributing to the itemized catalog list.
-
-    Fonts are deduplicated by normalized family name before rendering,
-    preserving first-seen order.
     """
     font_list = as_font_desc_list(font_list)
 
-    # --- DEDUPLICATION BY FAMILY ---
+    # --- GROUP BY FAMILY, PRESERVING FIRST-SEEN ORDER ---
     seen_families: set[str] = set()
-    unique_fonts: list[CatalogFontEntryV12] = []
+    family_order: list[str] = []
+    fonts_by_family: dict[str, list[CatalogFontEntryV12]] = {}
     for font in font_list:
         fam = font_family(font)
+        if fam not in fonts_by_family:
+            fonts_by_family[fam] = []
+        fonts_by_family[fam].append(font)
         if fam not in seen_families:
             seen_families.add(fam)
-            unique_fonts.append(font)
+            family_order.append(fam)
 
-    font_list = unique_fonts
-
-    log_info(f"Generating LaTeX file for {len(font_list)} fonts...")
+    log_info(f"Generating LaTeX file for {len(family_order)} fonts...")
 
     latex_code: str = LATEX_INITIAL_CODE
 
@@ -257,13 +257,13 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     else:
         log_warn("LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found")
 
-    total = len(font_list)
+    total = len(family_order)
     latex_code += "\\section{Font List (Stage 0)}\n"
     latex_code += "\\begin{itemize}\n"
 
-    typed_font_list: list[CatalogFontEntryV12] = font_list
-    for idx, font in enumerate(typed_font_list, start=1):
-        fam = font_family(font)
+    for idx, fam in enumerate(family_order, start=1):
+        family_fonts = fonts_by_family[fam]
+        font = family_fonts[0]
         safe_name = escape_latex(fam)
 
         if idx % 500 == 0 or idx == total:
@@ -297,12 +297,6 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
             languages_raw_obj if isinstance(languages_raw_obj, list) else []
         )
 
-        fullpath = str(font.get("path", ""))
-        fullpath_norm = fullpath.replace("\\", "/")
-        detok_fullpath = "\\detokenize{" + _latex_detokenize_safe(fullpath_norm) + "}"
-
-        script0_iso = ScriptISO(script0.upper()) if script0 else ScriptISO("")
-
         scripts_pretty = (
             ", ".join(_format_script_display(str(s)) for s in scripts_raw)
             if scripts_raw
@@ -310,15 +304,16 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         )
 
         languages_pretty = (
-            ", ".join(str(lang) for lang in inferred_languages)
+            ", ".join(
+                _format_language_display(str(lang)) for lang in inferred_languages
+            )
             if inferred_languages
             else "N/A"
         )
 
-        options_plain = ""
-        render = ""
-
-        render, options_plain = _render_font_entry(
+        fullpath = str(font.get("path", ""))
+        script0_iso = ScriptISO(script0.upper()) if script0 else ScriptISO("")
+        _, options_plain = _render_font_entry(
             font=font,
             safe_specimen=safe_specimen,
             script0_iso=script0_iso,
@@ -326,7 +321,9 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         )
 
         options_pretty = (
-            "\\detokenize{" + _latex_detokenize_safe(options_plain) + "}"
+            "\\detokenize{"
+            + _latex_detokenize_safe(options_plain.replace(",", ", "))
+            + "}"
             if options_plain
             else "N/A"
         )
@@ -341,17 +338,43 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
             "{\\footnotesize\\ttfamily OPTS  : " + options_pretty + "}"
         )
 
+        variant_blocks: list[str] = []
+        for variant in family_fonts:
+            variant_path = str(variant.get("path", ""))
+            variant_path_norm = variant_path.replace("\\", "/")
+            detok_variant_path = (
+                "\\detokenize{" + _latex_detokenize_safe(variant_path_norm) + "}"
+            )
+            _, variant_file = _normalize_path_for_latex(variant_path)
+
+            variant_script = primary_script(variant) or ""
+            variant_script_iso = (
+                ScriptISO(variant_script.upper()) if variant_script else ScriptISO("")
+            )
+            variant_render, _ = _render_font_entry(
+                font=variant,
+                safe_specimen=safe_specimen,
+                script0_iso=variant_script_iso,
+                fullpath=variant_path,
+            )
+            variant_blocks.append(
+                "{\\footnotesize\\ttfamily FILE  : "
+                + escape_latex(variant_file)
+                + "}\\newline"
+                + "\\IfFileExists{"
+                + detok_variant_path
+                + "}{[OK]\\newline"
+                + variant_render
+                + "}{[MISSING]}"
+            )
+
         latex_code += (
             "\\item "
             + safe_name
             + " --- "
-            + "\\IfFileExists{"
-            + detok_fullpath
-            + "}{[OK]\\newline"
             + debug_block
             + "\\newline"
-            + render
-            + "}{[MISSING]}"
+            + "\\newline".join(variant_blocks)
             + "\n"
         )
 

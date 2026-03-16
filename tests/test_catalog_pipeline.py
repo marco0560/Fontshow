@@ -131,7 +131,7 @@ def test_run_inventory_diagnostics_uses_ratio_thresholds(
 
 def test_filter_and_prepare_fonts_filters_sorts_and_slices(monkeypatch):
     """
-    Ensure filtering happens before slicing and final output is family-grouped.
+    Ensure filtering happens before slicing and final output preserves variants.
     """
     trace_calls: list[tuple[str, dict[str, object]]] = []
     monkeypatch.setattr(
@@ -140,12 +140,6 @@ def test_filter_and_prepare_fonts_filters_sorts_and_slices(monkeypatch):
         lambda _log, _cat, msg, extra: trace_calls.append((msg, extra)),
     )
     monkeypatch.setattr(pipeline, "as_font_desc_list", lambda fonts: list(fonts))
-    monkeypatch.setattr(
-        pipeline,
-        "group_fonts_by_family",
-        lambda fonts: [{"family": font["family"]} for font in fonts],
-    )
-
     fonts = [
         {"family": "Zulu"},
         {"family": "Alpha"},

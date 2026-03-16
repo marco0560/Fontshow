@@ -541,9 +541,14 @@ def _infer_and_attach_metadata(
             script_primary_lang = None
 
     candidates = list(inferred_languages_map.keys())
+    blocks_present = set((coverage.get("unicode_blocks", {}) or {}).keys())
 
     # ensure script language exists
-    if script_primary_lang and script_primary_lang not in candidates:
+    if (
+        script_primary_lang
+        and script_primary_lang not in candidates
+        and not (font_scripts == {"LATN"} and blocks_present == {"Basic Latin"})
+    ):
         candidates.insert(0, script_primary_lang)
 
     inferred_languages = sorted(

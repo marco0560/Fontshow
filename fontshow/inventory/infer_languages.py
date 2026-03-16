@@ -334,6 +334,10 @@ def _apply_script_authoritative_fallbacks(
         return inferred
 
     if isinstance(scripts_lower, list) and scripts_lower:
+        if set(scripts_lower) == {"latn"} and set(unicode_blocks.keys()) == {
+            "Basic Latin"
+        }:
+            return inferred
         primary = sorted(str(s).lower() for s in scripts_lower)[0]
         info = SCRIPT_INFO.get(cast("ScriptISO", normalize_script_iso(primary)))
         lang = info["display_language"] if info else ""

@@ -27,7 +27,7 @@ from fontshow.constants.catalog import DEFAULT_TEST_FONTS
 from fontshow.core.cli_utils import log_info, log_warn
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.core.types import CatalogFontEntryV12
-from fontshow.inventory.io import as_font_desc_list, group_fonts_by_family
+from fontshow.inventory.io import as_font_desc_list
 from fontshow.inventory.metadata_processing import font_family
 
 
@@ -208,8 +208,7 @@ def _filter_and_prepare_fonts(
     -------
     list[CatalogFontEntryV12]
         Filtered font descriptors normalized with `as_font_desc_list`,
-        optionally limited by `args.number`, sorted by family name, and
-        grouped by family.
+        optionally limited by `args.number`, and sorted by family name.
 
     Raises
     ------
@@ -224,8 +223,7 @@ def _filter_and_prepare_fonts(
     Display-name fallbacks are derived transiently to remain compliant
     with schema v1.2.
     Processing order is deterministic: optional test-font filtering,
-    optional count limiting, normalization, family sorting, and final
-    family grouping.
+    optional count limiting, normalization, and family sorting.
     """
     log_trace_cat(
         log,
@@ -255,14 +253,13 @@ def _filter_and_prepare_fonts(
             or f.get("postscript_name")
             or f"{(f.get('family') or '')} {(f.get('subfamily') or '')}".strip()
         )
-    result = group_fonts_by_family(fonts)
     log_trace_cat(
         log,
         "flow",
         "font filtering completed",
         extra={
-            "output_fonts": len(result),
+            "output_fonts": len(fonts),
         },
     )
 
-    return result
+    return fonts

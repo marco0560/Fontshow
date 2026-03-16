@@ -176,6 +176,44 @@ def test_infer_scripts_uses_unicode_max_for_dogra_and_dives_akuru():
     assert infer_scripts({"unicode": {"max": 0x11946}}) == ["diak"]
 
 
+def test_infer_scripts_second_batch_blocks():
+    """
+    Verify second-batch script blocks infer dedicated script tags.
+
+    Returns
+    -------
+    None
+    """
+    assert infer_scripts({"unicode_blocks": {"Bopomofo": 40}}) == ["bopo"]
+    assert infer_scripts({"unicode_blocks": {"Brahmi": 60}}) == ["brah"]
+    assert infer_scripts({"unicode_blocks": {"Coptic": 90}}) == ["copt"]
+    assert infer_scripts({"unicode_blocks": {"Deseret": 32}}) == ["dsrt"]
+    assert infer_scripts({"unicode_blocks": {"Elbasan": 35}}) == ["elba"]
+    assert infer_scripts({"unicode_blocks": {"Glagolitic": 80}}) == ["glag"]
+    assert infer_scripts({"unicode_blocks": {"Grantha": 70}}) == ["gran"]
+    assert infer_scripts({"unicode_blocks": {"Hanifi Rohingya": 40}}) == ["rohg"]
+    assert infer_scripts({"unicode_blocks": {"Kaithi": 55}}) == ["kthi"]
+    assert infer_scripts(
+        {"unicode_blocks": {"Unified Canadian Aboriginal Syllabics": 120}}
+    ) == ["cans"]
+
+
+def test_infer_scripts_uses_unicode_max_for_second_batch_ranges():
+    """
+    Verify unicode.max fallback covers second-batch script ranges.
+
+    Returns
+    -------
+    None
+    """
+    assert infer_scripts({"unicode": {"max": 0x10420}}) == ["dsrt"]
+    assert infer_scripts({"unicode": {"max": 0x10518}}) == ["elba"]
+    assert infer_scripts({"unicode": {"max": 0x10D15}}) == ["rohg"]
+    assert infer_scripts({"unicode": {"max": 0x11042}}) == ["brah"]
+    assert infer_scripts({"unicode": {"max": 0x110A5}}) == ["kthi"]
+    assert infer_scripts({"unicode": {"max": 0x1133D}}) == ["gran"]
+
+
 def test_coverage_scripts_never_unknown():
     """
     Verify that the public coverage script list itself never contains ``unknown``.
