@@ -118,6 +118,46 @@ def _latex_detokenize_safe(text: str) -> str:
     return text.replace("\\", r"\\").replace("{", r"\{").replace("}", r"\}")
 
 
+def _latex_debug_literal(text: str) -> str:
+    """
+    Render debug text safely while preserving human-readable braces.
+
+    Parameters
+    ----------
+    text : str
+        Raw debug text to render in LaTeX.
+
+    Returns
+    -------
+    str
+        LaTeX-safe debug text suitable for direct insertion in
+        monospaced inline output.
+
+    Notes
+    -----
+    This helper differs from :func:`escape_latex` because it renders
+    literal braces via character codes so values such as
+    ``Script={Hanifi Rohingya}`` remain human-readable instead of
+    showing brace escapes in the debug output.
+    """
+    text = _strip_ascii_control_chars(text)
+    replacements = {
+        "\\": r"\textbackslash{}",
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\char123{}",
+        "}": r"\char125{}",
+        "~": r"\textasciitilde{}",
+        "^": r"\textasciicircum{}",
+        "<": r"\textless{}",
+        ">": r"\textgreater{}",
+    }
+    return "".join(replacements.get(c, c) for c in text)
+
+
 def _renderer_option_prefix() -> str:
     """
     Return the fontspec Renderer option prefix.

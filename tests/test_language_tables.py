@@ -170,6 +170,225 @@ def test_second_batch_language_entries_point_back_to_expected_scripts():
         assert isinstance(info["sample"], str) and info["sample"]
 
 
+def test_third_batch_script_entries_have_rendering_and_representative_languages():
+    """
+    Ensure the third 10-script expansion batch is wired into the ontology.
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "MROO": ("mro", "Script=Mro"),
+        "PERM": ("kv", "Script={Old Permic}"),
+        "PHLP": ("pal", "Script={Psalter Pahlavi}"),
+        "SOGD": ("sog", "Script=Sogdian"),
+        "TAGB": ("tbw", "Script=Tagbanwa"),
+        "TGLG": ("tl", "Script=Tagalog"),
+        "LANA": ("nod", "Script={Tai Tham}"),
+        "TAVT": ("blt", "Script={Tai Viet}"),
+        "TFNG": ("zgh", "Script=Tifinagh"),
+        "TIRH": ("mai", "Script=Tirhuta"),
+    }
+
+    for script_iso, (display_language, fontspec_opts) in expected.items():
+        info = SCRIPT_INFO[ScriptISO(script_iso)]
+        assert info["display_language"] == display_language
+        assert info["fontspec_opts"] == fontspec_opts
+        assert isinstance(info["specimen"], str) and info["specimen"]
+
+
+def test_third_batch_language_entries_point_back_to_expected_scripts():
+    """
+    Ensure the third 10-script expansion batch has reciprocal language rows.
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "mro": ScriptISO("MROO"),
+        "kv": ScriptISO("PERM"),
+        "pal": ScriptISO("PHLP"),
+        "sog": ScriptISO("SOGD"),
+        "tbw": ScriptISO("TAGB"),
+        "tl": ScriptISO("TGLG"),
+        "nod": ScriptISO("LANA"),
+        "blt": ScriptISO("TAVT"),
+        "zgh": ScriptISO("TFNG"),
+        "mai": ScriptISO("TIRH"),
+    }
+
+    for language, script_iso in expected.items():
+        info = LANGUAGE_INFO[language]
+        assert script_iso in info["scripts"]
+        assert isinstance(info["sample"], str) and info["sample"]
+
+
+def test_fourth_batch_script_entries_have_rendering_and_representative_languages():
+    """
+    Ensure the fourth 10-script expansion batch is wired into the ontology.
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "GOTH": ("got", "Script=Gothic"),
+        "KNDA": ("kn", "Script=Kannada"),
+        "MLYM": ("ml", "Script=Malayalam"),
+        "ORYA": ("or", "Script=Oriya"),
+        "TELU": ("te", "Script=Telugu"),
+        "THAA": ("dv", "Script=Thaana"),
+        "SYRC": ("syr", "Script=Syriac"),
+        "SOGO": ("sog", "Script={Old Sogdian}"),
+        "PHLI": ("pal", "Script={Inscriptional Pahlavi}"),
+        "VAII": ("vai", "Script=Vai"),
+    }
+
+    for script_iso, (display_language, fontspec_opts) in expected.items():
+        info = SCRIPT_INFO[ScriptISO(script_iso)]
+        assert info["display_language"] == display_language
+        assert info["fontspec_opts"] == fontspec_opts
+        assert isinstance(info["specimen"], str) and info["specimen"]
+
+
+def test_fourth_batch_language_entries_point_back_to_expected_scripts():
+    """
+    Ensure the fourth 10-script expansion batch has reciprocal language rows.
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "got": ScriptISO("GOTH"),
+        "kn": ScriptISO("KNDA"),
+        "ml": ScriptISO("MLYM"),
+        "or": ScriptISO("ORYA"),
+        "te": ScriptISO("TELU"),
+        "dv": ScriptISO("THAA"),
+        "syr": ScriptISO("SYRC"),
+        "sog": ScriptISO("SOGO"),
+        "pal": ScriptISO("PHLI"),
+        "vai": ScriptISO("VAII"),
+    }
+
+    for language, script_iso in expected.items():
+        info = LANGUAGE_INFO[language]
+        assert script_iso in info["scripts"]
+        assert isinstance(info["sample"], str) and info["sample"]
+
+
+def test_fifth_batch_script_entries_have_rendering_and_representative_languages():
+    """
+    Ensure the fifth 10-script expansion batch is wired into the ontology.
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "KALI": ("kyu", "Script={Kayah Li}"),
+        "LIMB": ("lif", "Script=Limbu"),
+        "LISU": ("lis", "Script=Lisu"),
+        "MEDF": ("dmf", "Script=Medefaidrin"),
+        "MEND": ("men", "Script={Mende Kikakui}"),
+        "MONG": ("mn", "Script=Mongolian"),
+        "MTEI": ("mni", "Script={Meitei Mayek}"),
+        "NEWA": ("new", "Script=Newa"),
+        "NKOO": ("nqo", "Script={N'Ko}"),
+        "OSGE": ("osa", "Script=Osage"),
+    }
+
+    for script_iso, (display_language, fontspec_opts) in expected.items():
+        info = SCRIPT_INFO[ScriptISO(script_iso)]
+        assert info["display_language"] == display_language
+        assert info["fontspec_opts"] == fontspec_opts
+        assert isinstance(info["specimen"], str) and info["specimen"]
+
+
+def test_fifth_batch_language_entries_point_back_to_expected_scripts():
+    """
+    Ensure the fifth 10-script expansion batch has reciprocal language rows.
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "kyu": ScriptISO("KALI"),
+        "lif": ScriptISO("LIMB"),
+        "lis": ScriptISO("LISU"),
+        "dmf": ScriptISO("MEDF"),
+        "men": ScriptISO("MEND"),
+        "mn": ScriptISO("MONG"),
+        "mni": ScriptISO("MTEI"),
+        "new": ScriptISO("NEWA"),
+        "nqo": ScriptISO("NKOO"),
+        "osa": ScriptISO("OSGE"),
+    }
+
+    for language, script_iso in expected.items():
+        info = LANGUAGE_INFO[language]
+        assert script_iso in info["scripts"]
+        assert isinstance(info["sample"], str) and info["sample"]
+
+
+def test_sixth_batch_script_entries_have_rendering_and_representative_languages():
+    """
+    Ensure the sixth 10-script expansion batch is wired into the ontology.
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "BAMU": ("bax", "Script=Bamum"),
+        "CHAK": ("ccp", "Script=Chakma"),
+        "GONG": ("gon", "Script={Gunjala Gondi}"),
+        "GONM": ("gon", "Script={Masaram Gondi}"),
+        "RJNG": ("rej", "Script=Rejang"),
+        "SAUR": ("saz", "Script=Saurashtra"),
+        "SUND": ("su", "Script=Sundanese"),
+        "SYLO": ("syl", "Script={Syloti Nagri}"),
+        "TALE": ("tdd", "Script={Tai Le}"),
+        "WARA": ("hoc", "Script={Warang Citi}"),
+    }
+
+    for script_iso, (display_language, fontspec_opts) in expected.items():
+        info = SCRIPT_INFO[ScriptISO(script_iso)]
+        assert info["display_language"] == display_language
+        assert info["fontspec_opts"] == fontspec_opts
+        assert isinstance(info["specimen"], str) and info["specimen"]
+
+
+def test_sixth_batch_language_entries_point_back_to_expected_scripts():
+    """
+    Ensure the sixth 10-script expansion batch has reciprocal language rows.
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "bax": ScriptISO("BAMU"),
+        "ccp": ScriptISO("CHAK"),
+        "gon": ScriptISO("GONG"),
+        "rej": ScriptISO("RJNG"),
+        "saz": ScriptISO("SAUR"),
+        "su": ScriptISO("SUND"),
+        "syl": ScriptISO("SYLO"),
+        "tdd": ScriptISO("TALE"),
+        "hoc": ScriptISO("WARA"),
+    }
+
+    for language, script_iso in expected.items():
+        info = LANGUAGE_INFO[language]
+        assert script_iso in info["scripts"]
+        assert isinstance(info["sample"], str) and info["sample"]
+
+
 def test_language_info_primary_script_is_present_in_scripts():
     """
     Ensure every language row exposes a valid primary script.

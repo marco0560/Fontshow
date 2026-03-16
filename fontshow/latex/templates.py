@@ -131,17 +131,17 @@ LATEX_INITIAL_CODE: str = (
 % Robust Macro for counting fonts (avoids expansion errors)
 \protected\def\LogWorking#1{%
     \stepcounter{cntWorking}%
-%    \immediate\write\fileWorking{\string\item\space\detokenize{#1}}%
+    \immediate\write\fileWorking{\string\item\space\detokenize{#1}}%
 }
 
 \protected\def\LogBroken#1{%
     \stepcounter{cntBroken}%
-%    \immediate\write\fileBroken{\string\item\space\detokenize{#1}}%
+    \immediate\write\fileBroken{\string\item\space\detokenize{#1}}%
 }
 
 \protected\def\LogExcluded#1{%
     \stepcounter{cntExcluded}%
-%    \immediate\write\fileExcluded{\string\item\space\detokenize{#1}}%
+    \immediate\write\fileExcluded{\string\item\space\detokenize{#1}}%
 }
 % -----------------------------------
 

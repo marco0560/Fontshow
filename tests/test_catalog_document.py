@@ -87,7 +87,7 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
 
 def test_render_font_entry_falls_back_to_fontspec_without_language(monkeypatch):
     """
-    Ensure non-Latin scripts without a language still render through ``\\fontspec``.
+    Ensure script-tagged entries without a language use a temporary font family.
 
     Parameters
     ----------
@@ -111,9 +111,42 @@ def test_render_font_entry_falls_back_to_fontspec_without_language(monkeypatch):
         fullpath="/tmp/foo.otf",
     )
 
-    assert "\\fontspec[" in render
-    assert "\\TestNonLatin" not in render
+    assert "\\newfontfamily\\fontshowentryfont" in render
+    assert "\\fontspec[" not in render
+    assert "Path=\\detokenize{/tmp/}" in render
+    assert "{\\detokenize{foo.otf}}" in render
     assert options == "Path=/tmp/,File=foo.otf,Script=Foo"
+
+
+def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
+    """
+    Ensure unknown scripts keep the simpler ``Path`` plus filename form.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace LaTeX helper functions.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "Renderer=1,")
+    monkeypatch.setattr(document, "_get_render_policy", lambda _script: ("", ""))
+
+    render, options = document._render_font_entry(
+        font={"path": "/tmp/unknown.ttf"},
+        safe_specimen="abc",
+        script0_iso=ScriptISO(""),
+        fullpath="/tmp/unknown.ttf",
+    )
+
+    assert "\\fontspec[" in render
+    assert "Path=\\detokenize{/tmp/}" in render
+    assert "{\\detokenize{unknown.ttf}}" in render
+    assert "{\\detokenize{/tmp/unknown.ttf}}" not in render
+    assert options == "Renderer=1,Path=/tmp/,File=unknown.ttf"
 
 
 def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkeypatch):
@@ -148,6 +181,11 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
     monkeypatch.setattr(document, "escape_latex", lambda value: value)
     monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(
+        document.Path,
+        "is_file",
+        lambda path_obj: path_obj.suffix == ".ttf",
+    )
     monkeypatch.setattr(
         document, "_format_language_display", lambda value: value.upper()
     )
@@ -196,14 +234,17 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert warnings == ["LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found"]
     assert latex.count("\\item Alpha --- ") == 1
     assert latex.count("\\item Beta --- ") == 1
-    assert "FILE  : alpha.ttf" in latex
-    assert "FILE  : ignored.ttf" in latex
+    assert "FILE  : alpha.ttf [OK]" in latex
+    assert "FILE  : ignored.ttf [OK]" in latex
     assert "LANGDEF" not in latex
     assert "FONTDEF" not in latex
     assert "LANGS : EN" in latex
-    assert "OPTS  : \\detokenize{Path=/tmp/, File=alpha.ttf}" in latex
+    assert "OPTS  : Path=/tmp/, File=alpha.ttf" in latex
+    assert "\\LogWorking{Alpha / alpha.ttf}" in latex
+    assert "\\LogWorking{Alpha / ignored.ttf}" in latex
+    assert "\\LogBroken{Beta / beta.bin}" in latex
     assert "\\allowbreak{}" in latex
     assert "FILE  : beta.bin" in latex
-    assert "{[MISSING]}" in latex
+    assert "\\LogBroken{Beta / beta.bin}[MISSING]" in latex
     assert "\\LogExcluded{Zed}" in latex
     assert latex.endswith("\nEND:2:DONE")

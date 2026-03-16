@@ -26,6 +26,8 @@ document assembly stage between inventory-derived font metadata and the
 final LaTeX output written by the create-catalog pipeline.
 """
 
+from pathlib import Path
+
 from fontshow.catalog.labels import primary_script
 from fontshow.constants.catalog import EXCLUDED_FONTS
 from fontshow.core.cli_utils import (
@@ -46,6 +48,7 @@ from fontshow.latex.policy import (
     _get_render_policy,
 )
 from fontshow.latex.render import (
+    _latex_debug_literal,
     _latex_detokenize_safe,
     _renderer_option_prefix,
     _strip_ascii_control_chars,
@@ -141,9 +144,13 @@ def _render_font_entry(
 
     lang, script_opt = _get_render_policy(script0_iso)
 
-    opts = renderer_prefix + "Path=" + detok_dir
+    render_options: list[str] = []
+    if renderer_prefix:
+        render_options.append(renderer_prefix.rstrip(","))
+    render_options.append("Path=" + detok_dir)
     if script_opt:
-        opts += "," + script_opt
+        render_options.append(script_opt)
+    opts = ",".join(render_options)
 
     options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
     if script_opt:
@@ -177,6 +184,23 @@ def _render_font_entry(
             + "\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{"
             + safe_specimen
             + "}}"
+            + "\\endgroup}"
+        )
+    elif script_opt:
+        font_cmd = "\\fontshowentryfont"
+        render = (
+            " {\\begingroup\\sloppy\\emergencystretch=2em"
+            "\\newfontfamily"
+            + font_cmd
+            + "[BoldFont={},ItalicFont={},BoldItalicFont={},"
+            + opts
+            + "]{"
+            + detok_file
+            + "}"
+            + font_cmd
+            + "\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{"
+            + safe_specimen
+            + "}"
             + "\\endgroup}"
         )
     else:
@@ -258,7 +282,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         log_warn("LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found")
 
     total = len(family_order)
-    latex_code += "\\section{Font List (Stage 0)}\n"
+    latex_code += "\\section{Font List}\n"
     latex_code += "\\begin{itemize}\n"
 
     for idx, fam in enumerate(family_order, start=1):
@@ -321,9 +345,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         )
 
         options_pretty = (
-            "\\detokenize{"
-            + _latex_detokenize_safe(options_plain.replace(",", ", "))
-            + "}"
+            _latex_debug_literal(options_plain.replace(",", ", "))
             if options_plain
             else "N/A"
         )
@@ -341,11 +363,8 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         variant_blocks: list[str] = []
         for variant in family_fonts:
             variant_path = str(variant.get("path", ""))
-            variant_path_norm = variant_path.replace("\\", "/")
-            detok_variant_path = (
-                "\\detokenize{" + _latex_detokenize_safe(variant_path_norm) + "}"
-            )
             _, variant_file = _normalize_path_for_latex(variant_path)
+            variant_exists = Path(variant_path).is_file()
 
             variant_script = primary_script(variant) or ""
             variant_script_iso = (
@@ -360,12 +379,18 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
             variant_blocks.append(
                 "{\\footnotesize\\ttfamily FILE  : "
                 + escape_latex(variant_file)
-                + "}\\newline"
-                + "\\IfFileExists{"
-                + detok_variant_path
-                + "}{[OK]\\newline"
-                + variant_render
-                + "}{[MISSING]}"
+                + " [OK]}"
+                + "\\newline"
+                + (
+                    "\\LogWorking{"
+                    + escape_latex(fam + " / " + variant_file)
+                    + "}"
+                    + variant_render
+                    if variant_exists
+                    else "\\LogBroken{"
+                    + escape_latex(fam + " / " + variant_file)
+                    + "}[MISSING]"
+                )
             )
 
         latex_code += (
