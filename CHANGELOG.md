@@ -1,3 +1,9 @@
+## [0.57.1](https://github.com/marco0560/Fontshow/compare/v0.57.0...v0.57.1) (2026-03-16)
+
+### Bug Fixes
+
+* **catalog:** Refine catalog rendering, TeX debugging, and full-catalog robustness ([193a854](https://github.com/marco0560/Fontshow/commit/193a854105bcd313b940915323eca35c2eb17bf4))
+
 ## [0.57.0](https://github.com/marco0560/Fontshow/compare/v0.56.3...v0.57.0) (2026-03-16)
 
 ### Features
