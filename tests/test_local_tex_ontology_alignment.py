@@ -5,6 +5,8 @@ Audit ontology references against the local TeX installation.
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -13,6 +15,65 @@ from fontshow.ontology.language_tables import SCRIPT_INFO
 
 _FONT_SPEC_PATH = Path("/usr/share/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty")
 _POLYGLOSSIA_DIR = Path("/usr/share/texmf-dist/tex/latex/polyglossia")
+
+
+def _locate_tex_file(filename: str, fallback: Path) -> Path:
+    """
+    Locate a TeX resource via ``kpsewhich`` with a deterministic filesystem fallback.
+
+    Parameters
+    ----------
+    filename : str
+        TeX resource name resolved through the Kpathsea database.
+    fallback : pathlib.Path
+        Filesystem path used when ``kpsewhich`` is unavailable or returns no match.
+
+    Returns
+    -------
+    pathlib.Path
+        Resolved filesystem path for the requested resource or the fallback path.
+    """
+    kpsewhich = shutil.which("kpsewhich")
+    if kpsewhich is None:
+        return fallback
+
+    result = subprocess.run(
+        [kpsewhich, filename],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    resolved = result.stdout.strip()
+    if result.returncode == 0 and resolved:
+        return Path(resolved)
+    return fallback
+
+
+def _fontspec_path() -> Path:
+    """
+    Resolve the local ``fontspec-luatex.sty`` path.
+
+    Returns
+    -------
+    pathlib.Path
+        Resolved path to the local ``fontspec`` style file.
+    """
+    return _locate_tex_file("fontspec-luatex.sty", _FONT_SPEC_PATH)
+
+
+def _polyglossia_dir() -> Path:
+    """
+    Resolve the local Polyglossia module directory.
+
+    Returns
+    -------
+    pathlib.Path
+        Directory expected to contain ``gloss-*.ldf`` language modules.
+    """
+    gloss_english = _locate_tex_file("gloss-english.ldf", _POLYGLOSSIA_DIR)
+    if gloss_english.name.startswith("gloss-") and gloss_english.suffix == ".ldf":
+        return gloss_english.parent
+    return _POLYGLOSSIA_DIR
 
 
 def _require_local_tex_installation(path: Path, description: str) -> None:
@@ -42,8 +103,9 @@ def test_ontology_fontspec_scripts_exist_in_local_fontspec_install():
     -------
     None
     """
-    _require_local_tex_installation(_FONT_SPEC_PATH, str(_FONT_SPEC_PATH))
-    fontspec = _FONT_SPEC_PATH.read_text(errors="replace")
+    fontspec_path = _fontspec_path()
+    _require_local_tex_installation(fontspec_path, str(fontspec_path))
+    fontspec = fontspec_path.read_text(errors="replace")
     local_scripts = {
         name.replace("~", " ")
         for name in re.findall(r"\\newfontscript\{([^}]+)\}\{", fontspec)
@@ -66,8 +128,8 @@ def test_ontology_polyglossia_languages_exist_in_local_modules():
     -------
     None
     """
-    _require_local_tex_installation(_POLYGLOSSIA_DIR, str(_POLYGLOSSIA_DIR))
-    polyglossia_dir = _POLYGLOSSIA_DIR
+    polyglossia_dir = _polyglossia_dir()
+    _require_local_tex_installation(polyglossia_dir, str(polyglossia_dir))
     local_modules = {
         path.stem.replace("gloss-", "") for path in polyglossia_dir.glob("gloss-*.ldf")
     }
