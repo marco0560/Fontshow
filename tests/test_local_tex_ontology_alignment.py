@@ -7,7 +7,31 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 from fontshow.ontology.language_tables import SCRIPT_INFO
+
+_FONT_SPEC_PATH = Path("/usr/share/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty")
+_POLYGLOSSIA_DIR = Path("/usr/share/texmf-dist/tex/latex/polyglossia")
+
+
+def _require_local_tex_installation(path: Path, description: str) -> None:
+    """
+    Skip local-TeX alignment tests when the audited installation is absent.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Filesystem path required by the local-installation audit.
+    description : str
+        Human-readable description of the required TeX resource.
+
+    Returns
+    -------
+    None
+    """
+    if not path.exists():
+        pytest.skip(f"local TeX installation not available: missing {description}")
 
 
 def test_ontology_fontspec_scripts_exist_in_local_fontspec_install():
@@ -18,9 +42,8 @@ def test_ontology_fontspec_scripts_exist_in_local_fontspec_install():
     -------
     None
     """
-    fontspec = Path(
-        "/usr/share/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty"
-    ).read_text(errors="replace")
+    _require_local_tex_installation(_FONT_SPEC_PATH, str(_FONT_SPEC_PATH))
+    fontspec = _FONT_SPEC_PATH.read_text(errors="replace")
     local_scripts = {
         name.replace("~", " ")
         for name in re.findall(r"\\newfontscript\{([^}]+)\}\{", fontspec)
@@ -43,7 +66,8 @@ def test_ontology_polyglossia_languages_exist_in_local_modules():
     -------
     None
     """
-    polyglossia_dir = Path("/usr/share/texmf-dist/tex/latex/polyglossia")
+    _require_local_tex_installation(_POLYGLOSSIA_DIR, str(_POLYGLOSSIA_DIR))
+    polyglossia_dir = _POLYGLOSSIA_DIR
     local_modules = {
         path.stem.replace("gloss-", "") for path in polyglossia_dir.glob("gloss-*.ldf")
     }
