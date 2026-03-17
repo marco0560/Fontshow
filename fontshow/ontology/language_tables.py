@@ -39,6 +39,9 @@ class ScriptInfo(TypedDict):
     ----------
     canonical_name : str
         Human readable script name.
+    description : str
+        Short description (1-3 lines) of the script, including origin,
+        usage, and notable characteristics.
     display_language : str
         Representative language used when a script-only specimen is
         required.
@@ -71,6 +74,7 @@ class ScriptInfo(TypedDict):
     """
 
     canonical_name: str
+    description: str
     display_language: str
     polyglossia_language: str
     fontspec_opts: str
@@ -95,6 +99,9 @@ class LanguageInfo(TypedDict):
     ----------
     canonical_name : str
         Human readable language name.
+    description : str
+        Short description (1–3 lines) of the language, including
+        geographic distribution, linguistic family, and writing system.
     scripts : list[ScriptISO]
         Scripts normally used to write the language.
     primary_script : ScriptISO
@@ -108,6 +115,7 @@ class LanguageInfo(TypedDict):
     """
 
     canonical_name: str
+    description: str
     scripts: list[ScriptISO]
     primary_script: NotRequired[ScriptISO]
     required_blocks: list[str]
@@ -152,6 +160,7 @@ class ScriptInferenceOverride(TypedDict, total=False):
 SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     ScriptISO("ADLM"): {
         "canonical_name": "Adlam",
+        "description": "Adlam is a modern alphabet created in the 1980s for Fulani. It is used in West Africa and is notable for being a right-to-left script designed for a living African language.",
         "display_language": "ff",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Adlam",
@@ -161,6 +170,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("AGHB"): {
         "canonical_name": "Caucasian Albanian",
+        "description": "Caucasian Albanian is an extinct script of the eastern Caucasus, used roughly between the 5th and 8th centuries CE. It is known mainly from inscriptions and palimpsests and is notable for preserving a lost regional literary tradition.",
         "display_language": "xag",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Caucasian Albanian}",
@@ -170,6 +180,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("AHOM"): {
         "canonical_name": "Ahom",
+        "description": "Ahom is a Tai script historically used in Assam for the Ahom language. It survives mainly in manuscripts and is notable for recent scholarly and community revival.",
         "display_language": "aho",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Ahom",
@@ -179,6 +190,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("ARAB"): {
         "canonical_name": "Arabic",
+        "description": "Arabic is a right-to-left abjad that developed from the Nabataean branch of Aramaic. It is used for Arabic and many other languages and is notable for its cursive letterforms and consonantal base.",
         "display_language": "ar",
         "polyglossia_language": "arabic",
         "fontspec_opts": "Script=Arabic",
@@ -188,6 +200,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("ARMN"): {
         "canonical_name": "Armenian",
+        "description": "Armenian is an alphabet created in the early 5th century for the Armenian language. It remains the standard script for Armenian and is notable for its distinct letter inventory and long literary continuity.",
         "display_language": "hy",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Armenian",
@@ -197,6 +210,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("AVST"): {
         "canonical_name": "Avestan",
+        "description": "Avestan is a right-to-left script created for Zoroastrian sacred texts. It was used for the Avestan language and is notable for representing phonology with unusual precision for an ancient script.",
         "display_language": "ae",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Avestan",
@@ -206,6 +220,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("BALI"): {
         "canonical_name": "Balinese",
+        "description": "Balinese is a Brahmic script of Indonesia used for Balinese and related liturgical texts. It is notable for complex consonant stacking and ornate manuscript forms.",
         "display_language": "ban",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Balinese",
@@ -215,6 +230,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("BATK"): {
         "canonical_name": "Batak",
+        "description": "Batak is a traditional script of Sumatra used for Batak languages. It is notable for its Brahmic structure and historical use in letters, records, and ritual writing.",
         "display_language": "bbc",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Batak",
@@ -224,6 +240,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("BAMU"): {
         "canonical_name": "Bamum",
+        "description": "Bamum is a script created in the Bamum kingdom of Cameroon in the late 19th century. It is notable as an indigenous script with several documented stages of development.",
         "display_language": "bax",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Bamum",
@@ -233,6 +250,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("BASS"): {
         "canonical_name": "Bassa Vah",
+        "description": "Bassa Vah is a 20th-century script created for the Bassa language of Liberia and Sierra Leone. It is notable for marking tone explicitly in a language where tone is phonemic.",
         "display_language": "bsq",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Bassa Vah}",
@@ -242,6 +260,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("BENG"): {
         "canonical_name": "Bengali",
+        "description": "Bengali is an eastern Brahmic script used for Bengali, Assamese, and related languages. It is notable for its many conjunct forms and the absence of a continuous top line in ordinary text.",
         "display_language": "bn",
         "polyglossia_language": "bengali",
         "fontspec_opts": "Script=Bengali",
@@ -251,6 +270,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("BHKS"): {
         "canonical_name": "Bhaiksuki",
+        "description": "Bhaiksuki is a historical Indic script used in Buddhist manuscripts in South Asia. It is notable for preserving Sanskrit and Pali material in manuscript transmission.",
         "display_language": "pli",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Bhaiksuki",
@@ -260,6 +280,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("BOPO"): {
         "canonical_name": "Bopomofo",
+        "description": "Bopomofo is a phonetic notation system developed in the early 20th century for Mandarin Chinese. It is notable for representing pronunciation directly rather than writing words with logographs.",
         "display_language": "zh",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Bopomofo",
@@ -269,6 +290,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("BRAH"): {
         "canonical_name": "Brahmi",
+        "description": "Brahmi is an ancient South Asian script attested from the 3rd century BCE. It is notable as the ancestor of most later Brahmic scripts used across South and Southeast Asia.",
         "display_language": "sa",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Brahmi",
@@ -278,6 +300,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("BUGI"): {
         "canonical_name": "Buginese",
+        "description": "Buginese is a traditional script of South Sulawesi used for Bugis and related languages. It is notable for its historical manuscript use and Brahmic abugida structure.",
         "display_language": "bug",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Buginese",
@@ -287,6 +310,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("BUHD"): {
         "canonical_name": "Buhid",
+        "description": "Buhid is an indigenous Philippine script used by the Mangyan people of Mindoro. It is notable as one of the few precolonial Philippine scripts still used in cultural practice.",
         "display_language": "bku",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Buhid",
@@ -296,6 +320,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("BYZM"): {
         "canonical_name": "Byzantine Music",
+        "description": "Byzantine Music is a notation system for chant in the Eastern Christian liturgical tradition. It is not a general-purpose writing script and is notable for encoding melodic formulas rather than spoken language.",
         "display_language": "zxx",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Byzantine Music}",
@@ -305,6 +330,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("CANS"): {
         "canonical_name": "Canadian Syllabics",
+        "description": "Canadian Syllabics is a syllabary developed in the 19th century for Cree and later adapted for other Indigenous languages of Canada. It is notable for rotating symbols to mark vowel changes.",
         "display_language": "cr",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Canadian Syllabics",
@@ -314,6 +340,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("CARI"): {
         "canonical_name": "Carian",
+        "description": "Carian is an ancient script used in southwestern Anatolia for the Carian language. It is notable for being deciphered largely through inscriptions and bilingual evidence.",
         "display_language": "xcr",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Carian",
@@ -323,6 +350,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("CHAK"): {
         "canonical_name": "Chakma",
+        "description": "Chakma is a Brahmic script used for the Chakma language in Bangladesh and India. It is notable for remaining in active community and educational use in the modern period.",
         "display_language": "ccp",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Chakma",
@@ -332,6 +360,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("CHAM"): {
         "canonical_name": "Cham",
+        "description": "Cham is a Brahmic script used for Cham languages in Vietnam and Cambodia. It is notable for preserving a long regional manuscript and inscriptional tradition.",
         "display_language": "cjm",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Cham",
@@ -341,6 +370,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("CHER"): {
         "canonical_name": "Cherokee",
+        "description": "Cherokee is a syllabary created by Sequoyah in the early 19th century for the Cherokee language. It is notable as one of the most successful independently invented scripts in regular literacy use.",
         "display_language": "chr",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Cherokee",
@@ -350,6 +380,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("CHRS"): {
         "canonical_name": "Chorasmian",
+        "description": "Chorasmian is an extinct script of Central Asia derived from Aramaic for the Chorasmian language. It is notable for surviving mainly in fragments and documentary texts.",
         "display_language": "xco",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Chorasmian",
@@ -359,6 +390,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("COPT"): {
         "canonical_name": "Coptic",
+        "description": "Coptic is an alphabet based mainly on Greek with additional signs from Egyptian Demotic. It was used for the latest stage of Egyptian and is notable for its continuing liturgical role.",
         "display_language": "cop",
         "polyglossia_language": "coptic",
         "fontspec_opts": "Script=Coptic",
@@ -368,6 +400,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("CPMN"): {
         "canonical_name": "Cypro-Minoan",
+        "description": "Cypro-Minoan is an undeciphered Bronze Age script from Cyprus. It is notable because its inscriptions are short and the underlying language remains unknown.",
         "display_language": "und",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Cypro-Minoan}",
@@ -377,6 +410,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("CPRT"): {
         "canonical_name": "Cypriot Syllabary",
+        "description": "Cypriot Syllabary is an Iron Age script of Cyprus used for Greek and Eteocypriot. It is notable for representing syllables rather than individual consonants and vowels.",
         "display_language": "ecy",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Cypriot Syllabary}",
@@ -386,6 +420,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("CYRL"): {
         "canonical_name": "Cyrillic",
+        "description": "Cyrillic is an alphabet developed in the medieval Slavic world, especially in the First Bulgarian Empire. It is used for many Slavic and non-Slavic languages and is notable for its adaptation of Greek letterforms.",
         "display_language": "ru",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Cyrillic",
@@ -395,6 +430,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("DEVA"): {
         "canonical_name": "Devanagari",
+        "description": "Devanagari is a major South Asian Brahmic script used for Hindi, Sanskrit, Marathi, and other languages. It is notable for its headline and extensive consonant conjunct system.",
         "display_language": "hi",
         "polyglossia_language": "hindi",
         "fontspec_opts": "Script=Devanagari",
@@ -404,6 +440,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("DIAK"): {
         "canonical_name": "Dives Akuru",
+        "description": "Dives Akuru is a historical script of the Maldives used for older stages of Dhivehi. It is notable as an earlier local writing tradition predating modern Thaana.",
         "display_language": "dv",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Dives Akuru}",
@@ -413,6 +450,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("DSRT"): {
         "canonical_name": "Deseret",
+        "description": "Deseret is a 19th-century alphabet devised in the Latter Day Saint movement for writing English. It is notable for its strongly phonemic design and limited historical adoption.",
         "display_language": "en",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Deseret",
@@ -422,6 +460,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("DOGR"): {
         "canonical_name": "Dogra",
+        "description": "Dogra is a historical script of the western Himalayas used for Dogri and related languages. It is notable for its modern recovery after long displacement by Devanagari and Perso-Arabic scripts.",
         "display_language": "doi",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Dogra",
@@ -431,6 +470,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("ETHI"): {
         "canonical_name": "Ethiopic",
+        "description": "Ethiopic is an abugida of the Horn of Africa used for Ge'ez and several modern languages. It is notable for encoding consonant-vowel combinations as distinct graphic series.",
         "display_language": "ti",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Ethiopic",
@@ -440,6 +480,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("ELBA"): {
         "canonical_name": "Elbasan",
+        "description": "Elbasan is an 18th-century alphabet created for Albanian. It is notable as a short-lived local attempt to provide Albanian with its own dedicated script.",
         "display_language": "sq",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Elbasan",
@@ -449,6 +490,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("GEOR"): {
         "canonical_name": "Georgian",
+        "description": "Georgian is the script used for Georgian and some other Kartvelian and Caucasian languages. It is notable for its distinctive letterforms and long inscriptional history.",
         "display_language": "ka",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Georgian",
@@ -458,6 +500,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("GOTH"): {
         "canonical_name": "Gothic",
+        "description": "Gothic is an alphabet created in late antiquity for the Gothic language. It is notable for its association with the Gothic Bible and the small surviving corpus of the language.",
         "display_language": "got",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Gothic",
@@ -467,6 +510,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("GREK"): {
         "canonical_name": "Greek",
+        "description": "Greek is an alphabet derived from Phoenician and used for Greek since the early 1st millennium BCE. It is notable for being the earliest alphabet to systematically represent vowels.",
         "display_language": "el",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Greek",
@@ -476,6 +520,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("GLAG"): {
         "canonical_name": "Glagolitic",
+        "description": "Glagolitic is the oldest known Slavic alphabet, created in the 9th century for Christian texts. It is notable for preceding Cyrillic in the written tradition of Slavic liturgy.",
         "display_language": "cu",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Glagolitic",
@@ -485,6 +530,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("GRAN"): {
         "canonical_name": "Grantha",
+        "description": "Grantha is a South Indian script traditionally used to write Sanskrit. It is notable for handling Sanskrit consonant clusters more fully than some neighboring regional scripts.",
         "display_language": "sa",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Grantha",
@@ -494,6 +540,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("GONG"): {
         "canonical_name": "Gunjala Gondi",
+        "description": "Gunjala Gondi is a script used for the Gondi language and attested in manuscript sources from central India. It is notable as one of the two distinct Gondi scripts encoded in Unicode.",
         "display_language": "gon",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Gunjala Gondi}",
@@ -503,6 +550,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("GONM"): {
         "canonical_name": "Masaram Gondi",
+        "description": "Masaram Gondi is a modern script created for the Gondi language in the 20th century. It is notable as a community-specific writing system separate from Gunjala Gondi.",
         "display_language": "gon",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Masaram Gondi}",
@@ -512,6 +560,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("GUJR"): {
         "canonical_name": "Gujarati",
+        "description": "Gujarati is a western Indic script used for Gujarati and related languages. It is notable for omitting the continuous headline found in Devanagari.",
         "display_language": "gu",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Gujarati",
@@ -521,6 +570,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("GURU"): {
         "canonical_name": "Gurmukhi",
+        "description": "Gurmukhi is the standard script for Punjabi in India and was standardized in the Sikh tradition. It is notable for its central role in the transmission of Sikh scripture.",
         "display_language": "pa",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Gurmukhi",
@@ -530,6 +580,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("KNDA"): {
         "canonical_name": "Kannada",
+        "description": "Kannada is a South Indian Brahmic script used mainly for Kannada. It is notable for rounded shapes that reflect manuscript writing on palm leaf and paper.",
         "display_language": "kn",
         "polyglossia_language": "kannada",
         "fontspec_opts": "Script=Kannada",
@@ -539,6 +590,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("HANG"): {
         "canonical_name": "Hangul",
+        "description": "Hangul is the Korean script created in the 15th century under King Sejong. It is notable for its featural design, with letter shapes reflecting articulation.",
         "display_language": "ko",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Hangul",
@@ -548,6 +600,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("HANO"): {
         "canonical_name": "Hanunoo",
+        "description": "Hanunoo is an indigenous Philippine script used by Mangyan communities of Mindoro. It is notable for continued traditional use, including writing on bamboo.",
         "display_language": "hnn",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Hanunoo",
@@ -557,6 +610,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("ROHG"): {
         "canonical_name": "Hanifi Rohingya",
+        "description": "Hanifi Rohingya is a modern script for the Rohingya language created in the 20th century. It is notable for being a right-to-left alphabet designed specifically for Rohingya literacy.",
         "display_language": "rhg",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Hanifi Rohingya}",
@@ -566,6 +620,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("HANI"): {
         "canonical_name": "Han",
+        "description": "Han is the logographic script used for Chinese and historically adapted elsewhere in East Asia. It is notable for representing morphemes with characters rather than alphabetic sequences.",
         "display_language": "zh",
         "polyglossia_language": "chinese",
         "fontspec_opts": "Script=CJK",
@@ -575,6 +630,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("HEBR"): {
         "canonical_name": "Hebrew",
+        "description": "Hebrew is a right-to-left abjad descended from the Aramaic script. It is used for Hebrew and historically for several Jewish languages and is notable for optional vowel pointing.",
         "display_language": "he",
         "polyglossia_language": "hebrew",
         "fontspec_opts": "Script=Hebrew",
@@ -584,6 +640,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("HLUW"): {
         "canonical_name": "Anatolian Hieroglyphs",
+        "description": "Anatolian Hieroglyphs is a logo-syllabic script used mainly for Luwian in ancient Anatolia. It is notable for monumental inscriptions combining signs with syllabic and logographic values.",
         "display_language": "hlu",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Anatolian Hieroglyphs}",
@@ -593,6 +650,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("HIRA"): {
         "canonical_name": "Hiragana",
+        "description": "Hiragana is a Japanese syllabary derived from cursive Chinese characters. It is notable for marking native morphology and grammatical endings in modern Japanese writing.",
         "display_language": "ja",
         "polyglossia_language": "japanese",
         "fontspec_opts": "Script=Kana",
@@ -602,6 +660,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("KANA"): {
         "canonical_name": "Katakana",
+        "description": "Katakana is a Japanese syllabary derived from shorthand components of Chinese characters. It is notable for its use with loanwords, scientific terms, and emphasis.",
         "display_language": "ja",
         "polyglossia_language": "japanese",
         "fontspec_opts": "Script=Kana",
@@ -611,6 +670,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("JPAN"): {
         "canonical_name": "Japanese",
+        "description": "Japanese is a mixed writing system that combines kanji with hiragana and katakana. It is notable for using multiple script types in the same sentence as part of standard orthography.",
         "display_language": "ja",
         "polyglossia_language": "japanese",
         "fontspec_opts": "Script=Kana",
@@ -620,6 +680,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("KHMR"): {
         "canonical_name": "Khmer",
+        "description": "Khmer is a Southeast Asian Brahmic script used for Khmer. It is notable for its large vowel inventory and historically limited use of word spacing in continuous text.",
         "display_language": "km",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Khmer",
@@ -629,6 +690,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("JAVA"): {
         "canonical_name": "Javanese",
+        "description": "Javanese is a Brahmic script historically used on Java for Javanese and related texts. It is notable for elaborate consonant forms and stacked conjunct behavior.",
         "display_language": "jv",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Javanese",
@@ -638,6 +700,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("KTHI"): {
         "canonical_name": "Kaithi",
+        "description": "Kaithi is a historical North Indian script once widely used for administrative and commercial documents. It is notable for its vernacular function outside elite manuscript traditions.",
         "display_language": "bho",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Kaithi",
@@ -647,6 +710,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("LAOO"): {
         "canonical_name": "Lao",
+        "description": "Lao is the script used for Lao and related languages in Laos. It is notable for its close historical relationship to the Thai script.",
         "display_language": "lo",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Lao",
@@ -656,6 +720,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("LATN"): {
         "canonical_name": "Latin",
+        "description": "Latin is the alphabet that developed from the writing of ancient Rome. It is used for hundreds of languages worldwide and is notable as the most widely used writing system today.",
         "display_language": "en",
         "polyglossia_language": "",
         "fontspec_opts": "",
@@ -665,6 +730,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("LIMB"): {
         "canonical_name": "Limbu",
+        "description": "Limbu is a script used for the Limbu language in Nepal and India. It is notable for its indigenous Himalayan tradition and structured vowel marking.",
         "display_language": "lif",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Limbu",
@@ -674,6 +740,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("LISU"): {
         "canonical_name": "Lisu",
+        "description": "Lisu is the script used for the Lisu language, based on the Fraser alphabet of the early 20th century. It is notable for using modified Latin-like letter shapes in a distinct inventory.",
         "display_language": "lis",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Lisu",
@@ -683,6 +750,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("MLYM"): {
         "canonical_name": "Malayalam",
+        "description": "Malayalam is a South Indian Brahmic script used for Malayalam. It is notable for rounded forms and a large set of consonant and vowel combinations.",
         "display_language": "ml",
         "polyglossia_language": "malayalam",
         "fontspec_opts": "Script=Malayalam",
@@ -692,6 +760,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("MYMR"): {
         "canonical_name": "Myanmar",
+        "description": "Myanmar is a Brahmic script used for Burmese and several other languages of Myanmar. It is notable for stacked consonants and circular letterforms.",
         "display_language": "my",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Myanmar",
@@ -701,6 +770,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("MEDF"): {
         "canonical_name": "Medefaidrin",
+        "description": "Medefaidrin is a script created by a Christian community in southeastern Nigeria for a liturgical language of the same name. It is notable as a modern community-designed writing system.",
         "display_language": "dmf",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Medefaidrin",
@@ -710,6 +780,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("MEND"): {
         "canonical_name": "Mende Kikakui",
+        "description": "Mende Kikakui is a syllabary created in the 20th century for the Mende language of Sierra Leone. It is notable as an independently developed African script.",
         "display_language": "men",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Mende Kikakui}",
@@ -719,6 +790,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("MONG"): {
         "canonical_name": "Mongolian",
+        "description": "Mongolian is the traditional script used for Mongolian and related languages. It is notable for its vertical layout, written top to bottom in columns ordered left to right.",
         "display_language": "mn",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Mongolian",
@@ -728,6 +800,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("MROO"): {
         "canonical_name": "Mro",
+        "description": "Mro is a modern script used for the Mro language of the Chittagong Hill Tracts. It is notable for being a dedicated script distinct from surrounding Brahmic systems.",
         "display_language": "mro",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Mro",
@@ -737,6 +810,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("MTEI"): {
         "canonical_name": "Meetei Mayek",
+        "description": "Meetei Mayek is the traditional script of the Manipuri language. It is notable for a modern revival after long replacement by the Bengali script.",
         "display_language": "mni",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Meitei Mayek}",
@@ -746,6 +820,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("NEWA"): {
         "canonical_name": "Newa",
+        "description": "Newa is a historical Nepalese script used for Nepal Bhasa and Sanskrit. It is notable for its manuscript tradition in the Kathmandu Valley.",
         "display_language": "new",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Newa",
@@ -755,6 +830,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("NKOO"): {
         "canonical_name": "NKo",
+        "description": "NKo is a right-to-left script created in 1949 for Manding languages. It is notable for its role in a modern literacy movement spanning several West African languages.",
         "display_language": "nqo",
         "polyglossia_language": "",
         "fontspec_opts": "Script={N'Ko}",
@@ -764,6 +840,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("OSGE"): {
         "canonical_name": "Osage",
+        "description": "Osage is a modern script standardized for the Osage language in the 21st century. It is notable as a recent community-led script design with bicameral letters.",
         "display_language": "osa",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Osage",
@@ -773,6 +850,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("PERM"): {
         "canonical_name": "Old Permic",
+        "description": "Old Permic is a medieval script created for Komi in northeastern Europe. It is notable for being one of the few historical scripts devised specifically for a Uralic language.",
         "display_language": "kv",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Old Permic}",
@@ -782,6 +860,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("RJNG"): {
         "canonical_name": "Rejang",
+        "description": "Rejang is a traditional Sumatran script used for the Rejang language. It is notable for its compact letterforms within the Brahmic family.",
         "display_language": "rej",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Rejang",
@@ -791,6 +870,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("PHLP"): {
         "canonical_name": "Psalter Pahlavi",
+        "description": "Psalter Pahlavi is a right-to-left script used for Middle Persian, especially in the manuscript tradition of the Psalter. It is notable as one of the distinct historical Pahlavi writing forms.",
         "display_language": "pal",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Psalter Pahlavi}",
@@ -800,6 +880,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("PHLI"): {
         "canonical_name": "Inscriptional Pahlavi",
+        "description": "Inscriptional Pahlavi is a monumental script used for Middle Persian inscriptions. It is notable for its conservative forms and reliance on inherited Aramaic conventions.",
         "display_language": "pal",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Inscriptional Pahlavi}",
@@ -809,6 +890,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("ORYA"): {
         "canonical_name": "Oriya",
+        "description": "Oriya, now usually called Odia script, is an eastern Indic script used for Odia. It is notable for rounded forms shaped by manuscript writing practice.",
         "display_language": "or",
         "polyglossia_language": "odia",
         "fontspec_opts": "Script=Oriya",
@@ -818,6 +900,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("SOGO"): {
         "canonical_name": "Old Sogdian",
+        "description": "Old Sogdian is an early stage of the Sogdian script used in Central Asia. It is notable for preserving an earlier written form of an important Silk Road language.",
         "display_language": "sog",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Old Sogdian}",
@@ -827,6 +910,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("SOGD"): {
         "canonical_name": "Sogdian",
+        "description": "Sogdian is a right-to-left Iranian script used in Central Asia. It is notable for its historical influence on later scripts such as Old Uyghur and Mongolian.",
         "display_language": "sog",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Sogdian",
@@ -836,6 +920,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("SAUR"): {
         "canonical_name": "Saurashtra",
+        "description": "Saurashtra is a modern script used for the Saurashtra language in India. It is notable for preserving a distinct community writing tradition alongside more widespread regional scripts.",
         "display_language": "saz",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Saurashtra",
@@ -845,6 +930,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("SUND"): {
         "canonical_name": "Sundanese",
+        "description": "Sundanese is the traditional script of West Java used for the Sundanese language. It is notable for a modern standardized form that revived a historical regional script.",
         "display_language": "su",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Sundanese",
@@ -854,6 +940,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("SYLO"): {
         "canonical_name": "Syloti Nagri",
+        "description": "Syloti Nagri is a script historically used for Sylheti in the Bengal region. It is notable for its compact letter shapes and its role in regional print culture.",
         "display_language": "syl",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Syloti Nagri}",
@@ -863,6 +950,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("LEPC"): {
         "canonical_name": "Lepcha",
+        "description": "Lepcha is a script of the eastern Himalayas used for the Lepcha language. It is notable for being an indigenous script rather than a direct regional derivative.",
         "display_language": "lep",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Lepcha",
@@ -872,6 +960,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("SINH"): {
         "canonical_name": "Sinhala",
+        "description": "Sinhala is the script used for Sinhala in Sri Lanka. It is notable for rounded forms and a long literary tradition tied to Buddhist culture.",
         "display_language": "si",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Sinhala",
@@ -881,6 +970,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("TAGB"): {
         "canonical_name": "Tagbanwa",
+        "description": "Tagbanwa is an indigenous Philippine script used in Palawan. It is notable as one of the surviving native scripts of the archipelago.",
         "display_language": "tbw",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Tagbanwa",
@@ -890,6 +980,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("TGLG"): {
         "canonical_name": "Tagalog",
+        "description": "Tagalog, often called Baybayin in historical context, is an indigenous Philippine script formerly used for Tagalog and related languages. It is notable as a precolonial abugida with strong symbolic revival today.",
         "display_language": "tl",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Tagalog",
@@ -899,6 +990,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("LANA"): {
         "canonical_name": "Tai Tham",
+        "description": "Tai Tham is a script of northern mainland Southeast Asia used for Northern Thai and related languages. It is notable for both vernacular and Buddhist manuscript use.",
         "display_language": "nod",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Tai Tham}",
@@ -908,6 +1000,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("TAVT"): {
         "canonical_name": "Tai Viet",
+        "description": "Tai Viet is a script used for Tai Dam and related languages in mainland Southeast Asia. It is notable for integrating tone marking into its orthography.",
         "display_language": "blt",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Tai Viet}",
@@ -917,6 +1010,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("TALE"): {
         "canonical_name": "Tai Le",
+        "description": "Tai Le is a script used for Tai Nua in China and neighboring regions. It is notable for its relatively simple modern standardized letterforms.",
         "display_language": "tdd",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Tai Le}",
@@ -926,6 +1020,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("TFNG"): {
         "canonical_name": "Tifinagh",
+        "description": "Tifinagh is the script associated with Berber languages in North Africa. It is notable for its modern standardized form, Neo-Tifinagh, used officially in Morocco.",
         "display_language": "zgh",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Tifinagh",
@@ -935,6 +1030,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("TIRH"): {
         "canonical_name": "Tirhuta",
+        "description": "Tirhuta is a historical eastern Indic script used for Maithili. It is notable for its close relationship to the Bengali-Assamese script group.",
         "display_language": "mai",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Tirhuta",
@@ -944,6 +1040,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("TAML"): {
         "canonical_name": "Tamil",
+        "description": "Tamil is a South Indian script used for Tamil. It is notable for a long continuous literary record and a letter inventory adapted to Tamil phonology.",
         "display_language": "ta",
         "polyglossia_language": "tamil",
         "fontspec_opts": "Script=Tamil",
@@ -953,6 +1050,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("TELU"): {
         "canonical_name": "Telugu",
+        "description": "Telugu is a South Indian Brahmic script used for Telugu. It is notable for rounded letterforms and clear vowel-sign patterns.",
         "display_language": "te",
         "polyglossia_language": "telugu",
         "fontspec_opts": "Script=Telugu",
@@ -962,6 +1060,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("THAA"): {
         "canonical_name": "Thaana",
+        "description": "Thaana is the right-to-left script used for Dhivehi in the Maldives. It is notable for an unusual historical development that incorporates forms derived from numerals and Arabic influence.",
         "display_language": "dv",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Thaana",
@@ -971,6 +1070,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("THAI"): {
         "canonical_name": "Thai",
+        "description": "Thai is the script used for Thai and some related languages. It is notable for explicit tone marks and an Indic-derived consonant class system.",
         "display_language": "th",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Thai",
@@ -980,6 +1080,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("SYRC"): {
         "canonical_name": "Syriac",
+        "description": "Syriac is a right-to-left script used for the Syriac language and related liturgical traditions. It is notable for several major calligraphic styles, including Estrangela, Serto, and East Syriac.",
         "display_language": "syr",
         "polyglossia_language": "syriac",
         "fontspec_opts": "Script=Syriac",
@@ -989,6 +1090,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("KALI"): {
         "canonical_name": "Kayah Li",
+        "description": "Kayah Li is a 20th-century script created for Kayah and related Karenni languages. It is notable for being an alphabetic design independent of neighboring Brahmic scripts.",
         "display_language": "kyu",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Kayah Li}",
@@ -998,6 +1100,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("WARA"): {
         "canonical_name": "Warang Citi",
+        "description": "Warang Citi is a modern script created for the Ho language. It is notable as a community-designed alphabet intended to replace borrowed regional scripts.",
         "display_language": "hoc",
         "polyglossia_language": "",
         "fontspec_opts": "Script={Warang Citi}",
@@ -1007,6 +1110,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("VAII"): {
         "canonical_name": "Vai",
+        "description": "Vai is a syllabary used for the Vai language of Liberia and Sierra Leone. It is notable as an independently created script that remains in continuous use.",
         "display_language": "vai",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Vai",
@@ -1016,6 +1120,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
     ScriptISO("YIII"): {
         "canonical_name": "Yi",
+        "description": "Yi is a syllabic script used mainly for Nuosu in southwest China. It is notable for its large standardized inventory of syllable signs.",
         "display_language": "ii",
         "polyglossia_language": "",
         "fontspec_opts": "Script=Yi",
@@ -1029,6 +1134,7 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
 LANGUAGE_INFO: dict[str, LanguageInfo] = {
     "ae": {
         "canonical_name": "Avestan",
+        "description": "Avestan is an ancient Iranian language known primarily from Zoroastrian scripture. It is written in the Avestan script and is notable for surviving almost entirely in liturgical transmission.",
         "scripts": [ScriptISO("AVST")],
         "required_blocks": ["Avestan"],
         "optional_blocks": [],
@@ -1036,6 +1142,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "aho": {
         "canonical_name": "Ahom",
+        "description": "Ahom is a historical Tai language of Assam. It is written in the Ahom script in surviving manuscripts and is notable for its preservation in ritual and scholarly contexts after language shift.",
         "scripts": [ScriptISO("AHOM")],
         "required_blocks": ["Ahom"],
         "optional_blocks": ["Ahom Supplement"],
@@ -1043,6 +1150,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "am": {
         "canonical_name": "Amharic",
+        "description": "Amharic is an Ethiosemitic language spoken mainly in Ethiopia. It is written in the Ethiopic script and is notable as a major working language of the Ethiopian state.",
         "scripts": [ScriptISO("ETHI")],
         "required_blocks": ["Ethiopic"],
         "optional_blocks": ["Ethiopic Supplement"],
@@ -1050,6 +1158,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ar": {
         "canonical_name": "Arabic",
+        "description": "Arabic is a Semitic language spoken across the Middle East and North Africa. It is written in the Arabic script and is notable for its standardized written form alongside many regional spoken varieties.",
         "scripts": [ScriptISO("ARAB")],
         "required_blocks": ["Arabic"],
         "optional_blocks": ["Arabic Supplement"],
@@ -1057,6 +1166,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ban": {
         "canonical_name": "Balinese",
+        "description": "Balinese is an Austronesian language spoken mainly on Bali. It is written today mostly in Latin, with the Balinese script preserved for traditional and cultural use.",
         "scripts": [ScriptISO("BALI")],
         "required_blocks": ["Balinese"],
         "optional_blocks": [],
@@ -1064,6 +1174,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "bax": {
         "canonical_name": "Bamum",
+        "description": "Bamum is a Grassfields language of Cameroon. It is written in Latin and historically in the Bamum script, which is notable as an indigenous royal creation.",
         "scripts": [ScriptISO("BAMU")],
         "required_blocks": ["Bamum"],
         "optional_blocks": [],
@@ -1071,6 +1182,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "bbc": {
         "canonical_name": "Batak Toba",
+        "description": "Batak Toba is an Austronesian language of northern Sumatra. It is written mainly in Latin today and is notable for a historical literary tradition in the Batak script.",
         "scripts": [ScriptISO("BATK")],
         "required_blocks": ["Batak"],
         "optional_blocks": [],
@@ -1078,6 +1190,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "bho": {
         "canonical_name": "Bhojpuri",
+        "description": "Bhojpuri is an Indo-Aryan language of eastern India and Nepal. It is written mainly in Devanagari today and is notable for earlier documentary use of the Kaithi script.",
         "scripts": [ScriptISO("KTHI"), ScriptISO("DEVA")],
         "required_blocks": ["Kaithi"],
         "optional_blocks": ["Devanagari"],
@@ -1085,6 +1198,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "bn": {
         "canonical_name": "Bengali",
+        "description": "Bengali is an Indo-Aryan language spoken chiefly in Bangladesh and eastern India. It is written in the Bengali script and is notable for having one of the largest speaker populations in the world.",
         "scripts": [ScriptISO("BENG")],
         "required_blocks": ["Bengali"],
         "optional_blocks": [],
@@ -1092,6 +1206,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "bku": {
         "canonical_name": "Buhid",
+        "description": "Buhid is a Mangyan language of Mindoro in the Philippines. It is written in the Buhid script and is notable as part of a surviving indigenous Philippine writing tradition.",
         "scripts": [ScriptISO("BUHD")],
         "required_blocks": ["Buhid"],
         "optional_blocks": [],
@@ -1099,6 +1214,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "bug": {
         "canonical_name": "Buginese",
+        "description": "Buginese is an Austronesian language of South Sulawesi. It is written mainly in Latin today and is notable for a substantial earlier manuscript tradition in the Buginese script.",
         "scripts": [ScriptISO("BUGI")],
         "required_blocks": ["Buginese"],
         "optional_blocks": [],
@@ -1106,6 +1222,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "bsq": {
         "canonical_name": "Bassa",
+        "description": "Bassa is a Niger-Congo language of Liberia and Sierra Leone. It is written in Latin and Bassa Vah and is notable for the dedicated modern script created for it.",
         "scripts": [ScriptISO("BASS")],
         "required_blocks": ["Bassa Vah"],
         "optional_blocks": [],
@@ -1113,6 +1230,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "cop": {
         "canonical_name": "Coptic",
+        "description": "Coptic is the latest recorded stage of the Egyptian language. It is written in the Coptic script and is notable for continuing as a liturgical language of the Coptic Church.",
         "scripts": [ScriptISO("COPT")],
         "required_blocks": ["Coptic"],
         "optional_blocks": ["Coptic Epact Numbers"],
@@ -1120,6 +1238,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ccp": {
         "canonical_name": "Chakma",
+        "description": "Chakma is an Indo-Aryan language spoken in Bangladesh and northeastern India. It is written in the Chakma script and is notable for maintaining a distinct script alongside dominant regional writing systems.",
         "scripts": [ScriptISO("CHAK")],
         "required_blocks": ["Chakma"],
         "optional_blocks": [],
@@ -1127,6 +1246,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "cr": {
         "canonical_name": "Cree",
+        "description": "Cree is a continuum of Algonquian varieties spoken across Canada. It is written in Canadian syllabics and Latin orthographies and is notable for broad regional adaptation of the syllabic system.",
         "scripts": [ScriptISO("CANS"), ScriptISO("LATN")],
         "required_blocks": ["Unified Canadian Aboriginal Syllabics"],
         "optional_blocks": ["Unified Canadian Aboriginal Syllabics Extended"],
@@ -1134,6 +1254,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "cu": {
         "canonical_name": "Church Slavic",
+        "description": "Church Slavic is a liturgical Slavic language used in Orthodox Christian traditions. It is written historically in Glagolitic and Cyrillic and is notable for its religious rather than vernacular function.",
         "scripts": [ScriptISO("GLAG"), ScriptISO("CYRL")],
         "required_blocks": ["Glagolitic"],
         "optional_blocks": ["Glagolitic Supplement"],
@@ -1141,6 +1262,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "cjm": {
         "canonical_name": "Eastern Cham",
+        "description": "Eastern Cham is an Austronesian language of Vietnam and Cambodia. It is written in the Cham script and is notable for preserving one branch of the older Cham literary tradition.",
         "scripts": [ScriptISO("CHAM")],
         "required_blocks": ["Cham"],
         "optional_blocks": [],
@@ -1148,6 +1270,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ecy": {
         "canonical_name": "Eteocypriot",
+        "description": "Eteocypriot is an extinct language of ancient Cyprus. It is written in the Cypriot Syllabary and is notable because its linguistic affiliation remains uncertain.",
         "scripts": [ScriptISO("CPRT")],
         "required_blocks": ["Cypriot Syllabary"],
         "optional_blocks": [],
@@ -1155,6 +1278,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "chr": {
         "canonical_name": "Cherokee",
+        "description": "Cherokee is an Iroquoian language of the southeastern United States. It is written in the Cherokee syllabary and Latin and is notable for the successful script created by Sequoyah.",
         "scripts": [ScriptISO("CHER")],
         "required_blocks": ["Cherokee"],
         "optional_blocks": ["Cherokee Supplement"],
@@ -1162,6 +1286,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "de": {
         "canonical_name": "German",
+        "description": "German is a West Germanic language spoken mainly in Germany, Austria, and Switzerland. It is written in the Latin script and is notable for productive word compounding and a standardized written norm.",
         "scripts": [ScriptISO("LATN")],
         "required_blocks": ["Basic Latin"],
         "optional_blocks": ["Latin-1 Supplement", "Latin Extended-A"],
@@ -1169,6 +1294,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "doi": {
         "canonical_name": "Dogri",
+        "description": "Dogri is an Indo-Aryan language of the Jammu region. It is written mainly in Devanagari today and is notable for historical use of the Dogra script.",
         "scripts": [ScriptISO("DOGR"), ScriptISO("DEVA")],
         "required_blocks": ["Dogra"],
         "optional_blocks": ["Devanagari", "Devanagari Extended-A"],
@@ -1176,6 +1302,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "dv": {
         "canonical_name": "Dhivehi",
+        "description": "Dhivehi is an Indo-Aryan language of the Maldives. It is written in Thaana and historically in Dives Akuru and is notable for using a modern right-to-left script in South Asia.",
         "scripts": [ScriptISO("DIAK"), ScriptISO("THAA")],
         "required_blocks": ["Dives Akuru"],
         "optional_blocks": ["Thaana"],
@@ -1183,6 +1310,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "el": {
         "canonical_name": "Greek",
+        "description": "Greek is the principal Hellenic language of Greece and Cyprus. It is written in the Greek alphabet and is notable for an exceptionally long continuous written history.",
         "scripts": [ScriptISO("GREK")],
         "required_blocks": ["Greek and Coptic"],
         "optional_blocks": [],
@@ -1190,6 +1318,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "en": {
         "canonical_name": "English",
+        "description": "English is a West Germanic language with global use as a first or second language. It is written in the Latin script and is notable for its worldwide role in education, science, and commerce.",
         "scripts": [ScriptISO("LATN"), ScriptISO("DSRT")],
         "required_blocks": ["Basic Latin"],
         "optional_blocks": ["Latin-1 Supplement"],
@@ -1197,6 +1326,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "es": {
         "canonical_name": "Spanish",
+        "description": "Spanish is a Romance language spoken in Spain and much of the Americas. It is written in the Latin script and is notable for its large transcontinental speech community.",
         "scripts": [ScriptISO("LATN")],
         "required_blocks": ["Basic Latin"],
         "optional_blocks": ["Latin-1 Supplement"],
@@ -1204,6 +1334,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "fr": {
         "canonical_name": "French",
+        "description": "French is a Romance language spoken in France and many other parts of the world. It is written in the Latin script and is notable for its broad international institutional use.",
         "scripts": [ScriptISO("LATN")],
         "required_blocks": ["Basic Latin"],
         "optional_blocks": ["Latin-1 Supplement"],
@@ -1211,6 +1342,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ff": {
         "canonical_name": "Fulah",
+        "description": "Fulah is a Niger-Congo language continuum spoken across the Sahel and West Africa. It is written in Latin, Arabic, and Adlam and is notable for the recent spread of a dedicated modern script.",
         "scripts": [ScriptISO("ADLM"), ScriptISO("LATN")],
         "required_blocks": ["Adlam"],
         "optional_blocks": ["Arabic"],
@@ -1218,6 +1350,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "gu": {
         "canonical_name": "Gujarati",
+        "description": "Gujarati is an Indo-Aryan language of western India and the Gujarati diaspora. It is written in the Gujarati script and is notable for a long mercantile and literary tradition.",
         "scripts": [ScriptISO("GUJR")],
         "required_blocks": ["Gujarati"],
         "optional_blocks": ["Gujarati Supplement"],
@@ -1225,6 +1358,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "got": {
         "canonical_name": "Gothic",
+        "description": "Gothic is an extinct East Germanic language. It is written in the Gothic script and is notable for being known mainly from a relatively small corpus of biblical translation material.",
         "scripts": [ScriptISO("GOTH")],
         "required_blocks": ["Gothic"],
         "optional_blocks": [],
@@ -1232,6 +1366,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "hlu": {
         "canonical_name": "Hieroglyphic Luwian",
+        "description": "Hieroglyphic Luwian is an extinct Anatolian language of the late Bronze and Iron Ages. It is written in Anatolian Hieroglyphs and is notable for monumental inscriptions in ancient Anatolia.",
         "scripts": [ScriptISO("HLUW")],
         "required_blocks": ["Anatolian Hieroglyphs"],
         "optional_blocks": [],
@@ -1239,6 +1374,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "gon": {
         "canonical_name": "Gondi",
+        "description": "Gondi is a Dravidian language spoken in central India. It is written in several scripts, including Gunjala Gondi and Masaram Gondi, and is notable for having more than one dedicated modern encoded script.",
         "scripts": [ScriptISO("GONG"), ScriptISO("GONM")],
         "required_blocks": ["Gunjala Gondi"],
         "optional_blocks": ["Masaram Gondi"],
@@ -1246,6 +1382,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "hoc": {
         "canonical_name": "Ho",
+        "description": "Ho is an Austroasiatic language spoken mainly in eastern India. It is written in Warang Citi and other regional scripts and is notable for its community-created modern alphabet.",
         "scripts": [ScriptISO("WARA")],
         "required_blocks": ["Warang Citi"],
         "optional_blocks": [],
@@ -1253,6 +1390,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "hnn": {
         "canonical_name": "Hanunoo",
+        "description": "Hanunoo is a Mangyan language of Mindoro in the Philippines. It is written in the Hanunoo script and is notable for continued traditional writing practices.",
         "scripts": [ScriptISO("HANO")],
         "required_blocks": ["Hanunoo"],
         "optional_blocks": [],
@@ -1260,6 +1398,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "he": {
         "canonical_name": "Hebrew",
+        "description": "Hebrew is a Northwest Semitic language used in Israel and Jewish communities worldwide. It is written in the Hebrew script and is notable for combining ancient liturgical continuity with modern vernacular revival.",
         "scripts": [ScriptISO("HEBR")],
         "required_blocks": ["Hebrew"],
         "optional_blocks": [],
@@ -1267,6 +1406,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "hi": {
         "canonical_name": "Hindi",
+        "description": "Hindi is an Indo-Aryan language spoken mainly in northern and central India. It is written in Devanagari and is notable as one of the major standardized languages of modern India.",
         "scripts": [ScriptISO("DEVA")],
         "required_blocks": ["Devanagari"],
         "optional_blocks": [],
@@ -1274,6 +1414,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "hy": {
         "canonical_name": "Armenian",
+        "description": "Armenian is an Indo-European language spoken in Armenia and the Armenian diaspora. It is written in the Armenian alphabet and is notable for a literary tradition extending back to late antiquity.",
         "scripts": [ScriptISO("ARMN")],
         "required_blocks": ["Armenian"],
         "optional_blocks": [],
@@ -1281,6 +1422,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ii": {
         "canonical_name": "Nuosu (Yi)",
+        "description": "Nuosu is a Loloish language spoken mainly in southwest China. It is written in the Yi script and is notable for the modern standardization of a large syllabary.",
         "scripts": [ScriptISO("YIII")],
         "required_blocks": ["Yi Syllables"],
         "optional_blocks": [],
@@ -1288,6 +1430,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "it": {
         "canonical_name": "Italian",
+        "description": "Italian is a Romance language spoken mainly in Italy and nearby regions. It is written in the Latin script and is notable for continuity with the literary prestige of Tuscan.",
         "scripts": [ScriptISO("LATN")],
         "required_blocks": ["Basic Latin"],
         "optional_blocks": ["Latin-1 Supplement"],
@@ -1295,6 +1438,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ja": {
         "canonical_name": "Japanese",
+        "description": "Japanese is a Japonic language spoken mainly in Japan. It uses a mixed writing system of kanji, hiragana, and katakana and is notable for routine multi-script text.",
         "scripts": [ScriptISO("JPAN"), ScriptISO("HIRA"), ScriptISO("KANA")],
         "required_blocks": ["Hiragana"],
         "optional_blocks": ["Katakana", "CJK Unified Ideographs"],
@@ -1302,6 +1446,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "jv": {
         "canonical_name": "Javanese",
+        "description": "Javanese is an Austronesian language of Java. It is written mainly in Latin today and is notable for a historical literary tradition in the Javanese script.",
         "scripts": [ScriptISO("JAVA")],
         "required_blocks": ["Javanese"],
         "optional_blocks": [],
@@ -1309,6 +1454,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ka": {
         "canonical_name": "Georgian",
+        "description": "Georgian is a Kartvelian language spoken mainly in Georgia. It is written in the Georgian script and is notable for a long native literary and inscriptional tradition.",
         "scripts": [ScriptISO("GEOR")],
         "required_blocks": ["Georgian"],
         "optional_blocks": [],
@@ -1316,6 +1462,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "km": {
         "canonical_name": "Khmer",
+        "description": "Khmer is an Austroasiatic language spoken mainly in Cambodia. It is written in the Khmer script and is notable for one of the oldest continuous inscriptional traditions in mainland Southeast Asia.",
         "scripts": [ScriptISO("KHMR")],
         "required_blocks": ["Khmer"],
         "optional_blocks": [],
@@ -1323,6 +1470,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "kn": {
         "canonical_name": "Kannada",
+        "description": "Kannada is a Dravidian language spoken mainly in Karnataka. It is written in the Kannada script and is notable for a long literary history in South India.",
         "scripts": [ScriptISO("KNDA")],
         "required_blocks": ["Kannada"],
         "optional_blocks": ["Kannada Supplement"],
@@ -1330,6 +1478,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ko": {
         "canonical_name": "Korean",
+        "description": "Korean is the principal Koreanic language of the Korean Peninsula. It is written in Hangul and is notable for a scientifically designed script organized into syllable blocks.",
         "scripts": [ScriptISO("HANG")],
         "required_blocks": ["Hangul Syllables"],
         "optional_blocks": [],
@@ -1337,6 +1486,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "lo": {
         "canonical_name": "Lao",
+        "description": "Lao is a Kra-Dai language spoken mainly in Laos. It is written in the Lao script and is notable for close historical and structural ties to Thai.",
         "scripts": [ScriptISO("LAOO")],
         "required_blocks": ["Lao"],
         "optional_blocks": [],
@@ -1344,6 +1494,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "lep": {
         "canonical_name": "Lepcha",
+        "description": "Lepcha is a Tibeto-Burman language of Sikkim and nearby Himalayan regions. It is written in the Lepcha script and is notable for an indigenous regional writing tradition.",
         "scripts": [ScriptISO("LEPC")],
         "required_blocks": ["Lepcha"],
         "optional_blocks": [],
@@ -1351,6 +1502,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "lif": {
         "canonical_name": "Limbu",
+        "description": "Limbu is a Kiranti language spoken in eastern Nepal and India. It is written in Limbu and Devanagari and is notable for preservation of its own script tradition.",
         "scripts": [ScriptISO("LIMB")],
         "required_blocks": ["Limbu"],
         "optional_blocks": [],
@@ -1358,6 +1510,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "lis": {
         "canonical_name": "Lisu",
+        "description": "Lisu is a Tibeto-Burman language spoken in China, Myanmar, Thailand, and neighboring regions. It is written in the Lisu script and is notable for a missionary-era alphabet that became a standard orthography.",
         "scripts": [ScriptISO("LISU")],
         "required_blocks": ["Lisu"],
         "optional_blocks": [],
@@ -1365,6 +1518,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "my": {
         "canonical_name": "Burmese",
+        "description": "Burmese is a Sino-Tibetan language spoken mainly in Myanmar. It is written in the Myanmar script and is notable as the dominant literary and administrative language of the country.",
         "scripts": [ScriptISO("MYMR")],
         "required_blocks": ["Myanmar"],
         "optional_blocks": ["Myanmar Extended-A"],
@@ -1372,6 +1526,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "dmf": {
         "canonical_name": "Medefaidrin",
+        "description": "Medefaidrin is a planned liturgical language created by a Christian community in southeastern Nigeria. It is written in the Medefaidrin script and is notable for being both a constructed language and a community-specific script tradition.",
         "scripts": [ScriptISO("MEDF")],
         "required_blocks": ["Medefaidrin"],
         "optional_blocks": [],
@@ -1379,6 +1534,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "men": {
         "canonical_name": "Mende",
+        "description": "Mende is a Mande language spoken mainly in Sierra Leone. It is written in Latin and Mende Kikakui and is notable for one of the better known modern indigenous African syllabaries.",
         "scripts": [ScriptISO("MEND")],
         "required_blocks": ["Mende Kikakui"],
         "optional_blocks": [],
@@ -1386,6 +1542,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "mn": {
         "canonical_name": "Mongolian",
+        "description": "Mongolian is a Mongolic language spoken in Mongolia and parts of China. It is written in Cyrillic and the traditional Mongolian script and is notable for the survival of a vertical historical script.",
         "scripts": [ScriptISO("MONG")],
         "required_blocks": ["Mongolian"],
         "optional_blocks": [],
@@ -1393,6 +1550,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "mni": {
         "canonical_name": "Manipuri",
+        "description": "Manipuri, also called Meitei, is a Tibeto-Burman language of Manipur. It is written in Meetei Mayek and is notable for the modern restoration of its historical script.",
         "scripts": [ScriptISO("MTEI")],
         "required_blocks": ["Meetei Mayek"],
         "optional_blocks": ["Meetei Mayek Extensions"],
@@ -1400,6 +1558,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "new": {
         "canonical_name": "Newar",
+        "description": "Newar is a Tibeto-Burman language of the Kathmandu Valley. It is written today mainly in Devanagari and is notable for an older manuscript tradition in the Newa script.",
         "scripts": [ScriptISO("NEWA")],
         "required_blocks": ["Newa"],
         "optional_blocks": [],
@@ -1407,6 +1566,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "nqo": {
         "canonical_name": "NKo",
+        "description": "NKo is a standardized written language form used for Manding varieties in West Africa. It is written in the NKo script and is notable for a modern literacy movement built around a dedicated orthography.",
         "scripts": [ScriptISO("NKOO")],
         "required_blocks": ["NKo"],
         "optional_blocks": [],
@@ -1414,6 +1574,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "osa": {
         "canonical_name": "Osage",
+        "description": "Osage is a Dhegiha Siouan language of Oklahoma. It is written in the Osage script and is notable for a recent community-led orthographic standardization.",
         "scripts": [ScriptISO("OSGE")],
         "required_blocks": ["Osage"],
         "optional_blocks": [],
@@ -1421,6 +1582,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "pli": {
         "canonical_name": "Pali",
+        "description": "Pali is a Middle Indo-Aryan language used mainly in Theravada Buddhist canon and scholarship. It is written in many Indic scripts and is notable more as a liturgical and textual language than as a vernacular.",
         "scripts": [ScriptISO("BHKS")],
         "required_blocks": ["Bhaiksuki"],
         "optional_blocks": [],
@@ -1428,6 +1590,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ml": {
         "canonical_name": "Malayalam",
+        "description": "Malayalam is a Dravidian language spoken mainly in Kerala. It is written in the Malayalam script and is notable for a substantial literary tradition and a distinct regional standard.",
         "scripts": [ScriptISO("MLYM")],
         "required_blocks": ["Malayalam"],
         "optional_blocks": ["Malayalam Supplement"],
@@ -1435,6 +1598,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "mro": {
         "canonical_name": "Mro",
+        "description": "Mro is a Tibeto-Burman language spoken in the Chittagong Hill Tracts and nearby areas. It is written in the Mro script and is notable for a recently adopted dedicated writing system.",
         "scripts": [ScriptISO("MROO")],
         "required_blocks": ["Mro"],
         "optional_blocks": [],
@@ -1442,6 +1606,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "kv": {
         "canonical_name": "Komi",
+        "description": "Komi is a Uralic language spoken in northeastern Europe. It is written mainly in Cyrillic and is notable for historical use of the Old Permic script.",
         "scripts": [ScriptISO("PERM"), ScriptISO("CYRL")],
         "required_blocks": ["Old Permic"],
         "optional_blocks": ["Cyrillic"],
@@ -1449,6 +1614,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "pal": {
         "canonical_name": "Middle Persian",
+        "description": "Middle Persian is an extinct Southwestern Iranian language of the Sasanian era. It is written in Pahlavi scripts and is notable for its importance in royal, administrative, and Zoroastrian texts.",
         "scripts": [ScriptISO("PHLP"), ScriptISO("PHLI")],
         "required_blocks": ["Psalter Pahlavi"],
         "optional_blocks": ["Inscriptional Pahlavi"],
@@ -1456,6 +1622,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "or": {
         "canonical_name": "Odia",
+        "description": "Odia is an Indo-Aryan language spoken mainly in Odisha. It is written in the Odia script and is notable for a long literary tradition in eastern India.",
         "scripts": [ScriptISO("ORYA")],
         "required_blocks": ["Oriya"],
         "optional_blocks": [],
@@ -1463,6 +1630,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "sog": {
         "canonical_name": "Sogdian",
+        "description": "Sogdian is an extinct Eastern Iranian language of Central Asia. It is written in Sogdian and Old Sogdian and is notable for its role as a commercial lingua franca on the Silk Road.",
         "scripts": [ScriptISO("SOGD"), ScriptISO("SOGO")],
         "required_blocks": ["Sogdian"],
         "optional_blocks": ["Old Sogdian"],
@@ -1470,6 +1638,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "su": {
         "canonical_name": "Sundanese",
+        "description": "Sundanese is an Austronesian language of West Java. It is written mainly in Latin today and is notable for a revived regional script used in education and public signage.",
         "scripts": [ScriptISO("SUND")],
         "required_blocks": ["Sundanese"],
         "optional_blocks": ["Sundanese Supplement"],
@@ -1477,6 +1646,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "syl": {
         "canonical_name": "Sylheti",
+        "description": "Sylheti is an Eastern Indo-Aryan language of northeastern Bangladesh and adjacent India. It is written mainly in Bengali today and is notable for a historical regional script, Syloti Nagri.",
         "scripts": [ScriptISO("SYLO")],
         "required_blocks": ["Syloti Nagri"],
         "optional_blocks": [],
@@ -1484,6 +1654,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "syr": {
         "canonical_name": "Syriac",
+        "description": "Syriac is a Middle Aramaic language of Christian communities in the Middle East. It is written in the Syriac script and is notable for its liturgical and scholarly significance.",
         "scripts": [ScriptISO("SYRC")],
         "required_blocks": ["Syriac"],
         "optional_blocks": ["Syriac Supplement"],
@@ -1491,6 +1662,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "tl": {
         "canonical_name": "Tagalog",
+        "description": "Tagalog is an Austronesian language of the Philippines and a major base of the national language. It is written in Latin today and is notable for historical use of the Tagalog or Baybayin script.",
         "scripts": [ScriptISO("TGLG"), ScriptISO("LATN")],
         "required_blocks": ["Tagalog"],
         "optional_blocks": ["Basic Latin"],
@@ -1498,6 +1670,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "und": {
         "canonical_name": "Undetermined",
+        "description": "Undetermined is a placeholder code used when no specific language can be assigned. In this table it marks undeciphered or unidentified content associated with the Cypro-Minoan script.",
         "scripts": [ScriptISO("CPMN")],
         "required_blocks": ["Cypro-Minoan"],
         "optional_blocks": [],
@@ -1505,6 +1678,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "tbw": {
         "canonical_name": "Tagbanwa",
+        "description": "Tagbanwa is an Austronesian language of Palawan in the Philippines. It is written in the Tagbanwa script and is notable as part of a surviving indigenous script tradition.",
         "scripts": [ScriptISO("TAGB")],
         "required_blocks": ["Tagbanwa"],
         "optional_blocks": [],
@@ -1512,6 +1686,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "nod": {
         "canonical_name": "Northern Thai",
+        "description": "Northern Thai is a Southwestern Tai language of northern Thailand. It is written in Tai Tham and is notable for a manuscript tradition shared with Buddhist texts in the region.",
         "scripts": [ScriptISO("LANA")],
         "required_blocks": ["Tai Tham"],
         "optional_blocks": [],
@@ -1519,6 +1694,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "blt": {
         "canonical_name": "Tai Dam",
+        "description": "Tai Dam is a Southwestern Tai language spoken in mainland Southeast Asia. It is written in Tai Viet and is notable for preserving a regional script with explicit tone marking.",
         "scripts": [ScriptISO("TAVT")],
         "required_blocks": ["Tai Viet"],
         "optional_blocks": [],
@@ -1526,6 +1702,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "zgh": {
         "canonical_name": "Standard Moroccan Tamazight",
+        "description": "Standard Moroccan Tamazight is the standardized Berber language used in Moroccan education and administration. It is written in Neo-Tifinagh and is notable for its official modern standardization.",
         "scripts": [ScriptISO("TFNG")],
         "required_blocks": ["Tifinagh"],
         "optional_blocks": [],
@@ -1533,6 +1710,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "mai": {
         "canonical_name": "Maithili",
+        "description": "Maithili is an Indo-Aryan language of eastern India and Nepal. It is written mainly in Devanagari today and is notable for historical use of the Tirhuta script.",
         "scripts": [ScriptISO("TIRH"), ScriptISO("DEVA")],
         "required_blocks": ["Tirhuta"],
         "optional_blocks": ["Devanagari"],
@@ -1540,6 +1718,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "pt": {
         "canonical_name": "Portuguese",
+        "description": "Portuguese is a Romance language spoken in Portugal, Brazil, and several African and Asian states. It is written in the Latin script and is notable for its pluricentric global standard.",
         "scripts": [ScriptISO("LATN")],
         "required_blocks": ["Basic Latin"],
         "optional_blocks": ["Latin-1 Supplement"],
@@ -1547,6 +1726,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "pa": {
         "canonical_name": "Panjabi",
+        "description": "Panjabi is an Indo-Aryan language of the Punjab region. It is written in Gurmukhi in this profile and is notable as a major cross-border language with parallel script traditions.",
         "scripts": [ScriptISO("GURU")],
         "required_blocks": ["Gurmukhi"],
         "optional_blocks": ["Gurmukhi Extensions"],
@@ -1554,6 +1734,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "rhg": {
         "canonical_name": "Rohingya",
+        "description": "Rohingya is an Indo-Aryan language spoken mainly in Rakhine State and the Rohingya diaspora. It is written in Hanifi Rohingya, Arabic, and Latin and is notable for a modern dedicated script tied to language activism.",
         "scripts": [ScriptISO("ROHG"), ScriptISO("ARAB")],
         "required_blocks": ["Hanifi Rohingya"],
         "optional_blocks": ["Arabic"],
@@ -1561,6 +1742,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "rej": {
         "canonical_name": "Rejang",
+        "description": "Rejang is an Austronesian language of Sumatra. It is written mainly in Latin today and is notable for a historical indigenous script of the same name.",
         "scripts": [ScriptISO("RJNG")],
         "required_blocks": ["Rejang"],
         "optional_blocks": [],
@@ -1568,6 +1750,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ru": {
         "canonical_name": "Russian",
+        "description": "Russian is an East Slavic language spoken across Russia and neighboring regions. It is written in Cyrillic and is notable for its broad geographic reach in Eurasia.",
         "scripts": [ScriptISO("CYRL")],
         "required_blocks": ["Cyrillic"],
         "optional_blocks": ["Cyrillic Supplement"],
@@ -1575,6 +1758,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "sa": {
         "canonical_name": "Sanskrit",
+        "description": "Sanskrit is a classical Indo-Aryan language of South Asia. It is written in several Indic scripts and is notable for its central role in religious, philosophical, and scholarly traditions.",
         "scripts": [ScriptISO("BRAH"), ScriptISO("GRAN"), ScriptISO("DEVA")],
         "required_blocks": ["Brahmi"],
         "optional_blocks": ["Grantha", "Devanagari"],
@@ -1582,6 +1766,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "saz": {
         "canonical_name": "Saurashtra",
+        "description": "Saurashtra is an Indo-Aryan language spoken by a diaspora community in southern India. It is written in its own script as well as regional scripts and is notable for maintaining a distinct community identity through writing.",
         "scripts": [ScriptISO("SAUR")],
         "required_blocks": ["Saurashtra"],
         "optional_blocks": [],
@@ -1589,6 +1774,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "si": {
         "canonical_name": "Sinhala",
+        "description": "Sinhala is an Indo-Aryan language spoken mainly in Sri Lanka. It is written in the Sinhala script and is notable as the only major modern Indo-Aryan language native to the island.",
         "scripts": [ScriptISO("SINH")],
         "required_blocks": ["Sinhala"],
         "optional_blocks": [],
@@ -1596,6 +1782,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "sq": {
         "canonical_name": "Albanian",
+        "description": "Albanian is an Indo-European language of the Balkans. It is written in the Latin script today and is notable in this table for historical evidence from the Elbasan script.",
         "scripts": [ScriptISO("ELBA"), ScriptISO("LATN")],
         "required_blocks": ["Elbasan"],
         "optional_blocks": ["Basic Latin"],
@@ -1603,6 +1790,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ta": {
         "canonical_name": "Tamil",
+        "description": "Tamil is a Dravidian language spoken in South India, Sri Lanka, and the global Tamil diaspora. It is written in the Tamil script and is notable for one of the oldest continuous literary traditions in Asia.",
         "scripts": [ScriptISO("TAML")],
         "required_blocks": ["Tamil"],
         "optional_blocks": ["Tamil Supplement"],
@@ -1610,6 +1798,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "te": {
         "canonical_name": "Telugu",
+        "description": "Telugu is a Dravidian language spoken mainly in Andhra Pradesh and Telangana. It is written in the Telugu script and is notable for a large speaker base and a major literary tradition.",
         "scripts": [ScriptISO("TELU")],
         "required_blocks": ["Telugu"],
         "optional_blocks": [],
@@ -1617,6 +1806,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "kyu": {
         "canonical_name": "Western Kayah",
+        "description": "Western Kayah is a Karenni language of Myanmar and Thailand. It is written in Kayah Li and is notable for a dedicated 20th-century script created for local use.",
         "scripts": [ScriptISO("KALI")],
         "required_blocks": ["Kayah Li"],
         "optional_blocks": [],
@@ -1624,6 +1814,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "th": {
         "canonical_name": "Thai",
+        "description": "Thai is a Kra-Dai language spoken mainly in Thailand. It is written in the Thai script and is notable for an orthography that marks tone and preserves historical consonant classes.",
         "scripts": [ScriptISO("THAI")],
         "required_blocks": ["Thai"],
         "optional_blocks": [],
@@ -1631,6 +1822,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "ti": {
         "canonical_name": "Tigrinya",
+        "description": "Tigrinya is an Ethiosemitic language of Eritrea and northern Ethiopia. It is written in the Ethiopic script and is notable as a major modern Semitic language of the Horn of Africa.",
         "scripts": [ScriptISO("ETHI")],
         "required_blocks": ["Ethiopic"],
         "optional_blocks": [],
@@ -1638,6 +1830,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "tdd": {
         "canonical_name": "Tai Nua",
+        "description": "Tai Nua is a Southwestern Tai language spoken mainly in southwestern China and nearby regions. It is written in Tai Le and is notable for a modern standardized script in the Chinese context.",
         "scripts": [ScriptISO("TALE")],
         "required_blocks": ["Tai Le"],
         "optional_blocks": [],
@@ -1645,6 +1838,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "zh": {
         "canonical_name": "Chinese",
+        "description": "Chinese is a Sinitic language group written primarily with Han characters. In this profile it also includes Bopomofo as supporting evidence and is notable for a logographic writing tradition of great historical depth.",
         "scripts": [ScriptISO("HANI"), ScriptISO("BOPO")],
         "required_blocks": ["CJK Unified Ideographs"],
         "optional_blocks": ["Bopomofo", "Bopomofo Extended"],
@@ -1652,6 +1846,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "vai": {
         "canonical_name": "Vai",
+        "description": "Vai is a Mande language spoken mainly in Liberia and Sierra Leone. It is written in the Vai syllabary and is notable for one of the rare indigenous scripts still used in daily practice.",
         "scripts": [ScriptISO("VAII")],
         "required_blocks": ["Vai"],
         "optional_blocks": [],
@@ -1659,6 +1854,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "xag": {
         "canonical_name": "Aghwan",
+        "description": "Aghwan is the conventional name for the extinct Caucasian Albanian language. It is known mainly from palimpsests and inscriptions and is notable for preserving a poorly documented language of the ancient Caucasus.",
         "scripts": [ScriptISO("AGHB")],
         "required_blocks": ["Caucasian Albanian"],
         "optional_blocks": [],
@@ -1666,6 +1862,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "xco": {
         "canonical_name": "Chorasmian",
+        "description": "Chorasmian is an extinct Eastern Iranian language of Central Asia. It is written in the Chorasmian script and is notable for surviving mainly in fragmentary documentary material.",
         "scripts": [ScriptISO("CHRS")],
         "required_blocks": ["Chorasmian"],
         "optional_blocks": [],
@@ -1673,6 +1870,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "xcr": {
         "canonical_name": "Carian",
+        "description": "Carian is an extinct Anatolian language once spoken in southwestern Asia Minor. It is written in the Carian script and is notable for being reconstructed largely from inscriptions.",
         "scripts": [ScriptISO("CARI")],
         "required_blocks": ["Carian"],
         "optional_blocks": [],
@@ -1680,6 +1878,7 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
     "zxx": {
         "canonical_name": "No linguistic content",
+        "description": "No linguistic content is a placeholder category for symbols that are not tied to a spoken language. In this table it covers Byzantine musical notation, which is notable for encoding chant rather than ordinary text.",
         "scripts": [ScriptISO("BYZM")],
         "required_blocks": ["Byzantine Musical Symbols"],
         "optional_blocks": [],
