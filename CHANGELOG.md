@@ -1,3 +1,9 @@
+## [0.58.0](https://github.com/marco0560/Fontshow/compare/v0.57.1...v0.58.0) (2026-03-17)
+
+### Features
+
+* **latex:** align TeX tooling and derive preamble font bindings ([4eadc38](https://github.com/marco0560/Fontshow/commit/4eadc38d5bf4329c3c685a8ced2b9d9160917a61))
+
 ## [0.57.1](https://github.com/marco0560/Fontshow/compare/v0.57.0...v0.57.1) (2026-03-16)
 
 ### Bug Fixes
