@@ -47,6 +47,8 @@ elif IS_LINUX:
         "Times New Roman",
         "Arial",
         "Calibri",
+        "Lohit Assamese",
+        "Lohit Gujarati",
         "Noto Sans Brahmi",
         "Noto Sans Buginese",
         "Noto Sans Buhid",

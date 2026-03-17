@@ -157,6 +157,43 @@ def test_render_font_entry_uses_inline_fontspec_for_gujarati_without_language(
     assert options == "Renderer=1,Path=/tmp/,File=Lohit-Gujarati.ttf"
 
 
+def test_render_font_entry_uses_inline_fontspec_for_lohit_assamese_with_language(
+    monkeypatch,
+):
+    """
+    Ensure Lohit Assamese avoids the family-style Polyglossia call form.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace LaTeX helper functions.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "Renderer=1,")
+    monkeypatch.setattr(
+        document, "_get_render_policy", lambda _script: ("bengali", "Script=Bengali")
+    )
+
+    render, options = document._render_font_entry(
+        font={"family": "Lohit Assamese", "path": "/tmp/Lohit-Assamese.ttf"},
+        safe_specimen="abc",
+        script0_iso=ScriptISO("BENG"),
+        fullpath="/tmp/Lohit-Assamese.ttf",
+    )
+
+    assert "\\fontspec[" in render
+    assert "\\renewfontfamily\\bengalifont" not in render
+    assert "\\foreignlanguage{bengali}" not in render
+    assert "Extension=.ttf" not in render
+    assert "Script=Bengali" not in render
+    assert "{\\detokenize{Lohit Assamese}}" in render
+    assert options == "Renderer=1,Path=/tmp/,File=Lohit-Assamese.ttf"
+
+
 def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
     """
     Ensure unknown scripts keep the simpler ``Path`` plus filename form.
@@ -186,6 +223,99 @@ def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
     assert "{\\detokenize{unknown.ttf}}" in render
     assert "{\\detokenize{/tmp/unknown.ttf}}" not in render
     assert options == "Renderer=1,Path=/tmp/,File=unknown.ttf"
+
+
+def test_generate_document_uses_variant_specific_specimens(monkeypatch, tmp_path):
+    """
+    Ensure family variants render using their own specimen metadata.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace helper functions with deterministic stubs.
+    tmp_path : pathlib.Path
+        Temporary directory used to create placeholder font files.
+
+    Returns
+    -------
+    None
+    """
+    regular_path = tmp_path / "FreeSans.ttf"
+    bold_path = tmp_path / "FreeSansBold.ttf"
+    regular_path.write_text("", encoding="utf-8")
+    bold_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+
+    def render_stub(font, safe_specimen, script0_iso, fullpath):
+        """
+        Return a deterministic marker for rendered variants.
+
+        Parameters
+        ----------
+        font : dict[str, object]
+            Font descriptor forwarded by the document generator.
+        safe_specimen : str
+            Preformatted specimen string selected for this render.
+        script0_iso : ScriptISO
+            Script code chosen for rendering.
+        fullpath : str
+            Absolute font path.
+
+        Returns
+        -------
+        tuple[str, str]
+            Fake LaTeX render block and plain option string.
+        """
+        _ = script0_iso, fullpath
+        marker = str(font.get("path", ""))
+        return f"<{marker}|{safe_specimen}>", f"Path={marker}"
+
+    monkeypatch.setattr(document, "_render_font_entry", render_stub)
+
+    fonts = [
+        {
+            "family": "FreeSans",
+            "path": str(regular_path),
+            "style": "Regular",
+            "script": "cans",
+            "specimen_text": "᐀ᐁ",
+            "inference": {"scripts": ["cans"], "languages": ["cr"]},
+        },
+        {
+            "family": "FreeSans",
+            "path": str(bold_path),
+            "style": "Bold",
+            "script": "latn",
+            "specimen_text": "The quick brown fox",
+            "inference": {"scripts": ["latn"], "languages": ["en"]},
+        },
+    ]
+
+    latex = document.generate_latex(fonts)
+
+    assert f"<{regular_path}|᐀ᐁ>" in latex
+    assert f"<{bold_path}|The quick brown fox>" in latex
 
 
 def test_format_specimen_for_latex_chunks_non_cjk_runs_every_ten_characters():
@@ -319,7 +449,7 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert "\\LogWorking{Alpha / alpha.ttf}" in latex
     assert "\\LogWorking{Alpha / ignored.ttf}" in latex
     assert "\\LogBroken{Beta / beta.bin}" in latex
-    assert latex.count("\\allowbreak{}") == 6
+    assert latex.count("\\allowbreak{}") == 3
     assert "FILE  : beta.bin" in latex
     assert "\\LogBroken{Beta / beta.bin}[MISSING]" in latex
     assert "\\LogExcluded{Zed}" in latex

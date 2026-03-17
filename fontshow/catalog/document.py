@@ -112,6 +112,40 @@ def _use_inline_fontspec_for_script(script0_iso: ScriptISO) -> bool:
     return script0_iso == ScriptISO("GUJR")
 
 
+def _use_inline_fontspec_for_font(
+    font: CatalogFontEntryV12, script0_iso: ScriptISO
+) -> bool:
+    """
+    Return whether a font should force the inline ``\\fontspec`` path.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor being rendered.
+    script0_iso : ScriptISO
+        Primary script driving the specimen rendering branch.
+
+    Returns
+    -------
+    bool
+        ``True`` when the specimen should use the inline file-oriented
+        ``\\fontspec`` path instead of ``\\newfontfamily`` or
+        ``\\renewfontfamily``.
+
+    Notes
+    -----
+    Gujarati stays on the inline path script-wide. ``Lohit Assamese``
+    is also forced onto the inline path because the family-style
+    Polyglossia/fontspec form fails for that installed font while the
+    file-oriented fallback is intended to remain local to the entry.
+    """
+    if _use_inline_fontspec_for_script(script0_iso):
+        return True
+
+    family = str(font.get("family", "")).strip()
+    return family == "Lohit Assamese"
+
+
 def _omit_script_option_for_script(script0_iso: ScriptISO) -> bool:
     """
     Return whether a script should skip the explicit ``Script=`` option.
@@ -134,6 +168,90 @@ def _omit_script_option_for_script(script0_iso: ScriptISO) -> bool:
     but raises a fatal lookup error when it is present.
     """
     return script0_iso == ScriptISO("GUJR")
+
+
+def _omit_script_option_for_font(
+    font: CatalogFontEntryV12, script0_iso: ScriptISO
+) -> bool:
+    """
+    Return whether a font should skip the explicit ``Script=`` option.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor being rendered.
+    script0_iso : ScriptISO
+        Primary script driving the specimen rendering branch.
+
+    Returns
+    -------
+    bool
+        ``True`` when the render path should omit the explicit script
+        option from the fontspec argument list.
+
+    Notes
+    -----
+    Gujarati requires this omission in the inline filename path.
+    ``Lohit Assamese`` follows the same omission rule for the local
+    inline fallback because its family-style path currently fails
+    during catalog compilation.
+    """
+    if _omit_script_option_for_script(script0_iso):
+        return True
+
+    family = str(font.get("family", "")).strip()
+    return family == "Lohit Assamese"
+
+
+def _use_language_wrapper_for_font(font: CatalogFontEntryV12) -> bool:
+    """
+    Return whether a font should be wrapped in ``\\foreignlanguage``.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor being rendered.
+
+    Returns
+    -------
+    bool
+        ``True`` when the specimen should remain wrapped in a
+        Polyglossia language command.
+
+    Notes
+    -----
+    ``Lohit Assamese`` skips the language wrapper because the
+    file-oriented inline fallback compiles in the small test catalog but
+    triggers a late-document Polyglossia expansion failure in the full
+    catalog when the wrapper is present.
+    """
+    family = str(font.get("family", "")).strip()
+    return family != "Lohit Assamese"
+
+
+def _use_fontconfig_family_resolution(font: CatalogFontEntryV12) -> bool:
+    """
+    Return whether a font should be resolved by family name.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor being rendered.
+
+    Returns
+    -------
+    bool
+        ``True`` when the specimen should use a fontconfig-resolved
+        family name instead of the inventory file path.
+
+    Notes
+    -----
+    ``Lohit Assamese`` resolves cleanly via fontconfig as a family
+    name on Linux, while the direct file-oriented `fontspec` forms
+    continue to trigger `.fontspec` lookups in the full catalog.
+    """
+    family = str(font.get("family", "")).strip()
+    return family == "Lohit Assamese"
 
 
 def _format_specimen_for_latex(specimen: str, script0_iso: ScriptISO) -> str:
@@ -237,14 +355,18 @@ def _render_font_entry(
     if renderer_prefix:
         render_options.append(renderer_prefix.rstrip(","))
     render_options.append("Path=" + detok_dir)
-    if script_opt and file_suffix and not _omit_script_option_for_script(script0_iso):
+    if (
+        script_opt
+        and file_suffix
+        and not _omit_script_option_for_font(font, script0_iso)
+    ):
         render_options.append("Extension=" + file_suffix)
-    if script_opt and not _omit_script_option_for_script(script0_iso):
+    if script_opt and not _omit_script_option_for_font(font, script0_iso):
         render_options.append(script_opt)
     opts = ",".join(render_options)
 
     options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
-    if script_opt and not _omit_script_option_for_script(script0_iso):
+    if script_opt and not _omit_script_option_for_font(font, script0_iso):
         options_plain += "," + script_opt
 
     if script0_iso == ScriptISO("LATN"):
@@ -258,30 +380,65 @@ def _render_font_entry(
             + "}\\endgroup}"
         )
     elif lang:
-        font_cmd = "\\" + lang + "font"
-        render = (
-            " {\\begingroup\\sloppy\\emergencystretch=2em"
-            "\\renewfontfamily"
-            + font_cmd
-            + "[BoldFont={},ItalicFont={},BoldItalicFont={},"
-            + opts
-            + "]{"
-            + detok_stem
-            + "}"
-            "\\foreignlanguage{"
-            + lang
-            + "}{"
-            + font_cmd
-            + "\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{"
-            + safe_specimen
-            + "}}"
-            + "\\endgroup}"
-        )
+        if _use_inline_fontspec_for_font(font, script0_iso):
+            inline_options = opts
+            inline_font = detok_file
+            if _use_fontconfig_family_resolution(font):
+                inline_options = renderer_prefix.rstrip(",")
+                inline_font = (
+                    "\\detokenize{"
+                    + _latex_detokenize_safe(str(font.get("family", "")).strip())
+                    + "}"
+                )
+            if _use_language_wrapper_for_font(font):
+                render = (
+                    " {\\begingroup\\sloppy\\emergencystretch=2em"
+                    "\\foreignlanguage{"
+                    + lang
+                    + "}{\\parbox{\\linewidth}{\\fontspec["
+                    + inline_options
+                    + "]{"
+                    + inline_font
+                    + "}"
+                    + safe_specimen
+                    + "}}"
+                    + "\\endgroup}"
+                )
+            else:
+                render = (
+                    " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
+                    + inline_options
+                    + "]{"
+                    + inline_font
+                    + "}"
+                    + safe_specimen
+                    + "}\\endgroup}"
+                )
+        else:
+            font_cmd = "\\" + lang + "font"
+            render = (
+                " {\\begingroup\\sloppy\\emergencystretch=2em"
+                "\\renewfontfamily"
+                + font_cmd
+                + "[BoldFont={},ItalicFont={},BoldItalicFont={},"
+                + opts
+                + "]{"
+                + detok_stem
+                + "}"
+                "\\foreignlanguage{"
+                + lang
+                + "}{"
+                + font_cmd
+                + "\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{"
+                + safe_specimen
+                + "}}"
+                + "\\endgroup}"
+            )
     elif script_opt:
-        if _use_inline_fontspec_for_script(script0_iso):
+        if _use_inline_fontspec_for_font(font, script0_iso):
             inline_font = (
                 detok_file
-                if _omit_script_option_for_script(script0_iso)
+                if _omit_script_option_for_font(font, script0_iso)
                 else detok_stem
             )
             render = (
@@ -468,9 +625,15 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
             variant_script_iso = (
                 ScriptISO(variant_script.upper()) if variant_script else ScriptISO("")
             )
+            variant_specimen = _strip_ascii_control_chars(
+                str(variant.get("specimen_text", ""))
+            )
+            variant_safe_specimen = _format_specimen_for_latex(
+                variant_specimen, variant_script_iso
+            )
             variant_render, _ = _render_font_entry(
                 font=variant,
-                safe_specimen=safe_specimen,
+                safe_specimen=variant_safe_specimen,
                 script0_iso=variant_script_iso,
                 fullpath=variant_path,
             )

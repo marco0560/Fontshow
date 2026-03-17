@@ -114,12 +114,19 @@ If any would fail:
 
 ### Step 6 — COMMIT BLOCK
 
-Propose a **single commit block**:
+Propose a **single commit block** that is:
 
 - 15 - 20 lines long
 - atomic
 - CI-compliant
 - compliant with `.githooks/commit-msg.py`
+
+Include:
+
+- type from permitted list
+- scope from permitted list
+- `Closes: #<issue_number>` if the activity closes an issue
+- `Refs:` if there is a reference to a decision or to an issue
 
 DO NOT include:
 
