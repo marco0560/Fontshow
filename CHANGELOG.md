@@ -1,3 +1,9 @@
+## [0.58.1](https://github.com/marco0560/Fontshow/compare/v0.58.0...v0.58.1) (2026-03-17)
+
+### Bug Fixes
+
+* **catalog:** use variant specimen metadata during rendering ([81ea998](https://github.com/marco0560/Fontshow/commit/81ea9983e452ba29eefda6ad513758e5b630f4fc)), closes [#65](https://github.com/marco0560/Fontshow/issues/65)
+
 ## [0.58.0](https://github.com/marco0560/Fontshow/compare/v0.57.1...v0.58.0) (2026-03-17)
 
 ### Features
