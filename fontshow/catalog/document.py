@@ -106,10 +106,13 @@ def _use_inline_fontspec_for_script(script0_iso: ScriptISO) -> bool:
 
     Notes
     -----
-    Gujarati currently uses the inline form so the script-specific
-    filename handling stays local to the specimen block.
+    Gujarati and Bengali currently use the inline form so the
+    script-specific filename handling stays local to the specimen
+    block. Bengali avoids a late-document Polyglossia/fontspec lookup
+    failure observed with per-entry ``\\renewfontfamily`` commands in
+    the full catalog.
     """
-    return script0_iso == ScriptISO("GUJR")
+    return script0_iso in {ScriptISO("GUJR"), ScriptISO("BENG")}
 
 
 def _use_inline_fontspec_for_font(
@@ -134,16 +137,12 @@ def _use_inline_fontspec_for_font(
 
     Notes
     -----
-    Gujarati stays on the inline path script-wide. ``Lohit Assamese``
-    is also forced onto the inline path because the family-style
-    Polyglossia/fontspec form fails for that installed font while the
-    file-oriented fallback is intended to remain local to the entry.
+    Gujarati and Bengali stay on the inline path script-wide.
+    ``Lohit Assamese`` remains covered by that policy and therefore no
+    longer needs a standalone exception.
     """
-    if _use_inline_fontspec_for_script(script0_iso):
-        return True
-
-    family = str(font.get("family", "")).strip()
-    return family == "Lohit Assamese"
+    _ = font
+    return _use_inline_fontspec_for_script(script0_iso)
 
 
 def _omit_script_option_for_script(script0_iso: ScriptISO) -> bool:
@@ -163,11 +162,11 @@ def _omit_script_option_for_script(script0_iso: ScriptISO) -> bool:
 
     Notes
     -----
-    Gujarati currently requires this omission in the inline filename
-    path because LuaLaTeX resolves the font cleanly without the option
-    but raises a fatal lookup error when it is present.
+    Gujarati and Bengali currently require this omission in the inline
+    filename path because LuaLaTeX resolves the font cleanly without
+    the option but raises a fatal lookup error when it is present.
     """
-    return script0_iso == ScriptISO("GUJR")
+    return script0_iso in {ScriptISO("GUJR"), ScriptISO("BENG")}
 
 
 def _omit_script_option_for_font(
@@ -191,16 +190,11 @@ def _omit_script_option_for_font(
 
     Notes
     -----
-    Gujarati requires this omission in the inline filename path.
-    ``Lohit Assamese`` follows the same omission rule for the local
-    inline fallback because its family-style path currently fails
-    during catalog compilation.
+    Gujarati and Bengali require this omission in the inline filename
+    path to avoid fontspec lookup failures in the full catalog.
     """
-    if _omit_script_option_for_script(script0_iso):
-        return True
-
-    family = str(font.get("family", "")).strip()
-    return family == "Lohit Assamese"
+    _ = font
+    return _omit_script_option_for_script(script0_iso)
 
 
 def _use_language_wrapper_for_font(font: CatalogFontEntryV12) -> bool:
@@ -220,13 +214,13 @@ def _use_language_wrapper_for_font(font: CatalogFontEntryV12) -> bool:
 
     Notes
     -----
-    ``Lohit Assamese`` skips the language wrapper because the
+    Bengali currently skips the language wrapper because the
     file-oriented inline fallback compiles in the small test catalog but
-    triggers a late-document Polyglossia expansion failure in the full
-    catalog when the wrapper is present.
+    the wrapped Polyglossia path triggers late-document fontspec lookup
+    failures in the full catalog.
     """
     family = str(font.get("family", "")).strip()
-    return family != "Lohit Assamese"
+    return family != "Lohit Assamese" and str(font.get("script", "")).lower() != "beng"
 
 
 def _use_fontconfig_family_resolution(font: CatalogFontEntryV12) -> bool:
@@ -246,12 +240,12 @@ def _use_fontconfig_family_resolution(font: CatalogFontEntryV12) -> bool:
 
     Notes
     -----
-    ``Lohit Assamese`` resolves cleanly via fontconfig as a family
-    name on Linux, while the direct file-oriented `fontspec` forms
-    continue to trigger `.fontspec` lookups in the full catalog.
+    The catalog generator currently does not require any per-font
+    family-name resolution overrides. Keeping this helper explicit
+    avoids inlining the policy decision into the rendering branch.
     """
-    family = str(font.get("family", "")).strip()
-    return family == "Lohit Assamese"
+    _ = font
+    return False
 
 
 def _format_specimen_for_latex(specimen: str, script0_iso: ScriptISO) -> str:

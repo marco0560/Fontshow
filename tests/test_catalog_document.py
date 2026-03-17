@@ -157,11 +157,11 @@ def test_render_font_entry_uses_inline_fontspec_for_gujarati_without_language(
     assert options == "Renderer=1,Path=/tmp/,File=Lohit-Gujarati.ttf"
 
 
-def test_render_font_entry_uses_inline_fontspec_for_lohit_assamese_with_language(
+def test_render_font_entry_uses_inline_fontspec_for_bengali_with_language(
     monkeypatch,
 ):
     """
-    Ensure Lohit Assamese avoids the family-style Polyglossia call form.
+    Ensure Bengali entries avoid the family-style Polyglossia call form.
 
     Parameters
     ----------
@@ -179,10 +179,14 @@ def test_render_font_entry_uses_inline_fontspec_for_lohit_assamese_with_language
     )
 
     render, options = document._render_font_entry(
-        font={"family": "Lohit Assamese", "path": "/tmp/Lohit-Assamese.ttf"},
+        font={
+            "family": "Lohit Bengali",
+            "path": "/tmp/Lohit-Bengali.ttf",
+            "script": "beng",
+        },
         safe_specimen="abc",
         script0_iso=ScriptISO("BENG"),
-        fullpath="/tmp/Lohit-Assamese.ttf",
+        fullpath="/tmp/Lohit-Bengali.ttf",
     )
 
     assert "\\fontspec[" in render
@@ -190,8 +194,9 @@ def test_render_font_entry_uses_inline_fontspec_for_lohit_assamese_with_language
     assert "\\foreignlanguage{bengali}" not in render
     assert "Extension=.ttf" not in render
     assert "Script=Bengali" not in render
-    assert "{\\detokenize{Lohit Assamese}}" in render
-    assert options == "Renderer=1,Path=/tmp/,File=Lohit-Assamese.ttf"
+    assert "Path=\\detokenize{/tmp/}" in render
+    assert "{\\detokenize{Lohit-Bengali.ttf}}" in render
+    assert options == "Renderer=1,Path=/tmp/,File=Lohit-Bengali.ttf"
 
 
 def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
