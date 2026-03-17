@@ -1,3 +1,9 @@
+## [0.58.2](https://github.com/marco0560/Fontshow/compare/v0.58.1...v0.58.2) (2026-03-17)
+
+### Bug Fixes
+
+* **catalog:** route Bengali specimens through inline fontspec ([c2370ce](https://github.com/marco0560/Fontshow/commit/c2370ce34c00d314c55eef3a467bb2bb36754f5e)), closes [#65](https://github.com/marco0560/Fontshow/issues/65)
+
 ## [0.58.1](https://github.com/marco0560/Fontshow/compare/v0.58.0...v0.58.1) (2026-03-17)
 
 ### Bug Fixes
