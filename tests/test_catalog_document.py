@@ -52,7 +52,7 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
     monkeypatch,
 ):
     """
-    Ensure non-Latin scripts with a language emit explicit per-entry font setup.
+    Ensure non-Latin scripts with a language use the compact inline form.
 
     Parameters
     ----------
@@ -79,17 +79,18 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
     assert "\\TestNonLatin" not in render
     assert "\\ifcsname" not in render
     assert "\\newfontfamily" not in render
-    assert "\\renewfontfamily\\arabicfont" in render
+    assert "\\renewfontfamily\\arabicfont" not in render
     assert "\\foreignlanguage{arabic}" in render
-    assert "\\arabicfont" in render
-    assert "Extension=.ttf" in render
-    assert "{\\detokenize{arabic}}" in render
+    assert "\\fontspec[" in render
+    assert render.count("\\emergencystretch=2em") == 1
+    assert "Extension=.ttf" not in render
+    assert "{\\detokenize{arabic.ttf}}" in render
     assert options == "Renderer=1,Path=/tmp/,File=arabic.ttf,Script=Arabic"
 
 
 def test_render_font_entry_falls_back_to_fontspec_without_language(monkeypatch):
     """
-    Ensure script-tagged entries without a language use a temporary font family.
+    Ensure script-tagged entries without a language use the compact inline form.
 
     Parameters
     ----------
@@ -113,11 +114,11 @@ def test_render_font_entry_falls_back_to_fontspec_without_language(monkeypatch):
         fullpath="/tmp/foo.otf",
     )
 
-    assert "\\newfontfamily\\fontshowentryfont" in render
-    assert "\\fontspec[" not in render
-    assert "Extension=.otf" in render
+    assert "\\newfontfamily\\fontshowentryfont" not in render
+    assert "\\fontspec[" in render
+    assert "Extension=.otf" not in render
     assert "Path=\\detokenize{/tmp/}" in render
-    assert "{\\detokenize{foo}}" in render
+    assert "{\\detokenize{foo.otf}}" in render
     assert options == "Path=/tmp/,File=foo.otf,Script=Foo"
 
 
@@ -125,7 +126,7 @@ def test_render_font_entry_uses_inline_fontspec_for_gujarati_without_language(
     monkeypatch,
 ):
     """
-    Ensure Gujarati script-only entries avoid ``\\newfontfamily``.
+    Ensure Gujarati script-only entries follow the generic compact form.
 
     Parameters
     ----------
@@ -151,17 +152,16 @@ def test_render_font_entry_uses_inline_fontspec_for_gujarati_without_language(
 
     assert "\\fontspec[" in render
     assert "\\newfontfamily\\fontshowentryfont" not in render
-    assert "Extension=.ttf" not in render
-    assert "Script=Gujarati" not in render
+    assert "Script=Gujarati" in render
     assert "{\\detokenize{Lohit-Gujarati.ttf}}" in render
-    assert options == "Renderer=1,Path=/tmp/,File=Lohit-Gujarati.ttf"
+    assert options == "Renderer=1,Path=/tmp/,File=Lohit-Gujarati.ttf,Script=Gujarati"
 
 
 def test_render_font_entry_uses_inline_fontspec_for_bengali_with_language(
     monkeypatch,
 ):
     """
-    Ensure Bengali entries avoid the family-style Polyglossia call form.
+    Ensure Bengali entries follow the generic compact language form.
 
     Parameters
     ----------
@@ -191,12 +191,11 @@ def test_render_font_entry_uses_inline_fontspec_for_bengali_with_language(
 
     assert "\\fontspec[" in render
     assert "\\renewfontfamily\\bengalifont" not in render
-    assert "\\foreignlanguage{bengali}" not in render
-    assert "Extension=.ttf" not in render
-    assert "Script=Bengali" not in render
+    assert "\\foreignlanguage{bengali}" in render
+    assert "Script=Bengali" in render
     assert "Path=\\detokenize{/tmp/}" in render
     assert "{\\detokenize{Lohit-Bengali.ttf}}" in render
-    assert options == "Renderer=1,Path=/tmp/,File=Lohit-Bengali.ttf"
+    assert options == "Renderer=1,Path=/tmp/,File=Lohit-Bengali.ttf,Script=Bengali"
 
 
 def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
@@ -323,9 +322,9 @@ def test_generate_document_uses_variant_specific_specimens(monkeypatch, tmp_path
     assert f"<{bold_path}|The quick brown fox>" in latex
 
 
-def test_format_specimen_for_latex_chunks_non_cjk_runs_every_ten_characters():
+def test_format_specimen_for_latex_chunks_non_space_runs_every_five_characters():
     """
-    Ensure long non-CJK runs receive sparse explicit break hints.
+    Ensure long runs without spaces receive explicit break hints every five characters.
 
     Returns
     -------
@@ -337,13 +336,13 @@ def test_format_specimen_for_latex_chunks_non_cjk_runs_every_ten_characters():
 
     assert (
         formatted
-        == "AAAAAAAAAA\\allowbreak{}AAAAAAAAAA\\allowbreak{}AAAAAAAAAA\\allowbreak{}AAAAAAAAAA"
+        == "AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA"
     )
 
 
-def test_format_specimen_for_latex_skips_break_hints_for_cjk_runs():
+def test_format_specimen_for_latex_adds_break_hints_for_cjk_runs():
     """
-    Ensure long CJK runs rely on native line breaking.
+    Ensure long CJK runs also receive explicit break hints.
 
     Returns
     -------
@@ -353,8 +352,11 @@ def test_format_specimen_for_latex_skips_break_hints_for_cjk_runs():
 
     formatted = document._format_specimen_for_latex(specimen, ScriptISO("HANI"))
 
-    assert formatted == specimen
-    assert "\\allowbreak{}" not in formatted
+    assert (
+        formatted
+        == "漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢"
+    )
+    assert formatted.count("\\allowbreak{}") == 7
 
 
 def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkeypatch):
@@ -454,7 +456,7 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert "\\LogWorking{Alpha / alpha.ttf}" in latex
     assert "\\LogWorking{Alpha / ignored.ttf}" in latex
     assert "\\LogBroken{Beta / beta.bin}" in latex
-    assert latex.count("\\allowbreak{}") == 3
+    assert latex.count("\\allowbreak{}") == 7
     assert "FILE  : beta.bin" in latex
     assert "\\LogBroken{Beta / beta.bin}[MISSING]" in latex
     assert "\\LogExcluded{Zed}" in latex
