@@ -89,6 +89,92 @@ def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
     return "./", norm
 
 
+def _use_inline_fontspec_for_script(script0_iso: ScriptISO) -> bool:
+    """
+    Return whether a script-only entry should use inline ``\\fontspec``.
+
+    Parameters
+    ----------
+    script0_iso : ScriptISO
+        Primary script driving the specimen rendering branch.
+
+    Returns
+    -------
+    bool
+        ``True`` when the script should use the inline ``\\fontspec``
+        fallback instead of a temporary ``\\newfontfamily`` command.
+
+    Notes
+    -----
+    Gujarati currently uses the inline form so the script-specific
+    filename handling stays local to the specimen block.
+    """
+    return script0_iso == ScriptISO("GUJR")
+
+
+def _omit_script_option_for_script(script0_iso: ScriptISO) -> bool:
+    """
+    Return whether a script should skip the explicit ``Script=`` option.
+
+    Parameters
+    ----------
+    script0_iso : ScriptISO
+        Primary script driving the specimen rendering branch.
+
+    Returns
+    -------
+    bool
+        ``True`` when the render path should omit the explicit script
+        option from the fontspec argument list.
+
+    Notes
+    -----
+    Gujarati currently requires this omission in the inline filename
+    path because LuaLaTeX resolves the font cleanly without the option
+    but raises a fatal lookup error when it is present.
+    """
+    return script0_iso == ScriptISO("GUJR")
+
+
+def _format_specimen_for_latex(specimen: str, script0_iso: ScriptISO) -> str:
+    """
+    Format specimen text with conservative LaTeX break hints.
+
+    Parameters
+    ----------
+    specimen : str
+        Raw specimen text after ASCII control characters are stripped.
+    script0_iso : ScriptISO
+        Primary script used to decide whether explicit break hints are
+        needed.
+
+    Returns
+    -------
+    str
+        LaTeX-escaped specimen text, optionally augmented with
+        ``\\allowbreak{}`` markers.
+
+    Notes
+    -----
+    CJK, Japanese, and Korean specimens are left untouched because TeX
+    can already break them between characters. Other long specimens
+    without whitespace receive a break opportunity every 10 characters
+    to avoid overfull lines without injecting a marker after every
+    glyph.
+    """
+    if not specimen:
+        return ""
+
+    if any(ch.isspace() for ch in specimen) or len(specimen) < 40:
+        return escape_latex(specimen)
+
+    if script0_iso in {ScriptISO("HANI"), ScriptISO("JPAN"), ScriptISO("HANG")}:
+        return escape_latex(specimen)
+
+    chunks = [specimen[idx : idx + 10] for idx in range(0, len(specimen), 10)]
+    return r"\allowbreak{}".join(escape_latex(chunk) for chunk in chunks)
+
+
 def _render_font_entry(
     *,
     font: CatalogFontEntryV12,
@@ -139,7 +225,10 @@ def _render_font_entry(
 
     _dir, _file = _normalize_path_for_latex(fullpath)
     detok_dir = "\\detokenize{" + _dir + "}"
+    file_suffix = Path(_file).suffix
+    file_stem = Path(_file).stem
     detok_file = "\\detokenize{" + _latex_detokenize_safe(_file) + "}"
+    detok_stem = "\\detokenize{" + _latex_detokenize_safe(file_stem) + "}"
     renderer_prefix = _renderer_option_prefix()
 
     lang, script_opt = _get_render_policy(script0_iso)
@@ -148,12 +237,14 @@ def _render_font_entry(
     if renderer_prefix:
         render_options.append(renderer_prefix.rstrip(","))
     render_options.append("Path=" + detok_dir)
-    if script_opt:
+    if script_opt and file_suffix and not _omit_script_option_for_script(script0_iso):
+        render_options.append("Extension=" + file_suffix)
+    if script_opt and not _omit_script_option_for_script(script0_iso):
         render_options.append(script_opt)
     opts = ",".join(render_options)
 
     options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
-    if script_opt:
+    if script_opt and not _omit_script_option_for_script(script0_iso):
         options_plain += "," + script_opt
 
     if script0_iso == ScriptISO("LATN"):
@@ -175,7 +266,7 @@ def _render_font_entry(
             + "[BoldFont={},ItalicFont={},BoldItalicFont={},"
             + opts
             + "]{"
-            + detok_file
+            + detok_stem
             + "}"
             "\\foreignlanguage{"
             + lang
@@ -187,22 +278,38 @@ def _render_font_entry(
             + "\\endgroup}"
         )
     elif script_opt:
-        font_cmd = "\\fontshowentryfont"
-        render = (
-            " {\\begingroup\\sloppy\\emergencystretch=2em"
-            "\\newfontfamily"
-            + font_cmd
-            + "[BoldFont={},ItalicFont={},BoldItalicFont={},"
-            + opts
-            + "]{"
-            + detok_file
-            + "}"
-            + font_cmd
-            + "\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{"
-            + safe_specimen
-            + "}"
-            + "\\endgroup}"
-        )
+        if _use_inline_fontspec_for_script(script0_iso):
+            inline_font = (
+                detok_file
+                if _omit_script_option_for_script(script0_iso)
+                else detok_stem
+            )
+            render = (
+                " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
+                + opts
+                + "]{"
+                + inline_font
+                + "}"
+                + safe_specimen
+                + "}\\endgroup}"
+            )
+        else:
+            font_cmd = "\\fontshowentryfont"
+            render = (
+                " {\\begingroup\\sloppy\\emergencystretch=2em"
+                "\\newfontfamily"
+                + font_cmd
+                + "[BoldFont={},ItalicFont={},BoldItalicFont={},"
+                + opts
+                + "]{"
+                + detok_stem
+                + "}"
+                + font_cmd
+                + "\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{"
+                + safe_specimen
+                + "}"
+                + "\\endgroup}"
+            )
     else:
         render = (
             " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
@@ -256,6 +363,8 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     fonts_by_family: dict[str, list[CatalogFontEntryV12]] = {}
     for font in font_list:
         fam = font_family(font)
+        if fam in EXCLUDED_FONTS:
+            continue
         if fam not in fonts_by_family:
             fonts_by_family[fam] = []
         fonts_by_family[fam].append(font)
@@ -293,19 +402,6 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         if idx % 500 == 0 or idx == total:
             log_info(f"  ... processed {idx}/{total}")
 
-        specimen = _strip_ascii_control_chars(str(font.get("specimen_text", "")))
-
-        # If the specimen has no whitespace and is long, TeX cannot line-break it
-        # even inside \parbox{\linewidth}. Insert safe break opportunities.
-        if (
-            specimen
-            and (not any(ch.isspace() for ch in specimen))
-            and len(specimen) >= 40
-        ):
-            safe_specimen = r"\allowbreak{}".join(escape_latex(ch) for ch in specimen)
-        else:
-            safe_specimen = escape_latex(specimen)
-
         inference_raw = font.get("inference") or {}
         inference = inference_raw if isinstance(inference_raw, dict) else {}
 
@@ -337,6 +433,8 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
 
         fullpath = str(font.get("path", ""))
         script0_iso = ScriptISO(script0.upper()) if script0 else ScriptISO("")
+        specimen = _strip_ascii_control_chars(str(font.get("specimen_text", "")))
+        safe_specimen = _format_specimen_for_latex(specimen, script0_iso)
         _, options_plain = _render_font_entry(
             font=font,
             safe_specimen=safe_specimen,
@@ -353,10 +451,10 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         debug_block = (
             "{\\footnotesize\\ttfamily SCRIPT: "
             + escape_latex(scripts_pretty)
-            + "}\\newline"
+            + "}\n\n"
             "{\\footnotesize\\ttfamily LANGS : "
             + escape_latex(languages_pretty)
-            + "}\\newline"
+            + "}\n\n"
             "{\\footnotesize\\ttfamily OPTS  : " + options_pretty + "}"
         )
 
@@ -380,7 +478,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
                 "{\\footnotesize\\ttfamily FILE  : "
                 + escape_latex(variant_file)
                 + " [OK]}"
-                + "\\newline"
+                + "\n\n"
                 + (
                     "\\LogWorking{"
                     + escape_latex(fam + " / " + variant_file)
@@ -398,9 +496,9 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
             + safe_name
             + " --- "
             + debug_block
-            + "\\newline"
-            + "\\newline".join(variant_blocks)
-            + "\n"
+            + "\n\n"
+            + "\n\n".join(variant_blocks)
+            + "\n\n"
         )
 
     latex_code += "\\end{itemize}\n"

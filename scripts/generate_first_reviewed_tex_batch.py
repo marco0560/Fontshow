@@ -9,6 +9,8 @@ cases that are suitable for fast manual review.
 The batch currently focuses on:
 
 - obvious Polyglossia alias-to-canonical mappings;
+- obvious Polyglossia module names already normalized by the production pipeline;
+- obvious Polyglossia non-canonical locale/style modules to suppress from ontology work;
 - obvious TeX script aliases to existing ontology script options;
 - a minimal set of new script candidates whose ISO mappings are clear.
 
@@ -174,7 +176,11 @@ def build_first_reviewed_batch(stub_proposal: dict[str, Any]) -> dict[str, Any]:
     """
     languages = stub_proposal.get("languages", {})
     alias_variants = languages.get("alias_variants", [])
+    pipeline_normalized = languages.get("pipeline_normalized", [])
+    non_canonical_modules = languages.get("non_canonical_modules", [])
     alias_names = {item["alias"] for item in alias_variants}
+    pipeline_normalized_names = {item["language"] for item in pipeline_normalized}
+    non_canonical_module_names = {item["language"] for item in non_canonical_modules}
 
     reviewed_language_aliases = [
         {
@@ -185,6 +191,19 @@ def build_first_reviewed_batch(stub_proposal: dict[str, Any]) -> dict[str, Any]:
         for alias, canonical_language in sorted(_REVIEWED_LANGUAGE_ALIASES.items())
         if alias in alias_names
     ]
+    reviewed_pipeline_normalized_languages = [
+        {
+            "language": language,
+            "canonical_language": canonical_language,
+            "reason": (
+                "production language normalization already collapses this module "
+                "to the canonical primary tag"
+            ),
+        }
+        for language, canonical_language in sorted(_REVIEWED_LANGUAGE_ALIASES.items())
+        if language in pipeline_normalized_names
+    ]
+    reviewed_non_canonical_modules = sorted(non_canonical_module_names)
 
     script_items = stub_proposal.get("scripts", [])
     script_names = {item["fontspec_script"] for item in script_items}
@@ -212,11 +231,17 @@ def build_first_reviewed_batch(stub_proposal: dict[str, Any]) -> dict[str, Any]:
     return {
         "summary": {
             "reviewed_language_aliases": len(reviewed_language_aliases),
+            "reviewed_pipeline_normalized_languages": len(
+                reviewed_pipeline_normalized_languages
+            ),
+            "reviewed_non_canonical_modules": len(reviewed_non_canonical_modules),
             "reviewed_script_aliases": len(reviewed_script_aliases),
             "reviewed_new_script_candidates": len(reviewed_new_scripts),
         },
         "languages": {
             "aliases": reviewed_language_aliases,
+            "pipeline_normalized": reviewed_pipeline_normalized_languages,
+            "non_canonical_modules": reviewed_non_canonical_modules,
         },
         "scripts": {
             "aliases": reviewed_script_aliases,
@@ -270,6 +295,8 @@ def main() -> int:
     print(
         "[OK] "
         f"language aliases={batch['summary']['reviewed_language_aliases']} "
+        f"pipeline normalized={batch['summary']['reviewed_pipeline_normalized_languages']} "
+        f"non-canonical modules={batch['summary']['reviewed_non_canonical_modules']} "
         f"script aliases={batch['summary']['reviewed_script_aliases']} "
         f"new script candidates={batch['summary']['reviewed_new_script_candidates']}"
     )

@@ -31,10 +31,24 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
+from fontshow.inventory.semantic_validation import normalize_languages
 from fontshow.ontology.language_tables import LANGUAGE_INFO, SCRIPT_INFO
 
 _DEFAULT_AUDIT_PATH = Path("reports/local_tex_surface.json")
 _DEFAULT_OUTPUT_PATH = Path("reports/tex_ontology_gap_report.json")
+_NON_CANONICAL_LANGUAGE_MODULES: frozenset[str] = frozenset(
+    {
+        "american",
+        "australian",
+        "austrian",
+        "bahasai",
+        "bahasam",
+        "brazil",
+        "british",
+        "canadian",
+        "canadien",
+    }
+)
 
 
 def load_audit_report(path: Path) -> dict[str, Any]:
@@ -138,6 +152,11 @@ def classify_missing_language(language_name: str) -> str:
     str
         Conservative review bucket label.
     """
+    if language_name in _NON_CANONICAL_LANGUAGE_MODULES:
+        return "non_canonical_module"
+    normalized = normalize_languages([language_name])
+    if normalized["normalized"]:
+        return "normalized_by_pipeline"
     if any(ch in language_name for ch in {"-", "_"}):
         return "needs_alias_mapping"
     if len(language_name) <= 3:

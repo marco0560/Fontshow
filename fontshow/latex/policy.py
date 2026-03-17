@@ -26,8 +26,10 @@ generation pipeline.
 """
 
 import hashlib
+from pathlib import Path
 
 from fontshow.core.types import CatalogFontEntryV12, ScriptISO
+from fontshow.latex.render import _latex_detokenize_safe, _renderer_option_prefix
 from fontshow.ontology.language_tables import LANGUAGE_INFO, SCRIPT_INFO
 
 
@@ -167,7 +169,7 @@ def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -
 
 def _collect_polyglossia_font_setup(font_list: list[CatalogFontEntryV12]) -> str:
     """
-    Collect placeholder Polyglossia font-command declarations.
+    Collect Polyglossia font-command declarations using real catalog fonts.
 
     Each language-specific ``\\<language>font`` command is declared once in the
     preamble so specimen entries can use a direct local ``\\renewfontfamily``
@@ -184,9 +186,16 @@ def _collect_polyglossia_font_setup(font_list: list[CatalogFontEntryV12]) -> str
     str
         Concatenated LaTeX preamble declarations for the required
         Polyglossia language font commands.
+
+    Notes
+    -----
+    The first eligible catalog font encountered for a given Polyglossia
+    language is used as the preamble-level definition. This keeps the
+    selection deterministic while avoiding placeholder bindings such as
+    ``Latin Modern Roman`` for unrelated scripts.
     """
 
-    langs: set[str] = set()
+    declarations: dict[str, str] = {}
 
     for font in font_list:
         inf_raw = font.get("inference") or {}
@@ -203,11 +212,113 @@ def _collect_polyglossia_font_setup(font_list: list[CatalogFontEntryV12]) -> str
             info = SCRIPT_INFO.get(script_iso)
             if info:
                 lang = info["polyglossia_language"]
-                if lang and lang != "english":
-                    langs.add(lang)
+                if (
+                    lang
+                    and lang != "english"
+                    and lang not in declarations
+                    and _font_has_supported_extension(font)
+                ):
+                    declaration = _build_polyglossia_font_setup(font, lang, script_iso)
+                    if declaration:
+                        declarations[lang] = declaration
 
-    return "".join(
-        f"\\newfontfamily\\{lang}font{{Latin Modern Roman}}\n" for lang in sorted(langs)
+    return "".join(declarations[lang] for lang in sorted(declarations))
+
+
+def _font_has_supported_extension(font: CatalogFontEntryV12) -> bool:
+    """
+    Return whether a catalog font entry points to a supported font file.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Catalog font entry whose `path` field is inspected.
+
+    Returns
+    -------
+    bool
+        ``True`` when the path ends with ``.ttf``, ``.otf``, or ``.ttc``.
+    """
+    path = str(font.get("path", "")).lower()
+    return path.endswith((".ttf", ".otf", ".ttc"))
+
+
+def _normalize_font_path_for_latex(fullpath: str) -> tuple[str, str]:
+    """
+    Normalize a font file path for LaTeX/fontspec usage.
+
+    Parameters
+    ----------
+    fullpath : str
+        Original font file path, possibly using platform-specific
+        separators.
+
+    Returns
+    -------
+    tuple[str, str]
+        Two-element tuple ``(dir_with_trailing_slash, filename)``.
+    """
+    norm = fullpath.replace("\\", "/")
+    if "/" in norm:
+        directory, filename = norm.rsplit("/", 1)
+        directory = (directory + "/") if directory else "./"
+        return directory, filename
+    return "./", norm
+
+
+def _build_polyglossia_font_setup(
+    font: CatalogFontEntryV12, lang: str, script_iso: ScriptISO
+) -> str:
+    """
+    Build a preamble ``\\newfontfamily`` declaration for one language.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Catalog font entry providing the actual file path used for the
+        declaration.
+    lang : str
+        Polyglossia language name whose font command will be defined.
+    script_iso : ScriptISO
+        Script whose render policy determines the emitted fontspec
+        options.
+
+    Returns
+    -------
+    str
+        Complete ``\\newfontfamily`` declaration ending with a newline,
+        or an empty string if the entry cannot be emitted.
+    """
+    fullpath = str(font.get("path", ""))
+    if not _font_has_supported_extension(font):
+        return ""
+
+    directory, filename = _normalize_font_path_for_latex(fullpath)
+    file_suffix = Path(filename).suffix
+    file_stem = Path(filename).stem
+    detok_dir = "\\detokenize{" + directory + "}"
+    detok_stem = "\\detokenize{" + _latex_detokenize_safe(file_stem) + "}"
+    renderer_prefix = _renderer_option_prefix()
+    _, script_opt = _get_render_policy(script_iso)
+
+    render_options: list[str] = []
+    if renderer_prefix:
+        render_options.append(renderer_prefix.rstrip(","))
+    render_options.append("Path=" + detok_dir)
+    if script_opt and file_suffix:
+        render_options.append("Extension=" + file_suffix)
+    if script_opt:
+        render_options.append(script_opt)
+    opts = ",".join(render_options)
+
+    return (
+        "\\newfontfamily\\"
+        + lang
+        + "font[BoldFont={},ItalicFont={},BoldItalicFont={},"
+        + opts
+        + "]{"
+        + detok_stem
+        + "}\n"
     )
 
 

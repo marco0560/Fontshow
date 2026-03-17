@@ -116,7 +116,7 @@ If any would fail:
 
 Propose a **single commit block**:
 
-- minimal
+- 15 - 20 lines long
 - atomic
 - CI-compliant
 - compliant with `.githooks/commit-msg.py`

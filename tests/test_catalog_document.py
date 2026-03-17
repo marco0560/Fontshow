@@ -82,6 +82,8 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
     assert "\\renewfontfamily\\arabicfont" in render
     assert "\\foreignlanguage{arabic}" in render
     assert "\\arabicfont" in render
+    assert "Extension=.ttf" in render
+    assert "{\\detokenize{arabic}}" in render
     assert options == "Renderer=1,Path=/tmp/,File=arabic.ttf,Script=Arabic"
 
 
@@ -113,9 +115,46 @@ def test_render_font_entry_falls_back_to_fontspec_without_language(monkeypatch):
 
     assert "\\newfontfamily\\fontshowentryfont" in render
     assert "\\fontspec[" not in render
+    assert "Extension=.otf" in render
     assert "Path=\\detokenize{/tmp/}" in render
-    assert "{\\detokenize{foo.otf}}" in render
+    assert "{\\detokenize{foo}}" in render
     assert options == "Path=/tmp/,File=foo.otf,Script=Foo"
+
+
+def test_render_font_entry_uses_inline_fontspec_for_gujarati_without_language(
+    monkeypatch,
+):
+    """
+    Ensure Gujarati script-only entries avoid ``\\newfontfamily``.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace LaTeX helper functions.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "Renderer=1,")
+    monkeypatch.setattr(
+        document, "_get_render_policy", lambda _script: ("", "Script=Gujarati")
+    )
+
+    render, options = document._render_font_entry(
+        font={"path": "/tmp/Lohit-Gujarati.ttf"},
+        safe_specimen="abc",
+        script0_iso=ScriptISO("GUJR"),
+        fullpath="/tmp/Lohit-Gujarati.ttf",
+    )
+
+    assert "\\fontspec[" in render
+    assert "\\newfontfamily\\fontshowentryfont" not in render
+    assert "Extension=.ttf" not in render
+    assert "Script=Gujarati" not in render
+    assert "{\\detokenize{Lohit-Gujarati.ttf}}" in render
+    assert options == "Renderer=1,Path=/tmp/,File=Lohit-Gujarati.ttf"
 
 
 def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
@@ -147,6 +186,40 @@ def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
     assert "{\\detokenize{unknown.ttf}}" in render
     assert "{\\detokenize{/tmp/unknown.ttf}}" not in render
     assert options == "Renderer=1,Path=/tmp/,File=unknown.ttf"
+
+
+def test_format_specimen_for_latex_chunks_non_cjk_runs_every_ten_characters():
+    """
+    Ensure long non-CJK runs receive sparse explicit break hints.
+
+    Returns
+    -------
+    None
+    """
+    specimen = "A" * 40
+
+    formatted = document._format_specimen_for_latex(specimen, ScriptISO("LATN"))
+
+    assert (
+        formatted
+        == "AAAAAAAAAA\\allowbreak{}AAAAAAAAAA\\allowbreak{}AAAAAAAAAA\\allowbreak{}AAAAAAAAAA"
+    )
+
+
+def test_format_specimen_for_latex_skips_break_hints_for_cjk_runs():
+    """
+    Ensure long CJK runs rely on native line breaking.
+
+    Returns
+    -------
+    None
+    """
+    specimen = "漢" * 40
+
+    formatted = document._format_specimen_for_latex(specimen, ScriptISO("HANI"))
+
+    assert formatted == specimen
+    assert "\\allowbreak{}" not in formatted
 
 
 def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkeypatch):
@@ -240,11 +313,78 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert "FONTDEF" not in latex
     assert "LANGS : EN" in latex
     assert "OPTS  : Path=/tmp/, File=alpha.ttf" in latex
+    assert "}\\newline" not in latex
+    assert "\\item Beta --- " in latex.split("\\item Alpha --- ", maxsplit=1)[1]
+    assert "\n\n\\item Beta --- " in latex
     assert "\\LogWorking{Alpha / alpha.ttf}" in latex
     assert "\\LogWorking{Alpha / ignored.ttf}" in latex
     assert "\\LogBroken{Beta / beta.bin}" in latex
-    assert "\\allowbreak{}" in latex
+    assert latex.count("\\allowbreak{}") == 6
     assert "FILE  : beta.bin" in latex
     assert "\\LogBroken{Beta / beta.bin}[MISSING]" in latex
     assert "\\LogExcluded{Zed}" in latex
     assert latex.endswith("\nEND:2:DONE")
+
+
+def test_generate_latex_skips_excluded_families_from_catalog(monkeypatch):
+    """
+    Ensure excluded families do not render catalog entries.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers and logging.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", {"Skip Me"})
+    monkeypatch.setattr(document, "log_info", lambda _message: None)
+    monkeypatch.setattr(document, "log_warn", lambda _message: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda fonts: "")
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document.Path, "is_file", lambda _path_obj: True)
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+    monkeypatch.setattr(
+        document,
+        "_render_font_entry",
+        lambda **kwargs: ("<rendered>", "Path=/tmp/,File=alpha.ttf"),
+    )
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "Skip Me",
+                "path": "/tmp/skip.ttf",
+                "specimen_text": "ignored",
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "script": "latn",
+            },
+            {
+                "family": "Keep Me",
+                "path": "/tmp/keep.ttf",
+                "specimen_text": "sample",
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "script": "latn",
+            },
+        ]
+    )
+
+    assert "\\item Skip Me --- " not in latex
+    assert "\\item Keep Me --- " in latex
+    assert "\\LogExcluded{Skip Me}" in latex
+    assert latex.endswith("\nEND:1:DONE")

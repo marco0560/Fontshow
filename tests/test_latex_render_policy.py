@@ -99,6 +99,91 @@ def test_collect_polyglossia_other_languages_is_sorted_and_filtered(monkeypatch)
     )
 
 
+def test_collect_polyglossia_font_setup_uses_first_matching_catalog_font(monkeypatch):
+    """
+    Ensure the preamble font setup uses real file-backed declarations.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the script ontology table and render
+        helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        policy,
+        "SCRIPT_INFO",
+        {
+            "ARAB": {
+                "polyglossia_language": "arabic",
+                "fontspec_opts": "Script=Arabic",
+            },
+            "HEBR": {
+                "polyglossia_language": "hebrew",
+                "fontspec_opts": "Script=Hebrew",
+            },
+        },
+    )
+    monkeypatch.setattr(policy, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(policy, "_renderer_option_prefix", lambda: "Renderer=1,")
+
+    result = policy._collect_polyglossia_font_setup(
+        [
+            {"path": "/tmp/ignored.txt", "inference": {"scripts": ["arab"]}},
+            {"path": "/tmp/arabic-one.ttf", "inference": {"scripts": ["arab"]}},
+            {"path": "/tmp/hebrew.otf", "inference": {"scripts": ["hebr"]}},
+            {"path": "/tmp/arabic-two.ttf", "inference": {"scripts": ["arab"]}},
+        ]
+    )
+
+    assert result == (
+        "\\newfontfamily\\arabicfont[BoldFont={},ItalicFont={},BoldItalicFont={},"
+        "Renderer=1,Path=\\detokenize{/tmp/},Extension=.ttf,Script=Arabic]"
+        "{\\detokenize{arabic-one}}\n"
+        "\\newfontfamily\\hebrewfont[BoldFont={},ItalicFont={},BoldItalicFont={},"
+        "Renderer=1,Path=\\detokenize{/tmp/},Extension=.otf,Script=Hebrew]"
+        "{\\detokenize{hebrew}}\n"
+    )
+
+
+def test_collect_polyglossia_font_setup_skips_english_and_missing_mappings(monkeypatch):
+    """
+    Ensure unsupported or main-language entries do not emit setup lines.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace the script ontology table and render
+        helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        policy,
+        "SCRIPT_INFO",
+        {
+            "LATN": {"polyglossia_language": "english", "fontspec_opts": ""},
+            "HANI": {"polyglossia_language": "", "fontspec_opts": "Script=CJK"},
+        },
+    )
+    monkeypatch.setattr(policy, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(policy, "_renderer_option_prefix", lambda: "")
+
+    result = policy._collect_polyglossia_font_setup(
+        [
+            {"path": "/tmp/latin.ttf", "inference": {"scripts": ["latn"]}},
+            {"path": "/tmp/han.ttf", "inference": {"scripts": ["hani"]}},
+        ]
+    )
+
+    assert result == ""
+
+
 def test_nfss_family_id_is_stable_and_uses_path():
     """
     Ensure NFSS ids are deterministic and vary across file paths.

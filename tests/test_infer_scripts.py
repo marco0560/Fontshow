@@ -500,6 +500,46 @@ def test_infer_scripts_suppresses_neighboring_scripts_for_sixth_batch():
     ]
 
 
+def test_infer_scripts_seventh_batch_blocks():
+    """
+    Verify seventh-batch script blocks infer dedicated script tags.
+
+    Returns
+    -------
+    None
+    """
+    assert infer_scripts({"unicode_blocks": {"Anatolian Hieroglyphs": 24}}) == ["hluw"]
+    assert infer_scripts({"unicode_blocks": {"Avestan": 24}}) == ["avst"]
+    assert infer_scripts({"unicode_blocks": {"Bassa Vah": 24}}) == ["bass"]
+    assert infer_scripts({"unicode_blocks": {"Bhaiksuki": 24}}) == ["bhks"]
+    assert infer_scripts({"unicode_blocks": {"Byzantine Musical Symbols": 24}}) == [
+        "byzm"
+    ]
+    assert infer_scripts({"unicode_blocks": {"Carian": 24}}) == ["cari"]
+    assert infer_scripts({"unicode_blocks": {"Caucasian Albanian": 24}}) == ["aghb"]
+    assert infer_scripts({"unicode_blocks": {"Chorasmian": 24}}) == ["chrs"]
+    assert infer_scripts({"unicode_blocks": {"Cypriot Syllabary": 24}}) == ["cprt"]
+    assert infer_scripts({"unicode_blocks": {"Cypro-Minoan": 24}}) == ["cpmn"]
+
+
+def test_infer_scripts_uses_unicode_max_for_seventh_batch_ranges():
+    """
+    Verify unicode.max fallback covers seventh-batch script ranges.
+
+    Returns
+    -------
+    None
+    """
+    assert infer_scripts({"unicode": {"max": 0x10545}}) == ["aghb"]
+    assert infer_scripts({"unicode": {"max": 0x10B15}}) == ["avst"]
+    assert infer_scripts({"unicode": {"max": 0x11C15}}) == ["bhks"]
+    assert infer_scripts({"unicode": {"max": 0x102B5}}) == ["cari"]
+    assert infer_scripts({"unicode": {"max": 0x10FC5}}) == ["chrs"]
+    assert infer_scripts({"unicode": {"max": 0x10815}}) == ["cprt"]
+    assert infer_scripts({"unicode": {"max": 0x12FA5}}) == ["cpmn"]
+    assert infer_scripts({"unicode": {"max": 0x14415}}) == ["hluw"]
+
+
 def test_coverage_scripts_never_unknown():
     """
     Verify that the public coverage script list itself never contains ``unknown``.

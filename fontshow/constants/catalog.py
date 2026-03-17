@@ -37,6 +37,9 @@ if IS_WINDOWS:
     DEFAULT_TEST_FONTS = {"Times New Roman", "Arial", "Calibri", "Noto Sans"}
 elif IS_LINUX:
     EXCLUDED_FONTS = {
+        "Lohit Gujarati",
+        "Lohit Gurmukhi",
+        "Lohit Kannada",
         "MuseJazz Text",
         "MnSymbol",
     }

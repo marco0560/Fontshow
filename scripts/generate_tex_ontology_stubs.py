@@ -7,6 +7,8 @@ produces a deterministic JSON proposal separating:
 
 - canonical specimen-language candidates,
 - alias-only language variants,
+- Polyglossia names already normalized by the production pipeline,
+- Polyglossia non-canonical locale/style modules,
 - script stubs requiring curation.
 
 Responsibilities
@@ -120,11 +122,28 @@ def build_stub_proposal(gap_report: dict[str, Any]) -> dict[str, Any]:
 
     alias_variants: list[dict[str, str]] = []
     canonical_languages: list[dict[str, str]] = []
+    pipeline_normalized_languages: list[dict[str, str]] = []
+    non_canonical_modules: list[dict[str, str]] = []
 
     for item in missing_languages:
         name = item["name"]
         classification = item["classification"]
-        if is_alias_language(name):
+        if classification == "normalized_by_pipeline":
+            pipeline_normalized_languages.append(
+                {
+                    "language": name,
+                    "normalized_candidate": canonicalize_alias_target(name),
+                    "classification": classification,
+                }
+            )
+        elif classification == "non_canonical_module":
+            non_canonical_modules.append(
+                {
+                    "language": name,
+                    "classification": classification,
+                }
+            )
+        elif is_alias_language(name):
             alias_variants.append(
                 {
                     "alias": name,
@@ -143,6 +162,10 @@ def build_stub_proposal(gap_report: dict[str, Any]) -> dict[str, Any]:
 
     alias_variants.sort(key=lambda item: (item["canonical_candidate"], item["alias"]))
     canonical_languages.sort(key=lambda item: item["language"])
+    pipeline_normalized_languages.sort(
+        key=lambda item: (item["normalized_candidate"], item["language"])
+    )
+    non_canonical_modules.sort(key=lambda item: item["language"])
 
     grouped_aliases: dict[str, list[str]] = {}
     for item in alias_variants:
@@ -156,12 +179,16 @@ def build_stub_proposal(gap_report: dict[str, Any]) -> dict[str, Any]:
             "canonical_language_candidates": len(canonical_languages),
             "alias_variants": len(alias_variants),
             "alias_groups": len(grouped_aliases),
+            "pipeline_normalized_languages": len(pipeline_normalized_languages),
+            "non_canonical_modules": len(non_canonical_modules),
         },
         "scripts": script_stubs,
         "languages": {
             "canonical_candidates": canonical_languages,
             "alias_variants": alias_variants,
             "alias_groups": grouped_aliases,
+            "pipeline_normalized": pipeline_normalized_languages,
+            "non_canonical_modules": non_canonical_modules,
         },
     }
 
@@ -212,7 +239,9 @@ def main() -> int:
         "[OK] "
         f"script stubs={proposal['summary']['script_stubs']} "
         f"canonical language candidates={proposal['summary']['canonical_language_candidates']} "
-        f"alias variants={proposal['summary']['alias_variants']}"
+        f"alias variants={proposal['summary']['alias_variants']} "
+        f"pipeline normalized={proposal['summary']['pipeline_normalized_languages']} "
+        f"non-canonical modules={proposal['summary']['non_canonical_modules']}"
     )
     return 0
 

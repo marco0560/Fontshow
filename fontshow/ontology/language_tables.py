@@ -159,6 +159,15 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "requires_polyglossia": False,
         "specimen": "𞤀𞤁𞤂𞤃𞤄𞤅𞤆𞤇𞤈𞤉𞤊𞤋𞤌𞤍𞤎𞤏𞤐𞤑𞤒𞤓𞤔𞤕𞤖𞤗",
     },
+    ScriptISO("AGHB"): {
+        "canonical_name": "Caucasian Albanian",
+        "display_language": "xag",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script={Caucasian Albanian}",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "𐔰𐔱𐔲𐔳𐔴𐔵𐔶𐔷𐔸𐔹𐔺𐔻𐔼𐔽𐔾𐔿𐕀𐕁𐕂𐕃𐕄𐕅𐕆𐕇",
+    },
     ScriptISO("AHOM"): {
         "canonical_name": "Ahom",
         "display_language": "aho",
@@ -185,6 +194,15 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "rtl": False,
         "requires_polyglossia": False,
         "specimen": "Վարդագույն աղվեսը ցատկում է ծույլ շան վրայով",
+    },
+    ScriptISO("AVST"): {
+        "canonical_name": "Avestan",
+        "display_language": "ae",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script=Avestan",
+        "rtl": True,
+        "requires_polyglossia": False,
+        "specimen": "𐬀𐬁𐬂𐬃𐬄𐬅𐬆𐬇𐬈𐬉𐬊𐬋𐬌𐬍𐬎𐬏𐬐𐬑𐬒𐬓𐬔𐬕𐬖𐬗",
     },
     ScriptISO("BALI"): {
         "canonical_name": "Balinese",
@@ -213,6 +231,15 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "requires_polyglossia": False,
         "specimen": "ꚠꚡꚢꚣꚤꚥꚦꚧꚨꚩꚪꚫꚬꚭꚮꚯꚰꚱꚲꚳꚴꚵꚶꚷ",
     },
+    ScriptISO("BASS"): {
+        "canonical_name": "Bassa Vah",
+        "display_language": "bsq",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script={Bassa Vah}",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "𖫐𖫑𖫒𖫓𖫔𖫕𖫖𖫗𖫘𖫙𖫚𖫛𖫜𖫝𖫞𖫟𖫠𖫡𖫢𖫣𖫤𖫥𖫦𖫧",
+    },
     ScriptISO("BENG"): {
         "canonical_name": "Bengali",
         "display_language": "bn",
@@ -221,6 +248,15 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "rtl": False,
         "requires_polyglossia": True,
         "specimen": "বাংলা ভাষা একটি সমৃদ্ধ ভাষা।",
+    },
+    ScriptISO("BHKS"): {
+        "canonical_name": "Bhaiksuki",
+        "display_language": "pli",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script=Bhaiksuki",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "𑰀𑰁𑰂𑰃𑰄𑰅𑰆𑰇𑰈𑰉𑰊𑰋𑰌𑰍𑰎𑰏𑰐𑰑𑰒𑰓𑰔𑰕𑰖𑰗",
     },
     ScriptISO("BOPO"): {
         "canonical_name": "Bopomofo",
@@ -258,6 +294,15 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "requires_polyglossia": False,
         "specimen": "ᝀᝁᝂᝃᝄᝅᝆᝇᝈᝉᝊᝋᝌᝍᝎᝏᝐᝑ᜵᜶",
     },
+    ScriptISO("BYZM"): {
+        "canonical_name": "Byzantine Music",
+        "display_language": "zxx",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script={Byzantine Music}",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "𝀀𝀁𝀂𝀃𝀄𝀅𝀆𝀇𝀈𝀉𝀊𝀋𝀌𝀍𝀎𝀏𝀐𝀑𝀒𝀓𝀔𝀕𝀖𝀗",
+    },
     ScriptISO("CANS"): {
         "canonical_name": "Canadian Syllabics",
         "display_language": "cr",
@@ -266,6 +311,15 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "rtl": False,
         "requires_polyglossia": False,
         "specimen": "᐀ᐁᐂᐃᐄᐅᐆᐇᐈᐉᐊᐋᐌᐍᐎᐏᐐᐑᐒᐓᐔᐕᐖᐗ",
+    },
+    ScriptISO("CARI"): {
+        "canonical_name": "Carian",
+        "display_language": "xcr",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script=Carian",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "𐊠𐊡𐊢𐊣𐊤𐊥𐊦𐊧𐊨𐊩𐊪𐊫𐊬𐊭𐊮𐊯𐊰𐊱𐊲𐊳𐊴𐊵𐊶𐊷",
     },
     ScriptISO("CHAK"): {
         "canonical_name": "Chakma",
@@ -294,6 +348,15 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "requires_polyglossia": False,
         "specimen": "ᎣᏏᏲ ᎠᏓᎨᏫᏍᏗ",
     },
+    ScriptISO("CHRS"): {
+        "canonical_name": "Chorasmian",
+        "display_language": "xco",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script=Chorasmian",
+        "rtl": True,
+        "requires_polyglossia": False,
+        "specimen": "𐾰𐾱𐾲𐾳𐾴𐾵𐾶𐾷𐾸𐾹𐾺𐾻𐾼𐾽𐾾𐾿𐿀𐿁𐿂𐿃𐿄𐿅𐿆𐿇",
+    },
     ScriptISO("COPT"): {
         "canonical_name": "Coptic",
         "display_language": "cop",
@@ -302,6 +365,24 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "rtl": False,
         "requires_polyglossia": True,
         "specimen": "ϢϣϤϥϦϧϨϩϪϫϬϭϮϯⲀⲁⲂⲃⲄⲅⲆⲇⲈⲉ",
+    },
+    ScriptISO("CPMN"): {
+        "canonical_name": "Cypro-Minoan",
+        "display_language": "und",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script={Cypro-Minoan}",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "𒾐𒾑𒾒𒾓𒾔𒾕𒾖𒾗𒾘𒾙𒾚𒾛𒾜𒾝𒾞𒾟𒾠𒾡𒾢𒾣𒾤𒾥𒾦𒾧",
+    },
+    ScriptISO("CPRT"): {
+        "canonical_name": "Cypriot Syllabary",
+        "display_language": "ecy",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script={Cypriot Syllabary}",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "𐠀𐠁𐠂𐠃𐠄𐠅𐠆𐠇𐠈𐠉𐠊𐠋𐠌𐠍𐠎𐠏𐠐𐠑𐠒𐠓𐠔𐠕𐠖𐠗",
     },
     ScriptISO("CYRL"): {
         "canonical_name": "Cyrillic",
@@ -500,6 +581,15 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "rtl": True,
         "requires_polyglossia": True,
         "specimen": "דג סקרן שט בים מאוכזב",
+    },
+    ScriptISO("HLUW"): {
+        "canonical_name": "Anatolian Hieroglyphs",
+        "display_language": "hlu",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script={Anatolian Hieroglyphs}",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "𔐀𔐁𔐂𔐃𔐄𔐅𔐆𔐇𔐈𔐉𔐊𔐋𔐌𔐍𔐎𔐏𔐐𔐑𔐒𔐓𔐔𔐕𔐖𔐗",
     },
     ScriptISO("HIRA"): {
         "canonical_name": "Hiragana",
@@ -937,6 +1027,13 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
 
 
 LANGUAGE_INFO: dict[str, LanguageInfo] = {
+    "ae": {
+        "canonical_name": "Avestan",
+        "scripts": [ScriptISO("AVST")],
+        "required_blocks": ["Avestan"],
+        "optional_blocks": [],
+        "sample": "𐬀𐬁𐬂𐬃𐬄𐬅𐬆𐬇𐬈𐬉𐬊𐬋𐬌𐬍𐬎𐬏𐬐𐬑𐬒𐬓𐬔𐬕𐬖𐬗",
+    },
     "aho": {
         "canonical_name": "Ahom",
         "scripts": [ScriptISO("AHOM")],
@@ -1007,6 +1104,13 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "optional_blocks": [],
         "sample": "ᨀᨁᨂᨃᨄᨅᨆᨇᨈᨉᨊᨋᨌᨍᨎᨏᨐᨑᨒᨓᨔᨕᨖꧏ᨞᨟",
     },
+    "bsq": {
+        "canonical_name": "Bassa",
+        "scripts": [ScriptISO("BASS")],
+        "required_blocks": ["Bassa Vah"],
+        "optional_blocks": [],
+        "sample": "𖫐𖫑𖫒𖫓𖫔𖫕𖫖𖫗𖫘𖫙𖫚𖫛𖫜𖫝𖫞𖫟𖫠𖫡𖫢𖫣𖫤𖫥𖫦𖫧",
+    },
     "cop": {
         "canonical_name": "Coptic",
         "scripts": [ScriptISO("COPT")],
@@ -1041,6 +1145,13 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "required_blocks": ["Cham"],
         "optional_blocks": [],
         "sample": "ꨀꨁꨂꨃꨄꨅꨆꨇꨈꨉꨊꨋꨌꨍꨎꨏꨐꨑꨒꨓꨔꨕꨖꨗ",
+    },
+    "ecy": {
+        "canonical_name": "Eteocypriot",
+        "scripts": [ScriptISO("CPRT")],
+        "required_blocks": ["Cypriot Syllabary"],
+        "optional_blocks": [],
+        "sample": "𐠀𐠁𐠂𐠃𐠄𐠅𐠆𐠇𐠈𐠉𐠊𐠋𐠌𐠍𐠎𐠏𐠐𐠑𐠒𐠓𐠔𐠕𐠖𐠗",
     },
     "chr": {
         "canonical_name": "Cherokee",
@@ -1118,6 +1229,13 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "required_blocks": ["Gothic"],
         "optional_blocks": [],
         "sample": "𐌰𐌱𐌲𐌳𐌴𐌵𐌶𐌷𐌸𐌹𐌺𐌻𐌼𐌽𐌾𐌿𐍀𐍁𐍂𐍃𐍄𐍅𐍆𐍇",
+    },
+    "hlu": {
+        "canonical_name": "Hieroglyphic Luwian",
+        "scripts": [ScriptISO("HLUW")],
+        "required_blocks": ["Anatolian Hieroglyphs"],
+        "optional_blocks": [],
+        "sample": "𔐀𔐁𔐂𔐃𔐄𔐅𔐆𔐇𔐈𔐉𔐊𔐋𔐌𔐍𔐎𔐏𔐐𔐑𔐒𔐓𔐔𔐕𔐖𔐗",
     },
     "gon": {
         "canonical_name": "Gondi",
@@ -1301,6 +1419,13 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "optional_blocks": [],
         "sample": "𐒰𐒱𐒲𐒳𐒴𐒵𐒶𐒷𐒸𐒹𐒺𐒻𐒼𐒽𐒾𐒿𐓀𐓁𐓂𐓃𐓄𐓅𐓆𐓇",
     },
+    "pli": {
+        "canonical_name": "Pali",
+        "scripts": [ScriptISO("BHKS")],
+        "required_blocks": ["Bhaiksuki"],
+        "optional_blocks": [],
+        "sample": "𑰀𑰁𑰂𑰃𑰄𑰅𑰆𑰇𑰈𑰉𑰊𑰋𑰌𑰍𑰎𑰏𑰐𑰑𑰒𑰓𑰔𑰕𑰖𑰗",
+    },
     "ml": {
         "canonical_name": "Malayalam",
         "scripts": [ScriptISO("MLYM")],
@@ -1370,6 +1495,13 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "required_blocks": ["Tagalog"],
         "optional_blocks": ["Basic Latin"],
         "sample": "ᜀᜁᜂᜃᜄᜅᜆᜇᜈᜉᜊᜋᜌᜎᜏᜐᜑᜒᜓ᜔",
+    },
+    "und": {
+        "canonical_name": "Undetermined",
+        "scripts": [ScriptISO("CPMN")],
+        "required_blocks": ["Cypro-Minoan"],
+        "optional_blocks": [],
+        "sample": "𒾐𒾑𒾒𒾓𒾔𒾕𒾖𒾗𒾘𒾙𒾚𒾛𒾜𒾝𒾞𒾟𒾠𒾡𒾢𒾣𒾤𒾥𒾦𒾧",
     },
     "tbw": {
         "canonical_name": "Tagbanwa",
@@ -1524,6 +1656,34 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "required_blocks": ["Vai"],
         "optional_blocks": [],
         "sample": "ꔀꔁꔂꔃꔄꔅꔆꔇꔈꔉꔊꔋꔌꔍꔎꔏꔐꔑꔒꔓꔔꔕꔖꔗ",
+    },
+    "xag": {
+        "canonical_name": "Aghwan",
+        "scripts": [ScriptISO("AGHB")],
+        "required_blocks": ["Caucasian Albanian"],
+        "optional_blocks": [],
+        "sample": "𐔰𐔱𐔲𐔳𐔴𐔵𐔶𐔷𐔸𐔹𐔺𐔻𐔼𐔽𐔾𐔿𐕀𐕁𐕂𐕃𐕄𐕅𐕆𐕇",
+    },
+    "xco": {
+        "canonical_name": "Chorasmian",
+        "scripts": [ScriptISO("CHRS")],
+        "required_blocks": ["Chorasmian"],
+        "optional_blocks": [],
+        "sample": "𐾰𐾱𐾲𐾳𐾴𐾵𐾶𐾷𐾸𐾹𐾺𐾻𐾼𐾽𐾾𐾿𐿀𐿁𐿂𐿃𐿄𐿅𐿆𐿇",
+    },
+    "xcr": {
+        "canonical_name": "Carian",
+        "scripts": [ScriptISO("CARI")],
+        "required_blocks": ["Carian"],
+        "optional_blocks": [],
+        "sample": "𐊠𐊡𐊢𐊣𐊤𐊥𐊦𐊧𐊨𐊩𐊪𐊫𐊬𐊭𐊮𐊯𐊰𐊱𐊲𐊳𐊴𐊵𐊶𐊷",
+    },
+    "zxx": {
+        "canonical_name": "No linguistic content",
+        "scripts": [ScriptISO("BYZM")],
+        "required_blocks": ["Byzantine Musical Symbols"],
+        "optional_blocks": [],
+        "sample": "𝀀𝀁𝀂𝀃𝀄𝀅𝀆𝀇𝀈𝀉𝀊𝀋𝀌𝀍𝀎𝀏𝀐𝀑𝀒𝀓𝀔𝀕𝀖𝀗",
     },
 }
 
