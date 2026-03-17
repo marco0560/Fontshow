@@ -1,3 +1,9 @@
+## [0.59.0](https://github.com/marco0560/Fontshow/compare/v0.58.2...v0.59.0) (2026-03-17)
+
+### Features
+
+* **ontology:** add factual descriptions to script and language tables ([fe2b158](https://github.com/marco0560/Fontshow/commit/fe2b1585d22319d4297c4424fadecd841d3c67c6)), closes [#65](https://github.com/marco0560/Fontshow/issues/65)
+
 ## [0.58.2](https://github.com/marco0560/Fontshow/compare/v0.58.1...v0.58.2) (2026-03-17)
 
 ### Bug Fixes
