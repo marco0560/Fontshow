@@ -108,7 +108,7 @@ LATEX_INITIAL_CODE: str = (
 \newenvironment{fontbox}[1]{}{}
 %\newtcolorbox{errorbox}[1]{
 %    colback=errorcolor!10, colframe=errorcolor!80!black, boxrule=1pt, arc=3pt,
-%    title={\textbf{Non Caricato: #1}}, coltitle=white, colbacktitle=errorcolor!80!black%
+%    title={\textbf{Not Loadable: #1}}, coltitle=white, colbacktitle=errorcolor!80!black%
 %}
 \newenvironment{errorbox}[1]{}{}
 
@@ -148,7 +148,7 @@ LATEX_INITIAL_CODE: str = (
 \SetLipsumText{cicero}
 \newcommand{\Li}{\lipsum[1][1-4]}
 
-\title{\Huge\textbf{\color{titlecolor}Catalogo Font di Sistema}}
+\title{\Huge\textbf{\color{titlecolor}System Font Catalog}}
 \author{Generated with fontshow create-catalog """
     + escape_latex(__version__)
     + r""" \texttt{"""
@@ -206,7 +206,7 @@ NORMAL_BLOCK: str = """\\subsection{{{safe_name}}}
 # --------------------------------------------
 LATEX_END_CODE_1: str = r"""\newpage
 
-% Chiusura file degli indici
+% Closing Indices
 \immediate\closeout\fileWorking
 \immediate\closeout\fileBroken
 \immediate\closeout\fileExcluded
@@ -222,7 +222,7 @@ LATEX_END_CODE_1: str = r"""\newpage
 \toprule
 \textbf{Category} & \textbf{Quantity} \\
 \midrule
-Font Analizzati (Post-Filtro) & """
+Analyzed Fonts (Post-Filter) & """
 # --------------------------------------------
 LATEX_END_CODE_2: str = r""" \\
 \textcolor{successcolor}{\textbf{Working Fonts}} & \textbf{\arabic{cntWorking}} \\
