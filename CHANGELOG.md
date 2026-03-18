@@ -1,3 +1,10 @@
+## [0.59.1](https://github.com/marco0560/Fontshow/compare/v0.59.0...v0.59.1) (2026-03-18)
+
+### Bug Fixes
+
+* **latex:** translate remaining Italian template strings ([b9c406e](https://github.com/marco0560/Fontshow/commit/b9c406ea18fbf3eca03f65f11917ef28366451d1))
+* **ontology:** add Elymaic Kawi and Makasar scripts and update script inference ([4dbe1ba](https://github.com/marco0560/Fontshow/commit/4dbe1bac7840ff02280655148f5d7c374b918ee3))
+
 ## [0.59.0](https://github.com/marco0560/Fontshow/compare/v0.58.2...v0.59.0) (2026-03-17)
 
 ### Features
