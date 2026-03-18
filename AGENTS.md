@@ -98,10 +98,16 @@ Tests must:
 You MUST assume the following commands are run:
 
 ```bash
+pre-commit run --all-files
+pytest -q
+```
+
+`pre-commit` includes and replaces:
+
+```bash
 black .
 ruff check .
 mypy fontshow
-pytest -q
 ```
 
 All must pass.
@@ -118,8 +124,7 @@ Propose a **single commit block** that is:
 
 - 15 - 20 lines long
 - atomic
-- CI-compliant
-- compliant with `.githooks/commit-msg.py`
+- CI-compliant, checked against `.githooks/commit-msg.py`
 
 Include:
 
@@ -145,7 +150,7 @@ Every:
 - module
 - class
 - public function
-- non-trivial private function
+- private function
 
 MUST have a docstring.
 
@@ -176,7 +181,33 @@ Raises
 ------
 ExceptionType
     Condition.
+
+Notes
+-----
+<Description>
+
+Examples
+--------
+>>> func(input)
+output
 ```
+
+The `Notes` field is optional. It is required if there is / are:
+
+- Non-obvious behavior: Anything that a reader would not infer from the signature or name.
+- Implementation details that affect correctness: especially if they influence edge cases or performance.
+- Important invariants or assumptions.
+- Design decisions / rationale.
+- Domain-specific meaning
+
+The `Examples` field is optional. It is required if:
+
+- The function is not immediately obvious from its signature
+- There are non-trivial inputs or outputs
+- Edge cases matter
+- Behavior is easier to show than to explain
+- CLI-like or pipeline functions
+- String transformations / formatting functions
 
 ---
 
