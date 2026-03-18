@@ -540,6 +540,41 @@ def test_infer_scripts_uses_unicode_max_for_seventh_batch_ranges():
     assert infer_scripts({"unicode": {"max": 0x14415}}) == ["hluw"]
 
 
+def test_infer_scripts_supports_eighth_batch_blocks_and_ranges():
+    """
+    Verify direct and unicode.max inference for the eighth script batch.
+
+    Returns
+    -------
+    None
+    """
+    assert infer_scripts({"unicode_blocks": {"Elymaic": 24}}) == ["elym"]
+    assert infer_scripts({"unicode_blocks": {"Kawi": 24}}) == ["kawi"]
+    assert infer_scripts({"unicode_blocks": {"Makasar": 24}}) == ["maka"]
+    assert infer_scripts({"unicode": {"max": 0x10FF0}}) == ["elym"]
+    assert infer_scripts({"unicode": {"max": 0x11F35}}) == ["kawi"]
+    assert infer_scripts({"unicode": {"max": 0x11EF4}}) == ["maka"]
+
+
+def test_infer_scripts_suppresses_neighboring_devanagari_and_thai_noise():
+    """
+    Verify Bengali and Lao suppress common neighboring false positives.
+
+    Returns
+    -------
+    None
+    """
+    assert infer_scripts(
+        {"unicode_blocks": {"Bengali": 24, "Devanagari": 9, "Basic Latin": 9}}
+    ) == ["beng", "latn"]
+    assert infer_scripts(
+        {"unicode_blocks": {"Lao": 24, "Thai": 9, "Basic Latin": 9}}
+    ) == [
+        "laoo",
+        "latn",
+    ]
+
+
 def test_coverage_scripts_never_unknown():
     """
     Verify that the public coverage script list itself never contains ``unknown``.

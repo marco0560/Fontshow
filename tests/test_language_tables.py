@@ -444,6 +444,47 @@ def test_seventh_batch_language_entries_point_back_to_expected_scripts():
         assert isinstance(info["sample"], str) and info["sample"]
 
 
+def test_eighth_batch_script_entries_have_rendering_and_representative_languages():
+    """
+    Ensure the eighth script expansion batch is wired into the ontology.
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "ELYM": ("xly", "Script=Elymaic"),
+        "KAWI": ("kaw", "Script=Kawi"),
+        "MAKA": ("mak", "Script=Makasar"),
+    }
+
+    for script_iso, (display_language, fontspec_opts) in expected.items():
+        info = SCRIPT_INFO[ScriptISO(script_iso)]
+        assert info["display_language"] == display_language
+        assert info["fontspec_opts"] == fontspec_opts
+        assert isinstance(info["specimen"], str) and info["specimen"]
+
+
+def test_eighth_batch_language_entries_point_back_to_expected_scripts():
+    """
+    Ensure the eighth script expansion batch has reciprocal language rows.
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "xly": ScriptISO("ELYM"),
+        "kaw": ScriptISO("KAWI"),
+        "mak": ScriptISO("MAKA"),
+    }
+
+    for language, script_iso in expected.items():
+        info = LANGUAGE_INFO[language]
+        assert script_iso in info["scripts"]
+        assert isinstance(info["sample"], str) and info["sample"]
+
+
 def test_language_info_primary_script_is_present_in_scripts():
     """
     Ensure every language row exposes a valid primary script.

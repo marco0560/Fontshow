@@ -488,6 +488,16 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "requires_polyglossia": False,
         "specimen": "𐔀𐔁𐔂𐔃𐔄𐔅𐔆𐔇𐔈𐔉𐔊𐔋𐔌𐔍𐔎𐔏𐔐𐔑𐔒𐔓𐔔𐔕𐔖𐔗",
     },
+    ScriptISO("ELYM"): {
+        "canonical_name": "Elymaic",
+        "description": "Elymaic is a right-to-left script used in ancient southwestern Iran for the Elymaic language. It is notable for a small corpus of inscriptional evidence from the late Parthian period.",
+        "display_language": "xly",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script=Elymaic",
+        "rtl": True,
+        "requires_polyglossia": False,
+        "specimen": "𐿠𐿡𐿢𐿣𐿤𐿥𐿦𐿧𐿨𐿩𐿪𐿫𐿬𐿭𐿮𐿯𐿰𐿱𐿲𐿳𐿴𐿵𐿶",
+    },
     ScriptISO("GEOR"): {
         "canonical_name": "Georgian",
         "description": "Georgian is the script used for Georgian and some other Kartvelian and Caucasian languages. It is notable for its distinctive letterforms and long inscriptional history.",
@@ -698,6 +708,16 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "requires_polyglossia": False,
         "specimen": "ꦀꦁꦂꦃꦄꦅꦆꦇꦈꦉꦊꦋꦌꦍꦎꦏꦐꦑꦒꦓꦔꦕꦖꦗ",
     },
+    ScriptISO("KAWI"): {
+        "canonical_name": "Kawi",
+        "description": "Kawi is a historical Brahmic script of maritime Southeast Asia used especially for Old Javanese and Sanskrit texts. It is notable for manuscript and inscriptional use across Java, Bali, and neighboring regions.",
+        "display_language": "kaw",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script=Kawi",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "𑼄𑼅𑼆𑼇𑼈𑼉𑼊𑼋𑼌𑼍𑼎𑼏𑼐𑼒𑼓𑼔𑼕𑼖𑼗𑼘𑼙𑼚𑼛𑼜",
+    },
     ScriptISO("KTHI"): {
         "canonical_name": "Kaithi",
         "description": "Kaithi is a historical North Indian script once widely used for administrative and commercial documents. It is notable for its vernacular function outside elite manuscript traditions.",
@@ -807,6 +827,16 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "rtl": False,
         "requires_polyglossia": False,
         "specimen": "𖩠𖩡𖩢𖩣𖩤𖩥𖩦𖩧𖩨𖩩𖩪𖩫𖩬𖩭𖩮𖩯𖩰𖩱𖩲𖩳𖩴𖩵𖩶𖩷",
+    },
+    ScriptISO("MAKA"): {
+        "canonical_name": "Makasar",
+        "description": "Makasar is a historical South Sulawesi script used for the Makassarese language. It is notable for a compact Brahmic-derived system preserved in manuscripts and a limited inscriptional record.",
+        "display_language": "mak",
+        "polyglossia_language": "",
+        "fontspec_opts": "Script=Makasar",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "𑻠𑻡𑻢𑻣𑻤𑻥𑻦𑻧𑻨𑻩𑻪𑻫𑻬𑻭𑻮𑻯𑻰𑻱𑻲𑻳𑻴𑻵𑻶",
     },
     ScriptISO("MTEI"): {
         "canonical_name": "Meetei Mayek",
@@ -1316,6 +1346,14 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "optional_blocks": [],
         "sample": "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία",
     },
+    "xly": {
+        "canonical_name": "Elymaic",
+        "description": "Elymaic is an extinct Iranian language attested in a small number of inscriptions from ancient Elymais. It is written in the Elymaic script and is notable for sparse documentary survival within the late Parthian world.",
+        "scripts": [ScriptISO("ELYM")],
+        "required_blocks": ["Elymaic"],
+        "optional_blocks": [],
+        "sample": "𐿠𐿡𐿢𐿣𐿤𐿥𐿦𐿧𐿨𐿩𐿪𐿫𐿬𐿭𐿮𐿯𐿰𐿱𐿲𐿳𐿴𐿵𐿶",
+    },
     "en": {
         "canonical_name": "English",
         "description": "English is a West Germanic language with global use as a first or second language. It is written in the Latin script and is notable for its worldwide role in education, science, and commerce.",
@@ -1451,6 +1489,14 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "required_blocks": ["Javanese"],
         "optional_blocks": [],
         "sample": "ꦀꦁꦂꦃꦄꦅꦆꦇꦈꦉꦊꦋꦌꦍꦎꦏꦐꦑꦒꦓꦔꦕꦖꦗ",
+    },
+    "kaw": {
+        "canonical_name": "Old Javanese",
+        "description": "Old Javanese, also known as Kawi, is a historical Austronesian language of Java and Bali. It is written in the Kawi script and is notable for a major corpus of literary, epigraphic, and courtly texts.",
+        "scripts": [ScriptISO("KAWI")],
+        "required_blocks": ["Kawi"],
+        "optional_blocks": [],
+        "sample": "𑼄𑼅𑼆𑼇𑼈𑼉𑼊𑼋𑼌𑼍𑼎𑼏𑼐𑼒𑼓𑼔𑼕𑼖𑼗𑼘𑼙𑼚𑼛𑼜",
     },
     "ka": {
         "canonical_name": "Georgian",
@@ -1715,6 +1761,14 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
         "required_blocks": ["Tirhuta"],
         "optional_blocks": ["Devanagari"],
         "sample": "𑒀𑒁𑒂𑒃𑒄𑒅𑒆𑒇𑒈𑒉𑒊𑒋𑒌𑒍𑒎𑒏𑒐𑒑𑒒𑒓𑒔𑒕𑒖𑒗",
+    },
+    "mak": {
+        "canonical_name": "Makassarese",
+        "description": "Makassarese is an Austronesian language of South Sulawesi. It is written mainly in Latin today and is notable here for historical manuscript use of the Makasar script.",
+        "scripts": [ScriptISO("MAKA")],
+        "required_blocks": ["Makasar"],
+        "optional_blocks": [],
+        "sample": "𑻠𑻡𑻢𑻣𑻤𑻥𑻦𑻧𑻨𑻩𑻪𑻫𑻬𑻭𑻮𑻯𑻰𑻱𑻲𑻳𑻴𑻵𑻶",
     },
     "pt": {
         "canonical_name": "Portuguese",
@@ -1983,6 +2037,10 @@ _SCRIPT_INFERENCE_OVERRIDES: dict[ScriptISO, ScriptInferenceOverride] = {
         "optional_blocks": ["Arabic"],
         "preferred_over": [ScriptISO("ARAB"), ScriptISO("LATN")],
     },
+    ScriptISO("BENG"): {
+        "suppresses": [ScriptISO("DEVA")],
+        "preferred_over": [ScriptISO("DEVA")],
+    },
     ScriptISO("BOPO"): {
         "required_blocks": ["Bopomofo"],
         "optional_blocks": ["Bopomofo Extended"],
@@ -2125,6 +2183,10 @@ _SCRIPT_INFERENCE_OVERRIDES: dict[ScriptISO, ScriptInferenceOverride] = {
         "optional_blocks": [],
         "block_match": "prefix",
         "unicode_max_ranges": [(0x0000, 0x024F)],
+    },
+    ScriptISO("LAOO"): {
+        "suppresses": [ScriptISO("THAI")],
+        "preferred_over": [ScriptISO("THAI")],
     },
     ScriptISO("LIMB"): {
         "required_blocks": ["Limbu"],
