@@ -244,9 +244,7 @@ def should_select(
         return True
 
     if args.nonstandard:
-
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-
             if doc and not is_numpy_style(doc):
                 return True
 
@@ -300,7 +298,6 @@ def extract_targets(path: Path, args: argparse.Namespace) -> Iterator[dict]:
     module_doc = ast.get_docstring(tree)
 
     if should_select(tree, module_doc, args):
-
         yield {
             "file": str(path),
             "qualname": "<module>",
@@ -311,7 +308,6 @@ def extract_targets(path: Path, args: argparse.Namespace) -> Iterator[dict]:
         }
 
     for node in iter_targets(tree):
-
         doc = ast.get_docstring(node)
 
         if not should_select(node, doc, args):
@@ -392,11 +388,8 @@ def emit_batches(path: str, args: argparse.Namespace) -> None:
     list_entries: list[str] = []
 
     for file in iter_python_files(path):
-
         for item in extract_targets(file, args):
-
             if args.list:
-
                 if item["qualname"] == "<module>":
                     entry = item["file"]
                 else:
