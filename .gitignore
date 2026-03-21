@@ -10,20 +10,23 @@ __pycache__/
 dist/
 build/
 site/
-luatex*
+
 # Packaging artifacts
 *.egg-info/
+
 # pytest / coverage artifacts
 .pytest_cache/
 .coverage
 .coverage.*
 htmlcov/
 coverage.xml
+
 # Artifacts
 *.fls
 *.fdb_latexmk
 *.bak
 *.tmp
+
 # --------------------------------------------------
 # OS / Filesystem artifacts (Windows / WSL)
 # --------------------------------------------------
@@ -53,12 +56,15 @@ fontshow_snapshot.tar.xz
 issues.json
 milestones_plan.json
 bootstrap_audit_report.txt
+.repoindex
+
 # --------------------------------------------------
 # Node / tooling
 # --------------------------------------------------
 node_modules/
 package-lock.json
 .releaserc.local.json
+
 # --------------------------------------------------
 # Generated LaTeX / output
 # --------------------------------------------------
@@ -89,3 +95,4 @@ package-lock.json
 *.synctex.gz
 *.synctex.gz(busy)
 *.synctex(busy)
+luatex*
