@@ -1,3 +1,9 @@
+## [0.59.2](https://github.com/marco0560/Fontshow/compare/v0.59.1...v0.59.2) (2026-03-23)
+
+### Bug Fixes
+
+* **docs:** configure mkdocstrings for src package layout ([c6ee4e5](https://github.com/marco0560/Fontshow/commit/c6ee4e5d930956f30c4f1c9a16a6ed179c6dde3f))
+
 ## [0.59.1](https://github.com/marco0560/Fontshow/compare/v0.59.0...v0.59.1) (2026-03-18)
 
 ### Bug Fixes
