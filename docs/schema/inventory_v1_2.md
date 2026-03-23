@@ -4,7 +4,7 @@
 
 The runtime JSON schema is the sole **source of truth** lives in:
 
-fontshow/schema/inventory_v1_2.json
+src/fontshow/schema/inventory_v1_2.json
 
 This document is a human-oriented explanation of that schema.
 

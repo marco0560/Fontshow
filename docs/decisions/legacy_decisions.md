@@ -578,7 +578,7 @@ All Fontshow CLI commands must follow a single, uniform execution contract:
   - MUST NOT perform argument parsing
 
 - Argument parsing is performed exclusively:
-  - in the dispatcher (`fontshow/__main__.py`)
+  - in the dispatcher (`src/fontshow/__main__.py`)
   - or in the module `if __name__ == "__main__"` block for `python -m` usage
 
 - `sys.exit()` is allowed **only** in:
@@ -786,7 +786,7 @@ explicit identifiers in the payload.
 
 ### Design (initial scope)
 
-- New internal logging utility module (e.g. `fontshow/logging_utils.py`)
+- New internal logging utility module (e.g. `src/fontshow/core/logging_utils.py`)
 - Supported log levels:
   - ERROR
   - WARNING
@@ -935,8 +935,8 @@ At the time of this decision, the global coverage percentage reported by the too
 
 Analysis of the coverage report shows that the low global percentage is primarily caused by two large modules:
 
-- `fontshow/create_catalog.py`
-- `fontshow/dump_fonts.py`
+- `src/fontshow/cli/create_catalog.py`
+- `src/fontshow/cli/dump_fonts.py`
 
 These modules:
 
@@ -1173,8 +1173,8 @@ This results in a runner that is:
 
 ### References
 
-- `fontshow/preflight/checks/base.py`
-- `fontshow/preflight/runner.py`
+- `src/fontshow/preflight/checks/base.py`
+- `src/fontshow/preflight/runner.py`
 - `tests/preflight/test_base_check_contract.py`
 
 ## D21 - Decision: Move preflight subsystem to a class-based design

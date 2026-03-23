@@ -22,7 +22,7 @@ relies on explicit data contracts instead of shared state.
 
 The Fontshow repository is organized as follows:
 
-- `fontshow/`
+- `src/fontshow/`
   Core Fontshow package. Contains the stable implementation of the pipeline,
   including preflight checks, validation logic, and CLI entry points.
 
@@ -53,7 +53,7 @@ For details about development-only tooling, see
 
 ## Python package subdivision
 
-The `fontshow/` package is intentionally subdivided by responsibility.
+The `src/fontshow/` package is intentionally subdivided by responsibility.
 
 This subdivision mirrors the pipeline stages and the project's
 cross-cutting infrastructure. The goal is to keep orchestration,

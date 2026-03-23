@@ -585,7 +585,7 @@ def main() -> int:
     This command-line entry point reads Unicode Character Database (UCD)
     source files and the ISO15924 registry snapshot, derives normalized
     block and script range tables, and writes the generated module
-    ``fontshow/ontology/unicode_tables.py``.
+    ``src/fontshow/ontology/unicode_tables.py``.
 
     Parameters
     ----------
@@ -613,8 +613,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--ucd-dir",
-        default="fontshow/data/unicode",
-        help="Directory containing vendored UCD files (default: fontshow/data/unicode).",
+        default="src/fontshow/data/unicode",
+        help="Directory containing vendored UCD files (default: src/fontshow/data/unicode).",
     )
     parser.add_argument(
         "--blocks-file",
@@ -628,8 +628,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--out",
-        default="fontshow/ontology/unicode_tables.py",
-        help="Output module path (default: fontshow/ontology/unicode_tables.py).",
+        default="src/fontshow/ontology/unicode_tables.py",
+        help="Output module path (default: src/fontshow/ontology/unicode_tables.py).",
     )
     parser.add_argument(
         "--script-keys",
@@ -642,7 +642,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--iso-file",
-        default="fontshow/data/iso/iso15924-2024.txt",
+        default="src/fontshow/data/iso/iso15924-2024.txt",
         help="ISO15924 registry snapshot.",
     )
 

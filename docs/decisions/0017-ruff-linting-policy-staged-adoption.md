@@ -7,7 +7,7 @@
 
 Fontshow uses Ruff as its primary static analysis tool.
 A full strict rule set was found to generate excessive noise on legacy modules
-(e.g. `fontshow/dump_fonts.py`), obscuring high-value diagnostics and slowing
+(e.g. `src/fontshow/cli/dump_fonts.py`), obscuring high-value diagnostics and slowing
 development.
 
 The project adopts a **staged, policy-driven Ruff adoption strategy** that

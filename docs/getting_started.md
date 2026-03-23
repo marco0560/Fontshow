@@ -29,6 +29,8 @@ pip install -e .
 ```
 <!-- cheatsheet:end -->
 
+The source package lives under `src/fontshow/`.
+
 ---
 
 ## Quick pipeline

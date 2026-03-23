@@ -9,7 +9,7 @@ AI assistants.
 The generated report freezes the following repository metadata:
 
 • repository directory tree
-• list of Python files under fontshow/, tests/, and scripts/
+• list of Python files under src/fontshow/, tests/, and scripts/
 • SHA256 hash baseline for every Python file
 • deterministic FILE AUDIT ORDER
 • frozen function inventory extracted via regex
@@ -297,19 +297,27 @@ def list_python_files(repo_root: Path) -> list[Path]:
     Only Python files that are both:
 
     • tracked by git
-    • located under fontshow/, tests/, scripts/ or githooks/
+    • located under src/fontshow/, tests/, scripts/ or githooks/
 
     are included.
     """
     tracked = git_tracked_files(repo_root)
 
-    allowed_roots = ("fontshow", "tests", "scripts", ".githooks")
+    allowed_prefixes = (
+        ("src", "fontshow"),
+        ("tests",),
+        ("scripts",),
+        (".githooks",),
+    )
 
     files = [
         path
         for path in tracked
         if path.suffix == ".py"
-        and path.relative_to(repo_root).parts[0] in allowed_roots
+        and any(
+            path.relative_to(repo_root).parts[: len(prefix)] == prefix
+            for prefix in allowed_prefixes
+        )
     ]
 
     return sorted(files)

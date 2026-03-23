@@ -5,7 +5,7 @@
 Runtime schema source of truth:
 
 ```bash
-fontshow/schema/inventory_v1_2.json
+src/fontshow/schema/inventory_v1_2.json
 ```
 
 This is the **only supported schema** for Fontshow.

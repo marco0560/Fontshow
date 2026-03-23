@@ -121,6 +121,9 @@ pip install -e .
 This installs Fontshow in editable mode using the project’s
 `pyproject.toml` configuration.
 
+The source package uses the standard `src/` layout under
+`src/fontshow/`.
+
 <!-- cheatsheet:end -->
 
 <!-- cheatsheet:start -->
@@ -180,7 +183,7 @@ fontshow dump-fonts --help
 Direct execution of files such as:
 
 ```bash
-python fontshow/dump_fonts.py
+python src/fontshow/cli/dump_fonts.py
 ```
 
 is not supported and may produce inconsistent behavior.

@@ -43,7 +43,7 @@ scripts/generate_unicode_tables.py
 produces:
 
 ```text
-fontshow/unicode_tables.py
+src/fontshow/ontology/unicode_tables.py
 ```
 
 This module is now the **single source of truth** for Unicode data.

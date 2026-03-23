@@ -30,7 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-SCHEMA = ROOT / "fontshow/schema/inventory_v1_2.json"
+SCHEMA = ROOT / "src/fontshow/schema/inventory_v1_2.json"
 DOC = ROOT / "docs/schema/inventory_v1_2.md"
 
 START = "<!-- SCHEMA_JSON_START -->"

@@ -107,7 +107,7 @@ pytest -q
 ```bash
 black .
 ruff check .
-mypy fontshow
+mypy src/fontshow
 ```
 
 All must pass.
@@ -300,11 +300,11 @@ Unless explicitly required.
 
 Key subsystems:
 
-- CLI: `fontshow/cli/`
-- Inventory: `fontshow/inventory/`
-- Catalog: `fontshow/catalog/`
-- Preflight: `fontshow/preflight/`
-- Ontology: `fontshow/ontology/`
+- CLI: `src/fontshow/cli/`
+- Inventory: `src/fontshow/inventory/`
+- Catalog: `src/fontshow/catalog/`
+- Preflight: `src/fontshow/preflight/`
+- Ontology: `src/fontshow/ontology/`
 
 Tests mirror system contracts.
 

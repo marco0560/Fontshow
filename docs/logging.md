@@ -45,7 +45,7 @@ Modules **must not**:
 All configuration is centralized in:
 
 ```text
-fontshow.logging_utils
+src/fontshow/core/logging_utils.py
 ```
 
 ---
@@ -75,7 +75,7 @@ Rules:
 
 ## 2. logging_utils.py
 
-The file `fontshow/logging_utils.py` is the **only place** where logging is configured.
+The file `src/fontshow/core/logging_utils.py` is the **only place** where logging is configured.
 
 Responsibilities:
 
