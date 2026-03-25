@@ -139,6 +139,33 @@ DO NOT include:
 - check summaries
 - noise
 
+### repoindex (tool) Workflow
+
+Use `repoindex` as a repository-local developer tool.
+
+Assume the session runs inside the repository virtual environment.
+All tool and command paths MUST resolve against that environment.
+When invoking tools or commands, prefer the virtual environment's
+executables and environment-derived paths over system-wide ones.
+
+Before broad code exploration or patching:
+
+1. Activate the repository virtual environment.
+2. Run `repoindex index`.
+3. Verify candidate symbols with `rg <query>` before editing.
+4. Run `repoindex context-for "<query>" --json` or `--prompt` as needed.
+5. Inspect the referenced files before applying changes.
+
+Use output modes as follows:
+
+- plain `context-for`: compact human-readable context
+- `context-for --json`: structured tool/agent workflows
+- `context-for --prompt`: copy-ready agent preamble
+- `context-for --explain`: retrieval diagnostics
+
+`repoindex` narrows search and improves determinism. It does not replace
+reading the actual source files before editing.
+
 ---
 
 ## 4. Docstring Policy (CRITICAL)
