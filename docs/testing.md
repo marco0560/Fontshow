@@ -205,6 +205,8 @@ Current behavior:
   for script inference when present.
 - Charset-derived script coverage is used as a secondary weighted signal
   and as fallback only when canonical block coverage is absent.
+- When canonical and charset-derived coverage disagree, parse-inventory
+  records structured diagnostics instead of silently reconciling them.
 
 ## Automated Tests (pytest)
 

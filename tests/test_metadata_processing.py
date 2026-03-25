@@ -135,3 +135,83 @@ def test_process_charset_emits_warning_on_decode_failure(monkeypatch):
             },
         }
     ]
+
+
+def test_process_charset_emits_warning_on_block_mismatch() -> None:
+    """
+    Ensure charset/canonical block mismatches emit structured diagnostics.
+
+    Returns
+    -------
+    None
+    """
+    font: dict[str, object] = {"charset": {"ranges": [[0x0020, 0x007E]]}}
+    coverage: dict[str, object] = {
+        "unicode_blocks": {
+            "Basic Latin": 94,
+            "Latin-1 Supplement": 10,
+        }
+    }
+
+    mp._process_charset(font, coverage, "/tmp/font.ttf")
+
+    warning = font["warnings"][0]
+    assert warning["code"] == "charset_block_mismatch"
+    assert warning["severity"] is Severity.WARN
+    assert warning["extra"]["canonical_only_blocks"] == ["Latin-1 Supplement"]
+    assert warning["extra"]["charset_only_blocks"] == []
+    assert warning["extra"]["differing_counts"] == [
+        {
+            "block": "Basic Latin",
+            "canonical_count": 94,
+            "charset_count": 95,
+        }
+    ]
+
+
+def test_infer_and_attach_metadata_emits_charset_script_mismatch(
+    monkeypatch,
+) -> None:
+    """
+    Ensure script mismatch diagnostics preserve canonical precedence.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace downstream language inference.
+
+    Returns
+    -------
+    None
+    """
+    font: dict[str, object] = {"warnings": []}
+    coverage: dict[str, object] = {
+        "unicode_blocks": {"Arabic": 40},
+        "script_coverage_from_charset": {"HEBR": 1.0, "ARAB": 0.1},
+        "languages": [],
+        "scripts": [],
+    }
+
+    monkeypatch.setattr(mp, "infer_languages", lambda *args, **kwargs: {})
+
+    mp._infer_and_attach_metadata(
+        font,
+        coverage,
+        level="medium",
+        font_path="/tmp/font.ttf",
+    )
+
+    assert font["warnings"][-1] == {
+        "code": "charset_script_mismatch",
+        "message": (
+            "Charset-derived primary script differs from canonical inferred script"
+        ),
+        "severity": Severity.INFO,
+        "source": "fontconfig_charset",
+        "extra": {
+            "font_path": "/tmp/font.ttf",
+            "canonical_primary_script": "ARAB",
+            "charset_primary_script": "HEBR",
+        },
+    }
+    assert font["inference"]["scripts"][0] == "ARAB"

@@ -256,6 +256,195 @@ def _debug_dump_inference(
 # ============================================================
 
 
+def _charset_block_mismatch_details(
+    canonical_blocks: dict[str, int],
+    charset_blocks: dict[str, int],
+) -> dict[str, Any]:
+    """
+    Compute deterministic mismatch details between two block-coverage maps.
+
+    Parameters
+    ----------
+    canonical_blocks : dict[str, int]
+        Canonical Unicode block coverage attached to the font.
+    charset_blocks : dict[str, int]
+        Unicode block coverage derived from charset ranges.
+
+    Returns
+    -------
+    dict[str, Any]
+        Structured mismatch summary containing blocks present only in one
+        source and blocks whose counts differ between sources.
+
+    Notes
+    -----
+    The result is deterministic:
+    - block-name lists are sorted lexically
+    - differing-count entries are sorted by block name
+    """
+    canonical_names = set(canonical_blocks)
+    charset_names = set(charset_blocks)
+
+    differing_counts = [
+        {
+            "block": block,
+            "canonical_count": canonical_blocks[block],
+            "charset_count": charset_blocks[block],
+        }
+        for block in sorted(canonical_names & charset_names)
+        if canonical_blocks[block] != charset_blocks[block]
+    ]
+
+    return {
+        "canonical_only_blocks": sorted(canonical_names - charset_names),
+        "charset_only_blocks": sorted(charset_names - canonical_names),
+        "differing_counts": differing_counts,
+    }
+
+
+def _warn_on_charset_block_mismatch(
+    font: dict[str, Any],
+    coverage: dict[str, Any],
+    *,
+    font_path: str | None,
+) -> None:
+    """
+    Attach diagnostics when canonical and charset-derived blocks diverge.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry updated with structured warnings.
+    coverage : dict[str, Any]
+        Coverage block containing canonical and charset-derived block maps.
+    font_path : str | None
+        Filesystem path included in diagnostic payloads.
+
+    Returns
+    -------
+    None
+    """
+    canonical_blocks = coverage.get("unicode_blocks")
+    charset_blocks = coverage.get("unicode_blocks_from_charset")
+
+    if not isinstance(canonical_blocks, dict) or not isinstance(charset_blocks, dict):
+        return
+    if not canonical_blocks or not charset_blocks:
+        return
+
+    details = _charset_block_mismatch_details(canonical_blocks, charset_blocks)
+    if (
+        not details["canonical_only_blocks"]
+        and not details["charset_only_blocks"]
+        and not details["differing_counts"]
+    ):
+        return
+
+    font.setdefault("warnings", []).append(
+        {
+            "code": "charset_block_mismatch",
+            "message": (
+                "Canonical Unicode blocks differ from charset-derived block coverage"
+            ),
+            "severity": Severity.WARN,
+            "source": "fontconfig_charset",
+            "extra": {
+                "font_path": font_path,
+                **details,
+            },
+        }
+    )
+
+    log_trace_cat(
+        log,
+        "infer",
+        "charset block mismatch",
+        extra={
+            "font_path": font_path,
+            "canonical_only_count": len(details["canonical_only_blocks"]),
+            "charset_only_count": len(details["charset_only_blocks"]),
+            "differing_count_blocks": len(details["differing_counts"]),
+        },
+    )
+
+
+def _warn_on_charset_script_mismatch(
+    font: dict[str, Any],
+    coverage: dict[str, Any],
+    inferred_scripts: list[str],
+    *,
+    font_path: str | None,
+) -> None:
+    """
+    Attach diagnostics when charset-derived and canonical script leaders diverge.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry updated with structured warnings.
+    coverage : dict[str, Any]
+        Coverage block that may contain charset-derived script coverage.
+    inferred_scripts : list[str]
+        Canonical inferred scripts ordered by confidence.
+    font_path : str | None
+        Filesystem path included in diagnostic payloads.
+
+    Returns
+    -------
+    None
+    """
+    if not inferred_scripts:
+        return
+
+    raw_charset_scores = coverage.get("script_coverage_from_charset")
+    if not isinstance(raw_charset_scores, dict) or not raw_charset_scores:
+        return
+
+    comparable_scores = {
+        str(script).upper(): float(score)
+        for script, score in raw_charset_scores.items()
+        if isinstance(script, str) and script.strip() and isinstance(score, int | float)
+    }
+    if not comparable_scores:
+        return
+
+    charset_primary = max(
+        sorted(comparable_scores.items()),
+        key=lambda item: item[1],
+    )[0]
+    canonical_primary = str(inferred_scripts[0]).upper()
+
+    if charset_primary == canonical_primary:
+        return
+
+    font.setdefault("warnings", []).append(
+        {
+            "code": "charset_script_mismatch",
+            "message": (
+                "Charset-derived primary script differs from canonical inferred script"
+            ),
+            "severity": Severity.INFO,
+            "source": "fontconfig_charset",
+            "extra": {
+                "font_path": font_path,
+                "canonical_primary_script": canonical_primary,
+                "charset_primary_script": charset_primary,
+            },
+        }
+    )
+
+    log_trace_cat(
+        log,
+        "infer",
+        "charset script mismatch",
+        extra={
+            "font_path": font_path,
+            "canonical_primary_script": canonical_primary,
+            "charset_primary_script": charset_primary,
+        },
+    )
+
+
 def _process_charset(
     font: dict[str, Any], coverage: dict[str, Any], font_path: str | None
 ) -> None:
@@ -360,6 +549,7 @@ def _process_charset(
             "unicode blocks derived from charset",
             extra={"font_path": font_path, "blocks_count": len(blocks)},
         )
+        _warn_on_charset_block_mismatch(font, coverage, font_path=font_path)
 
     script_cov = script_coverage_from_unicode_blocks(
         blocks,
@@ -456,6 +646,12 @@ def _infer_and_attach_metadata(
     inferred_scripts = list(infer_scripts(coverage, level) or [])
 
     normalized_scripts = [str(normalize_script_iso(s)) for s in inferred_scripts]
+    _warn_on_charset_script_mismatch(
+        font,
+        coverage,
+        normalized_scripts,
+        font_path=font_path,
+    )
 
     # ------------------------------------------------------------------
     # Canonical script field (Step 2 alignment)

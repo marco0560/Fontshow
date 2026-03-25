@@ -642,6 +642,8 @@ based on FontConfig charset data:
   existing `UNICODE_BLOCKS` table.
 - The result is attached as `coverage.unicode_blocks_from_charset`.
 - Existing `coverage.unicode_blocks` data is left untouched.
+- When both sources are present, parse-inventory compares them and
+  emits structured diagnostics for block-set gaps or differing counts.
 
 ##### 5.3 — Script coverage derived from charset
 
@@ -652,6 +654,9 @@ based on FontConfig charset data:
   canonical `coverage.unicode_blocks` remains authoritative when
   present, while charset-derived scores can reinforce or break ties and
   serve as fallback only when canonical block coverage is absent.
+- When the charset-derived leading script disagrees with the canonical
+  inferred script, parse-inventory emits an explicit diagnostic while
+  preserving canonical precedence.
 
 Each phase:
 
@@ -659,6 +664,8 @@ Each phase:
 - Produces explicit, separate metadata
 - Emits per-font DEBUG logs for observability
 - Is covered by unit and integration tests
+- Surfaces source disagreement via structured warnings rather than
+  silent merges
 
 ---
 
@@ -671,6 +678,8 @@ This approach deliberately avoids premature semantic decisions:
 - Canonical Unicode-block inference remains authoritative.
 - Charset-derived script coverage is allowed to contribute as a
   conservative weighted signal and fallback.
+- Disagreement between the two sources is reported explicitly so the
+  provenance boundary remains auditable.
 
 By keeping raw, normalized, and derived representations separate,
 we preserve auditability and allow future policy decisions to be
@@ -684,7 +693,8 @@ made explicitly and incrementally.
   - `normalized_charset`
   - `unicode_blocks_from_charset`
   - `script_coverage_from_charset`
-- These fields are not yet reflected in the JSON schema.
+- Validation currently accepts these fields, but they remain additive
+  diagnostic metadata rather than canonical replacements.
 - Consumers must treat them as optional, provenance-preserving, and
   lower-authority than canonical Unicode-block coverage.
 
