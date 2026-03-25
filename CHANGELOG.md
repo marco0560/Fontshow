@@ -1,3 +1,9 @@
+## [0.61.3](https://github.com/marco0560/Fontshow/compare/v0.61.2...v0.61.3) (2026-03-25)
+
+### Bug Fixes
+
+* **release:** require git rel for pushes to main again ([ef178f2](https://github.com/marco0560/Fontshow/commit/ef178f29ddff3117a0cda0d9d5e269e0b1a4d57a))
+
 ## [0.61.2](https://github.com/marco0560/Fontshow/compare/v0.61.1...v0.61.2) (2026-03-25)
 
 ### Bug Fixes
