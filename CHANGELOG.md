@@ -1,3 +1,9 @@
+## [0.60.0](https://github.com/marco0560/Fontshow/compare/v0.59.2...v0.60.0) (2026-03-25)
+
+### Features
+
+* **cli:** add generated Bash completion support ([54809c3](https://github.com/marco0560/Fontshow/commit/54809c382a87b99b6c24de818c72de0eb54386de)), closes [#45](https://github.com/marco0560/Fontshow/issues/45)
+
 ## [0.59.2](https://github.com/marco0560/Fontshow/compare/v0.59.1...v0.59.2) (2026-03-23)
 
 ### Bug Fixes
