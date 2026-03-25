@@ -1,3 +1,9 @@
+## [0.61.2](https://github.com/marco0560/Fontshow/compare/v0.61.1...v0.61.2) (2026-03-25)
+
+### Bug Fixes
+
+* **catalog:** add safe family fallback for missing-path font loading ([7dea1fd](https://github.com/marco0560/Fontshow/commit/7dea1fd489f0d61ccb49f304bdd0eff996427f6a)), closes [#56](https://github.com/marco0560/Fontshow/issues/56) [#56](https://github.com/marco0560/Fontshow/issues/56)
+
 ## [0.61.1](https://github.com/marco0560/Fontshow/compare/v0.61.0...v0.61.1) (2026-03-25)
 
 ### Bug Fixes
