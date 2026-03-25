@@ -49,14 +49,14 @@ git rel
 Alias definition:
 
 ```bash
-git config alias.rel '!SKIP_RELEASE_AUDIT=1 ALLOW_MAIN_PUSH=1 bash scripts/release_audit.sh && SKIP_RELEASE_AUDIT=1 ALLOW_MAIN_PUSH=1 git push'
+git config alias.rel '!bash scripts/release_rel.sh'
 ```
 
 ### Forbidden (blocked by hooks)
 
 ```bash
-git push
-git safe-push
+git push           # on main
+git safe-push      # on main
 ```
 
 ---
@@ -132,16 +132,23 @@ Blocks:
 * Failing lint
 * Broken release baseline
 
-Allows only:
+Allows:
 
 ```bash
-git rel
+git rel            # on main
+git push           # on non-main branches
 ```
 
 via:
 
 ```bash
 ALLOW_MAIN_PUSH=1
+```
+
+Emergency bypass remains available through Git's standard hook bypass:
+
+```bash
+git push --no-verify
 ```
 
 ---
@@ -351,7 +358,7 @@ These aliases are **NOT versioned** and must be defined locally:
 ## Safe release (ONLY publish command)
 
 ```bash
-git config alias.rel '!SKIP_RELEASE_AUDIT=1 ALLOW_MAIN_PUSH=1 bash scripts/release_audit.sh && SKIP_RELEASE_AUDIT=1 ALLOW_MAIN_PUSH=1 git push'
+git config alias.rel '!bash scripts/release_rel.sh'
 ```
 
 ### Release audit (manual check)

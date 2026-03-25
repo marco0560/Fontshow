@@ -41,7 +41,9 @@ generation. However, its usage differs between local development and CI.
 
 #### Local development
 
-- `semantic-release` is **not a mandatory check** during `git push`
+- direct `git push` to `main` is blocked by the pre-push hook
+- use `git rel` for guarded pushes to `main`
+- direct `git push` remains allowed on non-`main` branches
 - The pre-push hook may optionally run a `semantic-release --dry-run`
   **only if** a `GH_TOKEN` environment variable is present
 - If `GH_TOKEN` is not set, the semantic-release preview is skipped
@@ -49,7 +51,8 @@ generation. However, its usage differs between local development and CI.
 
 This design ensures that:
 
-- `git push` works in all environments (Linux, WSL, Windows)
+- guarded release pushes to `main` remain deterministic
+- branch pushes work in all environments (Linux, WSL, Windows)
 - no local credentials are required by default
 - release planning remains an explicit, opt-in action
 

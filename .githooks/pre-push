@@ -3,16 +3,19 @@ set -e
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
+if [ "$BRANCH" = "main" ] && [ -z "${ALLOW_MAIN_PUSH:-}" ]; then
+  echo "ERROR: direct push to main is blocked"
+  echo "Use: git rel"
+  echo "Emergency workaround: git push --no-verify"
+  exit 1
+fi
+
 # Allow git rel to bypass double audit
 if [ -z "${SKIP_RELEASE_AUDIT:-}" ]; then
   echo "🔐 Running release safety audit..."
   scripts/release_audit.sh || exit 1
 else
   echo "ℹ Skipping release_audit (already executed)"
-fi
-
-if [ "$BRANCH" = "main" ] && [ -z "${ALLOW_MAIN_PUSH:-}" ]; then
-  echo "⚠ Direct push to main: release safety audit passed (recommended: git rel)"
 fi
 
 echo "🔍 Running pre-commit checks before push..."
