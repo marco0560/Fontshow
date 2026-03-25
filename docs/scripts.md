@@ -78,6 +78,26 @@ Not required for normal Fontshow operation.
 
 ---
 
+## generate_bash_completion.py
+
+### Generation Purpose
+
+Generates the checked-in Bash completion script from the current
+Fontshow `argparse` dispatcher definition.
+
+The generated artifact is written to:
+
+```bash
+scripts/completions/fontshow.bash
+```
+
+### Generation Status
+
+Developer tooling.
+Not required for normal Fontshow operation.
+
+---
+
 ## set_version.py (removed)
 
 ### Purpose (historical)

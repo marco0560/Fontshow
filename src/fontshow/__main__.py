@@ -47,6 +47,105 @@ except ModuleNotFoundError as e:
 from fontshow.core.cli_utils import add_common_arguments
 
 
+def build_parser() -> argparse.ArgumentParser:
+    """
+    Build the top-level Fontshow argument parser.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        Parser configured with the full dispatcher command surface and
+        shared global options.
+
+    Notes
+    -----
+    Subcommand registration is performed eagerly so the generated help
+    output reflects the complete CLI surface available in the current
+    installation.
+    """
+    try:
+        fontshow_version = version("fontshow")
+    except PackageNotFoundError:
+        fontshow_version = "development"
+
+    parser = argparse.ArgumentParser(
+        prog="fontshow",
+        description=(
+            "Fontshow – font analysis and catalog generation toolkit\n\n"
+            "Typical pipeline:\n"
+            "  fontshow preflight\n"
+            "  fontshow dump-fonts\n"
+            "  fontshow parse-inventory\n"
+            "  fontshow validate-inventory\n"
+            "  fontshow create-catalog"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"fontshow {fontshow_version}",
+    )
+
+    subparsers = parser.add_subparsers(
+        title="Available commands",
+    )
+
+    # ------------------------------------------------------------------
+    # preflight
+    preflight_parser = subparsers.add_parser(
+        "preflight",
+        help="Run environment and dependency checks",
+    )
+    add_common_arguments(
+        preflight_parser,
+        include_output=True,
+        output_default=None,
+        output_help="Write preflight report to file (in addition to console output)",
+    )
+    fontshow.preflight.register_cli(preflight_parser)
+
+    # ------------------------------------------------------------------
+    # dump-fonts
+    dump_parser = subparsers.add_parser(
+        "dump-fonts",
+        help="Extract raw font inventory",
+    )
+    dump_fonts.register_cli(dump_parser)
+
+    # ------------------------------------------------------------------
+    # parse-inventory
+    parse_parser = subparsers.add_parser(
+        "parse-inventory",
+        help="Enrich and validate a font inventory",
+    )
+    parse_inventory.register_cli(parse_parser)
+
+    # ------------------------------------------------------------------
+    # validate-inventory
+    validate_parser = subparsers.add_parser(
+        "validate-inventory",
+        help="Validate a Fontshow inventory file against the JSON schema",
+    )
+    validate_inventory.register_cli(validate_parser)
+
+    # ------------------------------------------------------------------
+    # create-catalog
+    catalog_parser = subparsers.add_parser(
+        "create-catalog",
+        help="Generate output artifacts from an inventory",
+    )
+    create_catalog.register_cli(catalog_parser)
+
+    return parser
+
+
 def dispatch_command(args: argparse.Namespace) -> int:
     """
     Dispatch a parsed CLI command.
@@ -142,84 +241,7 @@ def main() -> int:
     output reflects the full CLI surface available in the current
     installation.
     """
-    try:
-        FONTSHOW_VERSION = version("fontshow")
-    except PackageNotFoundError:
-        FONTSHOW_VERSION = "development"
-
-    parser = argparse.ArgumentParser(
-        prog="fontshow",
-        description=(
-            "Fontshow – font analysis and catalog generation toolkit\n\n"
-            "Typical pipeline:\n"
-            "  fontshow preflight\n"
-            "  fontshow dump-fonts\n"
-            "  fontshow parse-inventory\n"
-            "  fontshow validate-inventory\n"
-            "  fontshow create-catalog"
-        ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    parser.add_argument(
-        "-V",
-        "--version",
-        action="version",
-        version=f"fontshow {FONTSHOW_VERSION}",
-    )
-
-    subparsers = parser.add_subparsers(
-        title="Available commands",
-    )
-
-    # ------------------------------------------------------------------
-    # preflight
-    preflight_parser = subparsers.add_parser(
-        "preflight",
-        help="Run environment and dependency checks",
-    )
-    add_common_arguments(
-        preflight_parser,
-        include_output=True,
-        output_default=None,
-        output_help="Write preflight report to file (in addition to console output)",
-    )
-    fontshow.preflight.register_cli(preflight_parser)
-
-    # ------------------------------------------------------------------
-    # dump-fonts
-    dump_parser = subparsers.add_parser(
-        "dump-fonts",
-        help="Extract raw font inventory",
-    )
-    dump_fonts.register_cli(dump_parser)
-
-    # ------------------------------------------------------------------
-    # parse-inventory
-    parse_parser = subparsers.add_parser(
-        "parse-inventory",
-        help="Enrich and validate a font inventory",
-    )
-    parse_inventory.register_cli(parse_parser)
-
-    # ------------------------------------------------------------------
-    # validate-inventory
-    validate_parser = subparsers.add_parser(
-        "validate-inventory",
-        help="Validate a Fontshow inventory file against the JSON schema",
-    )
-    validate_inventory.register_cli(validate_parser)
-
-    # ------------------------------------------------------------------
-    # create-catalog
-    catalog_parser = subparsers.add_parser(
-        "create-catalog",
-        help="Generate output artifacts from an inventory",
-    )
-    create_catalog.register_cli(catalog_parser)
-
-    # ------------------------------------------------------------------
-
+    parser = build_parser()
     args = parser.parse_args()
 
     if not getattr(args, "func", None):

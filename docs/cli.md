@@ -9,6 +9,9 @@ The supported and documented entrypoint is:
 fontshow <command> [options]
 ```
 
+Bash completion for this dispatcher is documented in
+[`bash-completion.md`](bash-completion.md).
+
 Direct execution via `python -m` remains supported for development and
 debugging purposes, but the dispatcher is the authoritative CLI.
 
@@ -168,6 +171,7 @@ All user documentation assumes the dispatcher form.
 
 ## Related documentation
 
+- [Bash completion](bash-completion.md)
 - `decisions.md` — authoritative design and architectural decisions
 - Inventory schema documentation: `docs/schema/index.md`
 - `data_dictionary.md` — meaning of inventory fields

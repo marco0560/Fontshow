@@ -4,6 +4,7 @@
 
 - [Getting started](getting_started.md)
 - [CLI overview](cli.md)
+- [Bash completion](bash-completion.md)
 - [Cheatsheet](cheatsheet.md)
 - [Commands](tools/preflight.md)
 
