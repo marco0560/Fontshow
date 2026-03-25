@@ -1,3 +1,9 @@
+## [0.61.0](https://github.com/marco0560/Fontshow/compare/v0.60.0...v0.61.0) (2026-03-25)
+
+### Features
+
+* **inventory:** weight charset-derived script evidence in inference ([474c754](https://github.com/marco0560/Fontshow/commit/474c75471c4f0f06567d46ea489df6311fb89a78)), closes [#27](https://github.com/marco0560/Fontshow/issues/27)
+
 ## [0.60.0](https://github.com/marco0560/Fontshow/compare/v0.59.2...v0.60.0) (2026-03-25)
 
 ### Features
