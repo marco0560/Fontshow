@@ -48,6 +48,42 @@ def test_render_font_entry_returns_empty_for_unsupported_extension():
     assert options == ""
 
 
+def test_render_font_entry_falls_back_to_family_name_when_path_missing(monkeypatch):
+    """
+    Ensure missing-path entries use safe family-based font loading.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace LaTeX helper functions.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "Renderer=1,")
+    monkeypatch.setattr(document, "_get_render_policy", lambda _script: ("", ""))
+
+    render, options = document._render_font_entry(
+        font={
+            "family": "Noto Sans Kannada",
+            "full_name": "Noto Sans Kannada SemiCondensed ExtraBold",
+            "path": "",
+        },
+        safe_specimen="abc",
+        script0_iso=ScriptISO("LATN"),
+        fullpath="",
+    )
+
+    assert "\\fontspec[" in render
+    assert "UprightFont=*" in render
+    assert "Path=\\detokenize{" not in render
+    assert "{\\detokenize{Noto Sans Kannada}}" in render
+    assert "SemiCondensed ExtraBold" not in render
+    assert options == "Renderer=1,Family=Noto Sans Kannada,UprightFont=*"
+
+
 def test_render_font_entry_uses_non_latin_template_when_language_is_available(
     monkeypatch,
 ):
@@ -392,11 +428,6 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     monkeypatch.setattr(document, "escape_latex", lambda value: value)
     monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
     monkeypatch.setattr(
-        document.Path,
-        "is_file",
-        lambda path_obj: path_obj.suffix == ".ttf",
-    )
-    monkeypatch.setattr(
         document, "_format_language_display", lambda value: value.upper()
     )
     monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
@@ -490,7 +521,6 @@ def test_generate_latex_skips_excluded_families_from_catalog(monkeypatch):
     monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
     monkeypatch.setattr(document, "escape_latex", lambda value: value)
     monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
-    monkeypatch.setattr(document.Path, "is_file", lambda _path_obj: True)
     monkeypatch.setattr(
         document, "_format_language_display", lambda value: value.upper()
     )
@@ -525,3 +555,57 @@ def test_generate_latex_skips_excluded_families_from_catalog(monkeypatch):
     assert "\\item Keep Me --- " in latex
     assert "\\LogExcluded{Skip Me}" in latex
     assert latex.endswith("\nEND:1:DONE")
+
+
+def test_generate_latex_marks_family_fallback_entries_as_working(monkeypatch):
+    """
+    Ensure family-only entries render as working fallback specimens.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers and logging.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _message: None)
+    monkeypatch.setattr(document, "log_warn", lambda _message: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "_get_render_policy", lambda _script: ("", ""))
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "ETbb",
+                "path": "",
+                "specimen_text": "Sample",
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "script": "latn",
+            }
+        ]
+    )
+
+    assert "FILE  : ETbb [OK]" in latex
+    assert "\\LogWorking{ETbb / ETbb}" in latex
+    assert "\\LogBroken{ETbb / ETbb}[MISSING]" not in latex
+    assert "OPTS  : Family=ETbb, UprightFont=*" in latex

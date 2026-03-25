@@ -42,6 +42,7 @@ def test_is_validation_candidate_requires_existing_supported_font_file(tmp_path)
         loadability._is_validation_candidate({"path": str(tmp_path / "Alpha.txt")})
         is False
     )
+    assert loadability._is_validation_candidate({"family": "ETbb", "path": ""}) is False
 
 
 def test_validate_font_loadability_returns_subset_failure(monkeypatch, tmp_path):

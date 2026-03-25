@@ -26,8 +26,6 @@ document assembly stage between inventory-derived font metadata and the
 final LaTeX output written by the create-catalog pipeline.
 """
 
-from pathlib import Path
-
 from fontshow.catalog.labels import primary_script
 from fontshow.constants.catalog import EXCLUDED_FONTS
 from fontshow.core.cli_utils import (
@@ -59,6 +57,8 @@ from fontshow.latex.templates import (
     LATEX_END_CODE_2,
     LATEX_INITIAL_CODE,
 )
+
+_SUPPORTED_PATH_BASED_EXTENSIONS = (".ttf", ".otf", ".ttc")
 
 
 def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
@@ -253,12 +253,14 @@ def _use_fontconfig_family_resolution(font: CatalogFontEntryV12) -> bool:
 
     Notes
     -----
-    The catalog generator currently does not require any per-font
-    family-name resolution overrides. Keeping this helper explicit
-    avoids inlining the policy decision into the rendering branch.
+    Family-based resolution is a conservative fallback used only when
+    the inventory entry does not carry a usable filesystem path and a
+    non-empty family name is available. File-backed fonts continue to
+    use deterministic path-based loading.
     """
-    _ = font
-    return False
+    path = str(font.get("path", "")).strip()
+    family = str(font.get("family", "")).strip()
+    return not path and bool(family)
 
 
 def _format_specimen_for_latex(specimen: str, script0_iso: ScriptISO) -> str:
@@ -320,8 +322,8 @@ def _render_font_entry(
     -------
     tuple[str, str]
         Two-element tuple ``(render_block, options_plain)``. Returns
-        ``("", "")`` when the font path does not refer to a supported
-        font file extension.
+        ``("", "")`` when neither a supported file-backed path nor a
+        safe family-name fallback is available.
 
     Raises
     ------
@@ -339,13 +341,12 @@ def _render_font_entry(
     information alongside the rendered specimen block.
     """
 
-    path = str(font.get("path", "")).lower()
-    if not path.endswith((".ttf", ".otf", ".ttc")):
+    path = str(font.get("path", "")).strip()
+    use_path_based_loading = path.lower().endswith(_SUPPORTED_PATH_BASED_EXTENSIONS)
+    use_family_resolution = _use_fontconfig_family_resolution(font)
+    if not use_path_based_loading and not use_family_resolution:
         return "", ""
 
-    _dir, _file = _normalize_path_for_latex(fullpath)
-    detok_dir = "\\detokenize{" + _dir + "}"
-    detok_file = "\\detokenize{" + _latex_detokenize_safe(_file) + "}"
     renderer_prefix = _renderer_option_prefix()
 
     lang, script_opt = _get_render_policy(script0_iso)
@@ -353,12 +354,23 @@ def _render_font_entry(
     render_options: list[str] = []
     if renderer_prefix:
         render_options.append(renderer_prefix.rstrip(","))
-    render_options.append("Path=" + detok_dir)
+    if use_path_based_loading:
+        _dir, _file = _normalize_path_for_latex(fullpath)
+        detok_dir = "\\detokenize{" + _dir + "}"
+        detok_file = "\\detokenize{" + _latex_detokenize_safe(_file) + "}"
+        render_options.append("Path=" + detok_dir)
+        inline_font = detok_file
+        options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
+    else:
+        family_name = str(font.get("family", "")).strip()
+        render_options.append("UprightFont=*")
+        inline_font = "\\detokenize{" + _latex_detokenize_safe(family_name) + "}"
+        options_plain = renderer_prefix + "Family=" + family_name + ",UprightFont=*"
+
     if script_opt and not _omit_script_option_for_font(font, script0_iso):
         render_options.append(script_opt)
     opts = ",".join(render_options)
 
-    options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
     if script_opt and not _omit_script_option_for_font(font, script0_iso):
         options_plain += "," + script_opt
 
@@ -367,21 +379,13 @@ def _render_font_entry(
             " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
             + opts
             + "]{"
-            + detok_file
+            + inline_font
             + "}"
             + safe_specimen
             + "}\\endgroup}"
         )
     elif lang:
         inline_options = opts
-        inline_font = detok_file
-        if _use_fontconfig_family_resolution(font):
-            inline_options = renderer_prefix.rstrip(",")
-            inline_font = (
-                "\\detokenize{"
-                + _latex_detokenize_safe(str(font.get("family", "")).strip())
-                + "}"
-            )
         if _use_language_wrapper_for_font(font):
             render = (
                 " {\\begingroup\\sloppy\\emergencystretch=2em"
@@ -458,8 +462,9 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     Polyglossia language declarations, and then renders one catalog
     block per family. Each family entry includes one debugging metadata
     header plus one specimen block per font file belonging to that
-    family. Fonts with unsupported file extensions produce an empty
-    render block while still contributing to the itemized catalog list.
+    family. Fonts without a usable path can still render through the
+    conservative family-name fallback, while unsupported file-backed
+    entries continue to produce an empty render block.
     """
     font_list = as_font_desc_list(font_list)
 
@@ -568,7 +573,9 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         for variant in family_fonts:
             variant_path = str(variant.get("path", ""))
             _, variant_file = _normalize_path_for_latex(variant_path)
-            variant_exists = Path(variant_path).is_file()
+            variant_label = (
+                variant_file or str(variant.get("family", "")).strip() or "UNKNOWN"
+            )
 
             variant_script = primary_script(variant) or ""
             variant_script_iso = (
@@ -586,19 +593,20 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
                 script0_iso=variant_script_iso,
                 fullpath=variant_path,
             )
+            variant_renderable = bool(variant_render)
             variant_blocks.append(
                 "{\\footnotesize\\ttfamily FILE  : "
-                + escape_latex(variant_file)
-                + " [OK]}"
+                + escape_latex(variant_label)
+                + (" [OK]}" if variant_renderable else " [MISSING]}")
                 + "\n\n"
                 + (
                     "\\LogWorking{"
-                    + escape_latex(fam + " / " + variant_file)
+                    + escape_latex(fam + " / " + variant_label)
                     + "}"
                     + variant_render
-                    if variant_exists
+                    if variant_renderable
                     else "\\LogBroken{"
-                    + escape_latex(fam + " / " + variant_file)
+                    + escape_latex(fam + " / " + variant_label)
                     + "}[MISSING]"
                 )
             )
