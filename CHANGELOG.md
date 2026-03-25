@@ -1,3 +1,9 @@
+## [0.61.1](https://github.com/marco0560/Fontshow/compare/v0.61.0...v0.61.1) (2026-03-25)
+
+### Bug Fixes
+
+* **inventory:** add charset cross-validation diagnostics ([168a38b](https://github.com/marco0560/Fontshow/commit/168a38b0ef23f2266cb6094b3da8553f8ab6138c)), closes [#27](https://github.com/marco0560/Fontshow/issues/27) [#27](https://github.com/marco0560/Fontshow/issues/27)
+
 ## [0.61.0](https://github.com/marco0560/Fontshow/compare/v0.60.0...v0.61.0) (2026-03-25)
 
 ### Features
