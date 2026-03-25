@@ -483,7 +483,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
             seen_families.add(fam)
             family_order.append(fam)
 
-    log_info(f"Generating LaTeX file for {len(family_order)} fonts...")
+    log_info(f"Generating LaTeX file for {len(family_order)} families...")
 
     latex_code: str = LATEX_INITIAL_CODE
 

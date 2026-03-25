@@ -469,7 +469,7 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     )
 
     assert infos == [
-        "Generating LaTeX file for 2 fonts...",
+        "Generating LaTeX file for 2 families...",
         "  ... processed 2/2",
     ]
     assert warnings == ["LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found"]
