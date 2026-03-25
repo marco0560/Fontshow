@@ -28,6 +28,67 @@ def test_script_coverage_from_unicode_blocks_ignores_unknown_blocks_and_zero_tot
     )
 
 
+def test_infer_scripts_uses_charset_scores_as_tiebreaker() -> None:
+    """
+    Ensure charset-derived script scores can break canonical score ties.
+
+    Returns
+    -------
+    None
+    """
+    coverage = {
+        "unicode_blocks": {
+            "Greek and Coptic": 20,
+            "Latin Extended-A": 20,
+        },
+        "script_coverage_from_charset": {
+            "GREK": 0.9,
+            "LATN": 0.1,
+        },
+    }
+
+    assert infer_scripts(coverage) == ["grek", "latn"]
+
+
+def test_infer_scripts_uses_charset_scores_as_fallback() -> None:
+    """
+    Ensure charset-derived script scores act as fallback evidence.
+
+    Returns
+    -------
+    None
+    """
+    coverage = {
+        "script_coverage_from_charset": {
+            "CYRL": 0.8,
+            "LATN": 0.2,
+        }
+    }
+
+    assert infer_scripts(coverage) == ["cyrl", "latn"]
+
+
+def test_infer_scripts_keeps_canonical_blocks_authoritative() -> None:
+    """
+    Ensure charset-derived scores do not override stronger canonical evidence.
+
+    Returns
+    -------
+    None
+    """
+    coverage = {
+        "unicode_blocks": {
+            "Arabic": 40,
+        },
+        "script_coverage_from_charset": {
+            "HEBR": 1.0,
+            "ARAB": 0.1,
+        },
+    }
+
+    assert infer_scripts(coverage) == ["arab"]
+
+
 def test_infer_scripts_cjk_and_threshold_branches():
     """
     Ensure CJK disambiguation and threshold branches behave deterministically.

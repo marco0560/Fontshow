@@ -193,17 +193,18 @@ Interpretation:
 - Fontshow can still capture and serialize Fontconfig charset bitmaps in practice
   even when direct `fc-query` fails for certain font types.
 
-Current limitations (by design):
+Current behavior:
 
-- The Fontconfig charset bitmap is **not decoded** into Unicode ranges.
-- As a consequence, `coverage.charset.ranges` is currently empty.
-- Downstream enrichment steps depending on charset ranges
-  (`normalized_charset`, `unicode_blocks_from_charset`,
-  `script_coverage_from_charset`) are intentionally left unset.
-
-This behavior is expected and reflects the current project design.
-Decoding and semantic consumption of Fontconfig charset data is deferred
-to a future C-step.
+- The Fontconfig charset bitmap is decoded into Unicode ranges during
+  parse-inventory enrichment when charset data is available.
+- Charset-derived fields may be attached under coverage:
+  - `normalized_charset`
+  - `unicode_blocks_from_charset`
+  - `script_coverage_from_charset`
+- Canonical `coverage.unicode_blocks` remains the authoritative source
+  for script inference when present.
+- Charset-derived script coverage is used as a secondary weighted signal
+  and as fallback only when canonical block coverage is absent.
 
 ## Automated Tests (pytest)
 

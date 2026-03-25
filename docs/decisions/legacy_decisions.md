@@ -648,7 +648,10 @@ based on FontConfig charset data:
 - Charset-derived Unicode blocks are mapped to script coverage ratios
   using the existing `UNICODE_SCRIPT_RANGES` table.
 - The result is attached as `coverage.script_coverage_from_charset`.
-- This data is purely diagnostic and does not affect script inference.
+- This data acts as a secondary weighted signal for script inference:
+  canonical `coverage.unicode_blocks` remains authoritative when
+  present, while charset-derived scores can reinforce or break ties and
+  serve as fallback only when canonical block coverage is absent.
 
 Each phase:
 
@@ -663,9 +666,11 @@ Each phase:
 
 This approach deliberately avoids premature semantic decisions:
 
-- Charset-derived data is **added**, never merged or substituted.
-- No automatic fallback or precedence rules are introduced.
-- Inference logic remains unchanged.
+- Charset-derived data is **added**, never merged into
+  `coverage.unicode_blocks`.
+- Canonical Unicode-block inference remains authoritative.
+- Charset-derived script coverage is allowed to contribute as a
+  conservative weighted signal and fallback.
 
 By keeping raw, normalized, and derived representations separate,
 we preserve auditability and allow future policy decisions to be
@@ -680,7 +685,8 @@ made explicitly and incrementally.
   - `unicode_blocks_from_charset`
   - `script_coverage_from_charset`
 - These fields are not yet reflected in the JSON schema.
-- Consumers must treat them as optional and informational.
+- Consumers must treat them as optional, provenance-preserving, and
+  lower-authority than canonical Unicode-block coverage.
 
 A follow-up decision is required to determine whether:
 

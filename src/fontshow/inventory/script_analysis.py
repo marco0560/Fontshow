@@ -31,6 +31,8 @@ from fontshow.core.types import ScriptISO
 from fontshow.ontology.language_tables import SCRIPT_INFO
 from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
+CHARSET_SCRIPT_WEIGHT = 0.25
+
 
 def _is_significant_latin_block(count: int, total: int, level: str) -> bool:
     """
@@ -248,18 +250,18 @@ def _score_scripts_from_blocks(blocks: dict[str, int], level: str) -> dict[str, 
     return scripts_score
 
 
-def _apply_preferred_over(scripts_score: dict[str, int]) -> dict[str, int]:
+def _apply_preferred_over(scripts_score: dict[str, float]) -> dict[str, float]:
     """
     Apply ontology-driven soft precedence between competing scripts.
 
     Parameters
     ----------
-    scripts_score : dict[str, int]
+    scripts_score : dict[str, float]
         Weighted score per inferred script tag.
 
     Returns
     -------
-    dict[str, int]
+    dict[str, float]
         Updated score mapping after soft precedence adjustments.
     """
     adjusted = dict(scripts_score)
@@ -276,18 +278,18 @@ def _apply_preferred_over(scripts_score: dict[str, int]) -> dict[str, int]:
     return adjusted
 
 
-def _apply_suppressions(scripts_score: dict[str, int]) -> dict[str, int]:
+def _apply_suppressions(scripts_score: dict[str, float]) -> dict[str, float]:
     """
     Apply ontology-driven hard suppressions between competing scripts.
 
     Parameters
     ----------
-    scripts_score : dict[str, int]
+    scripts_score : dict[str, float]
         Weighted score per inferred script tag.
 
     Returns
     -------
-    dict[str, int]
+    dict[str, float]
         Updated score mapping after hard suppressions.
     """
     adjusted = dict(scripts_score)
@@ -304,18 +306,18 @@ def _apply_suppressions(scripts_score: dict[str, int]) -> dict[str, int]:
     return adjusted
 
 
-def _collapse_script_groups(scripts_score: dict[str, int]) -> dict[str, int]:
+def _collapse_script_groups(scripts_score: dict[str, float]) -> dict[str, float]:
     """
     Collapse ontology-defined script groups to a canonical representative.
 
     Parameters
     ----------
-    scripts_score : dict[str, int]
+    scripts_score : dict[str, float]
         Weighted score per inferred script tag.
 
     Returns
     -------
-    dict[str, int]
+    dict[str, float]
         Score mapping after group-level collapse.
     """
     adjusted = dict(scripts_score)
@@ -342,13 +344,13 @@ def _collapse_script_groups(scripts_score: dict[str, int]) -> dict[str, int]:
     return adjusted
 
 
-def _sort_scored_scripts(scripts_score: dict[str, int]) -> list[str]:
+def _sort_scored_scripts(scripts_score: dict[str, float]) -> list[str]:
     """
     Sort inferred scripts by confidence and deterministic tie-breakers.
 
     Parameters
     ----------
-    scripts_score : dict[str, int]
+    scripts_score : dict[str, float]
         Weighted score per inferred script tag.
 
     Returns
@@ -400,6 +402,85 @@ def _infer_from_unicode_max(unicode_max: Any) -> list[str]:
     if unicode_max >= 0x4E00:
         return ["hani"]
     return ["unknown"]
+
+
+def _charset_script_scores(coverage: dict[str, Any]) -> dict[str, float]:
+    """
+    Extract normalized charset-derived script scores from coverage data.
+
+    Parameters
+    ----------
+    coverage : dict[str, Any]
+        Coverage block that may contain ``script_coverage_from_charset``.
+
+    Returns
+    -------
+    dict[str, float]
+        Lowercase script tags mapped to positive charset-derived
+        coverage ratios.
+
+    Notes
+    -----
+    Invalid or non-numeric values are ignored so malformed diagnostic
+    metadata does not crash script inference.
+    """
+    raw_scores = coverage.get("script_coverage_from_charset")
+    if not isinstance(raw_scores, dict):
+        return {}
+
+    normalized: dict[str, float] = {}
+    for script, value in raw_scores.items():
+        if not isinstance(script, str) or not script.strip():
+            continue
+        if not isinstance(value, int | float):
+            continue
+        score = float(value)
+        if score <= 0:
+            continue
+        normalized[script.lower()] = score
+
+    return normalized
+
+
+def _combine_weighted_script_scores(
+    primary_scores: dict[str, float],
+    charset_scores: dict[str, float],
+) -> dict[str, float]:
+    """
+    Combine canonical and charset-derived script scores conservatively.
+
+    Parameters
+    ----------
+    primary_scores : dict[str, float]
+        Scores derived from canonical Unicode block coverage.
+    charset_scores : dict[str, float]
+        Supporting script ratios derived from charset coverage.
+
+    Returns
+    -------
+    dict[str, float]
+        Combined script-score mapping.
+
+    Notes
+    -----
+    Policy:
+    - Canonical Unicode-block scores remain authoritative when present.
+    - Charset scores contribute a smaller weighted boost only to scripts
+      already supported by canonical evidence.
+    - When canonical evidence is absent, charset scores become the
+      fallback inference source.
+    """
+    if not primary_scores:
+        return dict(charset_scores)
+
+    combined = {script: float(score) for script, score in primary_scores.items()}
+
+    for script, score in charset_scores.items():
+        if script not in combined:
+            continue
+        combined[script] += score * CHARSET_SCRIPT_WEIGHT
+
+    return combined
 
 
 def script_coverage_from_unicode_blocks(
@@ -462,17 +543,22 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
     """
     Infer writing scripts from Unicode coverage metadata.
 
-    The function follows a two-step strategy:
+    The function follows a three-step strategy:
 
     1. **Primary path**: analyze ``coverage["unicode_blocks"]`` if present.
-    2. **Fallback path**: infer from ``coverage["unicode"]["max"]``.
+    2. **Secondary path**: use weighted ``script_coverage_from_charset``
+       as supporting evidence, or as a fallback when canonical block
+       coverage is absent.
+    3. **Final fallback**: infer from ``coverage["unicode"]["max"]``.
 
     Parameters
     ----------
     coverage : dict[str, Any]
         Coverage block extracted from a font entry. Expected keys are
         ``unicode_blocks`` (mapping block name to count) and/or
-        ``unicode.max`` (maximum code point).
+        ``unicode.max`` (maximum code point). The optional
+        ``script_coverage_from_charset`` mapping is treated as
+        secondary evidence.
     level : str, optional
         Inference aggressiveness level. One of
         ``"conservative"``, ``"medium"`` (default), or ``"aggressive"``.
@@ -490,13 +576,27 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
     ``"arab"``, ``"taml"``, and ``"hani"``. The value ``"unknown"``
     is a sentinel and must not be used for downstream language
     inference.
+
+    Charset-derived script coverage is never merged into
+    ``coverage["unicode_blocks"]``. It acts only as a weighted
+    supporting signal when canonical block coverage exists, and as a
+    fallback signal when canonical block coverage is absent.
     """
     blocks: dict[str, int] = coverage.get("unicode_blocks", {}) or {}
+    charset_scores = _charset_script_scores(coverage)
+
     if blocks:
-        scripts_score = _score_scripts_from_blocks(blocks, level)
+        scripts_score: dict[str, float] = {
+            script: float(score)
+            for script, score in _score_scripts_from_blocks(blocks, level).items()
+        }
+        scripts_score = _combine_weighted_script_scores(scripts_score, charset_scores)
         scripts_score = _apply_preferred_over(scripts_score)
         scripts_score = _apply_suppressions(scripts_score)
         scripts_score = _collapse_script_groups(scripts_score)
         return _sort_scored_scripts(scripts_score)
+
+    if charset_scores:
+        return _sort_scored_scripts(charset_scores)
 
     return _infer_from_unicode_max(coverage.get("unicode", {}).get("max"))

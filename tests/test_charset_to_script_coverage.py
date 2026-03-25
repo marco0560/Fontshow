@@ -80,3 +80,46 @@ def test_parse_inventory_adds_script_coverage_from_charset(enable_fontshow_loggi
     cov = inventory["fonts"][0]["coverage"]
     assert "script_coverage_from_charset" in cov
     assert "LATN" in cov["script_coverage_from_charset"]
+
+
+def test_parse_inventory_uses_charset_signal_for_script_inference(
+    enable_fontshow_logging,
+):
+    """
+    Verify that parse-inventory can infer scripts from charset-derived coverage.
+
+    Parameters
+    ----------
+    enable_fontshow_logging : object
+        Logging fixture used by the parse-inventory execution path.
+
+    Returns
+    -------
+    None
+    """
+    import importlib
+
+    import fontshow.cli.parse_inventory
+
+    importlib.reload(fontshow.cli.parse_inventory)
+
+    from tests.helpers import minimal_font_entry_v12, minimal_inventory_v12
+
+    inventory = minimal_inventory_v12()
+    font = minimal_font_entry_v12()
+
+    font["charset"] = {
+        "source": "fontconfig",
+        "ranges": [[0x0400, 0x04FF]],
+    }
+    font["coverage"] = {}
+
+    inventory["fonts"] = [font]
+
+    fontshow.cli.parse_inventory.parse_inventory(inventory, level="medium")
+
+    inference = inventory["fonts"][0]["inference"]
+
+    assert inference["scripts"][0] == "CYRL"
+    assert inference["primary_script"] == "CYRL"
+    assert "ru" in inference["languages"]
