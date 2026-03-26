@@ -29,6 +29,20 @@ def test_normalize_path_for_latex_handles_windows_and_bare_filenames():
     assert document._normalize_path_for_latex("Alpha.ttf") == ("./", "Alpha.ttf")
 
 
+def test_normalize_path_for_latex_preserves_wsl_mount_paths():
+    """
+    Ensure WSL-style mount-backed font paths remain absolute and normalized.
+
+    Returns
+    -------
+    None
+    """
+    assert document._normalize_path_for_latex("/mnt/c/Windows/Fonts/Arial.ttf") == (
+        "/mnt/c/Windows/Fonts/",
+        "Arial.ttf",
+    )
+
+
 def test_render_font_entry_returns_empty_for_unsupported_extension():
     """
     Ensure non-font paths do not render specimen blocks.

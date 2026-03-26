@@ -9,6 +9,8 @@ Responsibilities
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from types import SimpleNamespace
 
 from fontshow.cli import create_catalog
@@ -113,6 +115,39 @@ def test_generate_test_output_treats_limit_zero_as_no_limit(monkeypatch, tmp_pat
     content = out_file.read_text(encoding="utf-8")
     assert "Raw line: Alpha" in content
     assert "Raw line: Beta" in content
+
+
+def test_resolve_inventory_path_prefers_explicit_paths_and_defaults_from_cwd(tmp_path):
+    """
+    Ensure inventory resolution honors explicit paths and the cwd default file.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage the default inventory.
+
+    Returns
+    -------
+    None
+    """
+    default_inventory = tmp_path / create_catalog.DEFAULT_INVENTORY
+    default_inventory.write_text("{}", encoding="utf-8")
+
+    old_cwd = Path.cwd()
+    try:
+        os.chdir(tmp_path)
+
+        assert create_catalog._resolve_inventory_path(
+            SimpleNamespace(inventory=None)
+        ) == Path(create_catalog.DEFAULT_INVENTORY)
+        assert create_catalog._resolve_inventory_path(
+            SimpleNamespace(inventory="subdir/inventory.json")
+        ) == Path("subdir/inventory.json")
+        assert create_catalog._resolve_inventory_path(
+            SimpleNamespace(inventory="/mnt/c/tmp/inventory.json")
+        ) == Path("/mnt/c/tmp/inventory.json")
+    finally:
+        os.chdir(old_cwd)
 
 
 def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(

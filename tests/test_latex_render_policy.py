@@ -199,6 +199,20 @@ def test_nfss_family_id_is_stable_and_uses_path():
     assert policy.nfss_family_id(base) != policy.nfss_family_id(other)
 
 
+def test_normalize_font_path_for_latex_preserves_wsl_mount_paths():
+    """
+    Ensure WSL-style mount-backed font paths stay absolute for fontspec setup.
+
+    Returns
+    -------
+    None
+    """
+    assert policy._normalize_font_path_for_latex("/mnt/c/Windows/Fonts/Arial.ttf") == (
+        "/mnt/c/Windows/Fonts/",
+        "Arial.ttf",
+    )
+
+
 def test_render_helpers_strip_controls_and_toggle_renderer_prefix(monkeypatch):
     """
     Ensure control chars are removed and renderer prefix follows platform policy.
