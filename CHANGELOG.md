@@ -1,3 +1,9 @@
+## [0.62.1](https://github.com/marco0560/Fontshow/compare/v0.62.0...v0.62.1) (2026-03-27)
+
+### Bug Fixes
+
+* **git:** enforce pre-commit hook via repo venv ([cc39436](https://github.com/marco0560/Fontshow/commit/cc39436e2c3ec2cb050e59e65e762ee9d3e1cde7))
+
 ## [0.62.0](https://github.com/marco0560/Fontshow/compare/v0.61.3...v0.62.0) (2026-03-27)
 
 ### Features
