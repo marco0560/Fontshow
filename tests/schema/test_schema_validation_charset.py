@@ -32,6 +32,10 @@ def _base_inventory_with_charset():
     """
     Build a minimal schema-valid inventory that includes charset enrichment fields.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     dict
@@ -141,6 +145,10 @@ def test_schema_validation_with_charset_enrichment():
     """
     Verify that charset-enriched inventories do not emit error-severity warnings.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -156,6 +164,10 @@ def test_schema_validation_with_charset_enrichment():
 def test_schema_validation_no_spurious_warnings():
     """
     Verify that a valid charset-enriched inventory produces no warnings at all.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

@@ -9,6 +9,10 @@ def test_format_extra_handles_empty_and_boundary_sizes():
     """
     Ensure empty, compact, and multiline boundaries are stable.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

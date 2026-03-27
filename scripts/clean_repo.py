@@ -47,10 +47,14 @@ def git_ignored_paths() -> Iterable[Path]:
     its output, yielding paths that are reported as ignored (lines starting
     with ``"!! "``).
 
-    Returns
-    -------
-    Iterable[pathlib.Path]
-        Iterator over paths ignored by Git.
+    Parameters
+    ----------
+    None
+
+    Yields
+    ------
+    pathlib.Path
+        Paths ignored by Git and present in the working tree.
 
     Raises
     ------

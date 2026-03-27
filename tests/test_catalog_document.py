@@ -18,6 +18,10 @@ def test_normalize_path_for_latex_handles_windows_and_bare_filenames():
     """
     Ensure path normalization produces forward slashes and a default directory.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -33,6 +37,10 @@ def test_normalize_path_for_latex_preserves_wsl_mount_paths():
     """
     Ensure WSL-style mount-backed font paths remain absolute and normalized.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -46,6 +54,10 @@ def test_normalize_path_for_latex_preserves_wsl_mount_paths():
 def test_render_font_entry_returns_empty_for_unsupported_extension():
     """
     Ensure non-font paths do not render specimen blocks.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -376,6 +388,10 @@ def test_format_specimen_for_latex_chunks_non_space_runs_every_five_characters()
     """
     Ensure long runs without spaces receive explicit break hints every five characters.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -393,6 +409,10 @@ def test_format_specimen_for_latex_chunks_non_space_runs_every_five_characters()
 def test_format_specimen_for_latex_adds_break_hints_for_cjk_runs():
     """
     Ensure long CJK runs also receive explicit break hints.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

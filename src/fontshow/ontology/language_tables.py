@@ -2397,6 +2397,10 @@ def _finalize_language_info() -> None:
     """
     Normalize language ontology rows with explicit primary-script metadata.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -2469,6 +2473,10 @@ def _derive_unicode_max_ranges(
 def _finalize_script_info() -> None:
     """
     Normalize script ontology rows with explicit inference metadata.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

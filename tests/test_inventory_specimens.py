@@ -16,6 +16,10 @@ def test_specimen_from_internal_reports_rejection_reasons():
     """
     Ensure internal samples report absent, unsupported, short, and success states.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -112,6 +116,10 @@ def test_specimen_from_script_keeps_substantial_sample_for_large_cmap(monkeypatc
 def test_specimen_from_cmap_returns_fallback_without_warning_record():
     """
     Ensure cmap fallback uses preference ordering without adding a warning record.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

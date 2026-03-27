@@ -82,6 +82,10 @@ def test_validation_probe_text_prefers_specimen_then_sample_text():
     """
     Ensure loadability probes use the font's own specimen data first.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

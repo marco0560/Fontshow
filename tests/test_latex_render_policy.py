@@ -188,6 +188,10 @@ def test_nfss_family_id_is_stable_and_uses_path():
     """
     Ensure NFSS ids are deterministic and vary across file paths.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -202,6 +206,10 @@ def test_nfss_family_id_is_stable_and_uses_path():
 def test_normalize_font_path_for_latex_preserves_wsl_mount_paths():
     """
     Ensure WSL-style mount-backed font paths stay absolute for fontspec setup.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

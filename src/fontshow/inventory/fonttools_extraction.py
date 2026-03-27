@@ -411,7 +411,8 @@ def _extract_name_table(tt: TTFont) -> dict[str, list[str]]:
 
 
 def _extract_os2_table(tt: TTFont) -> dict[str, Any]:
-    """Extract a small subset of OS/2 fields, best-effort.
+    """
+    Extract a small subset of OS/2 fields, best-effort.
 
      The OS/2 table is frequently present but can be malformed. This function
      therefore uses defensive attribute access and returns only a stable subset.
@@ -433,6 +434,10 @@ def _extract_os2_table(tt: TTFont) -> dict[str, Any]:
      dict[str, Any]
          Dictionary containing extracted OS/2 fields when available,
          or an empty dict if the OS/2 table is missing or malformed.
+
+    Returns
+    -------
+    None
     """
     if "OS/2" not in tt:
         return {}

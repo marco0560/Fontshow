@@ -231,6 +231,10 @@ def git_alias_entries() -> list[tuple[str, str]]:
     """
     Return the repository-local Git alias contract.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     list[tuple[str, str]]

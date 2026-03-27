@@ -8,6 +8,9 @@
 #   - fontshow/data/iso/iso15924-2024.txt
 #
 # This module provides Unicode-derived tables for Fontshow.
+"""
+Auto-generated Unicode-derived ontology tables for Fontshow.
+"""
 
 from __future__ import annotations
 

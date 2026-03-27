@@ -28,6 +28,10 @@ def test_render_hides_ok_and_info_by_default():
     """
     Verify that the renderer formats all severities consistently in default mode.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -57,6 +61,10 @@ def test_render_hides_ok_and_info_by_default():
 def test_render_shows_all_with_verbose():
     """
     Verify that verbose mode preserves the full rendered result set.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

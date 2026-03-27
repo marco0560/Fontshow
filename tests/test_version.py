@@ -29,6 +29,10 @@ def test_version_is_defined():
     The test asserts both the presence of ``fontshow.__version__`` and
     that the value parses as a three-part release version.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

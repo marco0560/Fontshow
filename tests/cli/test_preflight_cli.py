@@ -204,6 +204,10 @@ def test_preflight_module_entrypoint_runs():
     This test bypasses cli_runner on purpose, because
     cli_runner is scoped to the `fontshow` console script.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

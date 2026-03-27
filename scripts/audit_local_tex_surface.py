@@ -133,6 +133,10 @@ def parse_args() -> argparse.Namespace:
     """
     Parse command-line arguments for the TeX surface audit.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     argparse.Namespace
@@ -163,6 +167,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     """
     Execute the local TeX audit and write the JSON report.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

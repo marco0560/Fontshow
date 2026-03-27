@@ -62,6 +62,10 @@ class _FakeNameRecord:
         """
         Return the configured Unicode string or raise the configured error.
 
+        Parameters
+        ----------
+        None
+
         Returns
         -------
         str
@@ -81,16 +85,56 @@ class _FakeNameRecord:
 
 
 class _FakeUnicodeSubtable:
+    """
+    Minimal fake cmap subtable with configurable Unicode eligibility.
+
+    Parameters
+    ----------
+    None
+    """
+
     def __init__(self, codepoints: list[int], *, unicode: bool = True) -> None:
         self.cmap = {cp: f"g{cp}" for cp in codepoints}
         self._unicode = unicode
 
     def isUnicode(self) -> bool:
+        """
+        Report whether the fake subtable should be treated as Unicode.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        bool
+            ``True`` when the fake subtable models a Unicode cmap.
+        """
         return self._unicode
 
 
 class _FakeTT(dict):
+    """
+    Minimal ``TTFont``-like mapping used by extraction helper tests.
+
+    Parameters
+    ----------
+    None
+    """
+
     def keys(self):
+        """
+        Expose mapping keys through the `TTFont`-compatible surface.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        collections.abc.KeysView[str]
+            Mapping view over the stored fake table tags.
+        """
         return super().keys()
 
 
@@ -191,6 +235,10 @@ def test_extract_name_table_falls_back_to_str_and_skips_unusable_records():
     """
     Ensure malformed name records use ``str()`` fallback when possible.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -215,6 +263,10 @@ def test_extract_name_table_falls_back_to_str_and_skips_unusable_records():
 def test_extract_os2_unicode_coverage_and_features_are_best_effort():
     """
     Ensure low-level helpers normalize values and tolerate malformed subtables.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -513,6 +565,10 @@ def test_fonttools_extract_all_ttc_uses_cached_faces_and_reports_per_face_failur
 def test_extract_opentype_features_ignores_malformed_feature_records():
     """
     Ensure malformed feature records are ignored instead of raising.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

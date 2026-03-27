@@ -14,6 +14,10 @@ def test_script_coverage_from_unicode_blocks_ignores_unknown_blocks_and_zero_tot
     """
     Ensure empty totals and unknown blocks produce safe output.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -31,6 +35,10 @@ def test_script_coverage_from_unicode_blocks_ignores_unknown_blocks_and_zero_tot
 def test_infer_scripts_uses_charset_scores_as_tiebreaker() -> None:
     """
     Ensure charset-derived script scores can break canonical score ties.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -54,6 +62,10 @@ def test_infer_scripts_uses_charset_scores_as_fallback() -> None:
     """
     Ensure charset-derived script scores act as fallback evidence.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -71,6 +83,10 @@ def test_infer_scripts_uses_charset_scores_as_fallback() -> None:
 def test_infer_scripts_keeps_canonical_blocks_authoritative() -> None:
     """
     Ensure charset-derived scores do not override stronger canonical evidence.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -92,6 +108,10 @@ def test_infer_scripts_keeps_canonical_blocks_authoritative() -> None:
 def test_infer_scripts_cjk_and_threshold_branches():
     """
     Ensure CJK disambiguation and threshold branches behave deterministically.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -117,6 +137,10 @@ def test_infer_scripts_uses_unicode_max_fallbacks():
     """
     Ensure unicode.max fallback ranges map to the documented scripts.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -129,6 +153,10 @@ def test_infer_scripts_uses_unicode_max_fallbacks():
 def test_infer_scripts_prefers_dedicated_blocks_over_broader_neighbors():
     """
     Ensure dedicated script blocks win over legacy neighboring scripts.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

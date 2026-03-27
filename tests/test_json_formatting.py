@@ -24,6 +24,10 @@ def test_dumps_pretty_compacts_short_numeric_lists():
     """
     Verify that short numeric sublists remain compact inside pretty-printed JSON.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -39,6 +43,10 @@ def test_dumps_pretty_compacts_short_numeric_lists():
 def test_dumps_pretty_does_not_compact_long_numeric_lists():
     """
     Verify that long numeric lists remain expanded for readability.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

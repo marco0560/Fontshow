@@ -38,6 +38,10 @@ def test_schema_v1_2_inventory_regression_no_errors():
     - schema validation does not raise
     - no error-level warnings are emitted
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

@@ -87,6 +87,10 @@ def test_validate_inventory_defaults_to_font_inventory_json():
     """
     Verify that validate-inventory defaults to ``font_inventory.json``.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

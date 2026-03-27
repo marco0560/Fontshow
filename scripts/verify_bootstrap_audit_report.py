@@ -181,6 +181,11 @@ def parse_sha256_section(report_lines: list[str]) -> dict[str, str]:
     """
     Parse SHA256 baseline section.
 
+    Parameters
+    ----------
+    report_lines : list[str]
+        Lines from the bootstrap audit report text.
+
     Returns
     -------
     dict[str, str]
@@ -251,6 +256,10 @@ def main() -> None:
     * verify the report checksum
     * confirm the Git working tree is clean
     * validate recorded file hashes against repository contents
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

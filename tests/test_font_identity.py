@@ -24,6 +24,10 @@ def test_font_identity_id_stable():
     """
     Verify that font identifiers are stable for identical inputs and differ otherwise.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

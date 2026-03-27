@@ -24,6 +24,10 @@ def test_infer_languages_latn():
     """
     Verify that Basic Latin coverage yields at least English as a candidate.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -44,6 +48,10 @@ def test_infer_languages_cyrillic():
     """
     Verify that Cyrillic coverage yields Russian as a candidate language.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -63,6 +71,10 @@ def test_infer_languages_cyrillic():
 def test_infer_languages_mixed_scripts():
     """
     Verify that mixed Latin and Greek coverage yields both language families.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -86,6 +98,10 @@ def test_infer_languages_unknown_script():
     """
     Verify that an empty Unicode block map yields no inferred languages.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -100,6 +116,10 @@ def test_infer_languages_unknown_script():
 def test_infer_languages_empty_input():
     """
     Verify that completely empty input yields no inferred languages.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

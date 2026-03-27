@@ -82,13 +82,12 @@ def _strip_ascii_control_chars(text: str) -> str:
     Returns
     -------
     str
-        Text with control characters removed, except for newline and
-        tab.
+        Text with control characters removed, except for newline and tab.
 
     Notes
     -----
     Keeps newline (``\\n``) and tab (``\\t``); strips other characters
-    in the ranges ``U+0000–U+001F`` and ``U+007F``.
+    in the ranges ``U+0000-U+001F`` and ``U+007F``.
     """
     return "".join(
         ch for ch in text if ch in {"\n", "\t"} or (ord(ch) >= 0x20 and ord(ch) != 0x7F)
@@ -97,7 +96,7 @@ def _strip_ascii_control_chars(text: str) -> str:
 
 def _latex_detokenize_safe(text: str) -> str:
     """
-    Prepare text for safe inclusion inside \\detokenize{...}.
+    Prepare text for safe inclusion inside ``\\detokenize{...}``.
 
     Parameters
     ----------

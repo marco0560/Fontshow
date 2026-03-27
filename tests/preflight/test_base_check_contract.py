@@ -32,6 +32,10 @@ def test_all_checks_are_subclasses_of_basecheck():
     """
     Verify that all registered checks subclass `BaseCheck`.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -45,6 +49,10 @@ def test_all_checks_are_subclasses_of_basecheck():
 def test_all_checks_define_check_id():
     """
     Verify that every registered check defines a non-empty string ``check_id``.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -62,6 +70,10 @@ def test_check_ids_are_unique():
     """
     Verify that ``check_id`` values are unique across registered checks.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -75,6 +87,10 @@ def test_check_ids_are_unique():
 def test_all_checks_implement_run_method():
     """
     Verify that all registered checks expose a callable `run()` method.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

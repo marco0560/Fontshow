@@ -12,10 +12,13 @@ def test_split_fc_query_blocks_returns_empty_mapping_without_defaults():
     """
     Ensure markerless output with no default paths remains empty.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
-
     """
     assert _split_fc_query_blocks("family: Example", []) == {}
 

@@ -24,6 +24,10 @@ def test_install_target_tracks_requested_dependency_groups() -> None:
     """
     Ensure editable install extras remain explicit and deterministic.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -36,6 +40,10 @@ def test_install_target_tracks_requested_dependency_groups() -> None:
 def test_git_alias_entries_are_repo_safe_and_self_contained() -> None:
     """
     Ensure bootstrap installs only portable repository-local Git aliases.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -57,6 +65,10 @@ def test_git_alias_entries_are_repo_safe_and_self_contained() -> None:
 def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
     """
     Ensure the default bootstrap plan covers install, config, and validation.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -93,6 +105,10 @@ def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
 def test_build_bootstrap_commands_can_skip_validation_and_include_docs() -> None:
     """
     Ensure optional docs install and validation skipping affect only planned steps.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

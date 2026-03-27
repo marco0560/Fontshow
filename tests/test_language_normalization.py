@@ -24,6 +24,10 @@ def test_empty_input():
     """
     Verify that empty language input normalizes to empty result collections.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -37,6 +41,10 @@ def test_empty_input():
 def test_basic_normalization():
     """
     Verify that already-normalized language tags are preserved.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -52,6 +60,10 @@ def test_case_normalization():
     """
     Verify that mixed-case language tags are lowercased.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -66,6 +78,10 @@ def test_deprecated_language_mapping():
     """
     Verify that deprecated language tags are remapped and recorded.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -79,6 +95,10 @@ def test_deprecated_language_mapping():
 def test_variant_stripping():
     """
     Verify that region and variant suffixes are stripped to base tags.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -97,6 +117,10 @@ def test_duplicate_languages():
     """
     Verify that duplicates after normalization are dropped with reasons.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -114,6 +138,10 @@ def test_unknown_language():
     """
     Verify that unknown language codes are dropped as unsupported.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -129,6 +157,10 @@ def test_unknown_language():
 def test_mixed_case():
     """
     Verify that repeated regional variants collapse to one normalized base tag.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

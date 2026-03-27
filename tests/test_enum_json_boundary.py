@@ -31,6 +31,10 @@ def _build_sample_inventory():
     """
     Build a minimal inventory payload containing enum-backed warnings.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     dict
@@ -48,6 +52,10 @@ def _build_sample_inventory():
 def test_enum_written_as_string():
     """
     Verify that enum severities serialize to JSON strings.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -67,6 +75,10 @@ def test_enum_written_as_string():
 def test_enum_restored_after_load():
     """
     Verify that JSON-loaded severity strings are normalized back to enums.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -88,6 +100,10 @@ def test_no_string_severity_after_normalization():
     """
     Verify that normalization leaves no string severities in warnings.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -108,6 +124,10 @@ def test_roundtrip_stability():
 
     This edge case checks round-trip stability across the enum JSON
     boundary rather than object identity.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

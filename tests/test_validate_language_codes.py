@@ -24,6 +24,10 @@ def test_valid_language_codes_no_warnings():
     """
     Verify that valid declared and inferred language codes produce no warnings.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -45,6 +49,10 @@ def test_valid_language_codes_no_warnings():
 def test_invalid_inferred_language_code_emits_warning():
     """
     Verify that an invalid inferred language code emits one warning.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -70,6 +78,10 @@ def test_invalid_declared_language_code_emits_warning():
     """
     Verify that an invalid declared coverage language emits a warning.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -92,6 +104,10 @@ def test_unknown_language_code_is_ignored():
     """
     Verify that the ``unknown`` sentinel is ignored during validation.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -112,6 +128,10 @@ def test_unknown_language_code_is_ignored():
 def test_duplicate_language_codes_emit_single_warning():
     """
     Verify that duplicate invalid codes across coverage and inference warn once.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

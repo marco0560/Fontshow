@@ -28,6 +28,10 @@ def test_greek_not_inferred_from_symbolic_coverage():
     points so the test exercises the low-coverage threshold guard
     against false positives.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -51,6 +55,10 @@ def test_greek_inferred_with_sufficient_block_coverage():
 
     This edge case checks the threshold crossover where Greek coverage
     becomes high enough to infer ``el`` confidently.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -76,6 +84,10 @@ def test_latin_languages_not_regressed():
 
     The setup provides broad Latin block coverage and asserts that the
     core Western language candidates remain inferred.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

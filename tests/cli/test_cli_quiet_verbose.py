@@ -54,6 +54,10 @@ def test_cli_default_output():
     """
     Verify that a default help-style invocation writes stdout but not stderr.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -68,6 +72,10 @@ def test_cli_default_output():
 def test_cli_quiet_suppresses_stdout():
     """
     Verify that ``--quiet`` suppresses stdout even when execution fails.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -85,6 +93,10 @@ def test_cli_verbose_enables_output():
     """
     Verify that ``--verbose`` does not suppress failure diagnostics.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -101,6 +113,10 @@ def test_cli_quiet_and_verbose_quiet_wins():
     """
     Verify that passing ``--quiet`` and ``--verbose`` together is rejected.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -115,6 +131,10 @@ def test_cli_quiet_and_verbose_quiet_wins():
 def test_cli_inventory_fallback_does_not_crash():
     """
     Verify that an explicit missing inventory path fails cleanly without stdout.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

@@ -114,6 +114,10 @@ def _script_priority_map() -> dict[str, int]:
     """
     Build deterministic script-priority mapping from ontology data.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     dict[str, int]

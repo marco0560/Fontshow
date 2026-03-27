@@ -33,6 +33,10 @@ def _minimal_inventory():
     Minimal inventory structure that is schema-valid for v1.3.
     Used to verify output invariants.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     dict
@@ -135,6 +139,10 @@ def test_enriched_inventory_is_schema_valid():
     """
     Output MUST conform to schema v1.3.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -158,6 +166,10 @@ def test_catalog_json_roundtrip_preserves_validity():
     """
     JSON serialization must not corrupt schema validity.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -177,6 +189,10 @@ def test_catalog_json_roundtrip_preserves_validity():
 def test_language_codes_have_no_warnings_for_minimal_case():
     """
     Semantic validation should emit no warnings for minimal valid inventory.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

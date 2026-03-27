@@ -173,7 +173,7 @@ def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -
     Returns
     -------
     str
-        Concatenated ``\\setotherlanguage{...}`` declarations for the
+        Concatenated ``\\setotherlanguage{{...}}`` declarations for the
         LaTeX preamble.
 
     Notes

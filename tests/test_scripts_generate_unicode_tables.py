@@ -24,6 +24,10 @@ def test_merge_contiguous_ranges_handles_empty_and_singleton():
     """
     Ensure the helper handles the documented lower-boundary inputs.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -35,6 +39,10 @@ def test_merge_contiguous_ranges_handles_empty_and_singleton():
 def test_merge_contiguous_ranges_rejects_malformed_tuples():
     """
     Ensure malformed tuple shapes fail clearly instead of merging silently.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

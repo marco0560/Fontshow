@@ -108,6 +108,10 @@ def scan_local() -> dict[str, set[tuple[str, int]]]:
     """
     Scan all workflows in the repository.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     dict[str, set[tuple[str, int]]]
@@ -240,6 +244,10 @@ def print_report(local_results: dict[str, set[tuple[str, int]]]) -> None:
 def main() -> None:
     """
     Entry point.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

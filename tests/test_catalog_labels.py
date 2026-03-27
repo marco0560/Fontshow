@@ -14,6 +14,10 @@ def test_primary_script_ignores_non_string_inference_entries():
     """
     Ensure malformed inferred scripts do not become string labels.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -25,6 +29,10 @@ def test_primary_script_ignores_non_string_inference_entries():
 def test_primary_script_falls_back_when_charset_scores_are_not_comparable():
     """
     Ensure malformed charset coverage values do not raise.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

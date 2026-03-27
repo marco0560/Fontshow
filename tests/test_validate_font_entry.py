@@ -33,6 +33,10 @@ def test_validate_font_entry_valid_minimal():
     Important setup assumption: `minimal_font_entry_v12()` returns a
     structurally complete entry acceptable to `validate_font_entry`.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -51,6 +55,10 @@ def test_validate_font_entry_valid_minimal():
 def test_validate_font_entry_not_a_dict():
     """
     Verify that non-dictionary inputs are rejected as invalid entries.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -74,6 +82,10 @@ def test_validate_font_entry_missing_required_fields():
     This test exercises the edge case of a partially populated mapping
     that contains only a path and omits required schema 1.2 fields.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -91,6 +103,10 @@ def test_validate_font_entry_missing_family_is_fatal():
     """
     Verify that removing the required ``family`` field is fatal.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -106,6 +122,10 @@ def test_validate_font_entry_missing_family_is_fatal():
 def test_style_leak_heuristic_ignores_justified_family_tokens():
     """
     Verify that family tokens matching width/weight metadata are not flagged.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -123,6 +143,10 @@ def test_style_leak_heuristic_ignores_justified_family_tokens():
 def test_style_leak_heuristic_flags_unjustified_family_tokens():
     """
     Verify that family tokens contradicting metadata are still flagged.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

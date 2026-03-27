@@ -24,6 +24,10 @@ def test_decode_single_bit():
     """
     Verify that a single set bit decodes to a one-codepoint range.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -38,6 +42,10 @@ def test_decode_contiguous_range():
     """
     Verify that contiguous set bits decode to one merged range.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -51,6 +59,10 @@ def test_decode_contiguous_range():
 def test_decode_multiple_blocks_merge():
     """
     Verify that adjacent decoded ranges across bitmap blocks are merged.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

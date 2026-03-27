@@ -49,6 +49,10 @@ def test_extract_fontspec_scripts_normalizes_tilde_and_deduplicates():
     """
     Ensure fontspec script extraction returns stable normalized names.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -91,6 +95,10 @@ def test_build_gap_report_marks_missing_items_with_review_buckets():
     """
     Ensure gap analysis emits classified missing script/language entries.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -125,6 +133,10 @@ def test_build_gap_report_marks_missing_items_with_review_buckets():
 def test_build_stub_proposal_splits_canonical_languages_from_aliases():
     """
     Ensure stub proposal separates alias variants from canonical candidates.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -177,6 +189,10 @@ def test_build_stub_proposal_splits_canonical_languages_from_aliases():
 def test_build_first_reviewed_batch_selects_only_low_risk_items():
     """
     Ensure the reviewed batch emits only configured low-risk candidates.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -257,6 +273,10 @@ def test_build_first_reviewed_batch_selects_only_low_risk_items():
 def test_build_alignment_plan_separates_alias_work_from_batch_work():
     """
     Ensure the staged alignment plan preserves the alias policy and batches.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

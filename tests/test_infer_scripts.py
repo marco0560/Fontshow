@@ -24,6 +24,10 @@ def test_infer_scripts_latn_from_unicode_blocks():
     """
     Verify that Latin block coverage infers the ``latn`` script.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -43,6 +47,10 @@ def test_infer_scripts_arabic_from_unicode_blocks():
     """
     Verify that Arabic block coverage infers the ``arab`` script.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -60,6 +68,10 @@ def test_infer_scripts_arabic_from_unicode_blocks():
 def test_infer_scripts_mixed_latin_greek():
     """
     Verify that mixed Latin and Greek coverage reports both scripts.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -79,6 +91,10 @@ def test_infer_scripts_mixed_latin_greek():
 def test_infer_scripts_cjk_japanese_disambiguation():
     """
     Verify that Hiragana and Katakana disambiguate Han coverage to Japanese.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -100,6 +116,10 @@ def test_infer_scripts_unknown_when_no_coverage():
     """
     Verify that missing coverage yields the ``unknown`` sentinel.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -113,6 +133,10 @@ def test_infer_scripts_unknown_when_no_coverage():
 def test_infer_scripts_cyrillic():
     """
     Verify that Cyrillic block coverage infers the ``cyrl`` script.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -131,6 +155,10 @@ def test_infer_scripts_cyrillic():
 def test_infer_scripts_myanmar():
     """
     Verify that Myanmar block coverage infers the ``mymr`` script.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -152,6 +180,10 @@ def test_infer_scripts_dogra_and_dives_akuru_from_unicode_blocks():
     """
     Verify Dogra and Dives Akuru blocks infer dedicated script tags.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -168,6 +200,10 @@ def test_infer_scripts_uses_unicode_max_for_dogra_and_dives_akuru():
     """
     Ensure unicode.max fallback covers Dogra and Dives Akuru ranges.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -179,6 +215,10 @@ def test_infer_scripts_uses_unicode_max_for_dogra_and_dives_akuru():
 def test_infer_scripts_second_batch_blocks():
     """
     Verify second-batch script blocks infer dedicated script tags.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -202,6 +242,10 @@ def test_infer_scripts_uses_unicode_max_for_second_batch_ranges():
     """
     Verify unicode.max fallback covers second-batch script ranges.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -217,6 +261,10 @@ def test_infer_scripts_uses_unicode_max_for_second_batch_ranges():
 def test_infer_scripts_third_batch_blocks():
     """
     Verify third-batch script blocks infer dedicated script tags.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -238,6 +286,10 @@ def test_infer_scripts_uses_unicode_max_for_third_batch_ranges():
     """
     Verify unicode.max fallback covers third-batch script ranges.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -257,6 +309,10 @@ def test_infer_scripts_uses_unicode_max_for_third_batch_ranges():
 def test_infer_scripts_fourth_batch_blocks():
     """
     Verify fourth-batch script blocks infer dedicated script tags.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -278,6 +334,10 @@ def test_infer_scripts_uses_unicode_max_for_fourth_batch_ranges():
     """
     Verify unicode.max fallback covers fourth-batch script ranges.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -297,6 +357,10 @@ def test_infer_scripts_uses_unicode_max_for_fourth_batch_ranges():
 def test_infer_scripts_suppresses_neighboring_scripts_for_dedicated_batches():
     """
     Verify dedicated script evidence suppresses broader neighboring scripts.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -343,6 +407,10 @@ def test_infer_scripts_fifth_batch_blocks():
     """
     Verify fifth-batch script blocks infer dedicated script tags.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -363,6 +431,10 @@ def test_infer_scripts_uses_unicode_max_for_fifth_batch_ranges():
     """
     Verify unicode.max fallback covers fifth-batch script ranges.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -382,6 +454,10 @@ def test_infer_scripts_uses_unicode_max_for_fifth_batch_ranges():
 def test_infer_scripts_suppresses_neighboring_scripts_for_fifth_batch():
     """
     Verify fifth-batch dedicated scripts suppress neighboring scripts.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -421,6 +497,10 @@ def test_infer_scripts_sixth_batch_blocks():
     """
     Verify sixth-batch script blocks infer dedicated script tags.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -441,6 +521,10 @@ def test_infer_scripts_uses_unicode_max_for_sixth_batch_ranges():
     """
     Verify unicode.max fallback covers sixth-batch script ranges.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -460,6 +544,10 @@ def test_infer_scripts_uses_unicode_max_for_sixth_batch_ranges():
 def test_infer_scripts_suppresses_neighboring_scripts_for_sixth_batch():
     """
     Verify sixth-batch dedicated scripts suppress neighboring scripts.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -504,6 +592,10 @@ def test_infer_scripts_seventh_batch_blocks():
     """
     Verify seventh-batch script blocks infer dedicated script tags.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -526,6 +618,10 @@ def test_infer_scripts_uses_unicode_max_for_seventh_batch_ranges():
     """
     Verify unicode.max fallback covers seventh-batch script ranges.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -544,6 +640,10 @@ def test_infer_scripts_supports_eighth_batch_blocks_and_ranges():
     """
     Verify direct and unicode.max inference for the eighth script batch.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -559,6 +659,10 @@ def test_infer_scripts_supports_eighth_batch_blocks_and_ranges():
 def test_infer_scripts_suppresses_neighboring_devanagari_and_thai_noise():
     """
     Verify Bengali and Lao suppress common neighboring false positives.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -578,6 +682,10 @@ def test_infer_scripts_suppresses_neighboring_devanagari_and_thai_noise():
 def test_coverage_scripts_never_unknown():
     """
     Verify that the public coverage script list itself never contains ``unknown``.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

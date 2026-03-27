@@ -40,6 +40,10 @@ def add_project_root_to_syspath():
     """
     Ensure the project root is importable for the duration of the test session.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -55,8 +59,12 @@ def ensure_fontshow_import_is_clean():
     """
     Clear cached `fontshow` modules after the session to avoid import leakage.
 
-    Returns
-    -------
+    Parameters
+    ----------
+    None
+
+    Yields
+    ------
     None
     """
     yield
@@ -95,8 +103,12 @@ def disable_fontshow_logging():
     """
     Temporarily disable Python logging during a test.
 
-    Returns
-    -------
+    Parameters
+    ----------
+    None
+
+    Yields
+    ------
     None
     """
     logging.disable(logging.CRITICAL)
@@ -109,8 +121,12 @@ def silence_root_logger():
     """
     Remove root logger handlers temporarily to keep test output isolated.
 
-    Returns
-    -------
+    Parameters
+    ----------
+    None
+
+    Yields
+    ------
     None
     """
     root = logging.getLogger()
@@ -130,9 +146,10 @@ def capture_fontshow_logs(caplog):
     caplog : pytest.LogCaptureFixture
         Fixture used to collect log records during the test.
 
-    Returns
-    -------
-    None
+    Yields
+    ------
+    pytest.LogCaptureFixture
+        Active log-capture fixture configured for the ``fontshow`` logger.
     """
     logger = logging.getLogger("fontshow")
 
@@ -155,6 +172,10 @@ def capture_fontshow_logs(caplog):
 def cli_runner():
     """
     Provide a small helper for invoking the Fontshow top-level CLI in tests.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -245,6 +266,10 @@ class _FakePreflightResult:
         ----------
         ok : bool
             Whether the aggregate fake severity should be ``OK`` or ``ERROR``.
+
+        Returns
+        -------
+        None
         """
         self.results = []
         self.overall_severity = _FakeSeverity("OK" if ok else "ERROR")
@@ -602,6 +627,10 @@ def stub_validate_inventory(monkeypatch, request):
 def _reset_cli_state():
     """
     Reset shared CLI verbosity state between tests.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

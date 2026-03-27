@@ -27,6 +27,10 @@ def test_normalize_charset_merges_and_sorts():
     """
     Verify that overlapping and adjacent ranges are merged after sorting.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -48,6 +52,10 @@ def test_normalize_charset_disjoint_ranges():
     """
     Verify that disjoint charset ranges remain separate after normalization.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -66,6 +74,10 @@ def test_normalize_charset_disjoint_ranges():
 def test_normalize_charset_empty():
     """
     Verify that normalizing an empty range list yields an empty result.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -122,6 +134,10 @@ def test_parse_inventory_adds_normalized_charset(enable_fontshow_logging):
 def test_unicode_blocks_from_charset_basic_latin():
     """
     Verify that Basic Latin coverage is counted correctly from ranges.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

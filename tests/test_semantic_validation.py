@@ -27,6 +27,10 @@ def test_raw_languages_are_not_validated():
     The test asserts that ``coverage.languages_raw`` is ignored by
     `validate_language_codes` and therefore does not emit warnings.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -49,6 +53,10 @@ def test_valid_language_passes():
     """
     Verify that valid normalized ISO language codes produce no warnings.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -63,6 +71,10 @@ def test_valid_language_passes():
 def test_invalid_language_triggers_warning():
     """
     Verify that an invalid normalized language code emits a warning.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -84,6 +96,10 @@ def test_raw_and_normalized_languages_mixed():
     This edge case mixes a raw language variant with one valid and one
     invalid normalized language to ensure only the normalized invalid
     entry is reported.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

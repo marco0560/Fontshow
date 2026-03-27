@@ -62,10 +62,14 @@ class CliRunResult:
         """
         Preserve backward-compatible unpacking as ``(exit_code, stdout)``.
 
-        Returns
-        -------
-        collections.abc.Iterator[object]
-            Iterator yielding exit code first and stdout second.
+        Parameters
+        ----------
+        None
+
+        Yields
+        ------
+        object
+            Exit code first and stdout second.
         """
         yield self.exit_code
         yield self.stdout
@@ -81,6 +85,10 @@ def minimal_font_entry_v12() -> dict[str, Any]:
     Canonical minimal VALID font entry for schema 1.3.
 
     Deterministic and schema-compliant.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -161,6 +169,10 @@ def minimal_font_entry_v12() -> dict[str, Any]:
 def minimal_inventory_v12() -> dict[str, Any]:
     """
     Canonical minimal VALID inventory for schema 1.3.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

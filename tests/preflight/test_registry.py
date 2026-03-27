@@ -47,6 +47,10 @@ class DummyCheckA(BaseCheck):
         """
         Fail immediately if executed unexpectedly during a registry test.
 
+        Parameters
+        ----------
+        None
+
         Returns
         -------
         None
@@ -76,6 +80,10 @@ class DummyCheckB(BaseCheck):
         """
         Fail immediately if executed unexpectedly during a registry test.
 
+        Parameters
+        ----------
+        None
+
         Returns
         -------
         None
@@ -103,6 +111,10 @@ def setup_function():
     """
     Reset the preflight registry before each test for isolation.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -114,6 +126,10 @@ def setup_function():
 def test_register_single_check():
     """
     Verify that registering one check yields a one-item registry.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -129,6 +145,10 @@ def test_register_single_check():
 def test_register_preserves_order():
     """
     Verify that explicit registration order is preserved by the registry.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -146,6 +166,10 @@ def test_register_is_idempotent():
     """
     Verify that registering the same check twice does not duplicate it.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -162,6 +186,10 @@ def test_register_rejects_non_basecheck():
     """
     Verify that non-`BaseCheck` classes are rejected by the registry.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -173,6 +201,10 @@ def test_register_rejects_non_basecheck():
 def test_clear_registry_resets_state():
     """
     Verify that clearing the registry removes previously registered checks.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

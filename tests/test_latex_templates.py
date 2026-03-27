@@ -9,6 +9,10 @@ def test_testnonlatin_macro_is_not_defined_in_template():
     """
     Ensure non-Latin rendering no longer depends on a TeX-side helper macro.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -21,6 +25,10 @@ def test_testnonlatin_macro_is_not_defined_in_template():
 def test_template_logging_macros_write_auxiliary_lists():
     """
     Ensure summary logging macros feed the auxiliary list files again.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

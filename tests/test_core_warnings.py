@@ -15,6 +15,10 @@ def test_add_structured_warning_creates_warning_list_without_empty_extra():
     """
     Ensure an empty ``extra`` mapping does not produce an ``extra`` field.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -43,6 +47,10 @@ def test_add_structured_warning_creates_warning_list_without_empty_extra():
 def test_add_structured_warning_appends_to_existing_warning_list():
     """
     Ensure subsequent warnings are appended rather than overwriting state.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

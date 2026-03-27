@@ -24,6 +24,10 @@ def test_script_coverage_basic_latin_only():
     """
     Verify that Basic Latin coverage maps entirely to the Latin script.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

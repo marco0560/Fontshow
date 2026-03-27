@@ -28,6 +28,10 @@ def test_parse_inventory_basic_latin_only():
     language inference and asserts that the resulting inference payload
     remains empty for minimal Latin-only coverage.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -57,6 +61,10 @@ def test_parse_inventory_latin_extended():
     The setup adds both Basic Latin and Latin-1 Supplement coverage and
     asserts that common Western language candidates appear in the
     parsed inference payload.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
@@ -91,6 +99,10 @@ def test_declared_languages_do_not_affect_inference():
     the output while inferred languages remain driven only by Unicode
     coverage heuristics.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -122,6 +134,10 @@ def test_parse_inventory_cyrillic():
     """
     Verify that Cyrillic coverage propagates to Russian language inference.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -148,6 +164,10 @@ def test_parse_inventory_no_coverage():
     """
     Verify that missing coverage data yields an empty inference result.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -166,6 +186,10 @@ def test_missing_declared_languages_uses_inference_without_warning():
 
     The enriched inventory should remain usable even when declared
     languages are absent from the raw metadata.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

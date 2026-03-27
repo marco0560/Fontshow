@@ -12,6 +12,10 @@ def test_collect_language_warnings_groups_and_filters_payloads():
     """
     Ensure grouping handles missing extras and filters info-only non-language warnings.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

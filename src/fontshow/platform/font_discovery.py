@@ -193,7 +193,7 @@ def _windows_font_dirs() -> list[Path]:
     Notes
     -----
     Windows supports per-user font installs under:
-    %LOCALAPPDATA%\\Microsoft\\Windows\\Fonts
+    ``%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts``
 
     The returned list contains only directories that currently exist.
     """

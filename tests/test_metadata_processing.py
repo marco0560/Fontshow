@@ -141,6 +141,10 @@ def test_process_charset_emits_warning_on_block_mismatch() -> None:
     """
     Ensure charset/canonical block mismatches emit structured diagnostics.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

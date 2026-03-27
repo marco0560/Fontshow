@@ -72,6 +72,10 @@ def build_ontology_snapshot() -> dict[str, list[str]]:
     """
     Build a normalized view of current ontology TeX-facing entries.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     dict[str, list[str]]
@@ -225,6 +229,10 @@ def parse_args() -> argparse.Namespace:
     """
     Parse command-line arguments for gap report generation.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     argparse.Namespace
@@ -249,6 +257,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     """
     Execute TeX-versus-ontology gap analysis.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

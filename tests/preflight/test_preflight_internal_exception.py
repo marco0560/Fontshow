@@ -30,6 +30,10 @@ def test_preflight_internal_exception_returns_exit_2():
     """
     Verify that an unexpected preflight exception is converted into exit code ``2``.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

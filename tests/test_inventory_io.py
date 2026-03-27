@@ -23,6 +23,10 @@ def test_validate_fonts_container_accepts_only_lists():
     """
     Ensure the helper returns the list unchanged and rejects non-lists.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None

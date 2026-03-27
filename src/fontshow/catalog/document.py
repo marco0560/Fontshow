@@ -92,8 +92,6 @@ def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
 
 def _use_inline_fontspec_for_script(script0_iso: ScriptISO) -> bool:
     """
-    TODO: Deprecated and to be deleted.
-
     Return whether a script-only entry should use inline ``\\fontspec``.
 
     Parameters
@@ -109,9 +107,9 @@ def _use_inline_fontspec_for_script(script0_iso: ScriptISO) -> bool:
 
     Notes
     -----
-    The current renderer already uses the compact inline form
-    unconditionally. This helper remains only as compatibility
-    scaffolding while the old policy layer is being removed.
+    Deprecated compatibility scaffolding. The current renderer already
+    uses the compact inline form unconditionally, so this helper
+    always returns ``False``.
     """
     _ = script0_iso
     return False
@@ -121,8 +119,6 @@ def _use_inline_fontspec_for_font(
     font: CatalogFontEntryV12, script0_iso: ScriptISO
 ) -> bool:
     """
-    TODO: Deprecated and to be deleted.
-
     Return whether a font should force the inline ``\\fontspec`` path.
 
     Parameters
@@ -141,9 +137,9 @@ def _use_inline_fontspec_for_font(
 
     Notes
     -----
-    The current renderer already uses the compact inline form
-    unconditionally. This helper remains only as compatibility
-    scaffolding while the old policy layer is being removed.
+    Deprecated compatibility scaffolding. The current renderer already
+    uses the compact inline form unconditionally, so this helper
+    always returns ``False``.
     """
     _ = font
     _ = script0_iso
@@ -211,9 +207,7 @@ def _omit_script_option_for_font(
 
 def _use_language_wrapper_for_font(font: CatalogFontEntryV12) -> bool:
     """
-    TODO: Deprecated and to be deleted.
-
-    Return whether a font should be wrapped in ``\\foreignlanguage``.
+    Return whether a font should be wrapped in ``\foreignlanguage``.
 
     Parameters
     ----------
@@ -228,10 +222,9 @@ def _use_language_wrapper_for_font(font: CatalogFontEntryV12) -> bool:
 
     Notes
     -----
-    The current renderer no longer carries per-font or per-script
-    language-wrapper exceptions. This helper remains only as
-    compatibility scaffolding while the old policy layer is being
-    removed.
+    Deprecated compatibility scaffolding. The current renderer no
+    longer carries per-font or per-script language-wrapper exceptions,
+    so this helper always returns ``True``.
     """
     _ = font
     return True
@@ -279,7 +272,7 @@ def _format_specimen_for_latex(specimen: str, script0_iso: ScriptISO) -> str:
     -------
     str
         LaTeX-escaped specimen text, optionally augmented with
-        ``\\allowbreak{}`` markers.
+        ``llowbreak{}`` markers.
 
     Notes
     -----
