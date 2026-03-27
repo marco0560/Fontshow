@@ -40,7 +40,7 @@ pip install fontshow
 ```bash
 git clone https://github.com/marco0560/Fontshow.git
 cd Fontshow
-pip install -e .
+python3 scripts/bootstrap_dev_environment.py
 ```
 
 ---

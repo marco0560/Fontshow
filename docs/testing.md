@@ -46,19 +46,21 @@ This separation ensures that:
 
 - environment-dependent behavior is tested in ``tests/preflight/``;
 - CLI behavior (output, quiet mode, exit codes) is tested in isolation;
-- end-to-end validation of the real pipeline is delegated to platform-specific
-  integration scripts (e.g. ``scripts/test_fontshow_gentoo.py``).
+- end-to-end validation of the real pipeline is performed manually when needed
+  on real host environments rather than through the deterministic pytest suite.
 
-These scripts are intended for **manual, local execution only**.
+Such checks are intended for **manual, local execution only**.
 
 They are:
 
 - not executed in CI
 - not required for normal development
-- provided as documented helpers for platform-specific validation
-  (e.g. Gentoo Linux, LuaLaTeX, Fontconfig behavior)
+- environment-specific and therefore intentionally separate from the required
+  automated validation surface
+- rewritten case-by-case when a concrete platform investigation is needed
 
-They may assume the presence of system-specific tools and configurations.
+They may assume the presence of system-specific tools, fonts, and
+configurations.
 
 In short:
 

@@ -113,13 +113,19 @@ Clone the repository and create a virtual environment:
 ```bash
 git clone https://github.com/marco0560/Fontshow.git
 cd Fontshow
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
+python3 scripts/bootstrap_dev_environment.py
 ```
 
-This installs Fontshow in editable mode using the project’s
-`pyproject.toml` configuration.
+This bootstrap path creates `.venv`, upgrades packaging tools, installs
+Fontshow in editable mode with the repository development dependencies,
+applies repo-local Git configuration, and runs the standard validation
+surface.
+
+If you want the documentation toolchain as well, use:
+
+```bash
+python3 scripts/bootstrap_dev_environment.py --with-docs
+```
 
 The source package uses the standard `src/` layout under
 `src/fontshow/`.

@@ -350,7 +350,7 @@ If judgment is required at any point, state so and stop.
 
     - OBSERVATION: Error-path tests exist for CLI commands (expected failure codes and exception paths) for create-catalog, dump-fonts, and parse-inventory. Files: tests/cli/test_create-catalog.py L11-L21, tests/cli/test_dump-fonts.py L11-L21, tests/cli/test_parse-inventory.py L15-L25. Rationale: these tests explicitly assert non-zero exit codes under stubbed failure conditions.
 
-    - OBSERVATION: No explicit CLI test is present for the fontshow-validate entrypoint associated with cli_validate_inventory(); the CLI tests list covers preflight, dump-fonts, parse-inventory, and create-catalog. Files: tests/cli/test_preflight_cli.py L7-L101, tests/cli/test_dump-fonts.py L1-L21, tests/cli/test_parse-inventory.py L1-L45, tests/cli/test_create-catalog.py L1-L21. Rationale: the visible CLI tests correspond to these subcommands only.
+    - HISTORICAL OBSERVATION: At the time of this evaluation, no explicit CLI test was identified for the validation entrypoint; the visible CLI tests covered preflight, dump-fonts, parse-inventory, and create-catalog. Files: tests/cli/test_preflight_cli.py L7-L101, tests/cli/test_dump-fonts.py L1-L21, tests/cli/test_parse-inventory.py L1-L45, tests/cli/test_create-catalog.py L1-L21. Rationale: this note reflects the repository state observed during that evaluation and is not current contributor guidance.
 
 4. Decision ↔ Code ↔ Test Matrix
 

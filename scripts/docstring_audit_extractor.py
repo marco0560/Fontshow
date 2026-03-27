@@ -27,13 +27,13 @@ import argparse
 import ast
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-TargetNode: TypeAlias = ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef
-SelectableNode: TypeAlias = ast.Module | TargetNode
+type TargetNode = ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef
+type SelectableNode = ast.Module | TargetNode
 
 BATCH_SIZE = 8
 

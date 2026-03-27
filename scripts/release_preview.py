@@ -146,7 +146,7 @@ def main(argv: list[str] | None = None) -> int:
         "--config",
         type=Path,
         default=Path(DEFAULT_CONFIG),
-        help="semantic-release config file (default: .releaserc.local.json)",
+        help="semantic-release config file (default: .releaserc.json)",
     )
     parser.add_argument(
         "--verbose",

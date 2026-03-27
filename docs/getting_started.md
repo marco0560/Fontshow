@@ -25,9 +25,19 @@ For contributors or local development:
 ```bash
 git clone https://github.com/marco0560/Fontshow.git
 cd Fontshow
-pip install -e .
+python3 scripts/bootstrap_dev_environment.py
 ```
 <!-- cheatsheet:end -->
+
+This bootstrap command creates `.venv`, installs the editable project
+with development dependencies, applies repo-local Git configuration, and
+runs the standard validation checks.
+
+If you also want the documentation toolchain, run:
+
+```bash
+python3 scripts/bootstrap_dev_environment.py --with-docs
+```
 
 The source package lives under `src/fontshow/`.
 

@@ -1,117 +1,292 @@
 # Development Scripts
 
-This document describes the purpose and status of the scripts contained in the
-`scripts/` directory.
+This document describes the scripts currently present in the repository
+`scripts/` directory and the status of each one.
 
-Scripts in this directory are intended for **development, maintenance, and
-project tooling**. They are **not part of the Fontshow public API** and are not
-covered by compatibility or stability guarantees.
+Scripts in this directory are developer tooling, maintenance helpers, or
+local audit utilities. They are not part of the public Fontshow runtime API.
 
-They may change or be removed without notice.
+The inventory below distinguishes between:
 
----
-
-## Invocation via Git aliases
-
-Some development scripts are exposed via Git aliases for convenience and
-consistency across platforms.
-
-These aliases are defined in the local repository Git configuration
-(`.git/config`) and act as thin wrappers around Python scripts.
-
-Example aliases:
-
-- `git clean-artifacts`
-- `git test-coverage`
-- `git release-preview`
-
-Aliases forward all additional command-line arguments to the underlying
-Python script.
-
-For example:
-
-```bash
-git clean-artifacts --dry-run
-git release-preview --verbose
-```
-
-This allows scripts to support flags such as `--dry-run`, `--verbose`,
-or future options without modifying Git configuration.
+- actively wired scripts used by hooks or bootstrap-installed aliases
+- maintained manual helpers
+- niche or local-only scripts
+- retired scripts kept only in Git history
 
 ---
 
-## clean_repo.py
+## Hook- and Alias-Managed Scripts
 
-### Purpose
+These scripts are part of the repository's current operational workflow.
 
-Utility script used during development to clean the repository workspace.
+### bootstrap_dev_environment.py
 
-Typical use cases include:
+Fresh-clone bootstrap entrypoint.
 
-- removing temporary or generated files,
-- resetting local artifacts created during development or testing,
-- preparing the repository for a clean run or release check.
+Responsibilities:
 
-### Status
+- create `.venv`
+- upgrade `pip`, `setuptools`, and `wheel`
+- install `fontshow` in editable mode with `.[dev]`
+- apply repo-local Git configuration and sanctioned aliases
+- run `pre-commit run --all-files` and `pytest -q` by default
 
-Development-only utility.
-Not used by the core pipeline or CLI.
+Status:
 
----
+- recommended contributor entrypoint
+- documented in `README.md`, `docs/getting_started.md`, and `docs/CONTRIBUTING.md`
+- covered by `tests/test_bootstrap_dev_environment.py`
 
-## generate_cheatsheet.py
+### clean_repo.py
 
-### Generation Purpose
+Repository cleanup helper.
 
-Generates developer-facing cheat sheets from documentation sources.
+Responsibilities:
 
-This script is typically used to:
+- remove ignored/generated artifacts
+- preserve protected paths such as `.venv`
+- support `--dry-run`
 
-- consolidate reference information,
-- produce printable or distributable cheat sheets,
-- assist maintainers during documentation updates.
+Status:
 
-### Generation Status
+- installed as `git clean-artifacts` by the bootstrap script
+- documented in `README.md` and `docs/testing.md`
+- retained as the single supported cleanup utility
 
-Documentation tooling.
-Not required for normal Fontshow operation.
+### generate_cheatsheet.py
 
----
+Generated documentation helper for `docs/cheatsheet.md`.
 
-## generate_bash_completion.py
+Status:
 
-### Generation Purpose
+- called by pre-commit
+- documented in `docs/CONTRIBUTING.md`
+- not part of normal runtime usage
 
-Generates the checked-in Bash completion script from the current
-Fontshow `argparse` dispatcher definition.
+### update_schema_docs.py
 
-The generated artifact is written to:
+Synchronize `docs/schema/inventory_v*.md` with the committed JSON schema.
+
+Status:
+
+- called by pre-commit
+- not part of runtime usage
+- authoritative source remains the schema JSON under `src/fontshow/schema/`
+
+### generate_bash_completion.py
+
+Generate the checked-in Bash completion artifact:
 
 ```bash
 scripts/completions/fontshow.bash
 ```
 
-### Generation Status
+Status:
 
-Developer tooling.
-Not required for normal Fontshow operation.
+- maintained developer helper
+- documented in `docs/bash-completion.md`
+- indirectly covered by `tests/test_bash_completion.py`
+
+### new_decision.py
+
+Create a new decision record under `docs/decisions/`.
+
+Status:
+
+- installed as `git new-decision` by the bootstrap script
+- maintained documentation helper
+- interactive by design
+
+### release_preview.py
+
+Run a local `semantic-release --dry-run` preview.
+
+Status:
+
+- installed as `git release-preview` by the bootstrap script
+- documented in `docs/CONTRIBUTING.md`
+- requires local Node / `npx` / `semantic-release` availability
+- uses `.releaserc.json` by default
+
+### release_audit.sh
+
+Release-safety audit executed before guarded release pushes and by the
+pre-push hook.
+
+Status:
+
+- called by `.githooks/pre-push`
+- installed as `git release-audit` by the bootstrap script
+- documented in `docs/engineering/release-system.md`
+
+### release_rel.sh
+
+Guarded release wrapper used by `git rel`.
+
+Status:
+
+- installed as `git rel` by the bootstrap script
+- documented in `docs/engineering/release-system.md`
+
+### release_system_selfcheck.sh
+
+Validate the local release-system setup.
+
+Status:
+
+- installed as `git release-check` by the bootstrap script
+- documented in `docs/engineering/release-system.md`
+
+### generate_bootstrap_audit_report.py
+
+Generate `bootstrap_audit_report.txt`, a deterministic repository audit
+snapshot used for audit-oriented workflows.
+
+Status:
+
+- installed as `git gen-boot-report` by the bootstrap script
+- niche but retained
+- not required for normal development
+
+### verify_bootstrap_audit_report.py
+
+Verify the current repository state against `bootstrap_audit_report.txt`.
+
+Status:
+
+- installed as `git ver-boot-report` by the bootstrap script
+- niche but retained
+- not required for normal development
 
 ---
 
-## set_version.py (removed)
+## Maintained Manual Helpers
 
-### Purpose (historical)
+These scripts are current and useful, but are not called automatically by
+hooks and are not essential for a normal contributor workflow.
 
-Previously used to manually update version information during development.
+### generate_unicode_tables.py
 
-### Current status
+Regenerate committed Unicode-derived Python tables from vendored Unicode data.
 
-This script has been removed.
+Status:
 
-Fontshow versioning is now fully managed via:
+- documented in `src/fontshow/data/unicode/README.md`
+- partially covered by `tests/test_scripts_generate_unicode_tables.py`
+- relevant only when vendored Unicode inputs change
 
-- semantic-release,
-- Git tags,
-- automated CI workflows.
+### check_actions_runtime.py
 
-Manual version manipulation is no longer supported or required.
+Inspect repository GitHub Actions workflows for likely Node runtime drift.
+
+Status:
+
+- manual maintenance helper for workflow upkeep
+- useful when GitHub Actions deprecates a Node runtime
+- not currently wired into hooks or contributor bootstrap
+
+### docstring_audit_extractor.py
+
+Extract functions, classes, and source fragments for repository-wide docstring
+audits.
+
+Status:
+
+- niche documentation-maintenance helper
+- retained for targeted docstring work
+- not part of hooks or normal contributor setup
+
+---
+
+## TeX / Ontology Maintenance Helpers
+
+These scripts support staged maintenance of the TeX-facing ontology and local
+TeX capability audits. They are intentionally manual and local-only.
+
+### audit_local_tex_surface.py
+
+Audit locally installed `fontspec` and Polyglossia support into a deterministic
+JSON report.
+
+### generate_tex_ontology_gap_report.py
+
+Compare the local TeX audit report against the committed ontology and classify
+gaps.
+
+### generate_tex_ontology_stubs.py
+
+Convert the gap report into review-oriented ontology stub proposals.
+
+### generate_first_reviewed_tex_batch.py
+
+Select a conservative first batch of low-risk TeX / ontology follow-up work.
+
+### generate_tex_alignment_plan.py
+
+Combine the TeX audit outputs into a staged alignment plan.
+
+Status for the whole group:
+
+- deterministic local maintenance helpers
+- covered by `tests/test_scripts_tex_ontology_audit.py`
+- not required for ordinary development
+
+---
+
+## Retired Scripts
+
+### clean_repo.ps1
+
+Retired.
+
+Reason:
+
+- duplicated the behavior of `clean_repo.py`
+- was not called by hooks
+- was not installed by the repository bootstrap alias set
+- was not documented as part of the active contributor workflow
+- conflicted with the repository's Python-first tooling direction
+
+Recovery:
+
+- the file remains available in Git history if needed for archaeology or
+  recovery
+
+### test_fontshow_gentoo.py
+
+Retired.
+
+Reason:
+
+- it had never been exercised as part of the maintained repository workflow
+- it had already drifted from the current CLI contract
+- if a platform-specific end-to-end helper is needed again, it is safer to
+  rewrite it from current requirements than to preserve an untrusted legacy
+  script
+
+Recovery:
+
+- the file remains available in Git history if needed for archaeology or
+  recovery
+
+---
+
+## Release Guard Helpers
+
+These shell helpers remain active because they are part of the current release
+system described in `docs/engineering/release-system.md`.
+
+### changelog_guard.sh
+
+Validate `CHANGELOG.md` structure and top-version consistency.
+
+### tag_guard.sh
+
+Validate tag ancestry and release-history invariants.
+
+Status:
+
+- active release-system helpers
+- invoked indirectly by the documented release workflow
+- retained despite Decision 0007 because they are existing operational release
+  guards, not new helper scripts

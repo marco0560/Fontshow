@@ -186,6 +186,12 @@ using:
 git config commit.template .gitmessage
 ```
 
+The recommended bootstrap command applies this automatically:
+
+```bash
+python3 scripts/bootstrap_dev_environment.py
+```
+
 Notes:
 
 - `.gitignore` does not affect already tracked files.
