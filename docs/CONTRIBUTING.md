@@ -34,6 +34,19 @@ For convenience, commonly used helpers are exposed via Git aliases
 
 See `scripts.md` for details.
 
+For repository-wide docstring audits, use:
+
+```bash
+repoindex audit-docstrings
+```
+
+If you want to inspect only a subset of findings, filter the output text with
+`rg`, for example:
+
+```bash
+repoindex audit-docstrings | rg 'git_alias_entries|build_bootstrap_commands'
+```
+
 ### Semantic-release and git hooks
 
 Fontshow uses `semantic-release` to automate versioning and changelog

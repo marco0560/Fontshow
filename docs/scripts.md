@@ -185,17 +185,6 @@ Status:
 - useful when GitHub Actions deprecates a Node runtime
 - not currently wired into hooks or contributor bootstrap
 
-### docstring_audit_extractor.py
-
-Extract functions, classes, and source fragments for repository-wide docstring
-audits.
-
-Status:
-
-- niche documentation-maintenance helper
-- retained for targeted docstring work
-- not part of hooks or normal contributor setup
-
 ---
 
 ## TeX / Ontology Maintenance Helpers
@@ -263,6 +252,31 @@ Reason:
 - if a platform-specific end-to-end helper is needed again, it is safer to
   rewrite it from current requirements than to preserve an untrusted legacy
   script
+
+Recovery:
+
+- the file remains available in Git history if needed for archaeology or
+  recovery
+
+### docstring_audit_extractor.py
+
+Retired.
+
+Reason:
+
+- `repoindex audit-docstrings` is now the authoritative repository-wide
+  docstring audit tool
+- keeping a second local audit script created conflicting results and a weaker
+  maintenance path
+- targeted filtering should be done by piping `repoindex audit-docstrings`
+  output through `rg`, not by relying on a parallel audit implementation
+
+Replacement:
+
+```bash
+repoindex audit-docstrings
+repoindex audit-docstrings | rg 'git_alias_entries|build_bootstrap_commands'
+```
 
 Recovery:
 
