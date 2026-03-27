@@ -32,40 +32,38 @@ Metadata about how and when the inventory was generated or enriched.
 - `schema_version` (string)
   Inventory schema version.
 
-- `generated_at` (string, ISO 8601)
+- `input_inventory_tool` (string)
+  Name of the tool that produced the current inventory payload.
 
-- `tool` (string)
-  Name of the tool that produced the inventory (`dump-fonts`,
-  `parse-inventory`, `validate-inventory`, `create-catalog`).
+- `input_inventory_tool_version` (string)
+  Fontshow version used by the producing tool.
 
-- `tool_version` (string)
-  Fontshow version used by the tool.
+- `inference_level` (string)
+  Inference strategy used when enriching the inventory.
 
-- `environment` (object)
+- `fonttools` (object)
+  - `available` (boolean)
+  - `fontconfig_charset_included` (boolean)
+  - `version` (string)
+
+- `run_environment` (object)
   - `hostname` (string)
   - `username` (string)
   - `os` (string)
+  - `os_release` (string)
   - `kernel` (string)
+  - `machine` (string)
+  - `python_version` (string)
   - `platform` (string)
-  - `execution_context` (object)
-    - `type` (string, e.g. `native`, `wsl`, `container`)
-
-- `fontconfig_charset_included` (boolean)
-
-- `fonttools_available` (boolean)
-
-- `inference_level` (string, optional)
-  Inference strategy used when enriching the inventory.
-
-- `input_inventory_tool` (string, optional)
-- `input_inventory_tool_version` (string, optional)
+  - `execution_context` (string, e.g. `native`, `wsl`, `container`, `other`)
 
 ---
 
 ## fonts
 
 List of font entries.
-Each entry represents a **font file**, not an individual face.
+Each entry represents a single normalized font face descriptor emitted by
+the inventory pipeline.
 
 ---
 
