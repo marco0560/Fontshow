@@ -383,7 +383,7 @@ class FontRef(TypedDict):
 
 class CoverageV12(TypedDict, total=False):
     """
-    Schema v1.2 coverage payload for a font entry.
+    Coverage payload for a schema-shaped font entry.
 
     Parameters
     ----------
@@ -404,7 +404,7 @@ class CoverageV12(TypedDict, total=False):
 
 class InferenceV12(TypedDict, total=False):
     """
-    Schema v1.2 inference payload for a font entry.
+    Inference payload for a schema-shaped font entry.
 
     Parameters
     ----------
@@ -432,7 +432,7 @@ class InferenceV12(TypedDict, total=False):
 
 class CatalogFontEntryV12(TypedDict, total=False):
     """
-    Minimal catalog-facing font descriptor based on schema v1.2 fields.
+    Minimal catalog-facing font descriptor based on active inventory fields.
 
     Parameters
     ----------

@@ -232,9 +232,9 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
     }
 
     # -------------------------------
-    # Typography - metrics and features
+    # Typography source data
     # -------------------------------
-    typography = {
+    typography_source = {
         "weight_class": None,
         "width_class": None,
         "opentype_features": ctx.fonttools.get("opentype_features", []) or [],
@@ -242,8 +242,8 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
 
     os2 = ctx.fonttools.get("os2", {})
     if isinstance(os2, dict) and "error" not in os2:
-        typography["weight_class"] = os2.get("weight_class")
-        typography["width_class"] = os2.get("width_class")
+        typography_source["weight_class"] = os2.get("weight_class")
+        typography_source["width_class"] = os2.get("width_class")
 
     # -------------------------------
     # Format summary and classification
@@ -252,7 +252,7 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
     ttc_index = ctx.fonttools.get("ttc_index")
 
     # -------------------------------
-    # Structural / extraction warnings (schema v1.2)
+    # Structural / extraction warnings emitted during descriptor construction
     # -------------------------------
     warnings: list[WarningInfo] = []
 
@@ -296,7 +296,7 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
             }
         )
 
-    if typography.get("weight_class") is None:
+    if typography_source.get("weight_class") is None:
         warnings.append(
             {
                 "code": "missing_weight_class",
@@ -305,7 +305,7 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
             }
         )
 
-    if typography.get("width_class") is None:
+    if typography_source.get("width_class") is None:
         warnings.append(
             {
                 "code": "missing_width_class",
@@ -324,7 +324,7 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
         )
 
     # -------------------------------
-    # Schema v1.2 required normalizations
+    # Required schema normalizations for the active inventory contract
     # -------------------------------
     (
         family_s,
@@ -342,7 +342,7 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
         glyph_count_i,
     ) = _normalize_metrics(
         ctx.fonttools,
-        typography,
+        typography_source,
         names,
         (family, style, fullname, postscript),
     )
@@ -353,6 +353,31 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
     specimen_strategy = "deferred"
     specimen_glyph_count = None
     specimen_rejection_reason = "deferred_to_parse_inventory"
+    metrics = {
+        "units_per_em": units_per_em_i,
+        "ascent": ascent_i,
+        "descent": descent_i,
+        "weight_class": weight_i,
+        "width_class": width_i,
+        "italic_angle": italic_angle_f,
+        "is_fixed_pitch": is_fixed_pitch_b,
+        "glyph_count": glyph_count_i,
+    }
+    typography = {
+        "sample_text": sample_text,
+        "specimen_text": specimen_text,
+        "specimen_strategy": specimen_strategy,
+        "specimen_glyph_count": specimen_glyph_count,
+        "specimen_rejection_reason": specimen_rejection_reason,
+        "primary_script": None,
+        "script_display_name": None,
+        "render_policy": {
+            "polyglossia_language": None,
+            "fontspec_opts": None,
+        },
+        "script_source": None,
+        "opentype_features": typography_source["opentype_features"],
+    }
     return {
         "path": str(ctx.font_path),
         "family": family_s,
@@ -362,22 +387,19 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
         "postscript_name": postscript_s,
         "version_string": version_s,
         "unique_font_id": make_font_id(str(ctx.font_path), ttc_index),
-        "units_per_em": units_per_em_i,
-        "ascent": ascent_i,
-        "descent": descent_i,
-        "weight_class": weight_i,
-        "width_class": width_i,
-        "italic_angle": italic_angle_f,
-        "is_fixed_pitch": is_fixed_pitch_b,
-        "glyph_count": glyph_count_i,
+        "metrics": metrics,
         "coverage": coverage,
         "inference": {},
         "charset": {"fc_charset": coverage.get("charset")},
-        "sample_text": sample_text,
-        # Specimen fields populated later by parse-inventory
-        "specimen_text": specimen_text,
-        "specimen_strategy": specimen_strategy,
-        "specimen_glyph_count": specimen_glyph_count,
-        "specimen_rejection_reason": specimen_rejection_reason,
+        "typography": typography,
+        "loadability": {
+            "lualatex": {
+                "attempted": False,
+                "loadable": None,
+                "reason": None,
+                "runtime_fingerprint": None,
+                "probe_input": None,
+            }
+        },
         "warnings": warnings,
     }

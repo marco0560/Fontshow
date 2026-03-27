@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import Any
 
 from fontshow import __version__
+from fontshow.catalog.labels import primary_script
 from fontshow.core.cli_utils import (
     add_common_arguments,
     log_err,
@@ -43,17 +44,23 @@ from fontshow.core.global_constants import SCHEMA_VERSION
 from fontshow.core.json_boundary import normalize_loaded_enums
 from fontshow.core.json_format import dumps_pretty
 from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import ScriptISO
 from fontshow.diagnostics.inventory_warnings import _emit_verbose_warnings
 from fontshow.inventory.io import _validate_fonts_container
+from fontshow.inventory.latex_validation_metadata import (
+    collect_latex_validation_metadata,
+)
 from fontshow.inventory.metadata_processing import (
     _infer_and_attach_metadata,
     _process_charset,
     _process_language_metadata,
 )
 from fontshow.inventory.platform_metadata import collect_platform_metadata
+from fontshow.inventory.schema_accessors import ensure_v13_typography
 from fontshow.inventory.schema_validation import _validate_inventory_schema_strict
 from fontshow.inventory.specimens import _specimen_generate_for_font
 from fontshow.inventory.validation import _apply_schema_validation, validate_inventory
+from fontshow.latex.policy import _format_script_display, _get_render_policy
 
 # ============================================================
 # REFACTORED MAIN FUNCTION
@@ -140,12 +147,43 @@ def parse_inventory(
         )
 
         _specimen_generate_for_font(font, coverage, font_path)
+        typography = ensure_v13_typography(font)
+        script = primary_script(font)
+        script_iso = script.upper() if isinstance(script, str) and script else ""
+        lang, fontspec_opts = _get_render_policy(ScriptISO(script_iso))
+        typography["primary_script"] = script or None
+        typography["script_display_name"] = (
+            _format_script_display(script_iso) if script_iso else None
+        )
+        typography["render_policy"] = {
+            "polyglossia_language": lang or None,
+            "fontspec_opts": fontspec_opts or None,
+        }
+        if isinstance(font.get("coverage"), dict) and font.get("coverage", {}).get(
+            "script_coverage_from_charset"
+        ):
+            typography["script_source"] = "charset_coverage"
+        elif isinstance(font.get("inference"), dict) and font.get("inference", {}).get(
+            "scripts"
+        ):
+            typography["script_source"] = "inference"
+        elif isinstance(font.get("coverage"), dict) and font.get("coverage", {}).get(
+            "scripts"
+        ):
+            typography["script_source"] = "coverage"
+        else:
+            typography["script_source"] = None
 
     metadata = data.setdefault("metadata", {})
     metadata["schema_version"] = SCHEMA_VERSION
     metadata["inference_level"] = level
     metadata.setdefault("input_inventory_tool", "parse_font_inventory")
     metadata.setdefault("input_inventory_tool_version", __version__)
+    validation = metadata.setdefault("validation", {})
+    if not isinstance(validation, dict):
+        validation = {}
+        metadata["validation"] = validation
+    validation["lualatex"] = collect_latex_validation_metadata()
 
     log.info(
         "font inventory parsing completed",

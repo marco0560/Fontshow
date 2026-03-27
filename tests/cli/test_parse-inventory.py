@@ -66,7 +66,7 @@ def _valid_inventory_from_cli(tmp_path, *_ignored):
 
     return {
         "metadata": {
-            "schema_version": "1.2",
+            "schema_version": "1.3",
             "input_inventory_tool": "fontshow",
             "input_inventory_tool_version": "test",
             "inference_level": "basic",
@@ -76,6 +76,18 @@ def _valid_inventory_from_cli(tmp_path, *_ignored):
                 "version": "unknown",
             },
             "run_environment": env,
+            "validation": {
+                "lualatex": {
+                    "attempted": False,
+                    "engine": None,
+                    "engine_version": None,
+                    "luaotfload_version": None,
+                    "fontspec_version": None,
+                    "polyglossia_version": None,
+                    "runtime_fingerprint": None,
+                    "render_policy_version": "test-policy",
+                }
+            },
         },
         "fonts": [],
     }

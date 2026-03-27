@@ -297,7 +297,10 @@ def _load_inventory(
 
         inv_env = metadata.get("run_environment")
         if require_platform and not isinstance(inv_env, dict):
-            log_err("Inventory missing required metadata.run_environment (schema v1.2)")
+            log_err(
+                "Inventory missing required metadata.run_environment "
+                f"(schema v{SCHEMA_VERSION})"
+            )
             return 1, []
 
         if require_platform and isinstance(inv_env, dict):

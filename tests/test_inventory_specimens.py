@@ -209,10 +209,11 @@ def test_specimen_generate_for_font_uses_visible_replacement_and_semantic_fallba
 
     specimens._specimen_generate_for_font(font, coverage, "/tmp/font.ttf")
 
-    assert font["specimen_text"] == "XYZ"
-    assert font["specimen_strategy"] == "validated-language-sample"
-    assert font["specimen_rejection_reason"] == "specimen_not_in_cmap"
-    assert font["specimen_glyph_count"] == 3
+    typography = font["typography"]
+    assert typography["specimen_text"] == "XYZ"
+    assert typography["specimen_strategy"] == "validated-language-sample"
+    assert typography["specimen_rejection_reason"] == "specimen_not_in_cmap"
+    assert typography["specimen_glyph_count"] == 3
     assert trace_calls == [
         {
             "strategy": "validated-language-sample",

@@ -221,7 +221,7 @@ def _filter_and_prepare_fonts(
     -----
     The helper does not mutate descriptors by adding non-schema keys.
     Display-name fallbacks are derived transiently to remain compliant
-    with schema v1.2.
+    with the archived schema v1.2 layout.
     Processing order is deterministic: optional test-font filtering,
     optional count limiting, normalization, and family sorting.
     """
@@ -245,7 +245,7 @@ def _filter_and_prepare_fonts(
         key=lambda f: font_family(f),
     )
 
-    # Schema v1.2 forbids adding non-schema keys (e.g. 'name').
+    # Inventory descriptors remain schema-shaped; rendering code must not mutate them.
     # Rendering code must derive display name dynamically instead of mutating the descriptor.
     for f in fonts:
         _ = (

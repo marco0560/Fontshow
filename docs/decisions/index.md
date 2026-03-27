@@ -43,3 +43,4 @@ created before the adoption of the formal decision record system.
 - [0023 — Font skip accounting and legacy format filtering](0023-font-skip-accounting-legacy-format-filtering.md)
 - [0024 — Parse-inventory validation summary and fallback handling](0024-parse-inventory-validation-summary-fallback-handling.md)
 - [0025 — Drive Script Inference from Ontology Data](0025-drive-script-inference-ontology-data.md)
+- [0026 — Schema v1.3 nested inventory structure and LaTeX validation metadata](0026-schema-v1-3-nested-inventory-structure-latex-validation-metadata.md)

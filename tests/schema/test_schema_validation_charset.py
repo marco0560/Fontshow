@@ -24,7 +24,7 @@ from fontshow.core.types import Severity
 from fontshow.inventory.schema_validation import validate_inventory_schema
 
 # ---------------------------------------------------------------------------
-# Helper — minimal valid v1.2 inventory with charset enrichment
+# Helper — minimal valid v1.3 inventory with charset enrichment
 # ---------------------------------------------------------------------------
 
 
@@ -39,7 +39,7 @@ def _base_inventory_with_charset():
     """
     return {
         "metadata": {
-            "schema_version": "1.2",
+            "schema_version": "1.3",
             "input_inventory_tool": "test",
             "input_inventory_tool_version": "0",
             "inference_level": "none",
@@ -57,6 +57,18 @@ def _base_inventory_with_charset():
                 "hostname": "test",
                 "execution_context": "native",
             },
+            "validation": {
+                "lualatex": {
+                    "attempted": False,
+                    "engine": None,
+                    "engine_version": None,
+                    "luaotfload_version": None,
+                    "fontspec_version": None,
+                    "polyglossia_version": None,
+                    "runtime_fingerprint": None,
+                    "render_policy_version": "test-policy",
+                }
+            },
         },
         "fonts": [
             {
@@ -68,14 +80,16 @@ def _base_inventory_with_charset():
                 "postscript_name": "Fake-Regular",
                 "version_string": "1.0",
                 "unique_font_id": "fake-regular",
-                "units_per_em": 1000,
-                "ascent": 800,
-                "descent": -200,
-                "weight_class": 400,
-                "width_class": 5,
-                "italic_angle": 0,
-                "is_fixed_pitch": False,
-                "glyph_count": 100,
+                "metrics": {
+                    "units_per_em": 1000,
+                    "ascent": 800,
+                    "descent": -200,
+                    "weight_class": 400,
+                    "width_class": 5,
+                    "italic_angle": 0,
+                    "is_fixed_pitch": False,
+                    "glyph_count": 100,
+                },
                 "coverage": {
                     "normalized_charset": {
                         "ranges": [[32, 126]],
@@ -90,11 +104,29 @@ def _base_inventory_with_charset():
                 },
                 "inference": {},
                 "charset": {},
-                "sample_text": {"source": "font", "text": "Fake sample"},
-                "specimen_text": "Fake specimen",
-                "specimen_strategy": "cmap",
-                "specimen_glyph_count": 50,
-                "specimen_rejection_reason": None,
+                "typography": {
+                    "sample_text": {"source": "font", "text": "Fake sample"},
+                    "specimen_text": "Fake specimen",
+                    "specimen_strategy": "cmap",
+                    "specimen_glyph_count": 50,
+                    "specimen_rejection_reason": None,
+                    "primary_script": None,
+                    "script_display_name": None,
+                    "render_policy": {
+                        "polyglossia_language": None,
+                        "fontspec_opts": None,
+                    },
+                    "script_source": None,
+                },
+                "loadability": {
+                    "lualatex": {
+                        "attempted": False,
+                        "loadable": None,
+                        "reason": None,
+                        "runtime_fingerprint": None,
+                        "probe_input": None,
+                    }
+                },
             }
         ],
     }
@@ -133,5 +165,5 @@ def test_schema_validation_no_spurious_warnings():
 
     warnings = validate_inventory_schema(inventory)
 
-    # Valid v1.2 inventory must produce no warnings
+    # Valid v1.3 inventory must produce no warnings
     assert warnings == []

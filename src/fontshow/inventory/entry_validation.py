@@ -27,6 +27,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from fontshow.inventory.schema_accessors import get_font_metrics, get_font_typography
+
 # ============================================================
 # Helper functions
 # ============================================================
@@ -189,12 +191,13 @@ def _validate_sample_text(entry: dict, errors: list[str]) -> None:
 
     Notes
     -----
-    The helper enforces the schema v1.2 expectation that
+    The helper enforces the active schema expectation that
     ``sample_text.source`` is ``"font"`` and that the embedded text is a
     string. The text may be empty in raw or enriched inventories when
     no internal sample is available.
     """
-    sample_text = entry.get("sample_text")
+    typography = get_font_typography(entry)
+    sample_text = typography.get("sample_text")
     if not isinstance(sample_text, dict):
         errors.append("Missing or invalid 'sample_text'")
         return
@@ -227,16 +230,26 @@ def _validate_specimen(entry: dict, errors: list[str]) -> None:
     This helper validates specimen text presence, generation strategy,
     and glyph count metadata expected by downstream rendering code.
     """
-    specimen_text = entry.get("specimen_text")
+    typography = get_font_typography(entry)
+    specimen_text = typography.get("specimen_text")
     if not isinstance(specimen_text, str) or not specimen_text:
         errors.append("Missing or invalid 'specimen_text'")
 
-    specimen_strategy = entry.get("specimen_strategy")
-    if specimen_strategy not in ("internal", "script", "cmap"):
+    specimen_strategy = typography.get("specimen_strategy")
+    if specimen_strategy not in (
+        "internal",
+        "script",
+        "cmap",
+        "deferred",
+        "validated-language-sample",
+        "validated-fallback",
+    ):
         errors.append("Invalid 'specimen_strategy'")
 
-    specimen_glyph_count = entry.get("specimen_glyph_count")
-    if not isinstance(specimen_glyph_count, int) or specimen_glyph_count < 1:
+    specimen_glyph_count = typography.get("specimen_glyph_count")
+    if specimen_glyph_count is not None and (
+        not isinstance(specimen_glyph_count, int) or specimen_glyph_count < 1
+    ):
         errors.append("Missing or invalid 'specimen_glyph_count'")
 
 
@@ -280,9 +293,10 @@ def validate_font_entry(entry: Any, *, index: int) -> list[str]:
 
     _validate_specimen(entry, errors)
 
-    _validate_int_min(entry, "glyph_count", 1, errors)
-    _validate_int_range(entry, "weight_class", 1, 1000, errors)
-    _validate_int_range(entry, "width_class", 1, 9, errors)
+    metrics = dict(get_font_metrics(entry))
+    _validate_int_min(metrics, "glyph_count", 1, errors)
+    _validate_int_range(metrics, "weight_class", 1, 1000, errors)
+    _validate_int_range(metrics, "width_class", 1, 9, errors)
 
     _validate_obj_required(entry, "coverage", errors)
     _validate_obj_required(entry, "inference", errors)
@@ -292,12 +306,12 @@ def validate_font_entry(entry: Any, *, index: int) -> list[str]:
     _validate_str_required(entry, "version_string", errors)
     _validate_str_required(entry, "unique_font_id", errors)
 
-    _validate_int_min(entry, "units_per_em", 1, errors)
+    _validate_int_min(metrics, "units_per_em", 1, errors)
 
-    _validate_int_min(entry, "ascent", -(10**18), errors)
-    _validate_int_min(entry, "descent", -(10**18), errors)
+    _validate_int_min(metrics, "ascent", -(10**18), errors)
+    _validate_int_min(metrics, "descent", -(10**18), errors)
 
-    _validate_number_required(entry, "italic_angle", errors)
-    _validate_bool_required(entry, "is_fixed_pitch", errors)
+    _validate_number_required(metrics, "italic_angle", errors)
+    _validate_bool_required(metrics, "is_fixed_pitch", errors)
 
     return errors

@@ -28,7 +28,7 @@ from tests.helpers import minimal_font_entry_v12
 
 def test_validate_font_entry_valid_minimal():
     """
-    Verify that the minimal valid schema v1.2 font entry passes unchanged.
+    Verify that the minimal valid current-schema font entry passes unchanged.
 
     Important setup assumption: `minimal_font_entry_v12()` returns a
     structurally complete entry acceptable to `validate_font_entry`.
@@ -114,8 +114,8 @@ def test_style_leak_heuristic_ignores_justified_family_tokens():
     entry = minimal_font_entry_v12()
     entry["family"] = "Roboto Condensed"
     entry["subfamily"] = "Bold"
-    entry["weight_class"] = 700
-    entry["width_class"] = 3
+    entry["metrics"]["weight_class"] = 700
+    entry["metrics"]["width_class"] = 3
 
     assert has_style_leak_in_family(entry) is False
 
@@ -131,8 +131,8 @@ def test_style_leak_heuristic_flags_unjustified_family_tokens():
     entry = minimal_font_entry_v12()
     entry["family"] = "Arial Black"
     entry["subfamily"] = "Regular"
-    entry["weight_class"] = 400
-    entry["width_class"] = 5
-    entry["italic_angle"] = 0
+    entry["metrics"]["weight_class"] = 400
+    entry["metrics"]["width_class"] = 5
+    entry["metrics"]["italic_angle"] = 0
 
     assert has_style_leak_in_family(entry) is True

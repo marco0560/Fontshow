@@ -26,11 +26,51 @@ generation pipeline.
 """
 
 import hashlib
+import json
 from pathlib import Path
 
 from fontshow.core.types import CatalogFontEntryV12, ScriptISO
 from fontshow.latex.render import _latex_detokenize_safe, _renderer_option_prefix
 from fontshow.ontology.language_tables import LANGUAGE_INFO, SCRIPT_INFO
+
+
+def get_render_policy_version() -> str:
+    """
+    Return a deterministic version fingerprint for render-policy inputs.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    str
+        Stable SHA-256-based fingerprint derived from the ontology
+        fields that influence LaTeX render policy.
+
+    Notes
+    -----
+    The fingerprint is derived from ``SCRIPT_INFO`` entries relevant to
+    render-policy decisions so inventories can record which policy set
+    was active when validation metadata was collected.
+    """
+    policy_snapshot = {
+        str(script_iso): {
+            "fontspec_opts": info.get("fontspec_opts", ""),
+            "polyglossia_language": info.get("polyglossia_language", ""),
+            "requires_polyglossia": bool(info.get("requires_polyglossia", False)),
+        }
+        for script_iso, info in sorted(
+            SCRIPT_INFO.items(), key=lambda item: str(item[0])
+        )
+    }
+    encoded = json.dumps(
+        policy_snapshot,
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()[:16]
 
 
 def _format_script_display(script_iso: str) -> str:

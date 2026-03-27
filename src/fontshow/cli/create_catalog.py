@@ -7,7 +7,7 @@ command.
 
 Responsibilities
 ----------------
-- Load and strictly validate a schema v1.2 inventory.
+- Load and strictly validate the current inventory schema.
 - Run semantic and platform validation checks before catalog generation.
 - Orchestrate catalog preparation steps (filtering, grouping, diagnostics).
 - Invoke catalog helpers that transform normalized font descriptors
@@ -54,6 +54,7 @@ from fontshow.core.cli_utils import (
     log_ok,
     set_cli_mode,
 )
+from fontshow.core.global_constants import SCHEMA_VERSION
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.inventory.io import _load_inventory
 from fontshow.platform.runtime import IS_WINDOWS
@@ -395,7 +396,8 @@ def run_create_catalog(args) -> int:
 
     if not inv_path or not inv_path.exists():
         log_err(
-            "Font inventory not found. Catalog generation requires a valid v1.2 inventory."
+            "Font inventory not found. Catalog generation requires a valid "
+            f"v{SCHEMA_VERSION} inventory."
         )
         return 1  # MUST fail deterministically even in --quiet mode
 

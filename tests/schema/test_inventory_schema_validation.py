@@ -29,7 +29,7 @@ from fontshow.inventory.schema_validation import (
 )
 
 
-def make_inventory(schema_version="1.2", with_fonts=True):
+def make_inventory(schema_version="1.3", with_fonts=True):
     """
     Build a minimal inventory payload for schema validation tests.
 
@@ -113,7 +113,7 @@ def test_strict_validation_missing_schema_file(monkeypatch):
     The test replaces the schema resource loader with a fake path-like
     object that raises `FileNotFoundError` when the schema text is read.
     """
-    data = make_inventory("1.2")
+    data = make_inventory("1.3")
 
     class FakeSchemaPath:
         """
@@ -182,7 +182,7 @@ def test_strict_validation_schema_error():
     # Missing required metadata fields AND fonts
     data = {
         "metadata": {
-            "schema_version": "1.2",
+            "schema_version": "1.3",
         }
     }
 
@@ -205,7 +205,7 @@ def _valid_metadata_block():
         Schema-valid metadata mapping.
     """
     return {
-        "schema_version": "1.2",
+        "schema_version": "1.3",
         "input_inventory_tool": "test",
         "input_inventory_tool_version": "0",
         "inference_level": "none",
@@ -222,6 +222,18 @@ def _valid_metadata_block():
             "python_version": "test",
             "hostname": "test",
             "execution_context": "native",
+        },
+        "validation": {
+            "lualatex": {
+                "attempted": False,
+                "engine": None,
+                "engine_version": None,
+                "luaotfload_version": None,
+                "fontspec_version": None,
+                "polyglossia_version": None,
+                "runtime_fingerprint": None,
+                "render_policy_version": "test-policy",
+            }
         },
     }
 

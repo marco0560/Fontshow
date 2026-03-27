@@ -30,8 +30,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-SCHEMA = ROOT / "src/fontshow/schema/inventory_v1_2.json"
-DOC = ROOT / "docs/schema/inventory_v1_2.md"
+constants_text = (ROOT / "src/fontshow/core/global_constants.py").read_text(
+    encoding="utf-8"
+)
+match = re.search(r'SCHEMA_VERSION = "([^"]+)"', constants_text)
+if match is None:
+    msg = "ERROR: could not determine SCHEMA_VERSION from core constants"
+    raise SystemExit(msg)
+SCHEMA_VERSION = match.group(1)
+
+SCHEMA = (
+    ROOT / f"src/fontshow/schema/inventory_v{SCHEMA_VERSION.replace('.', '_')}.json"
+)
+DOC = ROOT / f"docs/schema/inventory_v{SCHEMA_VERSION.replace('.', '_')}.md"
 
 START = "<!-- SCHEMA_JSON_START -->"
 END = "<!-- SCHEMA_JSON_END -->"
@@ -51,7 +62,8 @@ text = DOC.read_text()
 
 if START not in text or END not in text:
     msg = (
-        "ERROR: schema markers not found or malformed in docs/schema/inventory_v1_2.md"
+        "ERROR: schema markers not found or malformed in "
+        f"docs/schema/inventory_v{SCHEMA_VERSION.replace('.', '_')}.md"
     )
     raise SystemExit(msg)
 
@@ -64,6 +76,6 @@ new_text = pattern.sub(replacement, text)
 
 if new_text != text:
     DOC.write_text(new_text)
-    print("Updated docs/schema/inventory_v1_2.md")
+    print(f"Updated {DOC.relative_to(ROOT)}")
 else:
     print("Schema documentation already up to date")

@@ -87,7 +87,7 @@ def test_cli_invalid_schema(tmp_path):
 
 def test_cli_missing_run_environment(tmp_path):
     """
-    Verify that schema v1.2 inventories missing ``run_environment`` fail.
+    Verify that current-schema inventories missing ``run_environment`` fail.
 
     Parameters
     ----------

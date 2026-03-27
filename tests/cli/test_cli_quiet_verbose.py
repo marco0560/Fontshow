@@ -75,7 +75,7 @@ def test_cli_quiet_suppresses_stdout():
     """
     result = run_cli(["create-catalog", "--quiet"])
 
-    # create-catalog now requires a valid v1.2 inventory
+    # create-catalog now requires a valid current-schema inventory
     assert result.returncode != 0
     assert result.stdout.strip() == ""
     # warnings may be emitted on stderr

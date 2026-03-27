@@ -45,6 +45,7 @@ from fontshow.core.cli_utils import (
     log_warn,
     set_cli_mode,
 )
+from fontshow.core.global_constants import SCHEMA_VERSION
 from fontshow.core.json_format import dumps_pretty
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.inventory.font_descriptor import build_font_descriptor
@@ -54,7 +55,11 @@ from fontshow.inventory.fonttools_extraction import (
     detect_font_container,
     fonttools_extract_all,
 )
+from fontshow.inventory.latex_validation_metadata import (
+    collect_latex_validation_metadata,
+)
 from fontshow.inventory.platform_metadata import collect_platform_metadata
+from fontshow.inventory.schema_accessors import get_font_metrics
 from fontshow.inventory.types import FontBuildContext
 from fontshow.inventory.validation import (
     has_style_leak_in_family,
@@ -177,7 +182,7 @@ def run_dump_fonts(args) -> int:
 
     inventory: dict[str, Any] = {
         "metadata": {
-            "schema_version": "1.2",
+            "schema_version": SCHEMA_VERSION,
             "input_inventory_tool": "dump_fonts",
             "input_inventory_tool_version": __version__,
             "inference_level": "none",
@@ -193,6 +198,9 @@ def run_dump_fonts(args) -> int:
                 ),
             },
             "run_environment": collect_platform_metadata(),
+            "validation": {
+                "lualatex": collect_latex_validation_metadata(),
+            },
         },
         "fonts": [],
     }
@@ -300,9 +308,18 @@ def run_dump_fonts(args) -> int:
                                 desc["path"],
                                 desc["family"],
                                 desc["subfamily"],
-                                f"weight_class={desc['weight_class']}",
-                                f"width_class={desc['width_class']}",
-                                f"italic_angle={desc['italic_angle']}",
+                                (
+                                    "weight_class="
+                                    f"{get_font_metrics(desc).get('weight_class')}"
+                                ),
+                                (
+                                    "width_class="
+                                    f"{get_font_metrics(desc).get('width_class')}"
+                                ),
+                                (
+                                    "italic_angle="
+                                    f"{get_font_metrics(desc).get('italic_angle')}"
+                                ),
                             ]
                         )
                     )

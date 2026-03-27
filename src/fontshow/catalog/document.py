@@ -38,6 +38,7 @@ from fontshow.core.types import (
 )
 from fontshow.inventory.io import as_font_desc_list
 from fontshow.inventory.metadata_processing import font_family
+from fontshow.inventory.schema_accessors import get_specimen_text
 from fontshow.latex.policy import (
     _collect_polyglossia_font_setup,
     _collect_polyglossia_other_languages,
@@ -544,7 +545,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
 
         fullpath = str(font.get("path", ""))
         script0_iso = ScriptISO(script0.upper()) if script0 else ScriptISO("")
-        specimen = _strip_ascii_control_chars(str(font.get("specimen_text", "")))
+        specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
         safe_specimen = _format_specimen_for_latex(specimen, script0_iso)
         _, options_plain = _render_font_entry(
             font=font,
@@ -582,7 +583,7 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
                 ScriptISO(variant_script.upper()) if variant_script else ScriptISO("")
             )
             variant_specimen = _strip_ascii_control_chars(
-                str(variant.get("specimen_text", ""))
+                get_specimen_text(variant) or ""
             )
             variant_safe_specimen = _format_specimen_for_latex(
                 variant_specimen, variant_script_iso

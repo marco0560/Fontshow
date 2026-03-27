@@ -27,4 +27,4 @@ The constants defined here are intentionally minimal and versioned so
 schema-sensitive pipeline stages share a single authoritative source.
 """
 
-SCHEMA_VERSION = "1.2"
+SCHEMA_VERSION = "1.3"

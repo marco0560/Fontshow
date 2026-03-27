@@ -37,6 +37,10 @@ from fontshow.catalog.labels import primary_script
 from fontshow.constants.runtime import SUBPROCESS_TIMEOUT_SECONDS
 from fontshow.core.cli_utils import log_warn
 from fontshow.core.types import ScriptISO
+from fontshow.inventory.schema_accessors import (
+    get_sample_text_value,
+    get_specimen_text,
+)
 from fontshow.latex.policy import _get_render_policy
 from fontshow.latex.render import (
     _latex_detokenize_safe,
@@ -157,15 +161,13 @@ def _validation_probe_text(font: CatalogFontEntryV12) -> str:
     """
     candidates: list[str] = []
 
-    specimen = font.get("specimen_text")
+    specimen = get_specimen_text(font)
     if isinstance(specimen, str):
         candidates.append(specimen)
 
-    sample_text = font.get("sample_text")
-    if isinstance(sample_text, dict):
-        sample_value = sample_text.get("text")
-        if isinstance(sample_value, str):
-            candidates.append(sample_value)
+    sample_value = get_sample_text_value(font)
+    if isinstance(sample_value, str):
+        candidates.append(sample_value)
 
     for candidate in candidates:
         cleaned = _strip_ascii_control_chars(candidate)

@@ -55,6 +55,10 @@ from fontTools.ttLib import TTFont, TTLibError
 from fontshow.common.specimens import choose_language_sample
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.core.types import ScriptISO, normalize_script_iso
+from fontshow.inventory.schema_accessors import (
+    get_sample_text_value,
+    set_specimen_fields,
+)
 from fontshow.ontology.language_tables import SCRIPT_INFO
 
 # ============================================================
@@ -299,7 +303,7 @@ def _specimen_from_internal(
         unsupported, or too short.
     """
 
-    text = font.get("sample_text")
+    text = get_sample_text_value(font)
 
     if not isinstance(text, str) or not text.strip():
         return None, "no_internal_sample"
@@ -517,11 +521,11 @@ def _specimen_generate_for_font(
 
     Notes
     -----
-    Writes:
-        specimen_text
-        specimen_strategy
-        specimen_glyph_count
-        specimen_rejection_reason
+    Writes the schema v1.3 typography fields:
+    - ``typography.specimen_text``
+    - ``typography.specimen_strategy``
+    - ``typography.specimen_glyph_count``
+    - ``typography.specimen_rejection_reason``
 
     Fallback order:
     1. internal sample text
@@ -607,19 +611,24 @@ def _specimen_generate_for_font(
         strategy = new_strategy
         rejection = "specimen_not_in_cmap"
 
-    font["specimen_text"] = filtered
-    font["specimen_strategy"] = strategy or "cmap"
-    font["specimen_rejection_reason"] = rejection
-    font["specimen_glyph_count"] = int(g)
+    set_specimen_fields(
+        font,
+        specimen_text=filtered,
+        specimen_strategy=strategy or "cmap",
+        specimen_glyph_count=int(g),
+        specimen_rejection_reason=rejection,
+    )
 
     log_trace_cat(
         log,
         "specimen",
         "specimen generated",
         extra={
-            "strategy": font["specimen_strategy"],
-            "glyph_count": font["specimen_glyph_count"],
+            "strategy": (font.get("typography") or {}).get("specimen_strategy"),
+            "glyph_count": (font.get("typography") or {}).get("specimen_glyph_count"),
             "fallback_depth": fallback_depth,
-            "rejection": font["specimen_rejection_reason"],
+            "rejection": (font.get("typography") or {}).get(
+                "specimen_rejection_reason"
+            ),
         },
     )

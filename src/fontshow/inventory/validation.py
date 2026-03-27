@@ -39,6 +39,7 @@ from fontshow.core.cli_utils import (
     log_info,
     log_ok,
 )
+from fontshow.core.global_constants import SCHEMA_VERSION
 from fontshow.core.logging_utils import log
 from fontshow.core.types import Severity
 from fontshow.core.warnings import add_structured_warning
@@ -47,6 +48,11 @@ from fontshow.diagnostics.inventory_warnings import (
     _get_font_path_for_diagnostics,
 )
 from fontshow.inventory.entry_validation import validate_font_entry
+from fontshow.inventory.schema_accessors import (
+    get_font_metrics,
+    get_sample_text_info,
+    get_specimen_strategy,
+)
 from fontshow.inventory.schema_validation import validate_inventory_schema
 
 _VALIDATION_SUMMARY_WARNING_CODES = frozenset(
@@ -125,13 +131,13 @@ def _record_validation_observations(
     """
     ident = _format_font_identity(font, index=index)
 
-    sample_text = font.get("sample_text")
+    sample_text = get_sample_text_info(font)
     if isinstance(sample_text, dict) and not sample_text.get("text"):
         observation_counts["missing_internal_sample_text"] += 1
         if len(observation_examples["missing_internal_sample_text"]) < 5:
             observation_examples["missing_internal_sample_text"].append(ident)
 
-    specimen_strategy = font.get("specimen_strategy")
+    specimen_strategy = get_specimen_strategy(font)
     strategy_map = {
         "internal": "specimen_from_internal",
         "script": "specimen_from_script",
@@ -334,13 +340,15 @@ def validate_inventory(
     data = dict(data)  # defensive copy to allow safe normalization
     metadata = data.get("metadata")
     if not isinstance(metadata, dict):
-        log_err("'metadata' field missing or not an object (schema 1.2 required)")
+        log_err(
+            f"'metadata' field missing or not an object (schema {SCHEMA_VERSION} required)"
+        )
         return 1
 
     schema_version = metadata.get("schema_version")
-    if schema_version != "1.2":
+    if schema_version != SCHEMA_VERSION:
         log_err(
-            f"Unsupported schema_version '{schema_version}': only '1.2' is accepted"
+            f"Unsupported schema_version '{schema_version}': only '{SCHEMA_VERSION}' is accepted"
         )
         return 1
 
@@ -572,9 +580,10 @@ def has_style_leak_in_family(desc: dict) -> bool:
 
     subfamily = desc.get("subfamily", "")
     subfamily_lc = subfamily.lower() if isinstance(subfamily, str) else ""
-    weight_class = desc.get("weight_class")
-    width_class = desc.get("width_class")
-    italic_angle = desc.get("italic_angle")
+    metrics = get_font_metrics(desc)
+    weight_class = metrics.get("weight_class")
+    width_class = metrics.get("width_class")
+    italic_angle = metrics.get("italic_angle")
 
     for match in STYLE_LEAK_RE.finditer(fam):
         token = match.group(1).lower()

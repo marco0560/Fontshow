@@ -24,13 +24,13 @@ from fontshow.core.json_format import dumps_pretty
 from fontshow.inventory.schema_validation import validate_inventory_schema
 
 # ---------------------------------------------------------------------------
-# Minimal valid v1.2 inventory
+# Minimal valid v1.3 inventory
 # ---------------------------------------------------------------------------
 
 
 def _minimal_inventory():
     """
-    Minimal inventory structure that is schema-valid for v1.2.
+    Minimal inventory structure that is schema-valid for v1.3.
     Used to verify output invariants.
 
     Returns
@@ -40,7 +40,7 @@ def _minimal_inventory():
     """
     return {
         "metadata": {
-            "schema_version": "1.2",
+            "schema_version": "1.3",
             "input_inventory_tool": "test",
             "input_inventory_tool_version": "0",
             "inference_level": "none",
@@ -58,6 +58,18 @@ def _minimal_inventory():
                 "hostname": "test",
                 "execution_context": "native",
             },
+            "validation": {
+                "lualatex": {
+                    "attempted": False,
+                    "engine": None,
+                    "engine_version": None,
+                    "luaotfload_version": None,
+                    "fontspec_version": None,
+                    "polyglossia_version": None,
+                    "runtime_fingerprint": None,
+                    "render_policy_version": "test-policy",
+                }
+            },
         },
         "fonts": [
             {
@@ -69,14 +81,16 @@ def _minimal_inventory():
                 "postscript_name": "Fake-Regular",
                 "version_string": "1.0",
                 "unique_font_id": "fake-regular",
-                "units_per_em": 1000,
-                "ascent": 800,
-                "descent": -200,
-                "weight_class": 400,
-                "width_class": 5,
-                "italic_angle": 0,
-                "is_fixed_pitch": False,
-                "glyph_count": 100,
+                "metrics": {
+                    "units_per_em": 1000,
+                    "ascent": 800,
+                    "descent": -200,
+                    "weight_class": 400,
+                    "width_class": 5,
+                    "italic_angle": 0,
+                    "is_fixed_pitch": False,
+                    "glyph_count": 100,
+                },
                 "coverage": {
                     "unicode_blocks": {
                         "Basic Latin": 95,
@@ -84,11 +98,29 @@ def _minimal_inventory():
                 },
                 "inference": {},
                 "charset": {},
-                "sample_text": {"source": "font", "text": "Fake sample"},
-                "specimen_text": "Fake specimen",
-                "specimen_strategy": "cmap",
-                "specimen_glyph_count": 50,
-                "specimen_rejection_reason": None,
+                "typography": {
+                    "sample_text": {"source": "font", "text": "Fake sample"},
+                    "specimen_text": "Fake specimen",
+                    "specimen_strategy": "cmap",
+                    "specimen_glyph_count": 50,
+                    "specimen_rejection_reason": None,
+                    "primary_script": None,
+                    "script_display_name": None,
+                    "render_policy": {
+                        "polyglossia_language": None,
+                        "fontspec_opts": None,
+                    },
+                    "script_source": None,
+                },
+                "loadability": {
+                    "lualatex": {
+                        "attempted": False,
+                        "loadable": None,
+                        "reason": None,
+                        "runtime_fingerprint": None,
+                        "probe_input": None,
+                    }
+                },
             }
         ],
     }
@@ -101,7 +133,7 @@ def _minimal_inventory():
 
 def test_enriched_inventory_is_schema_valid():
     """
-    Output MUST conform to schema v1.2.
+    Output MUST conform to schema v1.3.
 
     Returns
     -------
@@ -111,7 +143,7 @@ def test_enriched_inventory_is_schema_valid():
     enriched = parse_inventory(data, level="medium")
 
     assert "metadata" in enriched
-    assert enriched["metadata"]["schema_version"] == "1.2"
+    assert enriched["metadata"]["schema_version"] == "1.3"
     assert "fonts" in enriched
 
     # Schema validation must run on JSON-rendered output (Enums → strings)

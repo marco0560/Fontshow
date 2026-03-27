@@ -72,13 +72,13 @@ class CliRunResult:
 
 
 # ============================================================
-# Canonical minimal VALID schema-1.2 font entry
+# Canonical minimal VALID schema-1.3 font entry
 # ============================================================
 
 
 def minimal_font_entry_v12() -> dict[str, Any]:
     """
-    Canonical minimal VALID font entry for schema 1.2.
+    Canonical minimal VALID font entry for schema 1.3.
 
     Deterministic and schema-compliant.
 
@@ -98,14 +98,16 @@ def minimal_font_entry_v12() -> dict[str, Any]:
         "postscript_name": "Test-Regular",
         "version_string": "1.0",
         "unique_font_id": "test-regular-1.0",
-        "units_per_em": 1000,
-        "ascent": 800,
-        "descent": -200,
-        "weight_class": 400,
-        "width_class": 5,
-        "italic_angle": 0,
-        "is_fixed_pitch": False,
-        "glyph_count": 1,
+        "metrics": {
+            "units_per_em": 1000,
+            "ascent": 800,
+            "descent": -200,
+            "weight_class": 400,
+            "width_class": 5,
+            "italic_angle": 0,
+            "is_fixed_pitch": False,
+            "glyph_count": 1,
+        },
         "coverage": {
             "unicode_blocks": {},
             "scripts": [],
@@ -122,24 +124,43 @@ def minimal_font_entry_v12() -> dict[str, Any]:
         "charset": {
             "ranges": [],
         },
-        "sample_text": {
-            "source": "font",
-            "text": "A",
+        "typography": {
+            "sample_text": {
+                "source": "font",
+                "text": "A",
+            },
+            "specimen_text": "A",
+            "specimen_strategy": "cmap",
+            "specimen_glyph_count": 1,
+            "specimen_rejection_reason": None,
+            "primary_script": None,
+            "script_display_name": None,
+            "render_policy": {
+                "polyglossia_language": None,
+                "fontspec_opts": None,
+            },
+            "script_source": None,
         },
-        "specimen_text": "A",
-        "specimen_strategy": "cmap",
-        "specimen_glyph_count": 1,
+        "loadability": {
+            "lualatex": {
+                "attempted": False,
+                "loadable": None,
+                "reason": None,
+                "runtime_fingerprint": None,
+                "probe_input": None,
+            }
+        },
     }
 
 
 # ============================================================
-# Canonical minimal VALID schema-1.2 inventory
+# Canonical minimal VALID schema-1.3 inventory
 # ============================================================
 
 
 def minimal_inventory_v12() -> dict[str, Any]:
     """
-    Canonical minimal VALID inventory for schema 1.2.
+    Canonical minimal VALID inventory for schema 1.3.
 
     Returns
     -------
@@ -150,7 +171,7 @@ def minimal_inventory_v12() -> dict[str, Any]:
 
     return {
         "metadata": {
-            "schema_version": "1.2",
+            "schema_version": "1.3",
             "run_environment": collect_platform_metadata(),
             "input_inventory_tool": "fontshow-test",
             "input_inventory_tool_version": "0.1",
@@ -159,6 +180,18 @@ def minimal_inventory_v12() -> dict[str, Any]:
                 "available": True,
                 "fontconfig_charset_included": False,
                 "version": "4.38.0",
+            },
+            "validation": {
+                "lualatex": {
+                    "attempted": False,
+                    "engine": None,
+                    "engine_version": None,
+                    "luaotfload_version": None,
+                    "fontspec_version": None,
+                    "polyglossia_version": None,
+                    "runtime_fingerprint": None,
+                    "render_policy_version": "test-policy",
+                }
             },
         },
         "fonts": [minimal_font_entry_v12()],

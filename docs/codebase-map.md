@@ -330,7 +330,7 @@ A font face moves through these states:
 | Raw inventory shape     | `src/fontshow/inventory/font_descriptor.py`,      | Descriptor construction,             | `tests/test_validate_font_entry.py`,                   |
 |                         | `src/fontshow/inventory/types.py`,                | shared typed structures, and         | `tests/test_validate_inventory.py`,                    |
 |                         | `src/fontshow/core/types.py`,                     | schema contract are defined here.    | `tests/schema/test_inventory_schema_validation.py`,    |
-|                         | `src/fontshow/schema/inventory_v1_2.json`         |                                      | `tests/schema/test_schema_validation.py`               |
+|                         | `_archive/schema/inventory_v1_2.schema.json`      |                                      | `tests/schema/test_schema_validation.py`               |
 | Charset normalization   | `src/fontshow/unicode/charset_ranges.py`,         | Charset decode, range normalization, | `tests/test_charset_decoding.py`,                      |
 |                         | `src/fontshow/inventory/metadata_processing.py`,  | and block derivation happen here.    | `tests/test_charset_normalization.py`,                 |
 |                         | `src/fontshow/platform/fontconfig.py`             |                                      | `tests/test_charset_to_script_coverage.py`,            |
@@ -348,7 +348,7 @@ A font face moves through these states:
 |                         | `src/fontshow/inventory/metadata_processing.py`,  | enrichment path are coordinated      | `tests/test_parse_inventory_logging.py`,               |
 |                         | `src/fontshow/inventory/io.py`                    | here.                                | `tests/cli/test_parse-inventory.py`                    |
 | Schema validation       | `src/fontshow/inventory/schema_validation.py`,    | Public and strict schema validation  | `tests/schema/test_inventory_schema_validation.py`,    |
-| behavior                | `src/fontshow/schema/inventory_v1_2.json`         | are implemented here against the     | `tests/schema/test_schema_validation.py`,              |
+| behavior                | `_archive/schema/inventory_v1_2.schema.json`      | are implemented here against the     | `tests/schema/test_schema_validation.py`,              |
 |                         |                                               | bundled schema.                      | `tests/schema/test_schema_validation_regression.py`    |
 | General inventory       | `src/fontshow/inventory/validation.py`,           | Structural checks outside pure       | `tests/test_validate_font_entry.py`,                   |
 | validation              | `src/fontshow/inventory/entry_validation.py`      | JSON-schema validation live here.    | `tests/test_validate_inventory.py`                     |
@@ -402,7 +402,7 @@ A font face moves through these states:
 | Raw inventory shape     | `src/fontshow/inventory/font_descriptor.py`     | High        | `src/fontshow/cli/parse_inventory.py`,            |
 |                         |                                             |             | `src/fontshow/inventory/validation.py`,           |
 |                         |                                             |             | `src/fontshow/catalog/document.py`,               |
-|                         |                                             |             | `src/fontshow/schema/inventory_v1_2.json`         |
+|                         |                                             |             | `_archive/schema/inventory_v1_2.schema.json`      |
 | Charset normalization   | `src/fontshow/unicode/charset_ranges.py`        | Medium      | `src/fontshow/inventory/metadata_processing.py`,  |
 |                         |                                             |             | `src/fontshow/inventory/script_analysis.py`,      |
 |                         |                                             |             | `src/fontshow/inventory/infer_languages.py`       |
@@ -471,7 +471,7 @@ A font face moves through these states:
 | Fontconfig metadata is   | Fontconfig integration    | `src/fontshow/platform/fontconfig.py`,             |
 | missing or malformed     |                           | `src/fontshow/cli/dump_fonts.py`                   |
 | Inventory JSON shape     | Descriptor construction / | `src/fontshow/inventory/font_descriptor.py`,       |
-| changed or fields are    | schema                    | `src/fontshow/schema/inventory_v1_2.json`,         |
+| changed or fields are    | schema                    | `_archive/schema/inventory_v1_2.schema.json`,      |
 | missing unexpectedly     |                           | `src/fontshow/core/types.py`                       |
 | `parse-inventory` fails  | Parse orchestration or    | `src/fontshow/cli/parse_inventory.py`,             |
 | on valid input           | schema validation         | `src/fontshow/inventory/schema_validation.py`,     |

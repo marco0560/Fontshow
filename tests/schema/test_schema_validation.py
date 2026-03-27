@@ -30,13 +30,13 @@ from fontshow.inventory.schema_validation import (
 )
 
 # ---------------------------------------------------------------------------
-# Helper — minimal valid v1.2 inventory (must satisfy schema requirements)
+# Helper — minimal valid v1.3 inventory (must satisfy schema requirements)
 # ---------------------------------------------------------------------------
 
 
 def _valid_v12_inventory():
     """
-    Build a minimal schema-valid v1.2 inventory payload.
+    Build a minimal schema-valid v1.3 inventory payload.
 
     Returns
     -------
@@ -45,7 +45,7 @@ def _valid_v12_inventory():
     """
     return {
         "metadata": {
-            "schema_version": "1.2",
+            "schema_version": "1.3",
             "input_inventory_tool": "test",
             "input_inventory_tool_version": "0",
             "inference_level": "none",
@@ -62,6 +62,18 @@ def _valid_v12_inventory():
                 "python_version": "test",
                 "hostname": "test",
                 "execution_context": "native",
+            },
+            "validation": {
+                "lualatex": {
+                    "attempted": False,
+                    "engine": None,
+                    "engine_version": None,
+                    "luaotfload_version": None,
+                    "fontspec_version": None,
+                    "polyglossia_version": None,
+                    "runtime_fingerprint": None,
+                    "render_policy_version": "test-policy",
+                }
             },
         },
         "fonts": [],
@@ -90,9 +102,9 @@ def test_raw_inventory_without_metadata_emits_error():
     assert warnings[0]["severity"] == Severity.ERROR
 
 
-def test_valid_v1_2_inventory_is_ok():
+def test_valid_v1_3_inventory_is_ok():
     """
-    Verify that a minimal valid v1.2 inventory produces no warnings.
+    Verify that a minimal valid v1.3 inventory produces no warnings.
 
     Returns
     -------
@@ -155,7 +167,7 @@ def test_invalid_inventory_structure_raises():
     None
     """
     data = {
-        "metadata": {"schema_version": "1.2"}
+        "metadata": {"schema_version": "1.3"}
         # missing "fonts"
     }
 
@@ -172,7 +184,7 @@ def test_invalid_schema_raises_validation_error():
     None
     """
     data = {
-        "metadata": {"schema_version": "1.2"},
+        "metadata": {"schema_version": "1.3"},
         "fonts": [],
         # missing required metadata fields
     }

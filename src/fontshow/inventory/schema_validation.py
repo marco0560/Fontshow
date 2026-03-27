@@ -33,6 +33,23 @@ from fontshow.core.types import Severity
 SUPPORTED_SCHEMA_VERSIONS = {SCHEMA_VERSION}
 
 
+def _schema_resource_name(schema_version: str) -> str:
+    """
+    Return the bundled JSON schema filename for a schema version.
+
+    Parameters
+    ----------
+    schema_version : str
+        Supported inventory schema version.
+
+    Returns
+    -------
+    str
+        Bundled schema filename for the requested version.
+    """
+    return f"inventory_v{schema_version.replace('.', '_')}.json"
+
+
 def _validate_inventory_schema_strict(data: dict) -> None:
     """
     Perform strict schema validation.
@@ -90,7 +107,7 @@ def _validate_inventory_schema_strict(data: dict) -> None:
         )
         raise ValueError(msg)
 
-    schema_path = files("fontshow.schema") / "inventory_v1_2.json"
+    schema_path = files("fontshow.schema") / _schema_resource_name(schema_version)
 
     try:
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
@@ -186,7 +203,10 @@ def validate_inventory_schema(data: dict) -> list[dict]:
             {
                 "severity": Severity.ERROR,
                 "code": "schema_version_missing",
-                "message": "Missing metadata.schema_version; required schema version is 1.2",
+                "message": (
+                    "Missing metadata.schema_version; "
+                    f"required schema version is {SCHEMA_VERSION}"
+                ),
                 "schema_version": None,
             }
         ]

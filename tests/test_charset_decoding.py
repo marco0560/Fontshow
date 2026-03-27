@@ -172,9 +172,9 @@ def test_empty_string_fields_ok(tmp_path):
     None
     """
     data = minimal_inventory_v12()
-    data["fonts"][0]["sample_text"]["text"] = ""
+    data["fonts"][0]["typography"]["sample_text"]["text"] = ""
 
     p = _write_inventory(tmp_path, json.dumps(data))
     fonts = load_font_inventory(p)
 
-    assert fonts[0]["sample_text"]["text"] == ""
+    assert fonts[0]["typography"]["sample_text"]["text"] == ""

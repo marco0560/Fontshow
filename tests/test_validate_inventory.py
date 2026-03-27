@@ -30,7 +30,7 @@ def test_validate_inventory_valid_minimal():
     Verify that a minimal valid inventory passes validation.
 
     Important setup assumption: `minimal_inventory_v12()` returns a
-    structurally valid schema v1.2 inventory.
+    structurally valid current-schema inventory.
 
     Returns
     -------
@@ -72,7 +72,7 @@ def test_validate_inventory_missing_fonts():
     -------
     None
     """
-    data = {"metadata": {"schema_version": "1.2"}}
+    data = {"metadata": {"schema_version": "1.3"}}
 
     result = validate_inventory(data)
     assert result > 0
@@ -138,7 +138,7 @@ def test_validate_inventory_allows_empty_internal_sample_when_specimen_is_valid(
     None
     """
     entry = minimal_font_entry_v12()
-    entry["sample_text"]["text"] = ""
+    entry["typography"]["sample_text"]["text"] = ""
 
     data = minimal_inventory_v12()
     data["fonts"] = [entry]
@@ -216,8 +216,8 @@ def test_validate_inventory_summarizes_observations_without_per_font_warning_spa
     set_cli_mode(quiet=False, verbose=False)
 
     entry = minimal_font_entry_v12()
-    entry["sample_text"]["text"] = ""
-    entry["specimen_strategy"] = "cmap"
+    entry["typography"]["sample_text"]["text"] = ""
+    entry["typography"]["specimen_strategy"] = "cmap"
     entry["inference"]["languages"] = ["en"]
     entry["warnings"] = [
         {
