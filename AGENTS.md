@@ -1,22 +1,18 @@
-# AGENTS.md — Fontshow Codex Operating Contract
+# AGENTS.md — Fontshow Repository Contract
 
 ## 0. Mission
 
 You are operating on the Fontshow repository.
 
-This is a **deterministic, test-driven engineering project**.
-
 Priority:
 
 1. Correctness
-2. Test integrity (local + CI)
+2. Test integrity
 3. Reproducibility
 4. Traceability
 5. Minimality of change
 
 Fluency is irrelevant.
-
----
 
 ## 1. Operating Mode
 
@@ -29,303 +25,69 @@ Rules:
 - Never reconstruct unseen files
 - Never approximate behavior
 
-If any required information is missing:
+If required information is missing:
 
-→ STOP
-→ Ask for clarification
-
----
+-> STOP
+-> Ask for clarification
 
 ## 2. Sources of Truth
 
 Priority order:
 
 1. Repository files
-2. Tests (`tests/`) — **authoritative behavior contract**
+2. Tests (`tests/`) as the authoritative behavior contract
 3. Project documentation (`docs/`)
 4. User instructions
 
-Previous assistant output is NOT a source of truth.
+Previous assistant output is not a source of truth.
 
----
+## 3. Repository-Specific Constraints
 
-## 3. Mandatory Work Cycle (STRICT)
+- Fontshow is a deterministic, test-driven engineering project.
+- Scope control is strict: do only what is requested.
+- Do not refactor unrelated code, rename symbols, introduce stylistic churn, or modify APIs unless explicitly required.
+- Stop immediately if requirements are ambiguous, file context is missing, expected behavior is unclear, or a change risks breaking the CLI contract.
 
-All tasks MUST follow this exact sequence:
+## 4. Required Shared Skills
 
-### Step 1 — PLAN
+Use the following shared skills for the corresponding task classes:
 
-- Provide a **minimal, explicit plan**
-- Identify impacted files
-- Identify risks
-- Ask ALL necessary clarification questions
+- `deterministic-change-workflow` for non-trivial code changes, bug fixes, and feature work
+- `numpy-docstring-enforcer` whenever modifying modules, classes, public functions, or private functions
+- `repoindex-workflow` before broad code exploration or patching
+- `commit-block-generator` when proposing the final commit block
 
-→ STOP and WAIT
+If a required skill is unavailable, state that explicitly and apply the same rules manually.
 
----
+## 5. Validation Contract
 
-### Step 2 — USER CONFIRMATION
-
-- Do NOT proceed without approval
-- Accept modifications to the plan
-
----
-
-### Step 3 — EXECUTION
-
-- Apply minimal, surgical changes
-- Respect all constraints in this file
-
----
-
-### Step 4 — TEST EXTENSION (if needed)
-
-- Add tests when:
-  - behavior changes
-  - bug is fixed
-  - new invariant introduced
-
-Tests must:
-
-- be deterministic
-- not depend on environment-specific tools
-- not require LaTeX installation
-
----
-
-### Step 5 — FULL VALIDATION
-
-You MUST assume the following commands are run:
+Assume the following commands are the required validation surface:
 
 ```bash
 pre-commit run --all-files
 pytest -q
 ```
 
-`pre-commit` includes and replaces:
+`pre-commit` includes and replaces formatter, lint, and type-check gates managed by repository configuration.
 
-```bash
-black .
-ruff check .
-mypy src/fontshow
-```
+All required checks must pass before concluding.
 
-All must pass.
+## 6. Test Constraints
 
-If any would fail:
+GitHub CI does not guarantee LaTeX availability.
 
-→ fix BEFORE concluding
+Tests must:
 
----
+- be deterministic
+- be environment-independent
+- not require LaTeX installation
+- not rely on unmocked external binaries
 
-### Step 6 — COMMIT BLOCK
-
-Propose a **single commit block** that is:
-
-- 15 - 20 lines long
-- atomic
-- CI-compliant, checked against `.githooks/commit-msg.py`
-
-Include:
-
-- type from permitted list
-- scope from permitted list
-- `Closes: #<issue_number>` if the activity closes an issue
-- `Refs:` if there is a reference to a decision or to an issue
-
-DO NOT include:
-
-- tool output
-- check summaries
-- noise
-
-### repoindex (tool) Workflow
-
-Use `repoindex` as a repository-local developer tool.
-
-Assume the session runs inside the repository virtual environment.
-All tool and command paths MUST resolve against that environment.
-When invoking tools or commands, prefer the virtual environment's
-executables and environment-derived paths over system-wide ones.
-
-Before broad code exploration or patching:
-
-1. Activate the repository virtual environment.
-2. Run `repoindex index`.
-3. Verify candidate symbols with `rg <query>` before editing.
-4. Run `repoindex context-for "<query>" --json` or `--prompt` as needed.
-5. Inspect the referenced files before applying changes.
-
-Use output modes as follows:
-
-- plain `context-for`: compact human-readable context
-- `context-for --json`: structured tool/agent workflows
-- `context-for --prompt`: copy-ready agent preamble
-- `context-for --explain`: retrieval diagnostics
-
-`repoindex` narrows search and improves determinism. It does not replace
-reading the actual source files before editing.
-
----
-
-## 4. Docstring Policy (CRITICAL)
-
-### 4.1 Coverage
-
-Every:
-
-- module
-- class
-- public function
-- private function
-
-MUST have a docstring.
-
-Absence is a defect.
-
----
-
-### 4.2 Style (MANDATORY)
-
-Docstrings MUST follow **NumPy style**.
-
-Structure:
-
-```text
-Short summary.
-
-Parameters
-----------
-param : type
-    Description.
-
-Returns
--------
-type
-    Description.
-
-Raises
-------
-ExceptionType
-    Condition.
-
-Notes
------
-<Description>
-
-Examples
---------
->>> func(input)
-output
-```
-
-The `Notes` field is optional. It is required if there is / are:
-
-- Non-obvious behavior: Anything that a reader would not infer from the signature or name.
-- Implementation details that affect correctness: especially if they influence edge cases or performance.
-- Important invariants or assumptions.
-- Design decisions / rationale.
-- Domain-specific meaning
-
-The `Examples` field is optional. It is required if:
-
-- The function is not immediately obvious from its signature
-- There are non-trivial inputs or outputs
-- Edge cases matter
-- Behavior is easier to show than to explain
-- CLI-like or pipeline functions
-- String transformations / formatting functions
-
----
-
-### 4.3 Requirements
-
-Docstrings must:
-
-- match actual behavior (no drift)
-- reflect current signature
-- include `Raises` when exceptions are possible
-- avoid redundancy
-- be concise and precise
-
----
-
-### 4.4 Enforcement Rules
-
-If modifying a function/class/module:
-
-→ ALWAYS verify docstring compliance
-
-If missing or non-compliant:
-
-→ FIX as part of the same change
-
----
-
-## 5. Testing and CI Constraints (CRITICAL)
-
-### 5.1 CI Environment
-
-GitHub CI does **NOT guarantee LaTeX availability**.
-
-Therefore:
-
-- Tests MUST NOT require:
-  - `lualatex`
-  - external binaries not mocked
-
----
-
-### 5.2 Preflight / LaTeX behavior
-
-Code MAY depend on LaTeX.
-
-Tests MUST:
-
-- mock it
-- bypass it
-- or test behavior without requiring it
-
----
-
-### 5.3 Determinism
-
-Tests MUST be:
-
-- deterministic
-- environment-independent
-- reproducible
-
----
-
-### 5.4 Test Integrity
-
-Never:
-
-- weaken assertions
-- skip tests without reason
-- introduce flaky behavior
-
----
-
-## 6. Scope Control
-
-Do ONLY what is requested.
-
-Do NOT:
-
-- refactor unrelated code
-- rename symbols
-- introduce stylistic changes
-- modify APIs
-
-Unless explicitly required.
-
----
+Never weaken assertions or introduce flaky behavior.
 
 ## 7. Repository Awareness
 
-Key subsystems:
+Primary subsystems:
 
 - CLI: `src/fontshow/cli/`
 - Inventory: `src/fontshow/inventory/`
@@ -333,106 +95,61 @@ Key subsystems:
 - Preflight: `src/fontshow/preflight/`
 - Ontology: `src/fontshow/ontology/`
 
-Tests mirror system contracts.
-
----
-
-## 8. Issues and Milestones Awareness
-
-The repository includes structured planning artifacts in the root:
+For non-trivial work, consult these planning artifacts when relevant:
 
 - `issues.json`
 - `milestones_plan.json`
 
-These files define:
+Do not invent or reinterpret issue or milestone intent.
 
-- current backlog
-- issue scope and intent
-- milestone grouping and priorities
+## 8. Commit Contract
 
-### Usage Rules
+Commit messages must satisfy `.githooks/commit-msg.py`.
 
-When performing non-trivial work:
+Allowed types:
 
-- Consult these files (if relevant to the task)
-- Align changes with:
-  - existing issues
-  - declared milestones
-- Do NOT introduce work that conflicts with planned scope
+- `feat`
+- `fix`
+- `docs`
+- `perf`
+- `refactor`
+- `test`
+- `chore`
+- `style`
 
-### Constraints
+Allowed scopes:
 
-- Do NOT invent new issues or milestones unless explicitly requested
-- Do NOT reinterpret issue intent
-- Treat these files as **planning source of truth**
+- `build`
+- `catalog`
+- `ci`
+- `cli`
+- `config`
+- `core`
+- `decision`
+- `dev`
+- `diagnostics`
+- `discovery`
+- `docs`
+- `dump`
+- `git`
+- `inventory`
+- `latex`
+- `output`
+- `ontology`
+- `parser`
+- `planning`
+- `platform`
+- `release`
+- `schema`
+- `unicode`
+- `validation`
 
-### When to Use
+The first line must match `type(scope): summary`, with an optional scope and a summary length of 1 to 72 characters.
 
-Use these artifacts when:
+## 9. Session Stability
 
-- implementing features
-- fixing bugs tied to roadmap items
-- performing refactors related to tracked work
-- planning multi-step changes
-
-Skip them for:
-
-- trivial fixes
-- purely local changes
-- mechanical tasks (e.g. formatting, docstrings only)
-
----
-
-## 9. Change Discipline
-
-Changes must be:
-
-- minimal
-- localized
-- reversible
-- consistent with existing architecture
-
-Avoid:
-
-- cross-module ripple effects
-- hidden behavior changes
-
----
-
-## 10. Failure Conditions (STOP)
-
-STOP immediately if:
-
-- ambiguity in requirements
-- missing file context
-- unclear expected behavior
-- risk of breaking CLI contract
-- risk of breaking tests
-
----
-
-## 11. Session Stability
-
-Monitor for:
-
-- context drift
-- assumption creep
-- loss of file grounding
+Monitor for context drift, assumption creep, and loss of file grounding.
 
 If detected:
 
-→ recommend RESET
-
----
-
-## 12. Audit Mode (optional)
-
-When explicitly requested:
-
-- enforce 100% docstring coverage
-- report violations before fixing
-- operate in batch mode
-
----
-
-END
+-> recommend RESET
