@@ -1,3 +1,9 @@
+## [0.62.0](https://github.com/marco0560/Fontshow/compare/v0.61.3...v0.62.0) (2026-03-27)
+
+### Features
+
+* **schema:** introduce inventory schema v1.3 and archive v1.2 ([cae330b](https://github.com/marco0560/Fontshow/commit/cae330bd3b5ba5d86492330ed0b52b80ad1cd672)), closes [#65](https://github.com/marco0560/Fontshow/issues/65)
+
 ## [0.61.3](https://github.com/marco0560/Fontshow/compare/v0.61.2...v0.61.3) (2026-03-25)
 
 ### Bug Fixes
