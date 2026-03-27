@@ -111,7 +111,7 @@ def _latex_detokenize_safe(text: str) -> str:
     Notes
     -----
     Removes ASCII control characters and escapes braces, which would
-    otherwise terminate the TeX group inside ``\\detokenize{...}``.
+    otherwise terminate the TeX group inside ``\\\\detokenize{...}``.
     """
     text = _strip_ascii_control_chars(text)
     return text.replace("\\", r"\\").replace("{", r"\{").replace("}", r"\}")

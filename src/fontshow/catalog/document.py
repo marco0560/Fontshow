@@ -207,7 +207,7 @@ def _omit_script_option_for_font(
 
 def _use_language_wrapper_for_font(font: CatalogFontEntryV12) -> bool:
     """
-    Return whether a font should be wrapped in ``\foreignlanguage``.
+    Return whether a font should be wrapped in ``\\foreignlanguage``.
 
     Parameters
     ----------
