@@ -50,6 +50,7 @@ from fontshow.inventory.io import _validate_fonts_container
 from fontshow.inventory.latex_validation_metadata import (
     collect_latex_validation_metadata,
 )
+from fontshow.inventory.loadability import inventory_has_attempted_lualatex_validation
 from fontshow.inventory.metadata_processing import (
     _infer_and_attach_metadata,
     _process_charset,
@@ -183,7 +184,8 @@ def parse_inventory(
     if not isinstance(validation, dict):
         validation = {}
         metadata["validation"] = validation
-    validation["lualatex"] = collect_latex_validation_metadata()
+    if not inventory_has_attempted_lualatex_validation(metadata):
+        validation["lualatex"] = collect_latex_validation_metadata()
 
     log.info(
         "font inventory parsing completed",

@@ -91,6 +91,28 @@ def get_font_loadability(font: Mapping[str, Any]) -> Mapping[str, Any]:
     return {}
 
 
+def get_font_lualatex_loadability(font: Mapping[str, Any]) -> Mapping[str, Any]:
+    """
+    Return the nested LuaLaTeX loadability block for a font entry.
+
+    Parameters
+    ----------
+    font : collections.abc.Mapping[str, Any]
+        Font entry to inspect.
+
+    Returns
+    -------
+    collections.abc.Mapping[str, Any]
+        ``loadability.lualatex`` mapping when present, otherwise an
+        empty mapping.
+    """
+    loadability = get_font_loadability(font)
+    lualatex = loadability.get("lualatex")
+    if isinstance(lualatex, Mapping):
+        return lualatex
+    return {}
+
+
 def get_sample_text_info(font: Mapping[str, Any]) -> dict[str, Any] | None:
     """
     Return normalized sample-text metadata for a font entry.
@@ -200,6 +222,87 @@ def ensure_v13_typography(font: MutableMapping[str, Any]) -> MutableMapping[str,
     created: dict[str, Any] = {}
     font["typography"] = created
     return created
+
+
+def ensure_v13_loadability(font: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
+    """
+    Ensure a mutable v1.3 loadability block exists on a font entry.
+
+    Parameters
+    ----------
+    font : collections.abc.MutableMapping[str, Any]
+        Font entry updated in place.
+
+    Returns
+    -------
+    collections.abc.MutableMapping[str, Any]
+        Mutable loadability mapping attached to ``font``.
+    """
+    loadability = font.get("loadability")
+    if isinstance(loadability, MutableMapping):
+        return loadability
+    created: dict[str, Any] = {}
+    font["loadability"] = created
+    return created
+
+
+def ensure_v13_lualatex_loadability(
+    font: MutableMapping[str, Any],
+) -> MutableMapping[str, Any]:
+    """
+    Ensure a mutable nested LuaLaTeX loadability block exists.
+
+    Parameters
+    ----------
+    font : collections.abc.MutableMapping[str, Any]
+        Font entry updated in place.
+
+    Returns
+    -------
+    collections.abc.MutableMapping[str, Any]
+        Mutable ``loadability.lualatex`` mapping attached to ``font``.
+    """
+    loadability = ensure_v13_loadability(font)
+    lualatex = loadability.get("lualatex")
+    if isinstance(lualatex, MutableMapping):
+        return lualatex
+    created: dict[str, Any] = {
+        "attempted": False,
+        "loadable": None,
+        "reason": None,
+        "runtime_fingerprint": None,
+        "probe_input": None,
+    }
+    loadability["lualatex"] = created
+    return created
+
+
+def set_lualatex_loadability_fields(
+    font: MutableMapping[str, Any],
+    *,
+    state: Mapping[str, Any],
+) -> None:
+    """
+    Persist LuaLaTeX loadability fields in the v1.3 font entry.
+
+    Parameters
+    ----------
+    font : collections.abc.MutableMapping[str, Any]
+        Font entry updated in place.
+    state : collections.abc.Mapping[str, Any]
+        Mapping containing the persisted LuaLaTeX loadability fields to
+        write to the nested v1.3 structure.
+
+    Returns
+    -------
+    None
+    """
+    lualatex = ensure_v13_lualatex_loadability(font)
+    lualatex["attempted"] = bool(state.get("attempted", False))
+    lualatex["loadable"] = state.get("loadable")
+    lualatex["reason"] = state.get("reason")
+    lualatex["runtime_fingerprint"] = state.get("runtime_fingerprint")
+    lualatex["probe_input"] = state.get("probe_input")
 
 
 def set_specimen_fields(

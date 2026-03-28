@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 from types import SimpleNamespace
 
+from fontshow.catalog.loadability import LoadabilityExclusion, LoadabilityFilterResult
 from fontshow.cli import create_catalog
 
 
@@ -202,7 +203,6 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
         inventory=str(inv),
         test=False,
         list_test_fonts=True,
-        validate_loadability=False,
         number=None,
         quiet=False,
         verbose=False,
@@ -233,10 +233,30 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
     loadability_calls: list[list[dict]] = []
     monkeypatch.setattr(
         create_catalog,
-        "filter_loadable_catalog_fonts",
-        lambda fonts: loadability_calls.append(list(fonts)) or fonts,
+        "filter_loadable_catalog_fonts_with_report",
+        lambda fonts: (
+            loadability_calls.append(list(fonts))
+            or LoadabilityFilterResult(
+                kept=list(fonts),
+                excluded=[
+                    LoadabilityExclusion(
+                        identity="bad-1",
+                        family="Broken",
+                        path="/fonts/broken.ttf",
+                        detail="subset-empty",
+                    )
+                ],
+            )
+        ),
     )
-    monkeypatch.setattr(create_catalog, "generate_latex", lambda fonts: "LATEX")
+    latex_calls: list[tuple[list[dict], list[LoadabilityExclusion]]] = []
+    monkeypatch.setattr(
+        create_catalog,
+        "generate_latex_with_report",
+        lambda fonts, *, excluded_fonts: (
+            latex_calls.append((list(fonts), list(excluded_fonts))) or "LATEX"
+        ),
+    )
 
     def _boom(_path, _content):
         """
@@ -264,13 +284,16 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
     monkeypatch.setattr(create_catalog, "_write_latex_output", _boom)
     assert create_catalog.run_create_catalog(args) == 1
     assert diagnostics_calls == [[{"family": "Alpha"}]]
-    assert loadability_calls == []
-    assert errors[-1] == "Failed to write output file: disk full"
-
-    args.validate_loadability = True
-    assert create_catalog.run_create_catalog(args) == 1
-    assert diagnostics_calls == [[{"family": "Alpha"}], [{"family": "Alpha"}]]
     assert loadability_calls == [[{"family": "Alpha"}]]
+    assert latex_calls[0][0] == [{"family": "Alpha"}]
+    assert latex_calls[0][1] == [
+        LoadabilityExclusion(
+            identity="bad-1",
+            family="Broken",
+            path="/fonts/broken.ttf",
+            detail="subset-empty",
+        )
+    ]
     assert errors[-1] == "Failed to write output file: disk full"
 
 

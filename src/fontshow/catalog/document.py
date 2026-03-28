@@ -27,6 +27,7 @@ final LaTeX output written by the create-catalog pipeline.
 """
 
 from fontshow.catalog.labels import primary_script
+from fontshow.catalog.loadability import LoadabilityExclusion
 from fontshow.constants.catalog import EXCLUDED_FONTS
 from fontshow.core.cli_utils import (
     log_info,
@@ -460,6 +461,65 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     conservative family-name fallback, while unsupported file-backed
     entries continue to produce an empty render block.
     """
+    return generate_latex_with_report(font_list, excluded_fonts=[])
+
+
+def _render_excluded_fonts_section(excluded_fonts: list[LoadabilityExclusion]) -> str:
+    """
+    Render a deterministic unloadable-font report section.
+
+    Parameters
+    ----------
+    excluded_fonts : list[LoadabilityExclusion]
+        Structured unloadable-font records.
+
+    Returns
+    -------
+    str
+        LaTeX section text, or an empty string when no exclusions exist.
+    """
+    if not excluded_fonts:
+        return ""
+
+    ordered = sorted(
+        excluded_fonts,
+        key=lambda item: (item.family, item.path, item.identity, item.detail or ""),
+    )
+    lines = [
+        "\\section{Unloadable Fonts}",
+        f"Excluded fonts: {len(ordered)}\\\\",
+        "\\begin{itemize}",
+    ]
+    for item in ordered:
+        family = escape_latex(item.family or "N/A")
+        path = escape_latex(item.path or "N/A")
+        detail = escape_latex(item.detail or "LuaLaTeX load failure")
+        lines.append("\\item " + family + " | " + path + " | " + detail)
+    lines.append("\\end{itemize}")
+    return "\n".join(lines) + "\n"
+
+
+def generate_latex_with_report(
+    font_list: list[CatalogFontEntryV12],
+    *,
+    excluded_fonts: list[LoadabilityExclusion],
+) -> str:
+    """
+    Generate the full LaTeX document with unloadable-font reporting.
+
+    Parameters
+    ----------
+    font_list : list[CatalogFontEntryV12]
+        List of normalized catalog font entries used to assemble the
+        final document.
+    excluded_fonts : list[LoadabilityExclusion]
+        Structured skipped-font records to include in the report.
+
+    Returns
+    -------
+    str
+        Complete LaTeX document as a string.
+    """
     font_list = as_font_desc_list(font_list)
 
     # --- GROUP BY FAMILY, PRESERVING FIRST-SEEN ORDER ---
@@ -623,5 +683,6 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
         latex_code += excluded_block
 
     # Closing document and printing indices
+    latex_code += _render_excluded_fonts_section(excluded_fonts)
     latex_code += LATEX_END_CODE_1 + str(total) + LATEX_END_CODE_2
     return latex_code

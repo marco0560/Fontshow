@@ -81,31 +81,31 @@ filtering, not for the full loaded inventory.
 
 ## Loadability Validation
 
-Runtime LuaLaTeX loadability validation is available but **disabled by
-default**.
-
-Enable it explicitly with:
-
-```bash
-fontshow create-catalog --validate-loadability
-```
+`create-catalog` now uses **persisted LuaLaTeX loadability** from the
+inventory by default.
 
 Behavior:
 
-- When the flag is **not** present, `create-catalog` renders directly
-  from the inventory and performs no per-font LuaLaTeX probe.
-- When the flag **is** present, Fontshow performs a best-effort
-  per-font loadability check before rendering and skips fonts that fail.
+- When persisted loadability is present and the runtime fingerprint
+  matches the current environment, `create-catalog` trusts the
+  persisted per-font `loadability.lualatex` state.
+- When persisted loadability is missing, incomplete, or stale,
+  `create-catalog` falls back to best-effort runtime LuaLaTeX probing
+  for the affected fonts only.
+- Fonts proven unloadable are skipped deterministically and reported in
+  the generated `.tex` output under an unloadable-font section.
 
 Notes:
 
-- This validation can be slow on large inventories because it spawns
-  external LuaLaTeX checks.
-- It is intended for diagnostics and troubleshooting, not for normal
-  full-inventory catalog generation.
-- The validation uses the same render policy as catalog generation so
+- The normal fast path is to reuse persisted loadability produced by
+  `dump-fonts`.
+- Runtime fallback remains slower because it still uses per-font probes
+  in the catalog stage.
+- The fallback path uses the same render policy as catalog generation so
   `fontspec` script options remain aligned between probing and final
   rendering.
+- There is no longer a `--validate-loadability` flag on
+  `create-catalog`.
 
 ## API reference
 

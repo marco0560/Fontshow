@@ -1,0 +1,316 @@
+"""
+Exercise persisted loadability behavior in dump-fonts.
+
+Responsibilities
+----------------
+- Verify default loadability probing persists per-font state.
+- Verify ``--no-loadability`` disables probing deterministically.
+- Verify batch subdivision attributes failed fonts stably.
+- Verify parse-inventory preserves attempted loadability metadata.
+"""
+
+from __future__ import annotations
+
+import json
+from types import SimpleNamespace
+from typing import TYPE_CHECKING
+
+from fontshow.cli import parse_inventory
+from fontshow.cli.dump_fonts import run_dump_fonts
+from fontshow.inventory import loadability
+from tests.helpers import create_fake_font_file, simulate_dump_discovery
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+
+def _candidate_descriptor(path: Path, family: str) -> dict[str, object]:
+    """
+    Build a minimal mutable descriptor suitable for loadability tests.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Existing fake font path.
+    family : str
+        Family name stored in the descriptor.
+
+    Returns
+    -------
+    dict[str, object]
+        Minimal schema-compatible font descriptor.
+    """
+    return {
+        "path": str(path),
+        "family": family,
+        "subfamily": "Regular",
+        "typographic_subfamily": "Regular",
+        "full_name": f"{family} Regular",
+        "postscript_name": f"{family}-Regular",
+        "version_string": "1.0",
+        "unique_font_id": family.lower(),
+        "metrics": {
+            "units_per_em": 1000,
+            "ascent": 800,
+            "descent": -200,
+            "weight_class": 400,
+            "width_class": 5,
+            "italic_angle": 0.0,
+            "is_fixed_pitch": False,
+            "glyph_count": 1,
+        },
+        "coverage": {"unicode_blocks": {}, "scripts": [], "languages": []},
+        "inference": {},
+        "charset": {"fc_charset": None},
+        "typography": {
+            "sample_text": {"source": "font", "text": family[0]},
+            "specimen_text": family[0],
+            "specimen_strategy": "cmap",
+            "specimen_glyph_count": 1,
+            "specimen_rejection_reason": None,
+            "primary_script": None,
+            "script_display_name": None,
+            "render_policy": {
+                "polyglossia_language": None,
+                "fontspec_opts": None,
+            },
+            "script_source": None,
+            "opentype_features": [],
+        },
+        "loadability": {
+            "lualatex": {
+                "attempted": False,
+                "loadable": None,
+                "reason": None,
+                "runtime_fingerprint": None,
+                "probe_input": None,
+            }
+        },
+        "warnings": [],
+    }
+
+
+def test_dump_fonts_runs_loadability_by_default(tmp_path, monkeypatch):
+    """
+    Ensure dump-fonts persists loadability results by default.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for fake fonts and output.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace discovery and probing helpers.
+
+    Returns
+    -------
+    None
+    """
+    font_path = create_fake_font_file(tmp_path, "Alpha.ttf")
+    output = tmp_path / "inventory.json"
+    simulate_dump_discovery(monkeypatch, [font_path], skipped_legacy=0)
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.fonttools_extract_all",
+        lambda _path, **_kwargs: [{"ok": True, "ttc_index": None}],
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.build_font_descriptor",
+        lambda _ctx: _candidate_descriptor(font_path, "Alpha"),
+    )
+
+    def _persist(fonts, *, validation_metadata):
+        validation_metadata["attempted"] = True
+        for font in fonts:
+            font["loadability"]["lualatex"].update(
+                {
+                    "attempted": True,
+                    "loadable": True,
+                    "reason": None,
+                    "runtime_fingerprint": validation_metadata["runtime_fingerprint"],
+                    "probe_input": "U+0041",
+                }
+            )
+
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.probe_and_persist_lualatex_loadability",
+        _persist,
+    )
+
+    rc = run_dump_fonts(
+        SimpleNamespace(
+            output=output,
+            cache_dir=tmp_path,
+            include_fc_charset=False,
+            no_cache=True,
+            no_loadability=False,
+            verbose=False,
+        )
+    )
+
+    assert rc == 0
+    data = json.loads(output.read_text(encoding="utf-8"))
+    assert data["metadata"]["validation"]["lualatex"]["attempted"] is True
+    assert data["fonts"][0]["loadability"]["lualatex"]["loadable"] is True
+
+
+def test_dump_fonts_no_loadability_skips_probing(tmp_path, monkeypatch):
+    """
+    Ensure ``--no-loadability`` disables persisted probing.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for fake fonts and output.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace discovery and probing helpers.
+
+    Returns
+    -------
+    None
+    """
+    font_path = create_fake_font_file(tmp_path, "Alpha.ttf")
+    output = tmp_path / "inventory.json"
+    simulate_dump_discovery(monkeypatch, [font_path], skipped_legacy=0)
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.fonttools_extract_all",
+        lambda _path, **_kwargs: [{"ok": True, "ttc_index": None}],
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.build_font_descriptor",
+        lambda _ctx: _candidate_descriptor(font_path, "Alpha"),
+    )
+    probe_calls: list[list[dict[str, object]]] = []
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.probe_and_persist_lualatex_loadability",
+        lambda fonts, *, validation_metadata: probe_calls.append(list(fonts)),
+    )
+
+    rc = run_dump_fonts(
+        SimpleNamespace(
+            output=output,
+            cache_dir=tmp_path,
+            include_fc_charset=False,
+            no_cache=True,
+            no_loadability=True,
+            verbose=False,
+        )
+    )
+
+    assert rc == 0
+    data = json.loads(output.read_text(encoding="utf-8"))
+    assert probe_calls == []
+    assert data["metadata"]["validation"]["lualatex"]["attempted"] is False
+    assert data["fonts"][0]["loadability"]["lualatex"]["attempted"] is False
+
+
+def test_probe_and_persist_lualatex_loadability_recurses_on_batch_failure(
+    tmp_path, monkeypatch
+):
+    """
+    Ensure failed batches are recursively split until attribution is stable.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for fake fonts.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace batch execution.
+
+    Returns
+    -------
+    None
+    """
+    alpha_path = create_fake_font_file(tmp_path, "Alpha.ttf")
+    beta_path = create_fake_font_file(tmp_path, "Beta.ttf")
+    gamma_path = create_fake_font_file(tmp_path, "Gamma.ttf")
+
+    fonts: list[dict[str, object]] = [
+        _candidate_descriptor(alpha_path, "Alpha"),
+        _candidate_descriptor(beta_path, "Beta"),
+        _candidate_descriptor(gamma_path, "Gamma"),
+    ]
+    metadata = {
+        "attempted": False,
+        "engine": "lualatex",
+        "engine_version": "1.18.0",
+        "luaotfload_version": "3.28",
+        "fontspec_version": "2.9g",
+        "polyglossia_version": "1.60.0",
+        "runtime_fingerprint": "fp-1",
+        "render_policy_version": "policy-v1",
+    }
+
+    def _fake_run(candidates, *, lualatex_bin):
+        ids = [candidate.font_index for candidate in candidates]
+        if ids == [0, 1, 2]:
+            return 1, 'FONTSHOW_LOAD_OK:0\n! Font \\"Beta\\" cannot be found.\n'
+        if ids == [1]:
+            return 1, '! Font \\"Beta\\" cannot be found.\n'
+        if ids == [2]:
+            return 0, "FONTSHOW_LOAD_OK:2\n"
+        raise AssertionError(ids)
+
+    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
+    monkeypatch.setattr(loadability, "_run_lualatex_batch", _fake_run)
+
+    loadability.probe_and_persist_lualatex_loadability(
+        fonts,
+        validation_metadata=metadata,
+        batch_size=3,
+    )
+
+    assert metadata["attempted"] is True
+    assert fonts[0]["loadability"]["lualatex"]["loadable"] is True
+    assert fonts[1]["loadability"]["lualatex"]["loadable"] is False
+    assert fonts[1]["loadability"]["lualatex"]["reason"] == (
+        '! Font \\"Beta\\" cannot be found.'
+    )
+    assert fonts[2]["loadability"]["lualatex"]["loadable"] is True
+
+
+def test_parse_inventory_preserves_attempted_lualatex_validation(monkeypatch):
+    """
+    Ensure parse-inventory does not overwrite attempted validation metadata.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace platform metadata helpers.
+
+    Returns
+    -------
+    None
+    """
+    data = {
+        "metadata": {
+            "schema_version": "1.3",
+            "run_environment": {
+                "os": "x",
+                "machine": "y",
+                "execution_context": "native",
+            },
+            "validation": {
+                "lualatex": {
+                    "attempted": True,
+                    "engine": "lualatex",
+                    "engine_version": "1.18.0",
+                    "luaotfload_version": "3.28",
+                    "fontspec_version": "2.9g",
+                    "polyglossia_version": "1.60.0",
+                    "runtime_fingerprint": "fp-1",
+                    "render_policy_version": "policy-v1",
+                }
+            },
+        },
+        "fonts": [],
+    }
+    monkeypatch.setattr(parse_inventory, "collect_platform_metadata", dict)
+    monkeypatch.setattr(
+        parse_inventory,
+        "collect_latex_validation_metadata",
+        lambda: {"attempted": False, "runtime_fingerprint": None},
+    )
+
+    result = parse_inventory.parse_inventory(data, level="medium")
+
+    assert result["metadata"]["validation"]["lualatex"]["attempted"] is True
+    assert result["metadata"]["validation"]["lualatex"]["runtime_fingerprint"] == "fp-1"

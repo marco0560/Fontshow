@@ -25,10 +25,12 @@ metadata used by inventory producers.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from fontshow.constants.runtime import SUBPROCESS_TIMEOUT_SECONDS
 from fontshow.latex.policy import get_render_policy_version
@@ -139,6 +141,71 @@ def _extract_package_version(package_name: str) -> str | None:
     return None
 
 
+def build_latex_runtime_fingerprint(metadata: dict[str, object]) -> str | None:
+    """
+    Build a deterministic fingerprint for the LuaLaTeX runtime surface.
+
+    Parameters
+    ----------
+    metadata : dict[str, object]
+        Schema-compatible ``metadata.validation.lualatex`` mapping or a
+        partial mapping containing the runtime fields of interest.
+
+    Returns
+    -------
+    str | None
+        Stable SHA-256 fingerprint when enough runtime information is
+        available, otherwise ``None``.
+
+    Notes
+    -----
+    The fingerprint intentionally depends only on stable runtime inputs
+    already recorded in the inventory metadata. Probe outcome fields are
+    excluded so a valid runtime can be compared before or after probing.
+    """
+    engine = metadata.get("engine")
+    if not isinstance(engine, str) or not engine.strip():
+        return None
+
+    components: list[str] = []
+    for key in (
+        "engine",
+        "engine_version",
+        "luaotfload_version",
+        "fontspec_version",
+        "polyglossia_version",
+        "render_policy_version",
+    ):
+        value = metadata.get(key)
+        normalized = value.strip() if isinstance(value, str) else ""
+        components.append(f"{key}={normalized}")
+
+    payload = "\n".join(components).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def attach_latex_runtime_fingerprint(
+    metadata: dict[str, object],
+) -> dict[str, object]:
+    """
+    Return a copy of the metadata block with fingerprint populated.
+
+    Parameters
+    ----------
+    metadata : dict[str, object]
+        Schema-compatible ``metadata.validation.lualatex`` mapping.
+
+    Returns
+    -------
+    dict[str, object]
+        Shallow copy of ``metadata`` with ``runtime_fingerprint`` set to
+        the deterministic runtime fingerprint when derivable.
+    """
+    enriched = dict(metadata)
+    enriched["runtime_fingerprint"] = build_latex_runtime_fingerprint(enriched)
+    return enriched
+
+
 def collect_latex_validation_metadata() -> dict[str, object]:
     """
     Collect the schema v1.3 LaTeX validation metadata block.
@@ -163,7 +230,7 @@ def collect_latex_validation_metadata() -> dict[str, object]:
     engine_version = _extract_engine_version(
         _read_command_stdout(lualatex_bin, "--version") if lualatex_bin else None
     )
-    return {
+    metadata: dict[str, Any] = {
         "attempted": False,
         "engine": engine,
         "engine_version": engine_version,
@@ -173,3 +240,4 @@ def collect_latex_validation_metadata() -> dict[str, object]:
         "runtime_fingerprint": None,
         "render_policy_version": get_render_policy_version(),
     }
+    return attach_latex_runtime_fingerprint(metadata)

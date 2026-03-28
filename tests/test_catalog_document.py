@@ -11,6 +11,7 @@ Responsibilities
 from __future__ import annotations
 
 from fontshow.catalog import document
+from fontshow.catalog.loadability import LoadabilityExclusion
 from fontshow.core.types import ScriptISO
 
 
@@ -589,6 +590,77 @@ def test_generate_latex_skips_excluded_families_from_catalog(monkeypatch):
     assert "\\item Keep Me --- " in latex
     assert "\\LogExcluded{Skip Me}" in latex
     assert latex.endswith("\nEND:1:DONE")
+
+
+def test_generate_latex_with_report_includes_unloadable_font_section(monkeypatch):
+    """
+    Ensure structured unloadable-font reporting is rendered deterministically.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers and logging.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _message: None)
+    monkeypatch.setattr(document, "log_warn", lambda _message: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "_get_render_policy", lambda _script: ("", ""))
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+
+    latex = document.generate_latex_with_report(
+        [
+            {
+                "family": "Keep Me",
+                "path": "/tmp/keep.ttf",
+                "specimen_text": "sample",
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "script": "latn",
+            }
+        ],
+        excluded_fonts=[
+            LoadabilityExclusion(
+                identity="bad-2",
+                family="Zulu",
+                path="/tmp/zulu.ttf",
+                detail="timeout",
+            ),
+            LoadabilityExclusion(
+                identity="bad-1",
+                family="Alpha",
+                path="/tmp/alpha.ttf",
+                detail="subset-empty",
+            ),
+        ],
+    )
+
+    assert "\\section{Unloadable Fonts}" in latex
+    assert "Excluded fonts: 2\\\\" in latex
+    assert "\\item Alpha | /tmp/alpha.ttf | subset-empty" in latex
+    assert "\\item Zulu | /tmp/zulu.ttf | timeout" in latex
+    assert latex.index("Alpha | /tmp/alpha.ttf | subset-empty") < latex.index(
+        "Zulu | /tmp/zulu.ttf | timeout"
+    )
 
 
 def test_generate_latex_marks_family_fallback_entries_as_working(monkeypatch):

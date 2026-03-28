@@ -48,6 +48,37 @@ def test_dump_fonts_success(cli_runner, stub_dump_fonts, tmp_path):
     assert code == 0
 
 
+@pytest.mark.parametrize("stub_dump_fonts", ["ok"], indirect=True)
+def test_dump_fonts_accepts_no_loadability_flag(cli_runner, stub_dump_fonts, tmp_path):
+    """
+    Verify that dump-fonts accepts the ``--no-loadability`` flag.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_dump_fonts : object
+        Indirect fixture configuring the dump-fonts stub to succeed.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build the output file path.
+
+    Returns
+    -------
+    None
+    """
+    code, out = cli_runner(
+        [
+            "fontshow",
+            "dump-fonts",
+            "--no-loadability",
+            "-o",
+            str(tmp_path / "inv.json"),
+        ]
+    )
+
+    assert code == 0
+
+
 @pytest.mark.parametrize(
     "stub_dump_fonts, expected_code",
     [

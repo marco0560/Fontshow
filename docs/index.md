@@ -79,6 +79,7 @@ The planning set defines:
 - governance and evolution guidelines
 
 - [Planning document set overview](planning/00_Planning_Document_Set.md)
+- [Issue 66 persisted loadability implementation plan](planning/13_ISSUE_66_PERSISTED_LOADABILITY_IMPLEMENTATION_PLAN.md)
 
 Formal architectural and project decisions are tracked as individual,
 immutable records to preserve rationale and historical context.

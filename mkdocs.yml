@@ -107,6 +107,7 @@ nav:
       - Pipeline Robustness: planning/10_PIPELINE_ROBUSTNESS.md
       - Governance Notes: planning/11_GOVERNANCE_NOTES.md
       - V2 Design Spike: planning/12_V2_DESIGN_SPIKE.md
+      - Issue 66 Implementation Plan: planning/13_ISSUE_66_PERSISTED_LOADABILITY_IMPLEMENTATION_PLAN.md
 
     - Decisions:
         decisions/index.md

@@ -30,6 +30,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -37,7 +38,11 @@ from fontshow.catalog.labels import primary_script
 from fontshow.constants.runtime import SUBPROCESS_TIMEOUT_SECONDS
 from fontshow.core.cli_utils import log_warn
 from fontshow.core.types import ScriptISO
+from fontshow.inventory.latex_validation_metadata import (
+    collect_latex_validation_metadata,
+)
 from fontshow.inventory.schema_accessors import (
+    get_font_lualatex_loadability,
     get_sample_text_value,
     get_specimen_text,
 )
@@ -52,6 +57,46 @@ if TYPE_CHECKING:
     from fontshow.core.types import CatalogFontEntryV12
 
 _SUPPORTED_LOADABILITY_EXTENSIONS = {".ttf", ".otf", ".ttc"}
+
+
+@dataclass(frozen=True)
+class LoadabilityExclusion:
+    """
+    Structured unloadable-font record produced by catalog filtering.
+
+    Parameters
+    ----------
+    identity : str
+        Stable identity string used for logging.
+    family : str
+        Human-readable family name when available.
+    path : str
+        Font path associated with the skipped entry.
+    detail : str | None
+        Deterministic reason detail when available.
+    """
+
+    identity: str
+    family: str
+    path: str
+    detail: str | None
+
+
+@dataclass(frozen=True)
+class LoadabilityFilterResult:
+    """
+    Result of filtering catalog fonts by LuaLaTeX loadability.
+
+    Parameters
+    ----------
+    kept : list[CatalogFontEntryV12]
+        Font entries retained for rendering.
+    excluded : list[LoadabilityExclusion]
+        Structured records for skipped unloadable fonts.
+    """
+
+    kept: list[CatalogFontEntryV12]
+    excluded: list[LoadabilityExclusion]
 
 
 def _is_validation_candidate(font: CatalogFontEntryV12) -> bool:
@@ -278,6 +323,74 @@ def validate_font_loadability(
     return True, None
 
 
+def _current_runtime_fingerprint() -> str | None:
+    """
+    Collect the current LuaLaTeX runtime fingerprint for catalog fallback.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    str | None
+        Runtime fingerprint when the local environment can be
+        characterized, otherwise ``None``.
+    """
+    metadata = collect_latex_validation_metadata()
+    fingerprint = metadata.get("runtime_fingerprint")
+    return fingerprint if isinstance(fingerprint, str) and fingerprint else None
+
+
+def _persisted_loadability_state(
+    font: CatalogFontEntryV12,
+    *,
+    runtime_fingerprint: str | None,
+) -> tuple[str, str | None]:
+    """
+    Classify the persisted loadability state for a catalog font entry.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Catalog font descriptor to inspect.
+    runtime_fingerprint : str | None
+        Current runtime fingerprint used for staleness checks.
+
+    Returns
+    -------
+    tuple[str, str | None]
+        Pair ``(state, detail)`` where ``state`` is one of
+        ``trusted-pass``, ``trusted-fail``, ``needs-runtime``, or
+        ``skip-runtime``.
+    """
+    persisted = get_font_lualatex_loadability(font)
+    if not persisted:
+        return "needs-runtime", None
+
+    if not bool(persisted.get("attempted", False)):
+        return "needs-runtime", None
+
+    persisted_fingerprint = persisted.get("runtime_fingerprint")
+    if not isinstance(persisted_fingerprint, str) or not persisted_fingerprint:
+        return "needs-runtime", None
+
+    if runtime_fingerprint is None:
+        return "skip-runtime", None
+
+    if persisted_fingerprint != runtime_fingerprint:
+        return "needs-runtime", None
+
+    persisted_loadable = persisted.get("loadable")
+    if persisted_loadable is True:
+        return "trusted-pass", None
+    if persisted_loadable is False:
+        persisted_reason = persisted.get("reason")
+        detail = persisted_reason if isinstance(persisted_reason, str) else None
+        return "trusted-fail", detail
+    return "needs-runtime", None
+
+
 def filter_loadable_catalog_fonts(
     fonts: list[CatalogFontEntryV12],
 ) -> list[CatalogFontEntryV12]:
@@ -299,24 +412,58 @@ def filter_loadable_catalog_fonts(
     If `lualatex` is unavailable, validation is skipped and the input is
     returned unchanged to preserve the command's current API behavior.
     """
+    return filter_loadable_catalog_fonts_with_report(fonts).kept
+
+
+def filter_loadable_catalog_fonts_with_report(
+    fonts: list[CatalogFontEntryV12],
+) -> LoadabilityFilterResult:
+    """
+    Filter fonts and collect structured unloadable-font reporting data.
+
+    Parameters
+    ----------
+    fonts : list[CatalogFontEntryV12]
+        Catalog font entries ready for rendering.
+
+    Returns
+    -------
+    LoadabilityFilterResult
+        Kept render set plus structured exclusion records.
+    """
+    runtime_fingerprint = _current_runtime_fingerprint()
     candidates = [font for font in fonts if _is_validation_candidate(font)]
     if not candidates:
-        return list(fonts)
+        return LoadabilityFilterResult(kept=list(fonts), excluded=[])
 
-    if shutil.which("lualatex") is None:
+    if runtime_fingerprint is None and shutil.which("lualatex") is None:
         log_warn("lualatex not available; skipping font loadability validation")
-        return list(fonts)
+        return LoadabilityFilterResult(kept=list(fonts), excluded=[])
 
     kept: list[CatalogFontEntryV12] = []
+    excluded: list[LoadabilityExclusion] = []
     for font in fonts:
         if not _is_validation_candidate(font):
             kept.append(font)
             continue
 
-        ok, detail = validate_font_loadability(font)
-        if ok:
+        state, detail = _persisted_loadability_state(
+            font,
+            runtime_fingerprint=runtime_fingerprint,
+        )
+        if state == "trusted-pass":
             kept.append(font)
             continue
+        if state == "trusted-fail":
+            pass
+        elif state == "skip-runtime":
+            kept.append(font)
+            continue
+        else:
+            ok, detail = validate_font_loadability(font)
+            if ok:
+                kept.append(font)
+                continue
 
         identity = (
             str(font.get("unique_font_id", "")).strip()
@@ -328,5 +475,13 @@ def filter_loadable_catalog_fonts(
         log_warn(f"Font skipped: {identity}")
         log_warn("Reason: LuaLaTeX load failure")
         log_warn(f"Detail: {detail or 'LuaLaTeX load failure'}")
+        excluded.append(
+            LoadabilityExclusion(
+                identity=identity,
+                family=str(font.get("family", "")).strip(),
+                path=str(font.get("path", "")).strip(),
+                detail=detail,
+            )
+        )
 
-    return kept
+    return LoadabilityFilterResult(kept=kept, excluded=excluded)

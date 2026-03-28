@@ -34,8 +34,8 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from fontshow.catalog.document import generate_latex
-from fontshow.catalog.loadability import filter_loadable_catalog_fonts
+from fontshow.catalog.document import generate_latex_with_report
+from fontshow.catalog.loadability import filter_loadable_catalog_fonts_with_report
 from fontshow.catalog.output import (
     _prepare_output_filename,
     _write_latex_output,
@@ -260,11 +260,6 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         type=int,
         help="Limit the number of processed fonts to the first N (if positive) or the last |N| (if negative)",
     )
-    parser.add_argument(
-        "--validate-loadability",
-        action="store_true",
-        help="Validate per-font LuaLaTeX loadability before rendering",
-    )
     add_common_arguments(
         parser,
         include_output=True,
@@ -426,9 +421,11 @@ def run_create_catalog(args) -> int:
     # --------------------------------------------------------------
     _run_inventory_diagnostics(fonts)
 
-    if getattr(args, "validate_loadability", False):
-        fonts = filter_loadable_catalog_fonts(fonts)
-    latex_content = generate_latex(fonts)
+    loadability_result = filter_loadable_catalog_fonts_with_report(fonts)
+    latex_content = generate_latex_with_report(
+        loadability_result.kept,
+        excluded_fonts=loadability_result.excluded,
+    )
 
     # --------------------------------------------------------------
     # WRITE OUTPUT

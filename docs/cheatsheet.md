@@ -69,6 +69,12 @@ LuaLaTeX compilation (multi-pass)
 ---
 
 ```bash
+python -m fontshow.cli.dump_fonts --no-loadability
+```
+
+---
+
+```bash
 python -m fontshow.cli.dump_fonts --include-fc-charset
 ```
 

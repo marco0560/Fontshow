@@ -111,6 +111,13 @@ In case of conflicts or ambiguity, the planning document set
 **Function:** Isolated design exploration document for v2.x.y.
 **Content:** Architectural sketches, feasibility analysis, risks, and explicit non-commitments.
 
+---
+
+### 13. [ISSUE_66_PERSISTED_LOADABILITY_IMPLEMENTATION_PLAN](13_ISSUE_66_PERSISTED_LOADABILITY_IMPLEMENTATION_PLAN.md)
+
+**Function:** Execution-tracking plan for Issue `#66`.
+**Content:** Approved step sequence, commit boundaries, validation gates, and completion checklist for persisted LuaLaTeX loadability work.
+
 ## Notes
 
 - Documents 1–4 form the **core planning spine**.
@@ -118,3 +125,4 @@ In case of conflicts or ambiguity, the planning document set
 - Documents 7–10 are **contract documents**: changes must be explicit and justified.
 - Document 9 is a contract-style planning bridge between stabilization (8) and pipeline robustness (10), and must be kept consistent with the Timeline (1).
 - Document 12 is **non-binding by design** and must not leak into implementation work without approval.
+- Document 13 is execution-facing and must be updated as the Issue `#66` branch progresses.
