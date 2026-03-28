@@ -1,3 +1,9 @@
+## [0.63.0](https://github.com/marco0560/Fontshow/compare/v0.62.1...v0.63.0) (2026-03-28)
+
+### Features
+
+* **catalog:** persist and reuse LuaLaTeX loadability across the pipeline ([f878b18](https://github.com/marco0560/Fontshow/commit/f878b1845bb0bf2851a4d121d964eef00755585c)), closes [#66](https://github.com/marco0560/Fontshow/issues/66)
+
 ## [0.62.1](https://github.com/marco0560/Fontshow/compare/v0.62.0...v0.62.1) (2026-03-27)
 
 ### Bug Fixes
