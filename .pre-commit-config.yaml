@@ -59,3 +59,8 @@ repos:
         language: python
         additional_dependencies: [mypy==1.19.1]
         pass_filenames: false
+      - id: pyproject-lint
+        name: pyproject structural lint
+        entry: python scripts/pyproject_lint.py
+        language: system
+        pass_filenames: false
