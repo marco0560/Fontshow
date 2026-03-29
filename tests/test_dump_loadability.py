@@ -218,6 +218,12 @@ def test_probe_and_persist_lualatex_loadability_recurses_on_batch_failure(
     Returns
     -------
     None
+
+    Raises
+    ------
+    AssertionError
+        Raised by the fake batch runner if recursion probes an unexpected
+        candidate split.
     """
     alpha_path = create_fake_font_file(tmp_path, "Alpha.ttf")
     beta_path = create_fake_font_file(tmp_path, "Beta.ttf")
