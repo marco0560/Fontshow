@@ -34,11 +34,38 @@ class LintError(Exception):
 
 
 def fail(msg: str) -> None:
+    """Raise a hard-failure lint error after reporting it.
+
+    Parameters
+    ----------
+    msg : str
+        Error message describing the structural lint failure.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    LintError
+        Always raised after the message is emitted.
+    """
     print(f"[ERR ] {msg}", file=sys.stderr)
     raise LintError(msg)
 
 
 def ok(msg: str) -> None:
+    """Emit a success message for a completed lint check.
+
+    Parameters
+    ----------
+    msg : str
+        Success message describing the completed check.
+
+    Returns
+    -------
+    None
+    """
     print(f"[OK  ] {msg}")
 
 
@@ -48,6 +75,22 @@ def ok(msg: str) -> None:
 
 
 def check_project_table(data: dict[str, Any]) -> None:
+    """Validate the required PEP 621 project metadata table.
+
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Parsed ``pyproject.toml`` content.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    LintError
+        Raised when the project table or required fields are missing.
+    """
     project = data.get("project")
     if not isinstance(project, dict):
         fail("Missing [project] table")
@@ -61,6 +104,22 @@ def check_project_table(data: dict[str, Any]) -> None:
 
 
 def check_license_rules(data: dict[str, Any]) -> None:
+    """Validate mutually exclusive license metadata rules.
+
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Parsed ``pyproject.toml`` content.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    LintError
+        Raised when license metadata violates the enforced policy.
+    """
     project = data["project"]
 
     license_field = project.get("license")
@@ -76,6 +135,22 @@ def check_license_rules(data: dict[str, Any]) -> None:
 
 
 def check_dependencies(data: dict[str, Any]) -> None:
+    """Validate the main dependency list structure and uniqueness.
+
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Parsed ``pyproject.toml`` content.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    LintError
+        Raised when dependency entries are malformed or duplicated.
+    """
     project = data["project"]
 
     deps = project.get("dependencies", [])
@@ -96,6 +171,22 @@ def check_dependencies(data: dict[str, Any]) -> None:
 
 
 def check_optional_dependencies(data: dict[str, Any]) -> None:
+    """Validate optional dependency groups and entry types.
+
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Parsed ``pyproject.toml`` content.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    LintError
+        Raised when optional dependency groups are malformed.
+    """
     project = data["project"]
     optional = project.get("optional-dependencies", {})
 
@@ -114,6 +205,22 @@ def check_optional_dependencies(data: dict[str, Any]) -> None:
 
 
 def check_build_system(data: dict[str, Any]) -> None:
+    """Validate the build-system table and required keys.
+
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Parsed ``pyproject.toml`` content.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    LintError
+        Raised when build-system configuration is missing or invalid.
+    """
     build = data.get("build-system")
     if not isinstance(build, dict):
         fail("Missing [build-system]")
@@ -131,6 +238,22 @@ def check_build_system(data: dict[str, Any]) -> None:
 
 
 def check_tooling(data: dict[str, Any]) -> None:
+    """Validate presence of required tool configuration blocks.
+
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Parsed ``pyproject.toml`` content.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    LintError
+        Raised when required tool sections are missing.
+    """
     tool = data.get("tool", {})
 
     if "ruff" not in tool:
@@ -148,6 +271,22 @@ def check_tooling(data: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    """Run the deterministic structural lint for ``pyproject.toml``.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    int
+        Process exit status code for the lint run.
+
+    Raises
+    ------
+    LintError
+        Raised when the target file is missing or validation fails.
+    """
     path = Path("pyproject.toml")
 
     if not path.exists():
