@@ -1,6 +1,4 @@
-"""
-Exercise inventory warning aggregation edges.
-"""
+"""Exercise inventory warning aggregation edges."""
 
 from __future__ import annotations
 

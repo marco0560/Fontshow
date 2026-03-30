@@ -1,6 +1,4 @@
-"""
-Exercise additional fontconfig chunking and charset branches.
-"""
+"""Exercise additional fontconfig chunking and charset branches."""
 
 from __future__ import annotations
 

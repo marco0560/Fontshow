@@ -60,7 +60,7 @@ TRACE is controlled by:
 
     FONTSHOW_TRACE
         Category selector (comma-separated).
-        Examples:
+        Example selectors include:
             all
             none
             io,parse,perf

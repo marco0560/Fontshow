@@ -84,7 +84,6 @@ def _process_language_metadata(
     in ``languages_raw``, and injects structured warnings for
     deprecated, normalized, duplicate, and dropped language tags.
     """
-
     inference = font.get("inference")
     if isinstance(inference, dict):
         if not coverage.get("languages"):
@@ -475,7 +474,6 @@ def _process_charset(
     The input structures are updated in place and existing non-charset
     metadata is otherwise preserved.
     """
-
     charset = font.get("charset")
 
     if isinstance(charset, dict):
@@ -614,7 +612,6 @@ def _infer_and_attach_metadata(
     languages, ranks candidate languages by script affinity, attaches
     the final inference block, and optionally emits debug diagnostics.
     """
-
     family = font.get("family")
     style = font.get("subfamily")
 
@@ -823,9 +820,8 @@ def _language_base_tag(raw: Any) -> str:
         - any parenthesized suffix stripped,
         - any region/script/variant portion stripped (split on "-" or "_").
 
-    Notes
-    -----
-    Examples:
+    Examples
+    --------
     - "yuw(s)" -> "yuw"
     - "az-az"  -> "az"
     - "pt_BR"  -> "pt"

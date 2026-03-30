@@ -1,6 +1,4 @@
-"""
-Exercise ontology additions for newly supported scripts and languages.
-"""
+"""Exercise ontology additions for newly supported scripts and languages."""
 
 from fontshow.common.specimens import choose_language_sample
 from fontshow.core.types import ScriptISO

@@ -71,7 +71,7 @@ def escape_latex(text: str) -> str:
 
 
 def _strip_ascii_control_chars(text: str) -> str:
-    """
+    r"""
     Remove ASCII control characters from text before LaTeX insertion.
 
     Parameters
@@ -95,7 +95,7 @@ def _strip_ascii_control_chars(text: str) -> str:
 
 
 def _latex_detokenize_safe(text: str) -> str:
-    """
+    r"""
     Prepare text for safe inclusion inside ``\\detokenize{...}``.
 
     Parameters

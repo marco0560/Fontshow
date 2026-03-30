@@ -137,7 +137,6 @@ def _collect_language_warnings(
     only forwards non-language warnings when their severity is warning
     or error.
     """
-
     lang_norm_pairs: list[str] = []
     lang_dups: list[str] = []
     lang_dropped: list[str] = []
@@ -236,7 +235,6 @@ def _emit_verbose_warnings(enriched: dict[str, Any]) -> None:
     Duplicate warning payloads within a group are collapsed through
     ``set()`` before emission to keep CLI output compact.
     """
-
     fonts = enriched.get("fonts", [])
     if not isinstance(fonts, list):
         return

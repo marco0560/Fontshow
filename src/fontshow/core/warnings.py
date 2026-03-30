@@ -82,7 +82,6 @@ def add_structured_warning(
     The helper assumes the existing ``warnings`` field, if present, is
     list-compatible with the project warning schema.
     """
-
     w: WarningInfo = {
         "code": code,
         "message": message,

@@ -27,8 +27,7 @@ from fontshow.core.cli_utils import set_cli_mode
 
 def test_dump_fonts_excludes_non_opentype(tmp_path, monkeypatch):
     """
-    Ensure that dump-fonts excludes non-OpenType fonts
-    without depending on the system font installation.
+    Ensure that dump-fonts excludes non-OpenType fonts without depending on the system font installation.
 
     Parameters
     ----------
@@ -133,7 +132,6 @@ def test_parse_inventory_after_dump(tmp_path, monkeypatch):
     -------
     None
     """
-
     # --- Mock font discovery ---
     fake_fonts = [
         Path("/fake/font-valid.ttf"),

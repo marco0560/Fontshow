@@ -47,7 +47,6 @@ def has_fontconfig() -> bool:
     This is a lightweight capability probe only. It does not validate
     the behavior of Fontconfig itself or enumerate any fonts.
     """
-
     return shutil.which("fc-list") is not None
 
 

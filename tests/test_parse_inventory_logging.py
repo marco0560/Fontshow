@@ -101,7 +101,7 @@ def test_schema_validation_logging(
 
 def test_parse_inventory_verbosity_levels(capsys, tmp_path):
     """
-    CLI verbosity contract (strict mode):
+    CLI verbosity contract (strict mode).
 
     quiet   -> silent
     default -> limited output
@@ -118,7 +118,6 @@ def test_parse_inventory_verbosity_levels(capsys, tmp_path):
     -------
     None
     """
-
     from fontshow.cli.parse_inventory import main
     from fontshow.core.cli_utils import set_cli_mode
 

@@ -1,6 +1,4 @@
-"""
-Verify LaTeX template invariants used by catalog generation.
-"""
+"""Verify LaTeX template invariants used by catalog generation."""
 
 from fontshow.latex import templates
 

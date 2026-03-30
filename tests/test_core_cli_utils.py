@@ -1,6 +1,4 @@
-"""
-Exercise CLI formatting helper boundaries.
-"""
+"""Exercise CLI formatting helper boundaries."""
 
 from fontshow.core.cli_utils import _format_extra
 

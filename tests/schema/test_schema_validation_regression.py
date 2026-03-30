@@ -46,7 +46,6 @@ def test_schema_v1_2_inventory_regression_no_errors():
     -------
     None
     """
-
     data = minimal_inventory_v12()
 
     warnings = validate_inventory_schema(data)

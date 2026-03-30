@@ -99,7 +99,8 @@ def test_preflight_verbose_outputs_details(cli_runner, stub_preflight):
 
 def test_preflight_quiet_outputs_nothing(cli_runner, stub_preflight):
     """
-    NOTE:
+    NOTE.
+
     This test uses a stubbed preflight runner.
 
     The stub always prints "Preflight passed." regardless of -q,
@@ -198,8 +199,7 @@ def test_preflight_real_runner_quiet_suppresses_stdout(cli_runner):
 
 def test_preflight_module_entrypoint_runs():
     """
-    Ensure that `python -m fontshow.preflight` executes
-    and does not crash.
+    Ensure that `python -m fontshow.preflight` executes and does not crash.
 
     This test bypasses cli_runner on purpose, because
     cli_runner is scoped to the `fontshow` console script.

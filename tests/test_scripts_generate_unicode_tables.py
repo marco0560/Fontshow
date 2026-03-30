@@ -1,6 +1,4 @@
-"""
-Exercise Unicode table generator helper edge cases.
-"""
+"""Exercise Unicode table generator helper edge cases."""
 
 from __future__ import annotations
 

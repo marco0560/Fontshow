@@ -81,7 +81,6 @@ def _validate_inventory_schema_strict(data: dict) -> None:
     propagate low-level JSON decoding failures if the bundled schema
     file is malformed.
     """
-
     schema_version = data.get("metadata", {}).get("schema_version")
 
     log_trace_cat(
@@ -174,7 +173,6 @@ def validate_inventory_schema(data: dict) -> list[dict]:
     Missing or unknown schema versions are converted into structured
     error records instead of exceptions.
     """
-
     warnings: list[dict] = []
 
     schema_version = data.get("metadata", {}).get("schema_version")

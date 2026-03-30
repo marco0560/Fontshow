@@ -1,6 +1,4 @@
-"""
-Exercise local TeX audit and gap-report maintenance scripts.
-"""
+"""Exercise local TeX audit and gap-report maintenance scripts."""
 
 from __future__ import annotations
 

@@ -169,8 +169,7 @@ def _infer_languages_from_profiles(
     allowed_languages: set[str] | None,
 ) -> dict[str, LanguageInferenceInfo]:
     """
-    Infer candidate languages from Unicode block coverage using
-    deterministic language profiles.
+    Infer candidate languages from Unicode block coverage using deterministic language profiles.
 
     This function evaluates each language profile defined in
     `LANGUAGE_PROFILES_ISO` against measured Unicode block coverage

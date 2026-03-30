@@ -298,36 +298,36 @@ def validate_inventory(
     """
     Validate a Fontshow font inventory structure.
 
-     Parameters
-     ----------
-     data : dict[str, Any]
-         Parsed inventory JSON object.
+    Parameters
+    ----------
+    data : dict[str, Any]
+        Parsed inventory JSON object.
 
-     Returns
-     -------
-     int
-         Number of font entries with fatal validation errors.
-         Zero indicates a valid inventory.
+    Returns
+    -------
+    int
+        Number of font entries with fatal validation errors.
+        Zero indicates a valid inventory.
 
-     Notes
-     -----
-     - Performs both fatal validation and non-fatal consistency checks.
-     - Validation is exhaustive: all entries are inspected in one pass.
-     - Function never raises and does not mutate inference results.
-     - Structured warnings may be injected into the inventory.
+    Notes
+    -----
+    - Performs both fatal validation and non-fatal consistency checks.
+    - Validation is exhaustive: all entries are inspected in one pass.
+    - Function never raises and does not mutate inference results.
+    - Structured warnings may be injected into the inventory.
 
-     This function performs two distinct classes of checks:
+    This function performs two distinct classes of checks:
 
-     1. Fatal validation errors:
-        These indicate that one or more font entries are structurally or
-        semantically invalid according to the current data model.
-        Fatal errors are reported as ERROR and cause the validation to fail
-        (non-zero return value).
+    1. Fatal validation errors:
+       These indicate that one or more font entries are structurally or
+       semantically invalid according to the current data model.
+       Fatal errors are reported as ERROR and cause the validation to fail
+       (non-zero return value).
 
-     2. Non-fatal consistency warnings:
-        These highlight incomplete or suspicious entries that may still be
-        usable, but are worth reporting to the user.
-        Warnings do not cause validation failure.
+    2. Non-fatal consistency warnings:
+       These highlight incomplete or suspicious entries that may still be
+       usable, but are worth reporting to the user.
+       Warnings do not cause validation failure.
     """
     fatal_errors = 0
 
@@ -438,7 +438,6 @@ def _apply_schema_validation(data: dict[str, Any]) -> None:
     Existing inventory content is preserved; only warning records may be
     appended to the root warning collection.
     """
-
     log.info(
         "inventory schema validation requested",
         extra={"schema_version": data.get("schema_version")},

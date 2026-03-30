@@ -149,7 +149,6 @@ def normalize_languages(
     - duplicate_normalized
     - variant_stripped
     """
-
     normalized: list[str] = []
     deprecated: list[DeprecatedLanguageInfo] = []
     dropped: list[DroppedLanguageInfo] = []

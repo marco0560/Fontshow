@@ -159,11 +159,6 @@ select = [
 
 ignore = [
     # ------------------------------------------------------------
-    # Documentation / style
-    # ------------------------------------------------------------
-    "D",
-
-    # ------------------------------------------------------------
     # Typing strictness (future phase)
     # ------------------------------------------------------------
     "ANN",
@@ -221,6 +216,9 @@ fixable = [
 unfixable = [
     "E501",   # never auto-wrap long lines (TeX/regex risk)
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [

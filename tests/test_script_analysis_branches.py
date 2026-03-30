@@ -1,6 +1,4 @@
-"""
-Exercise script analysis branch-heavy logic.
-"""
+"""Exercise script analysis branch-heavy logic."""
 
 from __future__ import annotations
 

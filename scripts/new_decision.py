@@ -99,7 +99,6 @@ def slugify(text: str) -> str:
         Raised if the input is empty or if the resulting slug would
         contain only stopwords.
     """
-
     if not text.strip():
         msg = "slugify(): empty input"
         raise ValueError(msg)

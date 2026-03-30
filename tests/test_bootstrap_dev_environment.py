@@ -1,6 +1,4 @@
-"""
-Verify the development bootstrap maintenance script.
-"""
+"""Verify the development bootstrap maintenance script."""
 
 from __future__ import annotations
 
@@ -32,7 +30,6 @@ def test_install_target_tracks_requested_dependency_groups() -> None:
     -------
     None
     """
-
     assert bootstrap_dev_environment.install_target(with_docs=False) == ".[dev]"
     assert bootstrap_dev_environment.install_target(with_docs=True) == ".[dev,docs]"
 
@@ -49,7 +46,6 @@ def test_git_alias_entries_are_repo_safe_and_self_contained() -> None:
     -------
     None
     """
-
     entries = dict(bootstrap_dev_environment.git_alias_entries())
 
     assert entries["core.hooksPath"] == ".githooks"
@@ -74,7 +70,6 @@ def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
     -------
     None
     """
-
     repo_root = Path("/tmp/fontshow")
     commands = bootstrap_dev_environment.build_bootstrap_commands(
         repo_root=repo_root,
@@ -114,7 +109,6 @@ def test_build_bootstrap_commands_can_skip_validation_and_include_docs() -> None
     -------
     None
     """
-
     repo_root = Path("/tmp/fontshow")
     commands = bootstrap_dev_environment.build_bootstrap_commands(
         repo_root=repo_root,

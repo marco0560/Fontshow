@@ -1,6 +1,4 @@
-"""
-Exercise the saved inventory jq query helper script.
-"""
+"""Exercise the saved inventory jq query helper script."""
 
 from __future__ import annotations
 

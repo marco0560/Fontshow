@@ -92,7 +92,7 @@ def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
 
 
 def _use_inline_fontspec_for_script(script0_iso: ScriptISO) -> bool:
-    """
+    r"""
     Return whether a script-only entry should use inline ``\\fontspec``.
 
     Parameters
@@ -119,7 +119,7 @@ def _use_inline_fontspec_for_script(script0_iso: ScriptISO) -> bool:
 def _use_inline_fontspec_for_font(
     font: CatalogFontEntryV12, script0_iso: ScriptISO
 ) -> bool:
-    """
+    r"""
     Return whether a font should force the inline ``\\fontspec`` path.
 
     Parameters
@@ -207,7 +207,7 @@ def _omit_script_option_for_font(
 
 
 def _use_language_wrapper_for_font(font: CatalogFontEntryV12) -> bool:
-    """
+    r"""
     Return whether a font should be wrapped in ``\\foreignlanguage``.
 
     Parameters
@@ -299,7 +299,7 @@ def _render_font_entry(
     script0_iso: ScriptISO,
     fullpath: str,
 ) -> tuple[str, str]:
-    """
+    r"""
     Render a single catalog entry specimen block and plain option string.
 
     Parameters
@@ -335,7 +335,6 @@ def _render_font_entry(
     a plain-text option string so the caller can include debugging
     information alongside the rendered specimen block.
     """
-
     path = str(font.get("path", "")).strip()
     use_path_based_loading = path.lower().endswith(_SUPPORTED_PATH_BASED_EXTENSIONS)
     use_family_resolution = _use_fontconfig_family_resolution(font)

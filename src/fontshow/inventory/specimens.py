@@ -302,7 +302,6 @@ def _specimen_from_internal(
         ``(None, rejection_reason)`` when the internal sample is absent,
         unsupported, or too short.
     """
-
     text = get_sample_text_value(font)
 
     if not isinstance(text, str) or not text.strip():
@@ -347,7 +346,6 @@ def _specimen_from_script(
     1. Use dominant script by coverage ratio if available.
     2. Otherwise fall back to the first declared script.
     """
-
     scripts = coverage.get("scripts")
 
     if not isinstance(scripts, list) or not scripts:

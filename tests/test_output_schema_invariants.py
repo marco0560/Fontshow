@@ -31,6 +31,7 @@ from fontshow.inventory.schema_validation import validate_inventory_schema
 def _minimal_inventory():
     """
     Minimal inventory structure that is schema-valid for v1.3.
+
     Used to verify output invariants.
 
     Parameters

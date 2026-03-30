@@ -1,6 +1,4 @@
-"""
-Exercise fontconfig block-splitting edge cases.
-"""
+"""Exercise fontconfig block-splitting edge cases."""
 
 from pathlib import Path
 

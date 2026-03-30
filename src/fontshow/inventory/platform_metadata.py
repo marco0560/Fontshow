@@ -96,7 +96,6 @@ def collect_platform_metadata() -> dict[str, Any]:
     The returned mapping contains both schema-required fields and a
     small set of additional informational fields allowed by the schema.
     """
-
     ctx = _detect_execution_context()
 
     os_name = platform.system() or "unknown"

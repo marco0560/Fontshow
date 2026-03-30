@@ -109,7 +109,6 @@ def fail(msg: str, *, exit_code: int = 1) -> None:
     SystemExit
         Always raised with the provided exit code.
     """
-
     print(f"ERROR: {msg}", file=sys.stderr)
     raise SystemExit(exit_code)
 
@@ -133,7 +132,6 @@ def resolve_executable(name: str) -> str:
     SystemExit
         Raised if the executable cannot be found.
     """
-
     resolved = shutil.which(name)
     if resolved is None:
         fail(f"Required executable not found in PATH: {name}")
@@ -162,7 +160,6 @@ def detect_repo_root(repo_root: Path | None = None) -> Path:
         Raised if the directory does not look like the Fontshow
         repository root.
     """
-
     candidate = (
         repo_root.resolve()
         if repo_root is not None
@@ -199,7 +196,6 @@ def venv_executable(repo_root: Path, venv_dir: str, executable_name: str) -> Pat
     pathlib.Path
         Path to the requested virtual-environment executable.
     """
-
     scripts_dir = "Scripts" if os.name == "nt" else "bin"
     suffix = ".exe" if os.name == "nt" else ""
     return repo_root / venv_dir / scripts_dir / f"{executable_name}{suffix}"
@@ -219,7 +215,6 @@ def install_target(*, with_docs: bool) -> str:
     str
         Editable install target suitable for ``pip install -e``.
     """
-
     extras = ["dev"]
     if with_docs:
         extras.append("docs")
@@ -241,7 +236,6 @@ def git_alias_entries() -> list[tuple[str, str]]:
         Ordered ``(config_key, config_value)`` entries to apply via
         ``git config --local``.
     """
-
     venv_python = ".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python"
     venv_pytest = ".venv/Scripts/pytest.exe" if os.name == "nt" else ".venv/bin/pytest"
 
@@ -330,7 +324,6 @@ def build_bootstrap_commands(
     list[CommandSpec]
         Ordered command plan for the bootstrap workflow.
     """
-
     venv_path = repo_root / options.venv_dir
     venv_python = venv_executable(repo_root, options.venv_dir, "python")
     venv_pip = venv_executable(repo_root, options.venv_dir, "pip")
@@ -416,7 +409,6 @@ def render_command(command: CommandSpec) -> str:
     str
         Shell-quoted command line.
     """
-
     return " ".join(shlex.quote(arg) for arg in command.argv)
 
 
@@ -440,7 +432,6 @@ def run_plan(commands: list[CommandSpec], *, dry_run: bool) -> None:
     SystemExit
         Raised if any subprocess exits with a non-zero status code.
     """
-
     for command in commands:
         print(f"==> {command.description}")
         print(f"    {render_command(command)}")
@@ -472,7 +463,6 @@ def main(argv: list[str] | None = None) -> int:
     int
         Exit status code. Returns ``0`` on success.
     """
-
     parser = argparse.ArgumentParser(
         prog="bootstrap-dev-environment",
         description="Create .venv, install dev dependencies, and configure local Git state.",

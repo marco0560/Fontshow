@@ -178,7 +178,7 @@ def get_installed_font_files_linux() -> list[Path]:
 
 
 def _windows_font_dirs() -> list[Path]:
-    """
+    r"""
     Return known Windows font directories (system and user scopes).
 
     Parameters

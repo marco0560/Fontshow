@@ -160,7 +160,6 @@ def main(args=None) -> int:
     runner so report emission follows the shared CLI presentation
     contract.
     """
-
     try:
         return run_preflight_cli(args=args)
     except Exception as exc:  # noqa: BLE001

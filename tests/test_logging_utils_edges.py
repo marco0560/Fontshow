@@ -1,6 +1,4 @@
-"""
-Exercise logging utility environment and formatting edges.
-"""
+"""Exercise logging utility environment and formatting edges."""
 
 from __future__ import annotations
 

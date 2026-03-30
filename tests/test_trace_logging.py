@@ -69,7 +69,6 @@ def test_debug_vs_trace_logging(
     - TRACE logs report the real caller rather than
       `logging_utils` internals.
     """
-
     # 1. Enable requested log level BEFORE importing consumers
     monkeypatch.setenv("FONTSHOW_LOG_LEVEL", log_level)
 
@@ -165,7 +164,6 @@ def test_trace_logging_emitted_with_correct_caller(
     records are attributed to real fontconfig execution layers rather
     than logging facade internals.
     """
-
     # 1. Enable TRACE before importing consumers
     monkeypatch.setenv("FONTSHOW_LOG_LEVEL", "TRACE")
 

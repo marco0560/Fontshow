@@ -109,7 +109,6 @@ def parse_inventory(
     inference, language metadata, and specimen generation for each font
     before updating top-level inventory metadata.
     """
-
     _apply_schema_validation(data)
 
     log.info(
@@ -390,7 +389,7 @@ def run_parse_font_inventory(
     write_text_fn=None,
 ) -> int:
     """
-    Internal runner for parse-font-inventory CLI.
+    Run the internal parse-font-inventory CLI flow.
 
     Parameters
     ----------
@@ -638,7 +637,6 @@ def main(args) -> int:
     Unexpected `TypeError` exceptions are converted into exit code ``2``
     after user-facing error reporting and performance tracing.
     """
-
     set_cli_mode(getattr(args, "quiet", False), getattr(args, "verbose", False))
 
     from time import perf_counter

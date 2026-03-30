@@ -61,7 +61,6 @@ def choose_language_sample(
 
     Unknown language or script identifiers are ignored without raising.
     """
-
     # ---------------------------------------------------------
     # 1. Use inferred languages
     # ---------------------------------------------------------

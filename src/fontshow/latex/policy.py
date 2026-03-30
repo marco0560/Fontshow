@@ -161,7 +161,7 @@ def _get_render_policy(script_iso: ScriptISO) -> tuple[str, str]:
 
 
 def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -> str:
-    """
+    r"""
     Collect secondary Polyglossia languages required by the font list.
 
     Parameters
@@ -208,7 +208,7 @@ def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -
 
 
 def _collect_polyglossia_font_setup(font_list: list[CatalogFontEntryV12]) -> str:
-    """
+    r"""
     Collect Polyglossia font-command declarations using real catalog fonts.
 
     Each language-specific ``\\<language>font`` command is declared once in the
@@ -234,7 +234,6 @@ def _collect_polyglossia_font_setup(font_list: list[CatalogFontEntryV12]) -> str
     selection deterministic while avoiding placeholder bindings such as
     ``Latin Modern Roman`` for unrelated scripts.
     """
-
     declarations: dict[str, str] = {}
 
     for font in font_list:
@@ -309,7 +308,7 @@ def _normalize_font_path_for_latex(fullpath: str) -> tuple[str, str]:
 def _build_polyglossia_font_setup(
     font: CatalogFontEntryV12, lang: str, script_iso: ScriptISO
 ) -> str:
-    """
+    r"""
     Build a preamble ``\\newfontfamily`` declaration for one language.
 
     Parameters

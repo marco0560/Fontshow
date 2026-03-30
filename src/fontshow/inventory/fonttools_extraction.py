@@ -425,15 +425,15 @@ def _extract_os2_table(tt: TTFont) -> dict[str, Any]:
      - ``version`` (int)
 
     Parameters
-     ----------
-     tt : TTFont
-         Open TTFont instance representing a single font face.
+    ----------
+    tt : TTFont
+        Open TTFont instance representing a single font face.
 
-     Returns
-     -------
-     dict[str, Any]
-         Dictionary containing extracted OS/2 fields when available,
-         or an empty dict if the OS/2 table is missing or malformed.
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary containing extracted OS/2 fields when available,
+        or an empty dict if the OS/2 table is missing or malformed.
 
     Returns
     -------

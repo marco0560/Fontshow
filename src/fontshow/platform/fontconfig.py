@@ -465,7 +465,6 @@ def _extract_fc_query_charset(
         Charset dictionary containing raw text and parsed ranges,
         or None if charset extraction is disabled or unavailable.
     """
-
     if not include_charset:
         return None
 

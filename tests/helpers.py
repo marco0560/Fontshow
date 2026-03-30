@@ -96,7 +96,6 @@ def minimal_font_entry_v12() -> dict[str, Any]:
         Minimal schema-valid font descriptor used by structural and
         integration tests.
     """
-
     return {
         "path": "/fake/font.ttf",
         "family": "Test",
@@ -180,7 +179,6 @@ def minimal_inventory_v12() -> dict[str, Any]:
         Minimal schema-valid inventory containing one font entry and
         runtime metadata.
     """
-
     return {
         "metadata": {
             "schema_version": "1.3",
@@ -224,7 +222,7 @@ def make_fc_query_output(
     returncode: int = 0,
 ):
     """
-    Factory helper for mocking fc-query output.
+    Create a mock fc-query output payload.
 
     Parameters
     ----------
