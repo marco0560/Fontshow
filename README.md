@@ -224,7 +224,7 @@ The authoritative, user-facing interface is always `fontshow <command>`.
 Generate a JSON inventory of installed fonts:
 
 ```bash
-python -m fontshow.cli.dump_fonts \
+fontshow dump-fonts \
   --output font_inventory.json
 ```
 <!-- cheatsheet:end -->
@@ -243,7 +243,7 @@ This command produces a versioned inventory including:
 Normalize and enrich a previously generated inventory:
 
 ```bash
-python -m fontshow.cli.parse_inventory \
+fontshow parse-inventory \
   --output font_inventory_enriched.json
 ```
 <!-- cheatsheet:end -->
@@ -252,7 +252,7 @@ python -m fontshow.cli.parse_inventory \
 An optional soft validation of the inventory structure can be performed with:
 
 ```bash
-python -m fontshow.cli.parse_inventory \
+fontshow parse-inventory \
   --validate-inventory
 ```
 <!-- cheatsheet:end -->
@@ -265,7 +265,7 @@ python -m fontshow.cli.parse_inventory \
 Generate a LaTeX catalog from a parsed inventory:
 
 ```bash
-python -m fontshow.cli.create_catalog
+fontshow create-catalog
 ```
 <!-- cheatsheet:end -->
 
