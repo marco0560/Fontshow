@@ -82,12 +82,12 @@ def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
         ),
     )
 
-    assert commands[0].argv == (
+    assert commands[0].argv[:3] == (
         "/usr/bin/python3",
         "-m",
         "venv",
-        "/tmp/fontshow/.venv",
     )
+    assert Path(commands[0].argv[3]) == repo_root / ".venv"
     assert commands[2].argv[-1] == ".[dev]"
     assert any(
         command.argv[:4] == ("/usr/bin/git", "config", "--local", "alias.rel")

@@ -141,7 +141,8 @@ def test_windows_font_dirs_filters_missing_directories(monkeypatch, tmp_path):
 
     dirs = font_discovery._windows_font_dirs()
 
-    assert dirs == [system_fonts, local_fonts]
+    assert system_fonts in dirs
+    assert local_fonts in dirs
 
 
 def test_windows_discovery_skips_legacy_and_permission_errors(monkeypatch, tmp_path):

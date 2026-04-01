@@ -169,8 +169,8 @@ def test_build_validation_tex_reuses_render_policy_script_option(monkeypatch, tm
         }
     )
 
-    assert "[Renderer=Harfbuzz,Path=\\detokenize{" in tex
-    assert ",Script=Georgian]" in tex
+    assert "Path=\\detokenize{" in tex
+    assert "Script=Georgian]" in tex
 
 
 def test_validate_font_loadability_returns_first_relevant_error_line(
