@@ -1,3 +1,9 @@
+## [0.63.1](https://github.com/marco0560/Fontshow/compare/v0.63.0...v0.63.1) (2026-04-01)
+
+### Bug Fixes
+
+* **preflight:** detect Windows TeX Live outside PATH ([d025c69](https://github.com/marco0560/Fontshow/commit/d025c69b142acfa857da44a4cbaed3d335980ac1)), closes [#51](https://github.com/marco0560/Fontshow/issues/51)
+
 ## [0.63.0](https://github.com/marco0560/Fontshow/compare/v0.62.1...v0.63.0) (2026-03-28)
 
 ### Features
