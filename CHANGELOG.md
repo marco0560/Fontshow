@@ -1,3 +1,9 @@
+## [0.66.0](https://github.com/marco0560/Fontshow/compare/v0.65.1...v0.66.0) (2026-04-02)
+
+### Features
+
+* **catalog:** compact specimens and add provenance ([98e7b6c](https://github.com/marco0560/Fontshow/commit/98e7b6c91a84a4cd09d5c6ba9e4d097d417fbbda))
+
 ## [0.65.1](https://github.com/marco0560/Fontshow/compare/v0.65.0...v0.65.1) (2026-04-02)
 
 ### Bug Fixes
