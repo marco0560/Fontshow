@@ -30,7 +30,10 @@ catalog rendering helpers.
 
 import argparse
 import platform
+import shlex
+import socket
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -78,6 +81,30 @@ if not IS_WINDOWS:
 # --- Configuration ---
 TEST_FONTS: set[str] = set()
 DEFAULT_INVENTORY = "font_inventory_enriched.json"
+
+
+def _build_generation_metadata() -> dict[str, str]:
+    """
+    Build first-page metadata for the generated catalog document.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping containing the formatted generation timestamp, CLI
+        command line, operating system name, and hostname.
+    """
+    timestamp = datetime.now().astimezone().strftime("%B %d, %Y %H:%M:%S %Z")
+    hostname = socket.gethostname().strip() or "unknown"
+    return {
+        "generation_timestamp": timestamp,
+        "command_line": shlex.join(sys.argv),
+        "system_name": platform.system() or "unknown",
+        "hostname": hostname,
+    }
 
 
 def _generate_test_output(
@@ -436,6 +463,7 @@ def run_create_catalog(args) -> int:
         loadability_result.kept,
         excluded_fonts=loadability_result.excluded,
         catalog_detail=args.catalog_detail,
+        generation_metadata=_build_generation_metadata(),
     )
 
     # --------------------------------------------------------------

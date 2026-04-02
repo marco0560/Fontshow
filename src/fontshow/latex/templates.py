@@ -30,8 +30,6 @@ Changes here must avoid altering indentation or line breaks unless
 explicitly intended.
 """
 
-import platform
-
 from fontshow import __version__
 from fontshow.latex.render import escape_latex
 
@@ -151,14 +149,20 @@ LATEX_INITIAL_CODE: str = (
 \title{\Huge\textbf{\color{titlecolor}System Font Catalog}}
 \author{Generated with fontshow create-catalog """
     + escape_latex(__version__)
-    + r""" \texttt{"""
-    + escape_latex(platform.system())
-    + r"""}}
-\date{\today}
+    + r"""}
+\date{%%FONTSHOW_GENERATED_AT%%}
 
 \begin{document}
 
 \maketitle
+
+\begin{center}
+{\small\ttfamily System: %%FONTSHOW_SYSTEM_NAME%%}\\
+{\small\ttfamily Host: %%FONTSHOW_HOSTNAME%%}\\
+\vspace{0.5em}
+\parbox{0.95\linewidth}{\raggedright\emph{\footnotesize\ttfamily %%FONTSHOW_COMMAND_LINE%%}}
+\end{center}
+\vspace{0.75em}
 
 \begin{abstract}
 This document catalogs the fonts installed on the system.

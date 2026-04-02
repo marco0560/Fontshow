@@ -26,6 +26,7 @@ document assembly stage between inventory-derived font metadata and the
 final LaTeX output written by the create-catalog pipeline.
 """
 
+from collections.abc import Mapping
 from typing import Literal
 
 from fontshow.catalog.labels import primary_script
@@ -72,6 +73,47 @@ _SUPPORTED_PATH_BASED_EXTENSIONS = (".ttf", ".otf", ".ttc")
 _MULTI_SPECIMEN_LIMIT = 4
 
 CatalogDetailLevel = Literal["compact", "extended"]
+
+
+def _apply_frontmatter_metadata(
+    latex_code: str,
+    *,
+    generation_timestamp: str,
+    command_line: str,
+    system_name: str,
+    hostname: str,
+) -> str:
+    """
+    Inject first-page generation metadata into the LaTeX template.
+
+    Parameters
+    ----------
+    latex_code : str
+        Template-derived LaTeX document containing front-matter markers.
+    generation_timestamp : str
+        Human-readable generation timestamp including time information.
+    command_line : str
+        Full CLI command line used to create the catalog.
+    system_name : str
+        Host operating system name rendered on the title page.
+    hostname : str
+        Hostname rendered on the title page.
+
+    Returns
+    -------
+    str
+        LaTeX document with front-matter markers replaced by escaped
+        runtime metadata.
+    """
+    replacements = {
+        "%%FONTSHOW_GENERATED_AT%%": escape_latex(generation_timestamp),
+        "%%FONTSHOW_COMMAND_LINE%%": escape_latex(command_line),
+        "%%FONTSHOW_SYSTEM_NAME%%": escape_latex(system_name),
+        "%%FONTSHOW_HOSTNAME%%": escape_latex(hostname),
+    }
+    for marker, value in replacements.items():
+        latex_code = latex_code.replace(marker, value)
+    return latex_code
 
 
 def _ordered_script_candidates(font: CatalogFontEntryV12) -> list[ScriptISO]:
@@ -276,8 +318,8 @@ def _render_variant_specimen_blocks(
     Returns
     -------
     str
-        LaTeX fragment containing the file header plus one or more
-        rendered specimen blocks.
+        LaTeX fragment containing compact or extended variant metadata
+        plus one or more rendered specimen blocks.
     """
     variant_path = str(variant.get("path", ""))
     _, variant_file = _normalize_path_for_latex(variant_path)
@@ -300,9 +342,10 @@ def _render_variant_specimen_blocks(
             continue
         show_script_label = catalog_detail == "compact" or len(script_candidates) > 1
         if show_script_label:
-            rendered_blocks.append(
-                _render_script_label(script_iso, catalog_detail=catalog_detail)
-                + "\n\n"
+            label = _render_script_label(script_iso, catalog_detail=catalog_detail)
+            block = (
+                label
+                + (" " if catalog_detail == "compact" else "\n")
                 + "\\LogWorking{"
                 + escape_latex(
                     family_name + " / " + variant_label + " / " + str(script_iso)
@@ -310,6 +353,7 @@ def _render_variant_specimen_blocks(
                 + "}"
                 + variant_render
             )
+            rendered_blocks.append(block)
         else:
             rendered_blocks.append(
                 "\\LogWorking{"
@@ -319,6 +363,21 @@ def _render_variant_specimen_blocks(
             )
 
     variant_renderable = bool(rendered_blocks)
+    if catalog_detail == "compact":
+        header = (
+            r"{\footnotesize\ttfamily "
+            + escape_latex(variant_label)
+            + (" [OK]}" if variant_renderable else " [MISSING]}")
+        )
+        body = (
+            "\n".join(rendered_blocks)
+            if variant_renderable
+            else "\\LogBroken{"
+            + escape_latex(family_name + " / " + variant_label)
+            + "}[MISSING]"
+        )
+        return header + "\n" + body
+
     return (
         r"{\footnotesize\ttfamily FILE  : "
         + escape_latex(variant_label)
@@ -639,61 +698,73 @@ def _render_font_entry(
     if script_opt and not _omit_script_option_for_font(font, script0_iso):
         options_plain += "," + script_opt
 
+    specimen_prefix = "\\raggedright\\sloppy\\emergencystretch=2em "
+
     if script0_iso == ScriptISO("LATN"):
         render = (
-            " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
+            " {\\begingroup\\parbox{\\linewidth}{"
+            + specimen_prefix
+            + "\\fontspec["
             + opts
             + "]{"
             + inline_font
             + "}"
             + safe_specimen
-            + "}\\endgroup}"
+            + "\\par}\\endgroup}"
         )
     elif lang:
         inline_options = opts
         if _use_language_wrapper_for_font(font):
             render = (
-                " {\\begingroup\\sloppy\\emergencystretch=2em"
+                " {\begingroup"
                 "\\foreignlanguage{"
                 + lang
-                + "}{\\parbox{\\linewidth}{\\fontspec["
+                + "}{\\parbox{\\linewidth}{"
+                + specimen_prefix
+                + "\\fontspec["
                 + inline_options
                 + "]{"
                 + inline_font
                 + "}"
                 + safe_specimen
-                + "}}"
+                + "\\par}}"
                 + "\\endgroup}"
             )
         else:
             render = (
-                " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
+                " {\\begingroup\\parbox{\\linewidth}{"
+                + specimen_prefix
+                + "\\fontspec["
                 + inline_options
                 + "]{"
                 + inline_font
                 + "}"
                 + safe_specimen
-                + "}\\endgroup}"
+                + "\\par}\\endgroup}"
             )
     elif script_opt:
         render = (
-            " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
+            " {\\begingroup\\parbox{\\linewidth}{"
+            + specimen_prefix
+            + "\\fontspec["
             + opts
             + "]{"
             + detok_file
             + "}"
             + safe_specimen
-            + "}\\endgroup}"
+            + "\\par}\\endgroup}"
         )
     else:
         render = (
-            " {\\begingroup\\sloppy\\emergencystretch=2em\\parbox{\\linewidth}{\\fontspec["
+            " {\\begingroup\\parbox{\\linewidth}{"
+            + specimen_prefix
+            + "\\fontspec["
             + opts
             + "]{"
             + detok_file
             + "}"
             + safe_specimen
-            + "}\\endgroup}"
+            + "\\par}\\endgroup}"
         )
 
     return render, options_plain
@@ -703,6 +774,7 @@ def generate_latex(
     font_list: list[CatalogFontEntryV12],
     *,
     catalog_detail: CatalogDetailLevel = "compact",
+    generation_metadata: Mapping[str, str] | None = None,
 ) -> str:
     """
     Generate the full LaTeX document for the provided font descriptors.
@@ -715,6 +787,10 @@ def generate_latex(
     catalog_detail : {"compact", "extended"}, optional
         Family and specimen metadata detail level used in the rendered
         catalog body.
+    generation_metadata : collections.abc.Mapping[str, str] | None, optional
+        Optional first-page metadata keys used to replace LaTeX
+        front-matter placeholders. Missing keys fall back to empty
+        strings.
 
     Returns
     -------
@@ -742,6 +818,7 @@ def generate_latex(
         font_list,
         excluded_fonts=[],
         catalog_detail=catalog_detail,
+        generation_metadata=generation_metadata,
     )
 
 
@@ -785,6 +862,7 @@ def generate_latex_with_report(
     *,
     excluded_fonts: list[LoadabilityExclusion],
     catalog_detail: CatalogDetailLevel = "compact",
+    generation_metadata: Mapping[str, str] | None = None,
 ) -> str:
     """
     Generate the full LaTeX document with unloadable-font reporting.
@@ -799,6 +877,10 @@ def generate_latex_with_report(
     catalog_detail : {"compact", "extended"}, optional
         Family and specimen metadata detail level used in the rendered
         catalog body.
+    generation_metadata : collections.abc.Mapping[str, str] | None, optional
+        Optional first-page metadata keys used to replace LaTeX
+        front-matter placeholders. Missing keys fall back to empty
+        strings.
 
     Returns
     -------
@@ -840,9 +922,22 @@ def generate_latex_with_report(
     else:
         log_warn("LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found")
 
+    frontmatter = dict(generation_metadata or {})
+    latex_code = _apply_frontmatter_metadata(
+        latex_code,
+        generation_timestamp=frontmatter.get("generation_timestamp", ""),
+        command_line=frontmatter.get("command_line", ""),
+        system_name=frontmatter.get("system_name", ""),
+        hostname=frontmatter.get("hostname", ""),
+    )
+
     total = len(family_order)
     latex_code += "\\section{Font List}\n"
     latex_code += "\\begin{itemize}\n"
+    latex_code += "\\setlength{\\itemsep}{0.45em}\n"
+    latex_code += "\\setlength{\\parsep}{0pt}\n"
+    latex_code += "\\setlength{\\parskip}{0.1em}\n"
+    latex_code += "\\setlength{\\topsep}{0.25em}\n"
 
     for idx, fam in enumerate(family_order, start=1):
         family_fonts = fonts_by_family[fam]

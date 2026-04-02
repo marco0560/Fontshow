@@ -553,8 +553,8 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert latex.count("\\item Alpha") == 1
     assert latex.count("\\item Beta") == 1
     assert "---" not in latex
-    assert "FILE  : alpha.ttf [OK]" in latex
-    assert "FILE  : ignored.ttf [OK]" in latex
+    assert "alpha.ttf [OK]" in latex
+    assert "ignored.ttf [OK]" in latex
     assert "LANGDEF" not in latex
     assert "FONTDEF" not in latex
     assert "LANGS : EN" not in latex
@@ -566,7 +566,7 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert "\\LogWorking{Alpha / ignored.ttf / LATN}" in latex
     assert "\\LogBroken{Beta / beta.bin}" in latex
     assert latex.count("\\allowbreak{}") == 7
-    assert "FILE  : beta.bin" in latex
+    assert "beta.bin [MISSING]" in latex
     assert "\\LogBroken{Beta / beta.bin}[MISSING]" in latex
     assert "\\LogExcluded{Zed}" in latex
     assert latex.endswith("\nEND:2:DONE")
@@ -754,7 +754,7 @@ def test_generate_latex_marks_family_fallback_entries_as_working(monkeypatch):
         ]
     )
 
-    assert "FILE  : ETbb [OK]" in latex
+    assert "ETbb [OK]" in latex
     assert "\\LogWorking{ETbb / ETbb / LATN}" in latex
     assert "\\LogBroken{ETbb / ETbb}[MISSING]" not in latex
     assert "OPTS  : Family=ETbb, UprightFont=*" not in latex
@@ -1093,3 +1093,126 @@ def test_generate_document_escapes_tex_size_and_family_commands(monkeypatch, tmp
     assert "{\\footnotesize\\ttfamily SPEC  : KHMR}" in latex
     assert "\x0c" not in latex
     assert "\t" not in latex
+
+
+def test_generate_latex_compact_layout_includes_frontmatter_and_tighter_blocks(
+    monkeypatch, tmp_path
+):
+    """
+    Ensure compact catalogs include first-page metadata and compact labels.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers and ontology data.
+    tmp_path : pathlib.Path
+        Temporary directory used to create a placeholder font file.
+
+    Returns
+    -------
+    None
+    """
+    font_path = tmp_path / "FreeSans.ttf"
+    font_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(
+        document,
+        "LATEX_INITIAL_CODE",
+        (
+            "HEADER %%FONTSHOW_GENERATED_AT%% %%FONTSHOW_SYSTEM_NAME%% "
+            "%%FONTSHOW_HOSTNAME%% %%FONTSHOW_COMMAND_LINE%%\n"
+        ),
+    )
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+    monkeypatch.setattr(
+        document, "_filter_renderer_script_specimen", lambda _font, specimen: specimen
+    )
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("LATN"): {"rtl": False, "specimen": "Latin sample"},
+            ScriptISO("CYRL"): {"rtl": False, "specimen": "Cyrillic sample"},
+        },
+    )
+
+    def render_stub(font, safe_specimen, script0_iso, fullpath):
+        """
+        Return a deterministic compact marker for rendered script variants.
+
+        Parameters
+        ----------
+        font : dict[str, object]
+            Font descriptor forwarded by the document generator.
+        safe_specimen : str
+            Preformatted specimen string selected for this render.
+        script0_iso : ScriptISO
+            Script code chosen for rendering.
+        fullpath : str
+            Absolute font path.
+
+        Returns
+        -------
+        tuple[str, str]
+            Fake LaTeX render block and plain option string.
+        """
+        _ = font, fullpath
+        return f"<{script0_iso}|{safe_specimen}>", f"Path={script0_iso}"
+
+    monkeypatch.setattr(document, "_render_font_entry", render_stub)
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "FreeSans",
+                "path": str(font_path),
+                "style": "Regular",
+                "script": "latn",
+                "specimen_text": "Original Latin",
+                "inference": {"scripts": ["latn", "cyrl"], "languages": ["en"]},
+                "coverage": {"scripts": ["latn", "cyrl"]},
+            },
+        ],
+        catalog_detail="compact",
+        generation_metadata={
+            "generation_timestamp": "April 02, 2026 18:15:13 CEST",
+            "command_line": "fontshow create-catalog --inventory inv.json",
+            "system_name": "Linux",
+            "hostname": "atlas",
+        },
+    )
+
+    assert (
+        "April 02, 2026 18:15:13 CEST Linux atlas "
+        "fontshow create-catalog --inventory inv.json" in latex
+    )
+    assert "\\setlength{\\itemsep}{0.45em}" in latex
+    assert "\\setlength{\\parsep}{0pt}" in latex
+    assert "{\\footnotesize\\ttfamily FreeSans.ttf [OK]}" in latex
+    assert (
+        "{\\footnotesize\\ttfamily LATN} "
+        "\\LogWorking{FreeSans / FreeSans.ttf / LATN}<LATN|Original Latin>"
+    ) in latex
+    assert (
+        "{\\footnotesize\\ttfamily CYRL} "
+        "\\LogWorking{FreeSans / FreeSans.ttf / CYRL}<CYRL|Cyrillic sample>"
+    ) in latex

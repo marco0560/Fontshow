@@ -250,14 +250,33 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
             )
         ),
     )
-    latex_calls: list[tuple[list[dict], list[LoadabilityExclusion], str]] = []
+    latex_calls: list[
+        tuple[list[dict], list[LoadabilityExclusion], str, dict[str, str]]
+    ] = []
     monkeypatch.setattr(
         create_catalog,
         "generate_latex_with_report",
-        lambda fonts, *, excluded_fonts, catalog_detail: (
-            latex_calls.append((list(fonts), list(excluded_fonts), catalog_detail))
+        lambda fonts, *, excluded_fonts, catalog_detail, generation_metadata: (
+            latex_calls.append(
+                (
+                    list(fonts),
+                    list(excluded_fonts),
+                    catalog_detail,
+                    dict(generation_metadata),
+                )
+            )
             or "LATEX"
         ),
+    )
+    monkeypatch.setattr(
+        create_catalog,
+        "_build_generation_metadata",
+        lambda: {
+            "generation_timestamp": "April 02, 2026 18:15:13 CEST",
+            "command_line": "fontshow create-catalog --inventory inv.json",
+            "system_name": "Linux",
+            "hostname": "atlas",
+        },
     )
 
     def _boom(_path, _content):
@@ -288,6 +307,7 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
     assert diagnostics_calls == [[{"family": "Alpha"}]]
     assert loadability_calls == [[{"family": "Alpha"}]]
     assert latex_calls[0][0] == [{"family": "Alpha"}]
+    assert latex_calls[0][3]["hostname"] == "atlas"
     assert latex_calls[0][1] == [
         LoadabilityExclusion(
             identity="bad-1",
