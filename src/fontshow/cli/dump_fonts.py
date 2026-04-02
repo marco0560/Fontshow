@@ -340,9 +340,9 @@ def run_dump_fonts(args) -> int:
         "total_fonts": fonts_total,
         "total_font_files": len(font_files),
         "total_faces_seen": total_faces,
-        "skipped_non_opentype_faces": skipped_non_opentype,
-        "skipped_legacy_extension": skipped_legacy_extension,
-        "skipped_structurally_unloadable": skipped_structurally_unloadable,
+        "skipped_discovery_legacy_files": skipped_legacy_extension,
+        "skipped_face_non_opentype": skipped_non_opentype,
+        "skipped_face_structurally_unloadable": skipped_structurally_unloadable,
         "style_leak_suspected": style_leak_suspected,
     }
 
@@ -387,13 +387,13 @@ def run_dump_fonts(args) -> int:
         )
 
     log_info(
-        f"Processed {total_faces} - {skipped_non_opentype} skipped"
+        f"Processed {total_faces} faces - {skipped_non_opentype} non-opentype skipped"
         f" - {style_leak_suspected} style-leak suspected",
         verbose=(
             f"Processed {total_faces} font faces — "
-            f"{skipped_non_opentype} skipped (non-OpenType), "
-            f"{skipped_legacy_extension} skipped (legacy extension), "
-            f"{skipped_structurally_unloadable} skipped (structurally unloadable), "
+            f"{skipped_non_opentype} face skips (non-OpenType), "
+            f"{skipped_legacy_extension} discovery skips (legacy extension), "
+            f"{skipped_structurally_unloadable} face skips (structurally unloadable), "
             f"{style_leak_suspected} style-leak suspected, "
             f"{fonts_total} kept"
         ),

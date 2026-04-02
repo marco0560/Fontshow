@@ -61,10 +61,11 @@ def test_dump_summary_reports_skip_counters_in_stable_order(tmp_path, monkeypatc
         "total_faces_seen",
         "total_font_files",
         "total_fonts",
-        "skipped_legacy_extension",
-        "skipped_structurally_unloadable",
-        "skipped_non_opentype_faces",
+        "skipped_discovery_legacy_files",
+        "skipped_face_structurally_unloadable",
+        "skipped_face_non_opentype",
         "style_leak_suspected",
     }
-    assert summary["skipped_legacy_extension"] == 1
-    assert summary["skipped_structurally_unloadable"] == 2
+    assert summary["skipped_discovery_legacy_files"] == 1
+    assert summary["skipped_face_structurally_unloadable"] == 2
+    assert summary["skipped_face_non_opentype"] == 0

@@ -61,5 +61,5 @@ def test_unloadable_font_is_skipped_and_warned_once(tmp_path, monkeypatch):
     assert warnings == [f"skipping structurally-unloadable font: {font_path}"]
 
     summary = next(extra for message, extra in infos if message == "dump-fonts summary")
-    assert summary["skipped_structurally_unloadable"] == 2
+    assert summary["skipped_face_structurally_unloadable"] == 2
     assert summary["total_fonts"] == 0
