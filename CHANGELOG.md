@@ -1,3 +1,9 @@
+## [0.66.1](https://github.com/marco0560/Fontshow/compare/v0.66.0...v0.66.1) (2026-04-02)
+
+### Bug Fixes
+
+* **dev:** make bash completion generator directly executable ([3a4c05f](https://github.com/marco0560/Fontshow/commit/3a4c05ff52f51e09528825e49ade0fa38c23b959))
+
 ## [0.66.0](https://github.com/marco0560/Fontshow/compare/v0.65.1...v0.66.0) (2026-04-02)
 
 ### Features
