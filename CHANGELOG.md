@@ -1,3 +1,14 @@
+## [0.65.0](https://github.com/marco0560/Fontshow/compare/v0.64.0...v0.65.0) (2026-04-02)
+
+### Features
+
+* **catalog:** add compact catalog detail mode ([ea01011](https://github.com/marco0560/Fontshow/commit/ea01011790cf5f22ca25074df6fc7d634314b664))
+
+### Bug Fixes
+
+* **catalog:** filter sparse script specimens ([f2b4131](https://github.com/marco0560/Fontshow/commit/f2b4131314317c08b5f8b8d1090ff5065e1da624))
+* **catalog:** preserve TeX control labels ([151a62f](https://github.com/marco0560/Fontshow/commit/151a62feb435a74ffba5526ebde5f2cd9c236328))
+
 ## [0.64.0](https://github.com/marco0560/Fontshow/compare/v0.63.2...v0.64.0) (2026-04-02)
 
 ### Features
