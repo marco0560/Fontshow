@@ -64,6 +64,7 @@ bootstrap_audit_report.txt
 node_modules/
 package-lock.json
 .releaserc.local.json
+.codex
 
 # --------------------------------------------------
 # Generated LaTeX / output
