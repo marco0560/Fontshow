@@ -271,7 +271,7 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
     monkeypatch.setattr(
         create_catalog,
         "_build_generation_metadata",
-        lambda: {
+        lambda _args: {
             "generation_timestamp": "April 02, 2026 18:15:13 CEST",
             "command_line": "fontshow create-catalog --inventory inv.json",
             "system_name": "Linux",

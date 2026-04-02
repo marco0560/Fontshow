@@ -34,6 +34,7 @@ dependencies.
 from datetime import datetime
 
 DATE_STR = datetime.now().strftime("%Y%m%d")
+TIMESTAMP_STR = datetime.now().astimezone().strftime("%B %d, %Y %H:%M:%S %Z")
 
 # ------------------------------------------------------------------
 # Subprocess safety limits (Phase 6.4)

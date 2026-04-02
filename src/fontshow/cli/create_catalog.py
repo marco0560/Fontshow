@@ -33,7 +33,6 @@ import platform
 import shlex
 import socket
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -50,7 +49,7 @@ from fontshow.catalog.pipeline import (
     _handle_list_test_fonts,
     _run_inventory_diagnostics,
 )
-from fontshow.constants.runtime import DATE_STR
+from fontshow.constants.runtime import DATE_STR, TIMESTAMP_STR
 from fontshow.core.cli_utils import (
     add_common_arguments,
     log_err,
@@ -83,13 +82,89 @@ TEST_FONTS: set[str] = set()
 DEFAULT_INVENTORY = "font_inventory_enriched.json"
 
 
-def _build_generation_metadata() -> dict[str, str]:
+def _format_display_path(raw_path: str) -> str:
+    """
+    Render a CLI path argument in a stable, human-readable form.
+
+    Parameters
+    ----------
+    raw_path : str
+        Raw path value taken from parsed CLI arguments.
+
+    Returns
+    -------
+    str
+        Path relative to the current working directory when possible,
+        otherwise the original string value.
+    """
+    candidate = Path(raw_path)
+    if not raw_path:
+        return raw_path
+    if candidate.is_absolute():
+        try:
+            return str(candidate.relative_to(Path.cwd()))
+        except ValueError:
+            return raw_path
+    return raw_path
+
+
+def _render_invocation_command(args) -> str:
+    """
+    Reconstruct the create-catalog invocation from parsed arguments.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed arguments controlling catalog generation.
+
+    Returns
+    -------
+    str
+        Stable command line string suitable for human-readable output.
+    """
+    argv = ["fontshow", "create-catalog"]
+    inventory = str(getattr(args, "inventory", "") or "")
+    if inventory:
+        argv.extend(["--inventory", _format_display_path(inventory)])
+
+    output = getattr(args, "output", None)
+    if output is not None:
+        argv.extend(["--output", _format_display_path(str(output))])
+
+    number = getattr(args, "number", None)
+    if number is not None:
+        argv.extend(["--number", str(number)])
+
+    if getattr(args, "catalog_detail", "compact") != "compact":
+        argv.extend(["--catalog-detail", str(args.catalog_detail)])
+
+    if getattr(args, "test", False):
+        argv.append("--test")
+    if getattr(args, "list_test_fonts", False):
+        argv.append("--list-test-fonts")
+
+    test_fonts = getattr(args, "test_font", None) or []
+    for test_font in test_fonts:
+        argv.append("--test-font")
+        if test_font != "__DEFAULT__":
+            argv.append(str(test_font))
+
+    if getattr(args, "quiet", False):
+        argv.append("--quiet")
+    if getattr(args, "verbose", False):
+        argv.append("--verbose")
+
+    return shlex.join(argv)
+
+
+def _build_generation_metadata(args) -> dict[str, str]:
     """
     Build first-page metadata for the generated catalog document.
 
     Parameters
     ----------
-    None
+    args : argparse.Namespace
+        Parsed arguments controlling catalog generation.
 
     Returns
     -------
@@ -97,11 +172,10 @@ def _build_generation_metadata() -> dict[str, str]:
         Mapping containing the formatted generation timestamp, CLI
         command line, operating system name, and hostname.
     """
-    timestamp = datetime.now().astimezone().strftime("%B %d, %Y %H:%M:%S %Z")
     hostname = socket.gethostname().strip() or "unknown"
     return {
-        "generation_timestamp": timestamp,
-        "command_line": shlex.join(sys.argv),
+        "generation_timestamp": TIMESTAMP_STR,
+        "command_line": _render_invocation_command(args),
         "system_name": platform.system() or "unknown",
         "hostname": hostname,
     }
@@ -463,7 +537,7 @@ def run_create_catalog(args) -> int:
         loadability_result.kept,
         excluded_fonts=loadability_result.excluded,
         catalog_detail=args.catalog_detail,
-        generation_metadata=_build_generation_metadata(),
+        generation_metadata=_build_generation_metadata(args),
     )
 
     # --------------------------------------------------------------

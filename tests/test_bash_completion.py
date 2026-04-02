@@ -24,9 +24,14 @@ This module belongs to the **test infrastructure layer** and protects
 developer tooling derived from the CLI contract.
 """
 
+import argparse
 from pathlib import Path
 
 from fontshow.cli.bash_completion import build_completion_spec, render_bash_completion
+from scripts.generate_bash_completion import (
+    build_parser,
+    main as generate_bash_completion_main,
+)
 
 
 def test_completion_spec_exposes_registered_commands() -> None:
@@ -210,3 +215,70 @@ def test_checked_in_completion_script_matches_generated_output() -> None:
     actual = Path("scripts/completions/fontshow.bash").read_text(encoding="utf-8")
 
     assert actual == expected
+
+
+def test_generate_bash_completion_help_is_explicit(capsys) -> None:
+    """
+    Verify that the completion generator exposes a readable help screen.
+
+    Parameters
+    ----------
+    capsys : pytest.CaptureFixture[str]
+        Fixture used to capture argparse help output.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        generate_bash_completion_main(["--help"])
+    except SystemExit as exc:
+        assert exc.code == 0
+    else:
+        msg = "--help must exit through argparse"
+        raise AssertionError(msg)
+
+    captured = capsys.readouterr()
+    assert "Generate the Fontshow Bash completion script." in captured.out
+    assert "--stdout" in captured.out
+    assert "--output" in captured.out
+    assert "Examples:" in captured.out
+
+
+def test_generate_bash_completion_script_has_python_shebang() -> None:
+    """
+    Verify that the generator script is directly executable as Python.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    first_line = (
+        Path("scripts/generate_bash_completion.py")
+        .read_text(encoding="utf-8")
+        .splitlines()[0]
+    )
+
+    assert first_line == "#!/usr/bin/env python3"
+
+
+def test_generate_bash_completion_parser_uses_script_prog_name() -> None:
+    """
+    Verify that the completion generator advertises its own script name.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    parser = build_parser()
+
+    assert isinstance(parser, argparse.ArgumentParser)
+    assert parser.prog == "generate_bash_completion.py"
