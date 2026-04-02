@@ -42,6 +42,11 @@ from fontshow.core.types import (
 from fontshow.inventory.io import as_font_desc_list
 from fontshow.inventory.metadata_processing import font_family
 from fontshow.inventory.schema_accessors import get_specimen_text
+from fontshow.inventory.specimens import (
+    MIN_SAMPLE_GLYPHS,
+    _specimen_collect_cmap,
+    _specimen_filter_text,
+)
 from fontshow.latex.policy import (
     _collect_polyglossia_font_setup,
     _collect_polyglossia_other_languages,
@@ -149,7 +154,44 @@ def _specimen_for_rendered_script(
     if not isinstance(script_info, dict):
         return ""
     specimen = script_info.get("specimen")
-    return _strip_ascii_control_chars(specimen) if isinstance(specimen, str) else ""
+    if not isinstance(specimen, str):
+        return ""
+    return _filter_renderer_script_specimen(font, specimen)
+
+
+def _filter_renderer_script_specimen(
+    font: CatalogFontEntryV12,
+    specimen: str,
+) -> str:
+    """
+    Filter a renderer-added specimen against the font cmap.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose file-backed cmap is consulted.
+    specimen : str
+        Candidate ontology specimen selected for renderer-only output.
+
+    Returns
+    -------
+    str
+        Cmap-filtered specimen text, or an empty string when too few
+        supported glyphs remain to render a meaningful sample.
+    """
+    variant_path = str(font.get("path", "")).strip()
+    if not variant_path or not specimen:
+        return ""
+
+    cps = _specimen_collect_cmap(variant_path, None)
+    if not cps:
+        return ""
+
+    filtered, glyphs = _specimen_filter_text(specimen, cps)
+    if glyphs < MIN_SAMPLE_GLYPHS:
+        return ""
+
+    return _strip_ascii_control_chars(filtered)
 
 
 def _render_script_label(
