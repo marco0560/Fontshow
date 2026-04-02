@@ -59,8 +59,169 @@ from fontshow.latex.templates import (
     LATEX_END_CODE_2,
     LATEX_INITIAL_CODE,
 )
+from fontshow.ontology.language_tables import SCRIPT_INFO
 
 _SUPPORTED_PATH_BASED_EXTENSIONS = (".ttf", ".otf", ".ttc")
+_MULTI_SPECIMEN_LIMIT = 4
+
+
+def _ordered_script_candidates(font: CatalogFontEntryV12) -> list[ScriptISO]:
+    """
+    Return deterministic script candidates for multi-specimen rendering.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose inferred and fallback scripts are inspected.
+
+    Returns
+    -------
+    list[ScriptISO]
+        Ordered script candidates capped for renderer-side specimen
+        expansion.
+    """
+    primary = primary_script(font) or ""
+    ordered_raw: list[str] = []
+    if primary:
+        ordered_raw.append(primary)
+
+    inference_raw = font.get("inference")
+    inference = inference_raw if isinstance(inference_raw, dict) else {}
+    scripts_raw = inference.get("scripts")
+    if isinstance(scripts_raw, list):
+        ordered_raw.extend(str(script) for script in scripts_raw)
+
+    coverage_raw = font.get("coverage")
+    coverage = coverage_raw if isinstance(coverage_raw, dict) else {}
+    cov_scripts_raw = coverage.get("scripts")
+    if isinstance(cov_scripts_raw, list):
+        ordered_raw.extend(str(script) for script in cov_scripts_raw)
+
+    seen: set[str] = set()
+    normalized: list[ScriptISO] = []
+    for raw in ordered_raw:
+        cleaned = raw.strip().upper()
+        if not cleaned or cleaned in seen:
+            continue
+        seen.add(cleaned)
+        normalized.append(ScriptISO(cleaned))
+
+    def _sort_key(script_iso: ScriptISO) -> tuple[int, str]:
+        info: dict[str, object] = dict(SCRIPT_INFO.get(script_iso, {}))
+        if str(script_iso) == "LATN":
+            return (0, str(script_iso))
+        if bool(info.get("rtl", False)):
+            return (1, str(script_iso))
+        return (2, str(script_iso))
+
+    return sorted(normalized, key=_sort_key)[:_MULTI_SPECIMEN_LIMIT]
+
+
+def _specimen_for_rendered_script(
+    font: CatalogFontEntryV12,
+    script_iso: ScriptISO,
+) -> str:
+    """
+    Resolve the specimen text used to render a specific script block.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor being rendered.
+    script_iso : ScriptISO
+        Script rendered for the current specimen block.
+
+    Returns
+    -------
+    str
+        Deterministic specimen text for the script, or an empty string
+        when no script-appropriate sample can be resolved.
+    """
+    primary = (primary_script(font) or "").upper()
+    if str(script_iso) == primary:
+        return _strip_ascii_control_chars(get_specimen_text(font) or "")
+
+    script_info = SCRIPT_INFO.get(script_iso)
+    if not isinstance(script_info, dict):
+        return ""
+    specimen = script_info.get("specimen")
+    return _strip_ascii_control_chars(specimen) if isinstance(specimen, str) else ""
+
+
+def _render_variant_specimen_blocks(
+    variant: CatalogFontEntryV12,
+    *,
+    family_name: str,
+) -> str:
+    """
+    Render one or more specimen blocks for a family variant.
+
+    Parameters
+    ----------
+    variant : CatalogFontEntryV12
+        Variant entry belonging to the current family group.
+    family_name : str
+        Family label used for deterministic log identifiers.
+
+    Returns
+    -------
+    str
+        LaTeX fragment containing the file header plus one or more
+        rendered specimen blocks.
+    """
+    variant_path = str(variant.get("path", ""))
+    _, variant_file = _normalize_path_for_latex(variant_path)
+    variant_label = variant_file or str(variant.get("family", "")).strip() or "UNKNOWN"
+
+    script_candidates = _ordered_script_candidates(variant)
+    rendered_blocks: list[str] = []
+    for script_iso in script_candidates:
+        specimen = _specimen_for_rendered_script(variant, script_iso)
+        if not specimen:
+            continue
+        safe_specimen = _format_specimen_for_latex(specimen, script_iso)
+        variant_render, _ = _render_font_entry(
+            font=variant,
+            safe_specimen=safe_specimen,
+            script0_iso=script_iso,
+            fullpath=variant_path,
+        )
+        if not variant_render:
+            continue
+        if len(script_candidates) > 1:
+            rendered_blocks.append(
+                "{\footnotesize\ttfamily SPEC  : "
+                + escape_latex(_format_script_display(str(script_iso)))
+                + "}\n\n"
+                + "\\LogWorking{"
+                + escape_latex(
+                    family_name + " / " + variant_label + " / " + str(script_iso)
+                )
+                + "}"
+                + variant_render
+            )
+        else:
+            rendered_blocks.append(
+                "\\LogWorking{"
+                + escape_latex(family_name + " / " + variant_label)
+                + "}"
+                + variant_render
+            )
+
+    variant_renderable = bool(rendered_blocks)
+    return (
+        "{\footnotesize\ttfamily FILE  : "
+        + escape_latex(variant_label)
+        + (" [OK]}" if variant_renderable else " [MISSING]}")
+        + "\n\n"
+        + (
+            "\n\n".join(rendered_blocks)
+            if variant_renderable
+            else "\\LogBroken{"
+            + escape_latex(family_name + " / " + variant_label)
+            + "}[MISSING]"
+        )
+    )
 
 
 def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
@@ -624,46 +785,12 @@ def generate_latex_with_report(
 
         variant_blocks: list[str] = []
         for variant in family_fonts:
-            variant_path = str(variant.get("path", ""))
-            _, variant_file = _normalize_path_for_latex(variant_path)
-            variant_label = (
-                variant_file or str(variant.get("family", "")).strip() or "UNKNOWN"
-            )
-
-            variant_script = primary_script(variant) or ""
-            variant_script_iso = (
-                ScriptISO(variant_script.upper()) if variant_script else ScriptISO("")
-            )
-            variant_specimen = _strip_ascii_control_chars(
-                get_specimen_text(variant) or ""
-            )
-            variant_safe_specimen = _format_specimen_for_latex(
-                variant_specimen, variant_script_iso
-            )
-            variant_render, _ = _render_font_entry(
-                font=variant,
-                safe_specimen=variant_safe_specimen,
-                script0_iso=variant_script_iso,
-                fullpath=variant_path,
-            )
-            variant_renderable = bool(variant_render)
             variant_blocks.append(
-                "{\\footnotesize\\ttfamily FILE  : "
-                + escape_latex(variant_label)
-                + (" [OK]}" if variant_renderable else " [MISSING]}")
-                + "\n\n"
-                + (
-                    "\\LogWorking{"
-                    + escape_latex(fam + " / " + variant_label)
-                    + "}"
-                    + variant_render
-                    if variant_renderable
-                    else "\\LogBroken{"
-                    + escape_latex(fam + " / " + variant_label)
-                    + "}[MISSING]"
+                _render_variant_specimen_blocks(
+                    variant,
+                    family_name=fam,
                 )
             )
-
         latex_code += (
             "\\item "
             + safe_name

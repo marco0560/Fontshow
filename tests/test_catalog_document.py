@@ -292,6 +292,48 @@ def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
     assert options == "Renderer=1,Path=/tmp/,File=unknown.ttf"
 
 
+def test_ordered_script_candidates_prioritizes_latn_then_rtl(monkeypatch):
+    """
+    Ensure multi-specimen script ordering follows the renderer policy.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ontology script metadata.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("LATN"): {"rtl": False, "specimen": "Latin"},
+            ScriptISO("ARAB"): {"rtl": True, "specimen": "Arabic"},
+            ScriptISO("KHMR"): {"rtl": False, "specimen": "Khmer"},
+            ScriptISO("CYRL"): {"rtl": False, "specimen": "Cyrillic"},
+            ScriptISO("GREK"): {"rtl": False, "specimen": "Greek"},
+        },
+    )
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+
+    scripts = document._ordered_script_candidates(
+        {
+            "script": "khmr",
+            "inference": {"scripts": ["arab", "latn", "cyrl", "grek"]},
+            "coverage": {"scripts": ["khmr"]},
+        }
+    )
+
+    assert scripts == [
+        ScriptISO("LATN"),
+        ScriptISO("ARAB"),
+        ScriptISO("CYRL"),
+        ScriptISO("GREK"),
+    ]
+
+
 def test_generate_document_uses_variant_specific_specimens(monkeypatch, tmp_path):
     """
     Ensure family variants render using their own specimen metadata.
@@ -715,3 +757,106 @@ def test_generate_latex_marks_family_fallback_entries_as_working(monkeypatch):
     assert "\\LogWorking{ETbb / ETbb}" in latex
     assert "\\LogBroken{ETbb / ETbb}[MISSING]" not in latex
     assert "OPTS  : Family=ETbb, UprightFont=*" in latex
+
+
+def test_generate_document_adds_multi_script_specimens_from_ontology(
+    monkeypatch, tmp_path
+):
+    """
+    Ensure renderer-only specimen expansion adds extra script blocks.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers and ontology data.
+    tmp_path : pathlib.Path
+        Temporary directory used to create placeholder font files.
+
+    Returns
+    -------
+    None
+    """
+    font_path = tmp_path / "FreeSans.ttf"
+    font_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("LATN"): {"rtl": False, "specimen": "Latin sample"},
+            ScriptISO("ARAB"): {"rtl": True, "specimen": "Arabic sample"},
+            ScriptISO("KHMR"): {"rtl": False, "specimen": "Khmer sample"},
+        },
+    )
+
+    def render_stub(font, safe_specimen, script0_iso, fullpath):
+        """
+        Return a deterministic marker for rendered script variants.
+
+        Parameters
+        ----------
+        font : dict[str, object]
+            Font descriptor forwarded by the document generator.
+        safe_specimen : str
+            Preformatted specimen string selected for this render.
+        script0_iso : ScriptISO
+            Script code chosen for rendering.
+        fullpath : str
+            Absolute font path.
+
+        Returns
+        -------
+        tuple[str, str]
+            Fake LaTeX render block and plain option string.
+        """
+        _ = font, fullpath
+        return f"<{script0_iso}|{safe_specimen}>", f"Path={script0_iso}"
+
+    monkeypatch.setattr(document, "_render_font_entry", render_stub)
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "FreeSans",
+                "path": str(font_path),
+                "style": "Regular",
+                "script": "khmr",
+                "specimen_text": "Original Khmer",
+                "inference": {"scripts": ["khmr", "arab", "latn"], "languages": ["km"]},
+                "coverage": {"scripts": ["khmr", "arab", "latn"]},
+            },
+        ]
+    )
+
+    assert "SPEC  : LATN" in latex
+    assert "SPEC  : ARAB" in latex
+    assert "SPEC  : KHMR" in latex
+    assert "<LATN|Latin sample>" in latex
+    assert "<ARAB|Arabic sample>" in latex
+    assert "<KHMR|Original Khmer>" in latex
+    assert (
+        latex.index("SPEC  : LATN")
+        < latex.index("SPEC  : ARAB")
+        < latex.index("SPEC  : KHMR")
+    )
