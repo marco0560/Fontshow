@@ -1,3 +1,9 @@
+## [0.63.2](https://github.com/marco0560/Fontshow/compare/v0.63.1...v0.63.2) (2026-04-02)
+
+### Bug Fixes
+
+* **latex:** audit ontology TeX support in preflight ([962819d](https://github.com/marco0560/Fontshow/commit/962819db33aacdff265f8243e4998e8bf090c4c4)), closes [#67](https://github.com/marco0560/Fontshow/issues/67)
+
 ## [0.63.1](https://github.com/marco0560/Fontshow/compare/v0.63.0...v0.63.1) (2026-04-01)
 
 ### Bug Fixes
