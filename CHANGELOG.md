@@ -1,3 +1,9 @@
+## [0.65.1](https://github.com/marco0560/Fontshow/compare/v0.65.0...v0.65.1) (2026-04-02)
+
+### Bug Fixes
+
+* **cli:** clarify dump summary skip labels ([812c9e2](https://github.com/marco0560/Fontshow/commit/812c9e257d679fc8c95b56e52ba84871b1b086f4))
+
 ## [0.65.0](https://github.com/marco0560/Fontshow/compare/v0.64.0...v0.65.0) (2026-04-02)
 
 ### Features
