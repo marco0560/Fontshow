@@ -190,7 +190,7 @@ def _render_variant_specimen_blocks(
             continue
         if len(script_candidates) > 1:
             rendered_blocks.append(
-                "{\footnotesize\ttfamily SPEC  : "
+                r"{\footnotesize\ttfamily SPEC  : "
                 + escape_latex(_format_script_display(str(script_iso)))
                 + "}\n\n"
                 + "\\LogWorking{"
@@ -210,7 +210,7 @@ def _render_variant_specimen_blocks(
 
     variant_renderable = bool(rendered_blocks)
     return (
-        "{\footnotesize\ttfamily FILE  : "
+        r"{\footnotesize\ttfamily FILE  : "
         + escape_latex(variant_label)
         + (" [OK]}" if variant_renderable else " [MISSING]}")
         + "\n\n"
