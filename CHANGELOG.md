@@ -1,3 +1,9 @@
+## [0.64.0](https://github.com/marco0560/Fontshow/compare/v0.63.2...v0.64.0) (2026-04-02)
+
+### Features
+
+* **catalog:** render multiple script specimens per font ([bf11477](https://github.com/marco0560/Fontshow/commit/bf114774125b7b26fa2caed6ec1b9f21f22b0104)), closes [#60](https://github.com/marco0560/Fontshow/issues/60)
+
 ## [0.63.2](https://github.com/marco0560/Fontshow/compare/v0.63.1...v0.63.2) (2026-04-02)
 
 ### Bug Fixes
