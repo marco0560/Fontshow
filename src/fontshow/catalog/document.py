@@ -26,6 +26,8 @@ document assembly stage between inventory-derived font metadata and the
 final LaTeX output written by the create-catalog pipeline.
 """
 
+from typing import Literal
+
 from fontshow.catalog.labels import primary_script
 from fontshow.catalog.loadability import LoadabilityExclusion
 from fontshow.constants.catalog import EXCLUDED_FONTS
@@ -63,6 +65,8 @@ from fontshow.ontology.language_tables import SCRIPT_INFO
 
 _SUPPORTED_PATH_BASED_EXTENSIONS = (".ttf", ".otf", ".ttc")
 _MULTI_SPECIMEN_LIMIT = 4
+
+CatalogDetailLevel = Literal["compact", "extended"]
 
 
 def _ordered_script_candidates(font: CatalogFontEntryV12) -> list[ScriptISO]:
@@ -148,10 +152,72 @@ def _specimen_for_rendered_script(
     return _strip_ascii_control_chars(specimen) if isinstance(specimen, str) else ""
 
 
+def _render_script_label(
+    script_iso: ScriptISO,
+    *,
+    catalog_detail: CatalogDetailLevel,
+) -> str:
+    """
+    Render the visible label attached to a specimen block.
+
+    Parameters
+    ----------
+    script_iso : ScriptISO
+        Script code rendered by the current specimen block.
+    catalog_detail : {"compact", "extended"}
+        Requested catalog metadata detail level.
+
+    Returns
+    -------
+    str
+        Short compact label or extended metadata label.
+    """
+    display = escape_latex(_format_script_display(str(script_iso)))
+    if catalog_detail == "compact":
+        return r"{\footnotesize\ttfamily " + display + "}"
+    return r"{\footnotesize\ttfamily SPEC  : " + display + "}"
+
+
+def _render_family_debug_block(
+    *,
+    scripts_pretty: str,
+    languages_pretty: str,
+    options_pretty: str,
+    catalog_detail: CatalogDetailLevel,
+) -> str:
+    """
+    Render the family-level metadata block for the selected detail mode.
+
+    Parameters
+    ----------
+    scripts_pretty : str
+        Human-readable script summary for the family.
+    languages_pretty : str
+        Human-readable language summary for the family.
+    options_pretty : str
+        Deterministic plain-text rendering options.
+    catalog_detail : {"compact", "extended"}
+        Requested catalog metadata detail level.
+
+    Returns
+    -------
+    str
+        Extended metadata block or an empty string in compact mode.
+    """
+    if catalog_detail == "compact":
+        return ""
+    return (
+        "{\\footnotesize\\ttfamily SCRIPT: " + escape_latex(scripts_pretty) + "}\n\n"
+        "{\\footnotesize\\ttfamily LANGS : " + escape_latex(languages_pretty) + "}\n\n"
+        "{\\footnotesize\\ttfamily OPTS  : " + options_pretty + "}"
+    )
+
+
 def _render_variant_specimen_blocks(
     variant: CatalogFontEntryV12,
     *,
     family_name: str,
+    catalog_detail: CatalogDetailLevel,
 ) -> str:
     """
     Render one or more specimen blocks for a family variant.
@@ -162,6 +228,8 @@ def _render_variant_specimen_blocks(
         Variant entry belonging to the current family group.
     family_name : str
         Family label used for deterministic log identifiers.
+    catalog_detail : {"compact", "extended"}
+        Requested catalog metadata detail level.
 
     Returns
     -------
@@ -188,11 +256,11 @@ def _render_variant_specimen_blocks(
         )
         if not variant_render:
             continue
-        if len(script_candidates) > 1:
+        show_script_label = catalog_detail == "compact" or len(script_candidates) > 1
+        if show_script_label:
             rendered_blocks.append(
-                r"{\footnotesize\ttfamily SPEC  : "
-                + escape_latex(_format_script_display(str(script_iso)))
-                + "}\n\n"
+                _render_script_label(script_iso, catalog_detail=catalog_detail)
+                + "\n\n"
                 + "\\LogWorking{"
                 + escape_latex(
                     family_name + " / " + variant_label + " / " + str(script_iso)
@@ -589,7 +657,11 @@ def _render_font_entry(
     return render, options_plain
 
 
-def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
+def generate_latex(
+    font_list: list[CatalogFontEntryV12],
+    *,
+    catalog_detail: CatalogDetailLevel = "compact",
+) -> str:
     """
     Generate the full LaTeX document for the provided font descriptors.
 
@@ -598,6 +670,9 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     font_list : list[CatalogFontEntryV12]
         List of normalized catalog font entries used to assemble the
         final document.
+    catalog_detail : {"compact", "extended"}, optional
+        Family and specimen metadata detail level used in the rendered
+        catalog body.
 
     Returns
     -------
@@ -621,7 +696,11 @@ def generate_latex(font_list: list[CatalogFontEntryV12]) -> str:
     conservative family-name fallback, while unsupported file-backed
     entries continue to produce an empty render block.
     """
-    return generate_latex_with_report(font_list, excluded_fonts=[])
+    return generate_latex_with_report(
+        font_list,
+        excluded_fonts=[],
+        catalog_detail=catalog_detail,
+    )
 
 
 def _render_excluded_fonts_section(excluded_fonts: list[LoadabilityExclusion]) -> str:
@@ -663,6 +742,7 @@ def generate_latex_with_report(
     font_list: list[CatalogFontEntryV12],
     *,
     excluded_fonts: list[LoadabilityExclusion],
+    catalog_detail: CatalogDetailLevel = "compact",
 ) -> str:
     """
     Generate the full LaTeX document with unloadable-font reporting.
@@ -674,6 +754,9 @@ def generate_latex_with_report(
         final document.
     excluded_fonts : list[LoadabilityExclusion]
         Structured skipped-font records to include in the report.
+    catalog_detail : {"compact", "extended"}, optional
+        Family and specimen metadata detail level used in the rendered
+        catalog body.
 
     Returns
     -------
@@ -773,14 +856,11 @@ def generate_latex_with_report(
             else "N/A"
         )
 
-        debug_block = (
-            "{\\footnotesize\\ttfamily SCRIPT: "
-            + escape_latex(scripts_pretty)
-            + "}\n\n"
-            "{\\footnotesize\\ttfamily LANGS : "
-            + escape_latex(languages_pretty)
-            + "}\n\n"
-            "{\\footnotesize\\ttfamily OPTS  : " + options_pretty + "}"
+        debug_block = _render_family_debug_block(
+            scripts_pretty=scripts_pretty,
+            languages_pretty=languages_pretty,
+            options_pretty=options_pretty,
+            catalog_detail=catalog_detail,
         )
 
         variant_blocks: list[str] = []
@@ -789,17 +869,14 @@ def generate_latex_with_report(
                 _render_variant_specimen_blocks(
                     variant,
                     family_name=fam,
+                    catalog_detail=catalog_detail,
                 )
             )
-        latex_code += (
-            "\\item "
-            + safe_name
-            + " --- "
-            + debug_block
-            + "\n\n"
-            + "\n\n".join(variant_blocks)
-            + "\n\n"
-        )
+        family_intro = "\\item " + safe_name
+        if debug_block:
+            family_intro += " --- " + debug_block
+
+        latex_code += family_intro + "\n\n" + "\n\n".join(variant_blocks) + "\n\n"
 
     latex_code += "\\end{itemize}\n"
 

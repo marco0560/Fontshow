@@ -49,6 +49,40 @@ def test_create_catalog_success(cli_runner, stub_create_catalog, tmp_path):
 
 
 @pytest.mark.parametrize("stub_create_catalog", ["ok"], indirect=True)
+def test_create_catalog_accepts_catalog_detail_option(
+    cli_runner, stub_create_catalog, tmp_path
+):
+    """
+    Verify that create-catalog accepts the catalog detail option.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_create_catalog : object
+        Indirect fixture configuring the create-catalog stub to succeed.
+    tmp_path : pathlib.Path
+        Temporary directory fixture present in the test signature.
+
+    Returns
+    -------
+    None
+    """
+    code, out = cli_runner(
+        [
+            "fontshow",
+            "create-catalog",
+            "--inventory",
+            "inv.json",
+            "--catalog-detail",
+            "extended",
+        ]
+    )
+
+    assert code == 0
+
+
+@pytest.mark.parametrize("stub_create_catalog", ["ok"], indirect=True)
 def test_create_catalog_accepts_output_option(
     cli_runner, stub_create_catalog, tmp_path
 ):

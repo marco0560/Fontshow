@@ -260,6 +260,16 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         type=int,
         help="Limit the number of processed fonts to the first N (if positive) or the last |N| (if negative)",
     )
+    parser.add_argument(
+        "--catalog-detail",
+        choices=("compact", "extended"),
+        default="compact",
+        help=(
+            "Catalog output detail level. Use 'compact' to keep short "
+            "family and specimen labels, or 'extended' to include the full "
+            "metadata blocks."
+        ),
+    )
     add_common_arguments(
         parser,
         include_output=True,
@@ -425,6 +435,7 @@ def run_create_catalog(args) -> int:
     latex_content = generate_latex_with_report(
         loadability_result.kept,
         excluded_fonts=loadability_result.excluded,
+        catalog_detail=args.catalog_detail,
     )
 
     # --------------------------------------------------------------

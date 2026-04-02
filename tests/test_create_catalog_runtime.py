@@ -207,6 +207,7 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
         quiet=False,
         verbose=False,
         test_font=None,
+        catalog_detail="compact",
     )
     assert create_catalog.run_create_catalog(args) == 9
     assert list_calls == [({"Alpha"}, [{"family": "Alpha"}])]
@@ -249,12 +250,13 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
             )
         ),
     )
-    latex_calls: list[tuple[list[dict], list[LoadabilityExclusion]]] = []
+    latex_calls: list[tuple[list[dict], list[LoadabilityExclusion], str]] = []
     monkeypatch.setattr(
         create_catalog,
         "generate_latex_with_report",
-        lambda fonts, *, excluded_fonts: (
-            latex_calls.append((list(fonts), list(excluded_fonts))) or "LATEX"
+        lambda fonts, *, excluded_fonts, catalog_detail: (
+            latex_calls.append((list(fonts), list(excluded_fonts), catalog_detail))
+            or "LATEX"
         ),
     )
 
@@ -294,6 +296,7 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
             detail="subset-empty",
         )
     ]
+    assert latex_calls[0][2] == "compact"
     assert errors[-1] == "Failed to write output file: disk full"
 
 
