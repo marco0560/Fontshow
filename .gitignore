@@ -56,11 +56,11 @@ fontshow_snapshot.tar.xz
 issues.json
 milestones_plan.json
 bootstrap_audit_report.txt
-.repoindex
 
 # --------------------------------------------------
 # Node / tooling
 # --------------------------------------------------
+.repoindex/
 node_modules/
 package-lock.json
 .releaserc.local.json
