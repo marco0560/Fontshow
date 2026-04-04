@@ -26,7 +26,9 @@ document assembly stage between inventory-derived font metadata and the
 final LaTeX output written by the create-catalog pipeline.
 """
 
+import unicodedata
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Literal
 
 from fontshow.catalog.labels import primary_script
@@ -79,6 +81,55 @@ _MULTI_SPECIMEN_LIMIT = 4
 CatalogDetailLevel = Literal["compact", "extended"]
 
 
+@dataclass(frozen=True)
+class _VariantRenderResult:
+    """
+    Structured render result for one family variant.
+
+    Parameters
+    ----------
+    body_block : str
+        LaTeX fragment emitted in the main catalog body.
+    rendered : bool
+        Whether the variant produced a visible main-body specimen block.
+    missing_entry : str | None
+        Appendix entry used when the variant could not be rendered.
+    duplicate_entry : str | None
+        Appendix entry used when the variant was collapsed as a duplicate.
+    """
+
+    body_block: str
+    rendered: bool
+    missing_entry: str | None = None
+    duplicate_entry: str | None = None
+
+
+@dataclass(frozen=True)
+class _FamilyRenderResult:
+    """
+    Structured render result for one catalog family block.
+
+    Parameters
+    ----------
+    body_block : str
+        LaTeX fragment emitted in the main catalog body.
+    navigation_entry : tuple[str, str] | None
+        Optional indexed-navigation entry for the family.
+    rendered : bool
+        Whether the family produced any visible main-body output.
+    missing_entries : tuple[str, ...]
+        Appendix entries for variants that could not be rendered.
+    duplicate_entries : tuple[str, ...]
+        Appendix entries for variants collapsed as duplicates.
+    """
+
+    body_block: str
+    navigation_entry: tuple[str, str] | None
+    rendered: bool
+    missing_entries: tuple[str, ...] = ()
+    duplicate_entries: tuple[str, ...] = ()
+
+
 def _catalog_family_anchor(index: int) -> str:
     """
     Build a deterministic hyperlink anchor for a rendered family block.
@@ -124,6 +175,105 @@ def _render_navigation_index(entries: list[tuple[str, str]]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _variant_display_label(variant: CatalogFontEntryV12) -> str:
+    """
+    Return the visible file-oriented label for a family variant.
+
+    Parameters
+    ----------
+    variant : CatalogFontEntryV12
+        Variant entry being rendered.
+
+    Returns
+    -------
+    str
+        Basename-oriented label used in main-body and appendix output.
+    """
+    variant_path = str(variant.get("path", ""))
+    _directory, variant_file = _normalize_path_for_latex(variant_path)
+    if variant_file:
+        return variant_file
+    return str(variant.get("family", "")).strip() or "UNKNOWN"
+
+
+def _variant_duplicate_key(variant: CatalogFontEntryV12) -> tuple[str, ...]:
+    """
+    Build a conservative duplicate-collapse key for a family variant.
+
+    Parameters
+    ----------
+    variant : CatalogFontEntryV12
+        Variant entry being considered for duplicate collapsing.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Deterministic key built from stable inventory metadata.
+
+    Notes
+    -----
+    The current renderer does not have a persisted content hash. This
+    key therefore stays conservative and family-local, using stable
+    identity and specimen fields rather than weak filesystem metadata
+    such as timestamps.
+    """
+    return (
+        str(variant.get("family", "")).strip(),
+        str(variant.get("subfamily", "")).strip(),
+        str(variant.get("full_name", "")).strip(),
+        str(variant.get("postscript_name", "")).strip(),
+        str(variant.get("version_string", "")).strip(),
+        str(primary_script(variant) or "").strip().upper(),
+        str(get_specimen_text(variant) or "").strip(),
+        str(get_specimen_strategy(variant) or "").strip(),
+        str(get_specimen_glyph_count(variant) or ""),
+    )
+
+
+def _render_missing_variants_section(entries: list[str]) -> str:
+    """
+    Render the appendix section for variants omitted from the main body.
+
+    Parameters
+    ----------
+    entries : list[str]
+        Ordered item strings for missing variants.
+
+    Returns
+    -------
+    str
+        LaTeX section text, or an empty string when no entries exist.
+    """
+    if not entries:
+        return ""
+    lines = ["\\section{Unrendered Variants}", "\\begin{itemize}"]
+    lines.extend("\\item " + entry for entry in entries)
+    lines.append("\\end{itemize}")
+    return "\n".join(lines) + "\n"
+
+
+def _render_duplicate_sources_section(entries: list[str]) -> str:
+    """
+    Render the appendix section for collapsed duplicate font sources.
+
+    Parameters
+    ----------
+    entries : list[str]
+        Ordered item strings describing duplicate sources.
+
+    Returns
+    -------
+    str
+        LaTeX section text, or an empty string when no duplicates exist.
+    """
+    if not entries:
+        return ""
+    lines = ["\\section{Duplicate Sources}", "\\begin{itemize}"]
+    lines.extend("\\item " + entry for entry in entries)
+    lines.append("\\end{itemize}")
+    return "\n".join(lines) + "\n"
+
+
 def _render_family_catalog_block(
     *,
     family_name: str,
@@ -131,7 +281,7 @@ def _render_family_catalog_block(
     family_index: int,
     catalog_detail: CatalogDetailLevel,
     indexed_navigation: bool,
-) -> tuple[str, tuple[str, str] | None]:
+) -> _FamilyRenderResult:
     """
     Render one family block for the catalog body.
 
@@ -150,9 +300,9 @@ def _render_family_catalog_block(
 
     Returns
     -------
-    tuple[str, tuple[str, str] | None]
-        Rendered family block plus an optional
-        ``(family_name, anchor_name)`` navigation entry.
+    _FamilyRenderResult
+        Structured family render result containing the main-body block,
+        optional navigation entry, and appendix data.
     """
     font = family_fonts[0]
     safe_name = escape_latex(family_name)
@@ -207,14 +357,51 @@ def _render_family_catalog_block(
         catalog_detail=catalog_detail,
     )
 
-    variant_blocks = [
-        _render_variant_specimen_blocks(
+    variant_blocks: list[str] = []
+    missing_entries: list[str] = []
+    duplicate_entries: list[str] = []
+    duplicate_primary_by_key: dict[tuple[str, ...], str] = {}
+    rendered_variants = 0
+
+    for variant in family_fonts:
+        duplicate_key = _variant_duplicate_key(variant)
+        variant_label = _variant_display_label(variant)
+        variant_path = str(variant.get("path", "")).strip() or "N/A"
+        primary_label = duplicate_primary_by_key.get(duplicate_key)
+        if primary_label is not None:
+            duplicate_entries.append(
+                " | ".join(
+                    escape_latex(part)
+                    for part in (
+                        family_name,
+                        variant_label,
+                        variant_path,
+                        primary_label,
+                    )
+                )
+            )
+            continue
+
+        result = _render_variant_specimen_blocks(
             variant,
             family_name=family_name,
             catalog_detail=catalog_detail,
         )
-        for variant in family_fonts
-    ]
+        if result.rendered:
+            variant_blocks.append(result.body_block)
+            duplicate_primary_by_key[duplicate_key] = variant_label
+            rendered_variants += 1
+        elif result.missing_entry is not None:
+            missing_entries.append(result.missing_entry)
+
+    if not variant_blocks:
+        return _FamilyRenderResult(
+            body_block="",
+            navigation_entry=None,
+            rendered=False,
+            missing_entries=tuple(missing_entries),
+            duplicate_entries=tuple(duplicate_entries),
+        )
 
     if indexed_navigation:
         anchor = _catalog_family_anchor(family_index)
@@ -231,7 +418,13 @@ def _render_family_catalog_block(
         navigation_entry = None
 
     family_block = family_intro + "\n\n" + "\n\n".join(variant_blocks) + "\n\n"
-    return family_block, navigation_entry
+    return _FamilyRenderResult(
+        body_block=family_block,
+        navigation_entry=navigation_entry,
+        rendered=bool(rendered_variants),
+        missing_entries=tuple(missing_entries),
+        duplicate_entries=tuple(duplicate_entries),
+    )
 
 
 def _apply_frontmatter_metadata(
@@ -495,6 +688,48 @@ def _should_suppress_specialized_primary_specimen(font: CatalogFontEntryV12) -> 
     return strategy in {"cmap", "validated-fallback"}
 
 
+def _specialized_glyph_sample(
+    font: CatalogFontEntryV12, *, max_glyphs: int = 12
+) -> str:
+    """
+    Build a compact glyph-strip sample for a specialized non-text font.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose cmap is sampled.
+    max_glyphs : int, optional
+        Maximum number of glyphs to include in the strip.
+
+    Returns
+    -------
+    str
+        Space-separated visible glyph strip, or an empty string when no
+        suitable glyphs can be found.
+    """
+    variant_path = str(font.get("path", "")).strip()
+    if not variant_path:
+        return ""
+
+    cps = _specimen_collect_cmap(variant_path, None)
+    if not cps:
+        return ""
+
+    glyphs: list[str] = []
+    for cp in sorted(cps):
+        ch = chr(cp)
+        if not ch.strip():
+            continue
+        category = unicodedata.category(ch)
+        if category in {"Cc", "Cf", "Cs", "Cn"} or category.startswith("M"):
+            continue
+        glyphs.append(ch)
+        if len(glyphs) >= max_glyphs:
+            break
+
+    return " ".join(glyphs)
+
+
 def _render_script_label(
     script_iso: ScriptISO,
     *,
@@ -561,7 +796,7 @@ def _render_variant_specimen_blocks(
     *,
     family_name: str,
     catalog_detail: CatalogDetailLevel,
-) -> str:
+) -> _VariantRenderResult:
     """
     Render one or more specimen blocks for a family variant.
 
@@ -576,9 +811,9 @@ def _render_variant_specimen_blocks(
 
     Returns
     -------
-    str
-        LaTeX fragment containing compact or extended variant metadata
-        plus one or more rendered specimen blocks.
+    _VariantRenderResult
+        Structured result containing the main-body block when
+        renderable, or appendix metadata when the variant is omitted.
     """
     variant_path = str(variant.get("path", ""))
     _, variant_file = _normalize_path_for_latex(variant_path)
@@ -611,40 +846,76 @@ def _render_variant_specimen_blocks(
             rendered_blocks.append(variant_render)
 
     variant_renderable = bool(rendered_blocks)
-    if catalog_detail == "compact":
-        header = (
-            r"{\footnotesize\ttfamily "
-            + escape_latex(variant_label)
-            + (" [OK]}" if variant_renderable else " [MISSING]}")
-        )
-        body = "\n".join(rendered_blocks) if variant_renderable else "[MISSING]"
-        if not variant_renderable and _should_suppress_specialized_primary_specimen(
-            variant
-        ):
-            return (
-                r"{\footnotesize\ttfamily "
-                + escape_latex(variant_label)
-                + " [SPECIALIZED]}\n"
-                + r"{\footnotesize\ttfamily Specialized font: specimen suppressed}"
-            )
-        return header + "\n" + body
-
     if not variant_renderable and _should_suppress_specialized_primary_specimen(
         variant
     ):
-        return (
-            r"{\footnotesize\ttfamily FILE  : "
-            + escape_latex(variant_label)
-            + " [SPECIALIZED]}\n\n"
-            + r"{\footnotesize\ttfamily NOTE  : Specialized font; specimen suppressed}"
+        glyph_sample = _specialized_glyph_sample(variant)
+        if glyph_sample:
+            safe_glyph_sample = _format_specimen_for_latex(glyph_sample, ScriptISO(""))
+            glyph_render, _ = _render_font_entry(
+                font=variant,
+                safe_specimen=safe_glyph_sample,
+                script0_iso=ScriptISO(""),
+                fullpath=variant_path,
+                catalog_detail=catalog_detail,
+            )
+            if glyph_render:
+                if catalog_detail == "compact":
+                    return _VariantRenderResult(
+                        body_block=(
+                            r"{\footnotesize\ttfamily "
+                            + escape_latex(variant_label)
+                            + " [GLYPH SAMPLE]}\n"
+                            + r"{\footnotesize\ttfamily Glyph sample} "
+                            + glyph_render
+                        ),
+                        rendered=True,
+                    )
+                return _VariantRenderResult(
+                    body_block=(
+                        r"{\footnotesize\ttfamily FILE  : "
+                        + escape_latex(variant_label)
+                        + " [GLYPH SAMPLE]}\n\n"
+                        + r"{\footnotesize\ttfamily NOTE  : Glyph sample}\n\n"
+                        + glyph_render
+                    ),
+                    rendered=True,
+                )
+
+    if not variant_renderable:
+        missing_entry = " | ".join(
+            escape_latex(part)
+            for part in (
+                family_name,
+                variant_label,
+                variant_path.strip() or "N/A",
+            )
+        )
+        return _VariantRenderResult(
+            body_block="",
+            rendered=False,
+            missing_entry=missing_entry,
         )
 
-    return (
-        r"{\footnotesize\ttfamily FILE  : "
-        + escape_latex(variant_label)
-        + (" [OK]}" if variant_renderable else " [MISSING]}")
-        + "\n\n"
-        + ("\n\n".join(rendered_blocks) if variant_renderable else "[MISSING]")
+    if catalog_detail == "compact":
+        return _VariantRenderResult(
+            body_block=(
+                r"{\footnotesize\ttfamily "
+                + escape_latex(variant_label)
+                + " [OK]}\n"
+                + "\n".join(rendered_blocks)
+            ),
+            rendered=True,
+        )
+
+    return _VariantRenderResult(
+        body_block=(
+            r"{\footnotesize\ttfamily FILE  : "
+            + escape_latex(variant_label)
+            + " [OK]}\n\n"
+            + "\n\n".join(rendered_blocks)
+        ),
+        rendered=True,
     )
 
 
@@ -809,11 +1080,12 @@ def _use_language_wrapper_for_font(font: CatalogFontEntryV12) -> bool:
     Notes
     -----
     Deprecated compatibility scaffolding. The current renderer no
-    longer carries per-font or per-script language-wrapper exceptions,
-    so this helper always returns ``True``.
+    longer wraps specimen blocks in ``\\foreignlanguage`` because the
+    wrapper is fragile around paragraph boxes and duplicates shaping
+    responsibility already covered by fontspec script options.
     """
     _ = font
-    return True
+    return False
 
 
 def _use_fontconfig_family_resolution(font: CatalogFontEntryV12) -> bool:
@@ -939,10 +1211,7 @@ def _render_font_entry(
         render_options.append(renderer_prefix.rstrip(","))
     if use_path_based_loading:
         _dir, _file = _normalize_path_for_latex(fullpath)
-        detok_dir = "\\detokenize{" + _dir + "}"
-        detok_file = "\\detokenize{" + _latex_detokenize_safe(_file) + "}"
-        render_options.append("Path=" + detok_dir)
-        inline_font = detok_file
+        inline_font = "\\detokenize{" + _latex_detokenize_safe(fullpath) + "}"
         options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
     else:
         family_name = str(font.get("family", "")).strip()
@@ -976,34 +1245,18 @@ def _render_font_entry(
         )
     elif lang:
         inline_options = opts
-        if _use_language_wrapper_for_font(font):
-            render = (
-                " {\\begingroup"
-                "\\foreignlanguage{"
-                + lang
-                + "}{\\parbox{\\linewidth}{"
-                + specimen_prefix
-                + "\\fontspec["
-                + inline_options
-                + "]{"
-                + inline_font
-                + "}"
-                + safe_specimen
-                + "\\par}}"
-                + "\\endgroup}"
-            )
-        else:
-            render = (
-                " {\\begingroup\\parbox{\\linewidth}{"
-                + specimen_prefix
-                + "\\fontspec["
-                + inline_options
-                + "]{"
-                + inline_font
-                + "}"
-                + safe_specimen
-                + "\\par}\\endgroup}"
-            )
+        _ = lang
+        render = (
+            " {\\begingroup\\parbox{\\linewidth}{"
+            + specimen_prefix
+            + "\\fontspec["
+            + inline_options
+            + "]{"
+            + inline_font
+            + "}"
+            + safe_specimen
+            + "\\par}\\endgroup}"
+        )
     elif script_opt:
         render = (
             " {\\begingroup\\parbox{\\linewidth}{"
@@ -1011,7 +1264,7 @@ def _render_font_entry(
             + "\\fontspec["
             + opts
             + "]{"
-            + detok_file
+            + inline_font
             + "}"
             + safe_specimen
             + "\\par}\\endgroup}"
@@ -1023,7 +1276,7 @@ def _render_font_entry(
             + "\\fontspec["
             + opts
             + "]{"
-            + detok_file
+            + inline_font
             + "}"
             + safe_specimen
             + "\\par}\\endgroup}"
@@ -1208,6 +1461,8 @@ def generate_latex_with_report(
     total = len(family_order)
     latex_code += "\\section{Font List}\n"
     navigation_entries: list[tuple[str, str]] = []
+    missing_entries: list[str] = []
+    duplicate_entries: list[str] = []
     if not indexed_navigation:
         latex_code += "\\begin{itemize}\n"
         latex_code += "\\setlength{\\itemsep}{0.25em}\n"
@@ -1219,22 +1474,26 @@ def generate_latex_with_report(
         if idx % 500 == 0 or idx == total:
             log_info(f"  ... processed {idx}/{total}")
 
-        family_block, navigation_entry = _render_family_catalog_block(
+        family_result = _render_family_catalog_block(
             family_name=fam,
             family_fonts=fonts_by_family[fam],
             family_index=idx,
             catalog_detail=catalog_detail,
             indexed_navigation=indexed_navigation,
         )
-        if navigation_entry is not None:
-            navigation_entries.append(navigation_entry)
-        latex_code += family_block
+        missing_entries.extend(family_result.missing_entries)
+        duplicate_entries.extend(family_result.duplicate_entries)
+        if family_result.navigation_entry is not None:
+            navigation_entries.append(family_result.navigation_entry)
+        latex_code += family_result.body_block
 
     if not indexed_navigation:
         latex_code += "\\end{itemize}\n"
 
     # Closing document and printing indices
     latex_code += _render_excluded_fonts_section(excluded_fonts)
+    latex_code += _render_missing_variants_section(missing_entries)
+    latex_code += _render_duplicate_sources_section(duplicate_entries)
     closing = LATEX_END_CODE_1 + str(total) + LATEX_END_CODE_2
     document_end = "\n\\end{document}\n"
     if indexed_navigation and closing.endswith(document_end):

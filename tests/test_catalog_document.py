@@ -144,11 +144,11 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
     assert "\\newfontfamily" not in render
     assert "\\renewfontfamily\\arabicfont" not in render
     assert "\\begingroup" in render
-    assert "\\foreignlanguage{arabic}" in render
+    assert "\\foreignlanguage{arabic}" not in render
     assert "\\fontspec[" in render
     assert render.count("\\emergencystretch=2em") == 1
     assert "Extension=.ttf" not in render
-    assert "{\\detokenize{arabic.ttf}}" in render
+    assert "{\\detokenize{/tmp/arabic.ttf}}" in render
     assert "\b" not in render
     assert options == "Renderer=1,Path=/tmp/,File=arabic.ttf,Script=Arabic"
 
@@ -182,8 +182,8 @@ def test_render_font_entry_falls_back_to_fontspec_without_language(monkeypatch):
     assert "\\newfontfamily\\fontshowentryfont" not in render
     assert "\\fontspec[" in render
     assert "Extension=.otf" not in render
-    assert "Path=\\detokenize{/tmp/}" in render
-    assert "{\\detokenize{foo.otf}}" in render
+    assert "Path=\\detokenize{/tmp/}" not in render
+    assert "{\\detokenize{/tmp/foo.otf}}" in render
     assert options == "Path=/tmp/,File=foo.otf,Script=Foo"
 
 
@@ -218,7 +218,7 @@ def test_render_font_entry_uses_inline_fontspec_for_gujarati_without_language(
     assert "\\fontspec[" in render
     assert "\\newfontfamily\\fontshowentryfont" not in render
     assert "Script=Gujarati" in render
-    assert "{\\detokenize{Lohit-Gujarati.ttf}}" in render
+    assert "{\\detokenize{/tmp/Lohit-Gujarati.ttf}}" in render
     assert options == "Renderer=1,Path=/tmp/,File=Lohit-Gujarati.ttf,Script=Gujarati"
 
 
@@ -256,10 +256,10 @@ def test_render_font_entry_uses_inline_fontspec_for_bengali_with_language(
 
     assert "\\fontspec[" in render
     assert "\\renewfontfamily\\bengalifont" not in render
-    assert "\\foreignlanguage{bengali}" in render
+    assert "\\foreignlanguage{bengali}" not in render
     assert "Script=Bengali" in render
-    assert "Path=\\detokenize{/tmp/}" in render
-    assert "{\\detokenize{Lohit-Bengali.ttf}}" in render
+    assert "Path=\\detokenize{/tmp/}" not in render
+    assert "{\\detokenize{/tmp/Lohit-Bengali.ttf}}" in render
     assert options == "Renderer=1,Path=/tmp/,File=Lohit-Bengali.ttf,Script=Bengali"
 
 
@@ -288,9 +288,8 @@ def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
     )
 
     assert "\\fontspec[" in render
-    assert "Path=\\detokenize{/tmp/}" in render
-    assert "{\\detokenize{unknown.ttf}}" in render
-    assert "{\\detokenize{/tmp/unknown.ttf}}" not in render
+    assert "Path=\\detokenize{/tmp/}" not in render
+    assert "{\\detokenize{/tmp/unknown.ttf}}" in render
     assert options == "Renderer=1,Path=/tmp/,File=unknown.ttf"
 
 
@@ -553,7 +552,7 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     ]
     assert warnings == ["LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found"]
     assert latex.count("\\item Alpha") == 1
-    assert latex.count("\\item Beta") == 1
+    assert "\n\n\\item Beta\n" not in latex
     assert "---" not in latex
     assert "alpha.ttf [OK]" in latex
     assert "ignored.ttf [OK]" in latex
@@ -562,12 +561,93 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert "LANGS : EN" not in latex
     assert "OPTS  : Path=/tmp/, File=alpha.ttf" not in latex
     assert "}\\newline" not in latex
-    assert "\\item Beta" in latex.split("\\item Alpha", maxsplit=1)[1]
-    assert "\n\n\\item Beta" in latex
     assert latex.count("\\allowbreak{}") == 7
-    assert "beta.bin [MISSING]" in latex
-    assert "[MISSING]" in latex
+    assert "[MISSING]" not in latex
+    assert "\\section{Unrendered Variants}" in latex
+    assert "\\item Beta | beta.bin | /tmp/beta.bin" in latex
     assert latex.endswith("\nEND:2:DONE")
+
+
+def test_generate_latex_moves_duplicate_variants_to_appendix(monkeypatch):
+    """
+    Ensure duplicate variants are collapsed from the main body to an appendix.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers and logging.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _message: None)
+    monkeypatch.setattr(document, "log_warn", lambda _message: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+    monkeypatch.setattr(
+        document,
+        "_render_font_entry",
+        lambda **kwargs: (f"<{kwargs['font']['path']}>", "Path=/tmp/,File=alpha.ttf"),
+    )
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "Alpha",
+                "path": "/tmp/alpha-1.ttf",
+                "full_name": "Alpha Regular",
+                "subfamily": "Regular",
+                "postscript_name": "Alpha-Regular",
+                "version_string": "1.0",
+                "specimen_text": "Alpha sample",
+                "typography": {
+                    "specimen_text": "Alpha sample",
+                    "specimen_strategy": "language",
+                    "specimen_glyph_count": 12,
+                },
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "script": "latn",
+            },
+            {
+                "family": "Alpha",
+                "path": "/tmp/alpha-2.ttf",
+                "full_name": "Alpha Regular",
+                "subfamily": "Regular",
+                "postscript_name": "Alpha-Regular",
+                "version_string": "1.0",
+                "specimen_text": "Alpha sample",
+                "typography": {
+                    "specimen_text": "Alpha sample",
+                    "specimen_strategy": "language",
+                    "specimen_glyph_count": 12,
+                },
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "script": "latn",
+            },
+        ]
+    )
+
+    assert "alpha-1.ttf [OK]" in latex
+    assert "alpha-2.ttf [OK]" not in latex
+    assert "\\section{Duplicate Sources}" in latex
+    assert "\\item Alpha | alpha-2.ttf | /tmp/alpha-2.ttf | alpha-1.ttf" in latex
 
 
 def test_generate_latex_skips_excluded_families_from_catalog(monkeypatch):
@@ -1488,6 +1568,6 @@ def test_generate_latex_marks_specialized_low_information_variant(
         ]
     )
 
-    assert "[SPECIALIZED]" in latex
-    assert "Specialized font: specimen suppressed" in latex
-    assert "<LATN|" not in latex
+    assert "[GLYPH SAMPLE]" in latex
+    assert "Glyph sample" in latex
+    assert "<|" in latex
