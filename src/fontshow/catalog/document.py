@@ -56,8 +56,6 @@ from fontshow.inventory.specimens import (
     _specimen_filter_text,
 )
 from fontshow.latex.policy import (
-    _collect_polyglossia_font_setup,
-    _collect_polyglossia_other_languages,
     _format_language_display,
     _format_script_display,
     _get_render_policy,
@@ -80,6 +78,44 @@ _SUPPORTED_PATH_BASED_EXTENSIONS = (".ttf", ".otf", ".ttc")
 _MULTI_SPECIMEN_LIMIT = 4
 
 CatalogDetailLevel = Literal["compact", "extended"]
+
+
+def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -> str:
+    """
+    Return compatibility placeholder text for retired language setup.
+
+    Parameters
+    ----------
+    font_list : list[CatalogFontEntryV12]
+        Catalog entries retained only for call-site compatibility.
+
+    Returns
+    -------
+    str
+        Empty string because specimen rendering no longer relies on
+        predeclared Polyglossia secondary-language setup.
+    """
+    _ = font_list
+    return ""
+
+
+def _collect_polyglossia_font_setup(font_list: list[CatalogFontEntryV12]) -> str:
+    """
+    Return compatibility placeholder text for retired font setup.
+
+    Parameters
+    ----------
+    font_list : list[CatalogFontEntryV12]
+        Catalog entries retained only for call-site compatibility.
+
+    Returns
+    -------
+    str
+        Empty string because direct specimen rendering no longer uses
+        predeclared Polyglossia language-font commands.
+    """
+    _ = font_list
+    return ""
 
 
 @dataclass(frozen=True)
@@ -1440,16 +1476,10 @@ def generate_latex_with_report(
 
     latex_code: str = LATEX_INITIAL_CODE
 
-    other_langs = _strip_ascii_control_chars(
-        _collect_polyglossia_other_languages(font_list)
-    )
-    lang_font_setup = _strip_ascii_control_chars(
-        _collect_polyglossia_font_setup(font_list)
-    )
     if "%%FONTSHOW_OTHER_LANGUAGES%%" in latex_code:
         latex_code = latex_code.replace(
             "%%FONTSHOW_OTHER_LANGUAGES%%",
-            other_langs + lang_font_setup,
+            "",
         )
     else:
         log_warn("LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found")
