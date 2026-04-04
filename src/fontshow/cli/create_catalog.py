@@ -139,6 +139,12 @@ def _render_invocation_command(args) -> str:
         argv.extend(["--catalog-detail", str(args.catalog_detail)])
     if getattr(args, "indexed_navigation", False):
         argv.append("--indexed-navigation")
+    for language in getattr(args, "language", None) or []:
+        argv.extend(["--language", str(language)])
+    for script in getattr(args, "script", None) or []:
+        argv.extend(["--script", str(script)])
+    for sort_key in getattr(args, "sort_by", None) or []:
+        argv.extend(["--sort-by", str(sort_key)])
 
     if getattr(args, "test", False):
         argv.append("--test")
@@ -379,6 +385,37 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         help=(
             "Enable indexed navigation output with a clickable table of "
             "contents and end-of-document navigation index."
+        ),
+    )
+    parser.add_argument(
+        "--language",
+        action="append",
+        metavar="LANG",
+        help=(
+            "Restrict output to fonts matching at least one selected "
+            "language tag. Repeatable and combined AND-wise with other "
+            "selector families."
+        ),
+    )
+    parser.add_argument(
+        "--script",
+        action="append",
+        metavar="SCRIPT",
+        help=(
+            "Restrict output to fonts matching at least one selected "
+            "script tag. Repeatable and combined AND-wise with other "
+            "selector families."
+        ),
+    )
+    parser.add_argument(
+        "--sort-by",
+        action="append",
+        choices=("language", "script"),
+        metavar="FIELD",
+        help=(
+            "Add a deterministic catalog sort key before the default "
+            "family ordering. Repeat to sort by multiple metadata "
+            "fields in CLI order."
         ),
     )
     add_common_arguments(

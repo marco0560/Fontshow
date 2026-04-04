@@ -209,6 +209,9 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
         test_font=None,
         catalog_detail="compact",
         indexed_navigation=False,
+        language=None,
+        script=None,
+        sort_by=None,
     )
     assert create_catalog.run_create_catalog(args) == 9
     assert list_calls == [({"Alpha"}, [{"family": "Alpha"}])]

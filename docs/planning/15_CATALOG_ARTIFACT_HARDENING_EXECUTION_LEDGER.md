@@ -126,11 +126,11 @@ Verified work:
 
 Commit:
 
-- pending step commit
+- `7fac637` - indexed navigation mode committed and push blocker fixed
 
 ### Step 5 - Add selective archive controls
 
-Status: pending
+Status: completed
 
 Targets:
 
@@ -138,10 +138,33 @@ Targets:
 - `src/fontshow/catalog/pipeline.py`
 - `tests/cli/test_create-catalog.py`
 - `tests/test_create_catalog_runtime.py`
+- `tests/test_catalog_pipeline.py`
+- `tests/test_bash_completion.py`
+- `scripts/completions/fontshow.bash`
 
 Issue map:
 
 - `#59`
+
+Verified work:
+
+- added repeatable `--language` selectors with deterministic
+  normalization and OR-within-family matching
+- added repeatable `--script` selectors with deterministic
+  normalization and OR-within-family matching
+- combined language and script selector families AND-wise in the
+  catalog pipeline
+- added repeatable `--sort-by language|script` ordering keys layered
+  ahead of the default family ordering
+- propagated the new selector and sort flags into generated catalog
+  metadata and regenerated the checked-in bash completion script
+- ran focused validation:
+  - `source .venv/bin/activate && pytest -q tests/test_catalog_pipeline.py tests/test_create_catalog_runtime.py tests/cli/test_create-catalog.py tests/test_bash_completion.py`
+  - `source .venv/bin/activate && ruff check src/fontshow/catalog/pipeline.py src/fontshow/cli/create_catalog.py tests/test_catalog_pipeline.py tests/test_create_catalog_runtime.py tests/cli/test_create-catalog.py tests/test_bash_completion.py`
+
+Commit:
+
+- pending step commit
 
 ### Step 6 - Improve specimen usefulness without misrepresenting specialized fonts
 

@@ -143,6 +143,46 @@ def test_create_catalog_accepts_indexed_navigation_option(
     assert code == 0
 
 
+@pytest.mark.parametrize("stub_create_catalog", ["ok"], indirect=True)
+def test_create_catalog_accepts_selective_archive_options(
+    cli_runner, stub_create_catalog, tmp_path
+):
+    """
+    Verify that create-catalog accepts language/script selectors and sort keys.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_create_catalog : object
+        Indirect fixture configuring the create-catalog stub to succeed.
+    tmp_path : pathlib.Path
+        Temporary directory fixture present in the test signature.
+
+    Returns
+    -------
+    None
+    """
+    code, out = cli_runner(
+        [
+            "fontshow",
+            "create-catalog",
+            "--inventory",
+            "inv.json",
+            "--language",
+            "en",
+            "--script",
+            "LATN",
+            "--sort-by",
+            "script",
+            "--sort-by",
+            "language",
+        ]
+    )
+
+    assert code == 0
+
+
 @pytest.mark.parametrize(
     "stub_create_catalog, expected_code",
     [
