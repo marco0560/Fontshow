@@ -231,7 +231,7 @@ Verified work:
 
 Commit:
 
-- pending step commit
+- `3941b44` - compact catalog layout tightened
 
 ### Step 8 - ADR decision checkpoint
 
@@ -244,7 +244,7 @@ Decision:
 
 ### Step 9 - Final validation and issue closure pass
 
-Status: pending
+Status: completed
 
 Required validation:
 
@@ -252,3 +252,18 @@ Required validation:
 pre-commit run --all-files
 pytest -q
 ```
+
+Validation result:
+
+- `source .venv/bin/activate && pre-commit run --all-files`
+- `source .venv/bin/activate && pytest -q`
+- both commands passed on `2026-04-04`
+
+Issue closure assessment:
+
+- `#70` complete on this branch
+- `#59` complete on this branch
+
+Commit:
+
+- pending final ledger commit with issue-closing footers
