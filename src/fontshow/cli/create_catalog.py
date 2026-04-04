@@ -137,6 +137,8 @@ def _render_invocation_command(args) -> str:
 
     if getattr(args, "catalog_detail", "compact") != "compact":
         argv.extend(["--catalog-detail", str(args.catalog_detail)])
+    if getattr(args, "indexed_navigation", False):
+        argv.append("--indexed-navigation")
 
     if getattr(args, "test", False):
         argv.append("--test")
@@ -371,6 +373,14 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
             "metadata blocks."
         ),
     )
+    parser.add_argument(
+        "--indexed-navigation",
+        action="store_true",
+        help=(
+            "Enable indexed navigation output with a clickable table of "
+            "contents and end-of-document navigation index."
+        ),
+    )
     add_common_arguments(
         parser,
         include_output=True,
@@ -537,6 +547,7 @@ def run_create_catalog(args) -> int:
         loadability_result.kept,
         excluded_fonts=loadability_result.excluded,
         catalog_detail=args.catalog_detail,
+        indexed_navigation=bool(getattr(args, "indexed_navigation", False)),
         generation_metadata=_build_generation_metadata(args),
     )
 

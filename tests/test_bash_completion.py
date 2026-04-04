@@ -134,6 +134,7 @@ def test_completion_spec_tracks_command_options() -> None:
     assert spec["command_specs"]["create-catalog"]["options"] == [
         "--catalog-detail",
         "--help",
+        "--indexed-navigation",
         "--inventory",
         "--list-test-fonts",
         "--number",

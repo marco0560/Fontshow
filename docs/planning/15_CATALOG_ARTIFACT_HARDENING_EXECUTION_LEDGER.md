@@ -90,11 +90,11 @@ Verified work:
 
 Commit:
 
-- pending step commit
+- `29b13a3` - default output no longer emits legacy TeX bookkeeping
 
 ### Step 4 - Add opt-in indexed navigation mode
 
-Status: pending
+Status: completed
 
 Targets:
 
@@ -107,6 +107,26 @@ Targets:
 Issue map:
 
 - `#70`
+
+Verified work:
+
+- added explicit `--indexed-navigation` CLI support and propagated it
+  into catalog rendering metadata
+- added deterministic family anchors in indexed mode
+- enabled clickable TOC emission in indexed mode only
+- added a Python-generated end-of-document navigation index linked to
+  the rendered family anchors
+- updated completion metadata and regenerated the checked-in bash
+  completion script
+- updated the stale template test that still required removed auxiliary
+  logging macros
+- ran focused validation:
+  - `source .venv/bin/activate && pytest -q tests/test_catalog_document.py tests/test_create_catalog_runtime.py tests/cli/test_create-catalog.py`
+  - `source .venv/bin/activate && pytest -q tests/test_bash_completion.py tests/test_latex_templates.py`
+
+Commit:
+
+- pending step commit
 
 ### Step 5 - Add selective archive controls
 

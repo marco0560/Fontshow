@@ -1205,3 +1205,104 @@ def test_generate_latex_compact_layout_includes_frontmatter_and_tighter_blocks(
     assert "{\\footnotesize\\ttfamily FreeSans.ttf [OK]}" in latex
     assert "{\\footnotesize\\ttfamily LATN} <LATN|Original Latin>" in latex
     assert "{\\footnotesize\\ttfamily CYRL} <CYRL|Cyrillic sample>" in latex
+
+
+def test_generate_latex_indexed_navigation_adds_toc_anchors_and_end_index(
+    monkeypatch, tmp_path
+):
+    """
+    Ensure indexed catalogs include TOC, family anchors, and end index.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers and ontology data.
+    tmp_path : pathlib.Path
+        Temporary directory used to create a placeholder font file.
+
+    Returns
+    -------
+    None
+    """
+    font_path = tmp_path / "FreeSans.ttf"
+    font_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE\n\\end{document}\n")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+    monkeypatch.setattr(
+        document, "_filter_renderer_script_specimen", lambda _font, specimen: specimen
+    )
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("LATN"): {"rtl": False, "specimen": "Latin sample"},
+        },
+    )
+
+    def render_stub(font, safe_specimen, script0_iso, fullpath):
+        """
+        Return a deterministic indexed marker for rendered script variants.
+
+        Parameters
+        ----------
+        font : dict[str, object]
+            Font descriptor forwarded by the document generator.
+        safe_specimen : str
+            Preformatted specimen string selected for this render.
+        script0_iso : ScriptISO
+            Script code chosen for rendering.
+        fullpath : str
+            Absolute font path.
+
+        Returns
+        -------
+        tuple[str, str]
+            Fake LaTeX render block and plain option string.
+        """
+        _ = font, fullpath
+        return f"<{script0_iso}|{safe_specimen}>", f"Path={script0_iso}"
+
+    monkeypatch.setattr(document, "_render_font_entry", render_stub)
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "FreeSans",
+                "path": str(font_path),
+                "style": "Regular",
+                "script": "latn",
+                "specimen_text": "Original Latin",
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "coverage": {"scripts": ["latn"]},
+            },
+        ],
+        indexed_navigation=True,
+    )
+
+    assert "\\tableofcontents" in latex
+    assert "\\hypertarget{fontshow-family-0001}{}" in latex
+    assert "\\subsection{FreeSans}" in latex
+    assert "\\section{Navigation Index}" in latex
+    assert "\\hyperlink{fontshow-family-0001}{FreeSans}" in latex
+    assert "END:1:DONE" in latex
+    assert latex.endswith("\\end{document}\n")

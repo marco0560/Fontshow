@@ -75,6 +75,160 @@ _MULTI_SPECIMEN_LIMIT = 4
 CatalogDetailLevel = Literal["compact", "extended"]
 
 
+def _catalog_family_anchor(index: int) -> str:
+    """
+    Build a deterministic hyperlink anchor for a rendered family block.
+
+    Parameters
+    ----------
+    index : int
+        One-based family index in render order.
+
+    Returns
+    -------
+    str
+        Stable Hyperref anchor identifier.
+    """
+    return f"fontshow-family-{index:04d}"
+
+
+def _render_navigation_index(entries: list[tuple[str, str]]) -> str:
+    """
+    Render an end-of-document family navigation index.
+
+    Parameters
+    ----------
+    entries : list[tuple[str, str]]
+        Ordered ``(family_name, anchor_name)`` pairs from the rendered
+        catalog body.
+
+    Returns
+    -------
+    str
+        LaTeX section text for the navigation index, or an empty string
+        when no entries are available.
+    """
+    if not entries:
+        return ""
+
+    lines = ["\\section{Navigation Index}", "\\begin{itemize}"]
+    for family_name, anchor in entries:
+        lines.append(
+            "\\item \\hyperlink{" + anchor + "}{" + escape_latex(family_name) + "}"
+        )
+    lines.append("\\end{itemize}")
+    return "\n".join(lines) + "\n"
+
+
+def _render_family_catalog_block(
+    *,
+    family_name: str,
+    family_fonts: list[CatalogFontEntryV12],
+    family_index: int,
+    catalog_detail: CatalogDetailLevel,
+    indexed_navigation: bool,
+) -> tuple[str, tuple[str, str] | None]:
+    """
+    Render one family block for the catalog body.
+
+    Parameters
+    ----------
+    family_name : str
+        Family label used for rendering and deterministic identifiers.
+    family_fonts : list[CatalogFontEntryV12]
+        Font variants grouped under the same family.
+    family_index : int
+        One-based family index in render order.
+    catalog_detail : {"compact", "extended"}
+        Requested catalog metadata detail level.
+    indexed_navigation : bool
+        Whether indexed navigation output is being generated.
+
+    Returns
+    -------
+    tuple[str, tuple[str, str] | None]
+        Rendered family block plus an optional
+        ``(family_name, anchor_name)`` navigation entry.
+    """
+    font = family_fonts[0]
+    safe_name = escape_latex(family_name)
+
+    inference_raw = font.get("inference") or {}
+    inference = inference_raw if isinstance(inference_raw, dict) else {}
+
+    scripts_raw_obj = inference.get("scripts")
+    scripts_raw: list[str] = (
+        scripts_raw_obj if isinstance(scripts_raw_obj, list) else []
+    )
+
+    script0 = primary_script(font) or ""
+
+    languages_raw_obj = inference.get("languages")
+    inferred_languages: list[str] = (
+        languages_raw_obj if isinstance(languages_raw_obj, list) else []
+    )
+
+    scripts_pretty = (
+        ", ".join(_format_script_display(str(s)) for s in scripts_raw)
+        if scripts_raw
+        else "N/A"
+    )
+    languages_pretty = (
+        ", ".join(_format_language_display(str(lang)) for lang in inferred_languages)
+        if inferred_languages
+        else "N/A"
+    )
+
+    fullpath = str(font.get("path", ""))
+    script0_iso = ScriptISO(script0.upper()) if script0 else ScriptISO("")
+    specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+    safe_specimen = _format_specimen_for_latex(specimen, script0_iso)
+    _, options_plain = _render_font_entry(
+        font=font,
+        safe_specimen=safe_specimen,
+        script0_iso=script0_iso,
+        fullpath=fullpath,
+    )
+
+    options_pretty = (
+        _latex_debug_literal(options_plain.replace(",", ", "))
+        if options_plain
+        else "N/A"
+    )
+    debug_block = _render_family_debug_block(
+        scripts_pretty=scripts_pretty,
+        languages_pretty=languages_pretty,
+        options_pretty=options_pretty,
+        catalog_detail=catalog_detail,
+    )
+
+    variant_blocks = [
+        _render_variant_specimen_blocks(
+            variant,
+            family_name=family_name,
+            catalog_detail=catalog_detail,
+        )
+        for variant in family_fonts
+    ]
+
+    if indexed_navigation:
+        anchor = _catalog_family_anchor(family_index)
+        family_intro = (
+            "\\hypertarget{" + anchor + "}{}\n\\subsection{" + safe_name + "}"
+        )
+        if debug_block:
+            family_intro += "\n\n" + debug_block
+        navigation_entry = (family_name, anchor)
+    else:
+        family_intro = "\\item " + safe_name
+        if debug_block:
+            family_intro += " --- " + debug_block
+        navigation_entry = None
+
+    family_block = family_intro + "\n\n" + "\n\n".join(variant_blocks) + "\n\n"
+    return family_block, navigation_entry
+
+
 def _apply_frontmatter_metadata(
     latex_code: str,
     *,
@@ -750,6 +904,7 @@ def generate_latex(
     font_list: list[CatalogFontEntryV12],
     *,
     catalog_detail: CatalogDetailLevel = "compact",
+    indexed_navigation: bool = False,
     generation_metadata: Mapping[str, str] | None = None,
 ) -> str:
     """
@@ -763,6 +918,9 @@ def generate_latex(
     catalog_detail : {"compact", "extended"}, optional
         Family and specimen metadata detail level used in the rendered
         catalog body.
+    indexed_navigation : bool, optional
+        When ``True``, emit subsection-based navigation with a clickable
+        table of contents and an end-of-document navigation index.
     generation_metadata : collections.abc.Mapping[str, str] | None, optional
         Optional first-page metadata keys used to replace LaTeX
         front-matter placeholders. Missing keys fall back to empty
@@ -794,6 +952,7 @@ def generate_latex(
         font_list,
         excluded_fonts=[],
         catalog_detail=catalog_detail,
+        indexed_navigation=indexed_navigation,
         generation_metadata=generation_metadata,
     )
 
@@ -838,6 +997,7 @@ def generate_latex_with_report(
     *,
     excluded_fonts: list[LoadabilityExclusion],
     catalog_detail: CatalogDetailLevel = "compact",
+    indexed_navigation: bool = False,
     generation_metadata: Mapping[str, str] | None = None,
 ) -> str:
     """
@@ -853,6 +1013,9 @@ def generate_latex_with_report(
     catalog_detail : {"compact", "extended"}, optional
         Family and specimen metadata detail level used in the rendered
         catalog body.
+    indexed_navigation : bool, optional
+        When ``True``, emit subsection-based navigation with a clickable
+        table of contents and an end-of-document navigation index.
     generation_metadata : collections.abc.Mapping[str, str] | None, optional
         Optional first-page metadata keys used to replace LaTeX
         front-matter placeholders. Missing keys fall back to empty
@@ -907,93 +1070,46 @@ def generate_latex_with_report(
         hostname=frontmatter.get("hostname", ""),
     )
 
+    if indexed_navigation:
+        latex_code += "\\tableofcontents\n\\newpage\n"
+
     total = len(family_order)
     latex_code += "\\section{Font List}\n"
-    latex_code += "\\begin{itemize}\n"
-    latex_code += "\\setlength{\\itemsep}{0.45em}\n"
-    latex_code += "\\setlength{\\parsep}{0pt}\n"
-    latex_code += "\\setlength{\\parskip}{0.1em}\n"
-    latex_code += "\\setlength{\\topsep}{0.25em}\n"
+    navigation_entries: list[tuple[str, str]] = []
+    if not indexed_navigation:
+        latex_code += "\\begin{itemize}\n"
+        latex_code += "\\setlength{\\itemsep}{0.45em}\n"
+        latex_code += "\\setlength{\\parsep}{0pt}\n"
+        latex_code += "\\setlength{\\parskip}{0.1em}\n"
+        latex_code += "\\setlength{\\topsep}{0.25em}\n"
 
     for idx, fam in enumerate(family_order, start=1):
-        family_fonts = fonts_by_family[fam]
-        font = family_fonts[0]
-        safe_name = escape_latex(fam)
-
         if idx % 500 == 0 or idx == total:
             log_info(f"  ... processed {idx}/{total}")
 
-        inference_raw = font.get("inference") or {}
-        inference = inference_raw if isinstance(inference_raw, dict) else {}
-
-        scripts_raw_obj = inference.get("scripts")
-        scripts_raw: list[str] = (
-            scripts_raw_obj if isinstance(scripts_raw_obj, list) else []
-        )
-
-        script0 = primary_script(font) or ""
-
-        languages_raw_obj = inference.get("languages")
-        inferred_languages: list[str] = (
-            languages_raw_obj if isinstance(languages_raw_obj, list) else []
-        )
-
-        scripts_pretty = (
-            ", ".join(_format_script_display(str(s)) for s in scripts_raw)
-            if scripts_raw
-            else "N/A"
-        )
-
-        languages_pretty = (
-            ", ".join(
-                _format_language_display(str(lang)) for lang in inferred_languages
-            )
-            if inferred_languages
-            else "N/A"
-        )
-
-        fullpath = str(font.get("path", ""))
-        script0_iso = ScriptISO(script0.upper()) if script0 else ScriptISO("")
-        specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
-        safe_specimen = _format_specimen_for_latex(specimen, script0_iso)
-        _, options_plain = _render_font_entry(
-            font=font,
-            safe_specimen=safe_specimen,
-            script0_iso=script0_iso,
-            fullpath=fullpath,
-        )
-
-        options_pretty = (
-            _latex_debug_literal(options_plain.replace(",", ", "))
-            if options_plain
-            else "N/A"
-        )
-
-        debug_block = _render_family_debug_block(
-            scripts_pretty=scripts_pretty,
-            languages_pretty=languages_pretty,
-            options_pretty=options_pretty,
+        family_block, navigation_entry = _render_family_catalog_block(
+            family_name=fam,
+            family_fonts=fonts_by_family[fam],
+            family_index=idx,
             catalog_detail=catalog_detail,
+            indexed_navigation=indexed_navigation,
         )
+        if navigation_entry is not None:
+            navigation_entries.append(navigation_entry)
+        latex_code += family_block
 
-        variant_blocks: list[str] = []
-        for variant in family_fonts:
-            variant_blocks.append(
-                _render_variant_specimen_blocks(
-                    variant,
-                    family_name=fam,
-                    catalog_detail=catalog_detail,
-                )
-            )
-        family_intro = "\\item " + safe_name
-        if debug_block:
-            family_intro += " --- " + debug_block
-
-        latex_code += family_intro + "\n\n" + "\n\n".join(variant_blocks) + "\n\n"
-
-    latex_code += "\\end{itemize}\n"
+    if not indexed_navigation:
+        latex_code += "\\end{itemize}\n"
 
     # Closing document and printing indices
     latex_code += _render_excluded_fonts_section(excluded_fonts)
-    latex_code += LATEX_END_CODE_1 + str(total) + LATEX_END_CODE_2
+    closing = LATEX_END_CODE_1 + str(total) + LATEX_END_CODE_2
+    document_end = "\n\\end{document}\n"
+    if indexed_navigation and closing.endswith(document_end):
+        closing = (
+            closing[: -len(document_end)]
+            + _render_navigation_index(navigation_entries)
+            + document_end
+        )
+    latex_code += closing
     return latex_code
