@@ -30,13 +30,13 @@ from fontshow.inventory.schema_validation import (
 )
 
 # ---------------------------------------------------------------------------
-# Helper — minimal valid v1.3 inventory (must satisfy schema requirements)
+# Helper — minimal valid v1.4 inventory (must satisfy schema requirements)
 # ---------------------------------------------------------------------------
 
 
 def _valid_v12_inventory():
     """
-    Build a minimal schema-valid v1.3 inventory payload.
+    Build a minimal schema-valid v1.4 inventory payload.
 
     Parameters
     ----------
@@ -49,7 +49,7 @@ def _valid_v12_inventory():
     """
     return {
         "metadata": {
-            "schema_version": "1.3",
+            "schema_version": "1.4",
             "input_inventory_tool": "test",
             "input_inventory_tool_version": "0",
             "inference_level": "none",
@@ -110,9 +110,9 @@ def test_raw_inventory_without_metadata_emits_error():
     assert warnings[0]["severity"] == Severity.ERROR
 
 
-def test_valid_v1_3_inventory_is_ok():
+def test_valid_v1_4_inventory_is_ok():
     """
-    Verify that a minimal valid v1.3 inventory produces no warnings.
+    Verify that a minimal valid v1.4 inventory produces no warnings.
 
     Parameters
     ----------
@@ -191,7 +191,7 @@ def test_invalid_inventory_structure_raises():
     None
     """
     data = {
-        "metadata": {"schema_version": "1.3"}
+        "metadata": {"schema_version": "1.4"}
         # missing "fonts"
     }
 
@@ -212,7 +212,7 @@ def test_invalid_schema_raises_validation_error():
     None
     """
     data = {
-        "metadata": {"schema_version": "1.3"},
+        "metadata": {"schema_version": "1.4"},
         "fonts": [],
         # missing required metadata fields
     }

@@ -24,7 +24,7 @@ from fontshow.core.types import Severity
 from fontshow.inventory.schema_validation import validate_inventory_schema
 
 # ---------------------------------------------------------------------------
-# Helper — minimal valid v1.3 inventory with charset enrichment
+# Helper — minimal valid v1.4 inventory with charset enrichment
 # ---------------------------------------------------------------------------
 
 
@@ -43,7 +43,7 @@ def _base_inventory_with_charset():
     """
     return {
         "metadata": {
-            "schema_version": "1.3",
+            "schema_version": "1.4",
             "input_inventory_tool": "test",
             "input_inventory_tool_version": "0",
             "inference_level": "none",
@@ -129,6 +129,7 @@ def _base_inventory_with_charset():
                         "reason": None,
                         "runtime_fingerprint": None,
                         "probe_input": None,
+                        "render_variants": [],
                     }
                 },
             }
@@ -177,5 +178,5 @@ def test_schema_validation_no_spurious_warnings():
 
     warnings = validate_inventory_schema(inventory)
 
-    # Valid v1.3 inventory must produce no warnings
+    # Valid v1.4 inventory must produce no warnings
     assert warnings == []

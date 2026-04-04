@@ -6,7 +6,7 @@ entries during `dump-fonts`.
 
 Responsibilities
 ----------------
-- Select loadability candidates from schema v1.3 inventory entries.
+- Select loadability candidates from schema v1.4 inventory entries.
 - Build deterministic batched LuaLaTeX probe documents.
 - Isolate failed fonts with recursive batch subdivision.
 - Persist per-font loadability state without requiring real TeX in tests.
@@ -36,17 +36,26 @@ from pathlib import Path
 from typing import Any
 
 from fontshow.constants.runtime import SUBPROCESS_TIMEOUT_SECONDS
+from fontshow.core.types import ScriptISO
 from fontshow.inventory.schema_accessors import (
     get_font_typography,
     get_sample_text_value,
     get_specimen_text,
     set_lualatex_loadability_fields,
+    set_lualatex_render_variants,
 )
+from fontshow.inventory.specimens import (
+    MIN_SAMPLE_GLYPHS,
+    _specimen_collect_cmap,
+    _specimen_filter_text,
+)
+from fontshow.latex.policy import _get_render_policy
 from fontshow.latex.render import (
     _latex_detokenize_safe,
     _renderer_option_prefix,
     _strip_ascii_control_chars,
 )
+from fontshow.ontology.language_tables import SCRIPT_INFO
 
 _SUPPORTED_LOADABILITY_EXTENSIONS = {".ttf", ".otf", ".ttc"}
 _DEFAULT_BATCH_SIZE = 32
@@ -59,6 +68,8 @@ class _ProbeCandidate:
 
     Parameters
     ----------
+    candidate_index : int
+        Stable per-candidate identifier used for batch attribution.
     font_index : int
         Index of the mutable font entry inside the inventory list.
     path : pathlib.Path
@@ -70,13 +81,17 @@ class _ProbeCandidate:
     fontspec_opts : str | None
         Optional render-policy fontspec options already present on the
         inventory entry.
+    script : str | None
+        Optional ISO-15924 script identifier associated with the probe.
     """
 
+    candidate_index: int
     font_index: int
     path: Path
     probe_text: str
     probe_input: str
     fontspec_opts: str | None
+    script: str | None = None
 
 
 def _is_inventory_validation_candidate(font: MutableMapping[str, Any]) -> bool:
@@ -129,6 +144,28 @@ def _probe_text_from_font(font: MutableMapping[str, Any]) -> str:
                 return ch
 
     return "X"
+
+
+def _probe_text_from_sample(sample: str) -> str:
+    """
+    Select the first non-whitespace glyph from a deterministic sample.
+
+    Parameters
+    ----------
+    sample : str
+        Sample text already selected for a specific render path.
+
+    Returns
+    -------
+    str
+        First non-whitespace glyph, or an empty string when the sample
+        contains no usable probe glyph.
+    """
+    cleaned = _strip_ascii_control_chars(sample)
+    for ch in cleaned:
+        if not ch.isspace():
+            return ch
+    return ""
 
 
 def _probe_input_from_text(text: str) -> str:
@@ -208,10 +245,10 @@ def _render_probe_snippet(candidate: _ProbeCandidate) -> str:
     _directory, filename = _normalize_path_for_fontspec(candidate.path)
     detok_file = "\\detokenize{" + _latex_detokenize_safe(filename) + "}"
     return (
-        f"\\typeout{{FONTSHOW_LOAD_BEGIN:{candidate.font_index}}}\n"
+        f"\\typeout{{FONTSHOW_LOAD_BEGIN:{candidate.candidate_index}}}\n"
         f"\\fontspec[{_fontspec_options(candidate)}]{{{detok_file}}}"
         f"{candidate.probe_text}\n"
-        f"\\typeout{{FONTSHOW_LOAD_OK:{candidate.font_index}}}\n"
+        f"\\typeout{{FONTSHOW_LOAD_OK:{candidate.candidate_index}}}\n"
     )
 
 
@@ -392,8 +429,9 @@ def _resolve_batch_results(
 
     Returns
     -------
-    dict[int, dict[str, Any]]
-        Per-font persisted loadability state keyed by font index.
+        dict[int, dict[str, Any]]
+            Per-candidate persisted loadability state keyed by candidate
+            index.
     """
     if not candidates:
         return {}
@@ -404,7 +442,7 @@ def _resolve_batch_results(
 
     if returncode == 0 and len(successful_ids) == len(candidates):
         return {
-            candidate.font_index: {
+            candidate.candidate_index: {
                 "attempted": True,
                 "loadable": True,
                 "reason": None,
@@ -414,24 +452,24 @@ def _resolve_batch_results(
         }
 
     results: dict[int, dict[str, Any]] = {
-        candidate.font_index: {
+        candidate.candidate_index: {
             "attempted": True,
             "loadable": True,
             "reason": None,
             "probe_input": candidate.probe_input,
         }
         for candidate in candidates
-        if candidate.font_index in successful_ids
+        if candidate.candidate_index in successful_ids
     }
     unresolved = [
         candidate
         for candidate in candidates
-        if candidate.font_index not in successful_ids
+        if candidate.candidate_index not in successful_ids
     ]
 
     if len(unresolved) == 1:
         candidate = unresolved[0]
-        results[candidate.font_index] = {
+        results[candidate.candidate_index] = {
             "attempted": True,
             "loadable": False,
             "reason": detail,
@@ -522,6 +560,7 @@ def probe_and_persist_lualatex_loadability(
         probe_text = _probe_text_from_font(font)
         candidates.append(
             _ProbeCandidate(
+                candidate_index=len(candidates),
                 font_index=index,
                 path=Path(str(font.get("path", ""))),
                 probe_text=probe_text,
@@ -539,7 +578,7 @@ def probe_and_persist_lualatex_loadability(
         results.update(_resolve_batch_results(chunk, lualatex_bin=lualatex_bin))
 
     for candidate in candidates:
-        state = results.get(candidate.font_index)
+        state = results.get(candidate.candidate_index)
         if state is None:
             continue
         set_lualatex_loadability_fields(
@@ -550,6 +589,216 @@ def probe_and_persist_lualatex_loadability(
                 "reason": state["reason"],
                 "runtime_fingerprint": runtime_fingerprint,
                 "probe_input": state["probe_input"],
+            },
+        )
+
+
+def _ordered_render_variant_scripts(font: MutableMapping[str, Any]) -> list[ScriptISO]:
+    """
+    Return deterministic script candidates for parse-time render probing.
+
+    Parameters
+    ----------
+    font : collections.abc.MutableMapping[str, Any]
+        Enriched inventory font entry being prepared for catalog use.
+
+    Returns
+    -------
+    list[ScriptISO]
+        Ordered script candidates matching the catalog renderer's
+        multi-specimen selection policy.
+    """
+    typography = get_font_typography(font)
+    primary_raw = typography.get("primary_script")
+    ordered_raw: list[str] = []
+    if isinstance(primary_raw, str) and primary_raw.strip():
+        ordered_raw.append(primary_raw)
+
+    inference = font.get("inference")
+    if isinstance(inference, Mapping):
+        scripts_raw = inference.get("scripts")
+        if isinstance(scripts_raw, list):
+            ordered_raw.extend(str(script) for script in scripts_raw)
+
+    coverage = font.get("coverage")
+    if isinstance(coverage, Mapping):
+        scripts_raw = coverage.get("scripts")
+        if isinstance(scripts_raw, list):
+            ordered_raw.extend(str(script) for script in scripts_raw)
+
+    seen: set[str] = set()
+    normalized: list[ScriptISO] = []
+    for raw in ordered_raw:
+        cleaned = str(raw).strip().upper()
+        if not cleaned or cleaned in seen:
+            continue
+        seen.add(cleaned)
+        normalized.append(ScriptISO(cleaned))
+
+    primary_script = normalized[0] if normalized else None
+    secondary_scripts = normalized[1:] if primary_script is not None else normalized
+
+    def _sort_key(script_iso: ScriptISO) -> tuple[int, str]:
+        info = SCRIPT_INFO.get(script_iso)
+        if str(script_iso) == "LATN":
+            return (0, str(script_iso))
+        if isinstance(info, Mapping) and bool(info.get("rtl", False)):
+            return (1, str(script_iso))
+        return (2, str(script_iso))
+
+    ordered: list[ScriptISO] = []
+    if primary_script is not None:
+        ordered.append(primary_script)
+    ordered.extend(sorted(secondary_scripts, key=_sort_key))
+    return ordered[:4]
+
+
+def _render_variant_specimen(
+    font: MutableMapping[str, Any], script_iso: ScriptISO
+) -> str:
+    """
+    Return the sample text used to validate one render-path variant.
+
+    Parameters
+    ----------
+    font : collections.abc.MutableMapping[str, Any]
+        Enriched inventory font entry being validated.
+    script_iso : ScriptISO
+        Script code for the render-path candidate.
+
+    Returns
+    -------
+    str
+        Deterministic sample for the render path, or an empty string
+        when the variant should not be validated.
+    """
+    typography = get_font_typography(font)
+    primary_raw = typography.get("primary_script")
+    primary_iso = (
+        ScriptISO(str(primary_raw).strip().upper())
+        if isinstance(primary_raw, str) and str(primary_raw).strip()
+        else ScriptISO("")
+    )
+    if str(script_iso) == str(primary_iso):
+        specimen = get_specimen_text(font)
+        return _strip_ascii_control_chars(specimen) if isinstance(specimen, str) else ""
+
+    script_info = SCRIPT_INFO.get(script_iso)
+    if not isinstance(script_info, Mapping):
+        return ""
+    script_specimen = script_info.get("specimen")
+    variant_path = str(font.get("path", "")).strip()
+    if not isinstance(script_specimen, str) or not variant_path:
+        return ""
+
+    cps = _specimen_collect_cmap(variant_path, None)
+    if not cps:
+        return ""
+
+    filtered, glyphs = _specimen_filter_text(script_specimen, cps)
+    if glyphs < MIN_SAMPLE_GLYPHS:
+        return ""
+    return _strip_ascii_control_chars(filtered)
+
+
+def probe_and_persist_lualatex_render_variants(
+    fonts: list[MutableMapping[str, Any]],
+    *,
+    validation_metadata: MutableMapping[str, Any],
+    batch_size: int = _DEFAULT_BATCH_SIZE,
+) -> None:
+    """
+    Probe and persist script-aware LuaLaTeX render-path results.
+
+    Parameters
+    ----------
+    fonts : list[collections.abc.MutableMapping[str, Any]]
+        Mutable enriched inventory font entries updated in place.
+    validation_metadata : collections.abc.MutableMapping[str, Any]
+        Inventory-level ``metadata.validation.lualatex`` block updated
+        in place for the current parse-time environment.
+    batch_size : int, optional
+        Maximum number of render-path candidates bundled into one
+        serial batch.
+
+    Returns
+    -------
+    None
+    """
+    lualatex_bin = shutil.which("lualatex")
+    if lualatex_bin is None:
+        return
+
+    runtime_fingerprint = validation_metadata.get("runtime_fingerprint")
+    if not isinstance(runtime_fingerprint, str) or not runtime_fingerprint:
+        return
+
+    candidates: list[_ProbeCandidate] = []
+    for index, font in enumerate(fonts):
+        if not _is_inventory_validation_candidate(font):
+            continue
+
+        for script_iso in _ordered_render_variant_scripts(font):
+            specimen = _render_variant_specimen(font, script_iso)
+            if not specimen:
+                continue
+            probe_text = _probe_text_from_sample(specimen)
+            if not probe_text:
+                continue
+            _lang, script_opt = _get_render_policy(script_iso)
+            candidates.append(
+                _ProbeCandidate(
+                    candidate_index=len(candidates),
+                    font_index=index,
+                    path=Path(str(font.get("path", ""))),
+                    probe_text=probe_text,
+                    probe_input=_probe_input_from_text(probe_text),
+                    fontspec_opts=script_opt or None,
+                    script=str(script_iso),
+                )
+            )
+
+    if not candidates:
+        return
+
+    validation_metadata["attempted"] = True
+    results: dict[int, dict[str, Any]] = {}
+    for chunk in _chunk_candidates(candidates, batch_size=batch_size):
+        results.update(_resolve_batch_results(chunk, lualatex_bin=lualatex_bin))
+
+    grouped_states: dict[int, list[dict[str, Any]]] = {}
+    for candidate in candidates:
+        state = results.get(candidate.candidate_index)
+        if state is None:
+            continue
+        grouped_states.setdefault(candidate.font_index, []).append(
+            {
+                "script": candidate.script,
+                "fontspec_opts": candidate.fontspec_opts,
+                "attempted": state["attempted"],
+                "loadable": state["loadable"],
+                "reason": state["reason"],
+                "runtime_fingerprint": runtime_fingerprint,
+                "probe_input": state["probe_input"],
+            }
+        )
+
+    for font_index, states in grouped_states.items():
+        set_lualatex_render_variants(fonts[font_index], states=states)
+        typography = get_font_typography(fonts[font_index])
+        primary_script = typography.get("primary_script")
+        primary_state = next(
+            (state for state in states if state.get("script") == primary_script),
+            states[0],
+        )
+        set_lualatex_loadability_fields(
+            fonts[font_index],
+            state={
+                "attempted": primary_state["attempted"],
+                "loadable": primary_state["loadable"],
+                "reason": primary_state["reason"],
+                "runtime_fingerprint": runtime_fingerprint,
+                "probe_input": primary_state["probe_input"],
             },
         )
 

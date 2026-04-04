@@ -45,6 +45,7 @@ from fontshow.core.types import (
 from fontshow.inventory.io import as_font_desc_list
 from fontshow.inventory.metadata_processing import font_family
 from fontshow.inventory.schema_accessors import (
+    get_font_lualatex_render_variants,
     get_specimen_glyph_count,
     get_specimen_strategy,
     get_specimen_text,
@@ -556,6 +557,42 @@ def _ordered_script_candidates(font: CatalogFontEntryV12) -> list[ScriptISO]:
     return sorted(normalized, key=_sort_key)[:_MULTI_SPECIMEN_LIMIT]
 
 
+def _has_persisted_render_variant_success(
+    font: CatalogFontEntryV12,
+    script_iso: ScriptISO,
+) -> bool:
+    """
+    Return whether a rendered script has persisted validation support.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose persisted render-variant results are read.
+    script_iso : ScriptISO
+        Script code about to be rendered.
+
+    Returns
+    -------
+    bool
+        ``True`` when the inventory either has no render-variant data
+        yet or contains a matching successful render-path record.
+    """
+    variants = get_font_lualatex_render_variants(font)
+    if not variants:
+        return True
+
+    _lang, fontspec_opts = _get_render_policy(script_iso)
+    expected_script = str(script_iso)
+    expected_opts = fontspec_opts or None
+    for variant in variants:
+        if variant.get("script") != expected_script:
+            continue
+        if variant.get("fontspec_opts") != expected_opts:
+            continue
+        return bool(variant.get("attempted")) and variant.get("loadable") is True
+    return False
+
+
 def _specimen_for_rendered_script(
     font: CatalogFontEntryV12,
     script_iso: ScriptISO,
@@ -858,6 +895,8 @@ def _render_variant_specimen_blocks(
     script_candidates = _ordered_script_candidates(variant)
     rendered_blocks: list[str] = []
     for script_iso in script_candidates:
+        if not _has_persisted_render_variant_success(variant, script_iso):
+            continue
         specimen = _specimen_for_rendered_script(variant, script_iso)
         if not specimen:
             continue

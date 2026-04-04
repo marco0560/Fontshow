@@ -259,6 +259,60 @@ Validation result:
 - `source .venv/bin/activate && pytest -q`
 - both commands passed on `2026-04-04`
 
+### Step 10 - Schema 1.4 render-path loadability contract
+
+Status: completed
+
+Targets:
+
+- `src/fontshow/schema/inventory_v1_4.json`
+- `src/fontshow/core/global_constants.py`
+- `src/fontshow/inventory/schema_accessors.py`
+- `src/fontshow/inventory/font_descriptor.py`
+- `src/fontshow/inventory/loadability.py`
+- `src/fontshow/cli/parse_inventory.py`
+- `src/fontshow/catalog/document.py`
+- `tests/test_dump_loadability.py`
+- `tests/test_inventory_loadability_helpers.py`
+- `tests/test_catalog_document.py`
+- `docs/decisions/0028-parse-inventory-render-path-loadability.md`
+
+ADR trigger:
+
+- persisted coarse loadability from `dump-fonts` no longer matched the
+  stronger script-aware render paths emitted by the catalog renderer
+
+Verified work:
+
+- introduced schema `1.4` with `loadability.lualatex.render_variants`
+  as the authoritative per-render-path validation record
+- kept schema `1.3` intact as the historical contract and added the new
+  schema resource and schema documentation alongside it
+- changed `parse-inventory` to refresh current-install LuaLaTeX
+  validation metadata and probe script-aware render variants after
+  inference/specimen/render-policy enrichment
+- persisted render-variant validation records through schema-aware
+  accessors and updated the coarse top-level summary from the primary
+  render path
+- gated catalog specimen emission on persisted render-variant success so
+  unvalidated secondary script blocks are no longer emitted by default
+- added ADR 0028 to record the contract change from
+  `dump-fonts`-only install touching to `dump-fonts` plus
+  `parse-inventory`
+- updated schema-aware tests, fixtures, inventory docs indices, and
+  catalog regression coverage for the new contract
+
+Required validation:
+
+```bash
+source .venv/bin/activate && pre-commit run --all-files
+source .venv/bin/activate && pytest -q
+```
+
+Validation result:
+
+- both commands passed on `2026-04-04`
+
 Issue closure assessment:
 
 - `#70` complete on this branch

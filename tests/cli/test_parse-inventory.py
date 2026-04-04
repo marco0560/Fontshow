@@ -66,7 +66,7 @@ def _valid_inventory_from_cli(tmp_path, *_ignored):
 
     return {
         "metadata": {
-            "schema_version": "1.3",
+            "schema_version": "1.4",
             "input_inventory_tool": "fontshow",
             "input_inventory_tool_version": "test",
             "inference_level": "basic",

@@ -84,6 +84,7 @@ def _candidate_descriptor(path: Path, family: str) -> dict[str, object]:
                 "reason": None,
                 "runtime_fingerprint": None,
                 "probe_input": None,
+                "render_variants": [],
             }
         },
         "warnings": [],
@@ -273,9 +274,9 @@ def test_probe_and_persist_lualatex_loadability_recurses_on_batch_failure(
     assert fonts[2]["loadability"]["lualatex"]["loadable"] is True
 
 
-def test_parse_inventory_preserves_attempted_lualatex_validation(monkeypatch):
+def test_parse_inventory_refreshes_lualatex_validation_and_probes_variants(monkeypatch):
     """
-    Ensure parse-inventory does not overwrite attempted validation metadata.
+    Ensure parse-inventory refreshes validation metadata and probes variants.
 
     Parameters
     ----------
@@ -288,7 +289,7 @@ def test_parse_inventory_preserves_attempted_lualatex_validation(monkeypatch):
     """
     data = {
         "metadata": {
-            "schema_version": "1.3",
+            "schema_version": "1.4",
             "run_environment": {
                 "os": "x",
                 "machine": "y",
@@ -310,13 +311,22 @@ def test_parse_inventory_preserves_attempted_lualatex_validation(monkeypatch):
         "fonts": [],
     }
     monkeypatch.setattr(parse_inventory, "collect_platform_metadata", dict)
+    probe_calls: list[tuple[list[dict[str, object]], dict[str, object]]] = []
     monkeypatch.setattr(
         parse_inventory,
         "collect_latex_validation_metadata",
-        lambda: {"attempted": False, "runtime_fingerprint": None},
+        lambda: {"attempted": False, "runtime_fingerprint": "fp-2"},
+    )
+    monkeypatch.setattr(
+        parse_inventory,
+        "probe_and_persist_lualatex_render_variants",
+        lambda fonts, *, validation_metadata: probe_calls.append(
+            (list(fonts), validation_metadata)
+        ),
     )
 
     result = parse_inventory.parse_inventory(data, level="medium")
 
-    assert result["metadata"]["validation"]["lualatex"]["attempted"] is True
-    assert result["metadata"]["validation"]["lualatex"]["runtime_fingerprint"] == "fp-1"
+    assert result["metadata"]["validation"]["lualatex"]["attempted"] is False
+    assert result["metadata"]["validation"]["lualatex"]["runtime_fingerprint"] == "fp-2"
+    assert probe_calls == [([], result["metadata"]["validation"]["lualatex"])]

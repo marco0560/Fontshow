@@ -519,7 +519,7 @@ def _specimen_generate_for_font(
 
     Notes
     -----
-    Writes the schema v1.3 typography fields:
+    Writes the schema v1.4 typography fields:
     - ``typography.specimen_text``
     - ``typography.specimen_strategy``
     - ``typography.specimen_glyph_count``

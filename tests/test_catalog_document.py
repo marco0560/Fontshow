@@ -340,6 +340,63 @@ def test_ordered_script_candidates_prioritizes_latn_then_rtl(monkeypatch):
     ]
 
 
+def test_has_persisted_render_variant_success_requires_matching_success(monkeypatch):
+    """
+    Ensure secondary rendering follows persisted render-variant results.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace render-policy resolution.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        document,
+        "_get_render_policy",
+        lambda script: (
+            "",
+            {
+                ScriptISO("JPAN"): "Script=Kana",
+                ScriptISO("BOPO"): "Script=Bopomofo",
+            }.get(script),
+        ),
+    )
+
+    font = {
+        "loadability": {
+            "lualatex": {
+                "render_variants": [
+                    {
+                        "script": "JPAN",
+                        "fontspec_opts": "Script=Kana",
+                        "attempted": True,
+                        "loadable": True,
+                        "reason": None,
+                        "runtime_fingerprint": "fp-1",
+                        "probe_input": "U+8000",
+                    },
+                    {
+                        "script": "BOPO",
+                        "fontspec_opts": "Script=Bopomofo",
+                        "attempted": True,
+                        "loadable": False,
+                        "reason": "fontspec error",
+                        "runtime_fingerprint": "fp-1",
+                        "probe_input": "U+3105",
+                    },
+                ]
+            }
+        }
+    }
+
+    assert document._has_persisted_render_variant_success(font, ScriptISO("JPAN"))
+    assert not document._has_persisted_render_variant_success(font, ScriptISO("BOPO"))
+    assert not document._has_persisted_render_variant_success(font, ScriptISO("LATN"))
+
+
 def test_generate_document_uses_variant_specific_specimens(monkeypatch, tmp_path):
     """
     Ensure family variants render using their own specimen metadata.
