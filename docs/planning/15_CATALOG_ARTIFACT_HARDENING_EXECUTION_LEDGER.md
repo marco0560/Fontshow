@@ -164,23 +164,46 @@ Verified work:
 
 Commit:
 
-- pending step commit
+- `e49c719` - selective archive controls committed
 
 ### Step 6 - Improve specimen usefulness without misrepresenting specialized fonts
 
-Status: pending
+Status: completed
 
 Targets:
 
 - `src/fontshow/catalog/document.py`
-- `src/fontshow/inventory/specimens.py` if needed
-- `src/fontshow/common/specimens.py` if needed
+- `src/fontshow/inventory/schema_accessors.py`
 - `tests/test_catalog_document.py`
 - `tests/test_inventory_specimens.py`
+- `docs/decisions/0027-catalog-low-information-specimen-rendering-policy.md`
+- `docs/decisions/index.md`
 
 Issue map:
 
 - no dedicated issue yet if this becomes first-class policy
+
+ADR trigger:
+
+- specialized-font specimen handling became an explicit renderer policy
+  rather than incidental fallback behavior
+
+Verified work:
+
+- reused curated script specimens for low-information primary specimens
+  when the font still behaves like a text font
+- suppressed low-information specialized-font primary specimens instead
+  of fabricating misleading text output
+- added catalog tests covering both the curated replacement path and the
+  specialized-font suppression path
+- added Decision 0027 to record the renderer-local specimen policy
+- ran focused validation:
+  - `source .venv/bin/activate && pytest -q tests/test_catalog_document.py tests/test_inventory_specimens.py`
+  - `source .venv/bin/activate && ruff check src/fontshow/catalog/document.py src/fontshow/inventory/schema_accessors.py tests/test_catalog_document.py tests/test_inventory_specimens.py`
+
+Commit:
+
+- pending step commit
 
 ### Step 7 - Compact visual layout pass
 
@@ -194,11 +217,12 @@ Targets:
 
 ### Step 8 - ADR decision checkpoint
 
-Status: pending
+Status: completed
 
 Decision:
 
-- pending
+- Decision 0027 created because specialized-font specimen handling is
+  now an explicit catalog rendering policy
 
 ### Step 9 - Final validation and issue closure pass
 

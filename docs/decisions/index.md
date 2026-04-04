@@ -44,3 +44,4 @@ created before the adoption of the formal decision record system.
 - [0024 — Parse-inventory validation summary and fallback handling](0024-parse-inventory-validation-summary-fallback-handling.md)
 - [0025 — Drive Script Inference from Ontology Data](0025-drive-script-inference-ontology-data.md)
 - [0026 — Schema v1.3 nested inventory structure and LaTeX validation metadata](0026-schema-v1-3-nested-inventory-structure-latex-validation-metadata.md)
+- [0027 — Catalog low-information specimen rendering policy](0027-catalog-low-information-specimen-rendering-policy.md)

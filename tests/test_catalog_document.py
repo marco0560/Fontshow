@@ -1306,3 +1306,187 @@ def test_generate_latex_indexed_navigation_adds_toc_anchors_and_end_index(
     assert "\\hyperlink{fontshow-family-0001}{FreeSans}" in latex
     assert "END:1:DONE" in latex
     assert latex.endswith("\\end{document}\n")
+
+
+def test_generate_latex_replaces_low_information_primary_specimen_with_curated_script(
+    monkeypatch, tmp_path
+):
+    """
+    Ensure low-information text specimens fall back to curated script samples.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers.
+    tmp_path : pathlib.Path
+        Temporary directory used to create a placeholder font file.
+
+    Returns
+    -------
+    None
+    """
+    font_path = tmp_path / "Alpha.ttf"
+    font_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE\n\\end{document}\n")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "primary_script", lambda font: "latn")
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("LATN"): {"rtl": False, "specimen": "Curated Latin sample"},
+        },
+    )
+    monkeypatch.setattr(
+        document,
+        "_specimen_collect_cmap",
+        lambda _path, _idx: {ord(ch) for ch in "Curated Latin sample"},
+    )
+
+    def render_stub(font, safe_specimen, script0_iso, fullpath):
+        """
+        Return a deterministic marker for the selected specimen text.
+
+        Parameters
+        ----------
+        font : dict[str, object]
+            Font descriptor forwarded by the document generator.
+        safe_specimen : str
+            Specimen string selected for rendering.
+        script0_iso : ScriptISO
+            Script code chosen for rendering.
+        fullpath : str
+            Absolute font path.
+
+        Returns
+        -------
+        tuple[str, str]
+            Fake LaTeX render block and plain option string.
+        """
+        _ = font, fullpath
+        return f"<{script0_iso}|{safe_specimen}>", "Path=LATN"
+
+    monkeypatch.setattr(document, "_render_font_entry", render_stub)
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "Alpha",
+                "path": str(font_path),
+                "specimen_text": "A",
+                "typography": {
+                    "specimen_text": "A",
+                    "specimen_strategy": "cmap",
+                    "specimen_glyph_count": 1,
+                },
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "coverage": {"scripts": ["latn"], "languages": ["en"]},
+            }
+        ]
+    )
+
+    assert "Curated Latin sample" in latex
+    assert "<LATN|A>" not in latex
+
+
+def test_generate_latex_marks_specialized_low_information_variant(
+    monkeypatch, tmp_path
+):
+    """
+    Ensure low-information specialized fonts are labeled instead of faking text.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers.
+    tmp_path : pathlib.Path
+        Temporary directory used to create a placeholder font file.
+
+    Returns
+    -------
+    None
+    """
+    font_path = tmp_path / "Icons.ttf"
+    font_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE\n\\end{document}\n")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "primary_script", lambda font: "latn")
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("LATN"): {"rtl": False, "specimen": "xy"},
+        },
+    )
+    monkeypatch.setattr(
+        document,
+        "_specimen_collect_cmap",
+        lambda _path, _idx: {ord("x"), ord("y")},
+    )
+    monkeypatch.setattr(
+        document,
+        "_render_font_entry",
+        lambda font, safe_specimen, script0_iso, fullpath: (
+            f"<{script0_iso}|{safe_specimen}>",
+            "Path=LATN",
+        ),
+    )
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "Icons",
+                "path": str(font_path),
+                "specimen_text": "q",
+                "typography": {
+                    "specimen_text": "q",
+                    "specimen_strategy": "cmap",
+                    "specimen_glyph_count": 1,
+                },
+                "inference": {"scripts": ["latn"], "languages": []},
+                "coverage": {"scripts": ["latn"], "languages": []},
+            }
+        ]
+    )
+
+    assert "[SPECIALIZED]" in latex
+    assert "Specialized font: specimen suppressed" in latex
+    assert "<LATN|" not in latex

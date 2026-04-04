@@ -42,7 +42,11 @@ from fontshow.core.types import (
 )
 from fontshow.inventory.io import as_font_desc_list
 from fontshow.inventory.metadata_processing import font_family
-from fontshow.inventory.schema_accessors import get_specimen_text
+from fontshow.inventory.schema_accessors import (
+    get_specimen_glyph_count,
+    get_specimen_strategy,
+    get_specimen_text,
+)
 from fontshow.inventory.specimens import (
     MIN_SAMPLE_GLYPHS,
     _specimen_collect_cmap,
@@ -344,15 +348,26 @@ def _specimen_for_rendered_script(
     """
     primary = (primary_script(font) or "").upper()
     if str(script_iso) == primary:
-        return _strip_ascii_control_chars(get_specimen_text(font) or "")
+        specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+        if not _is_low_information_primary_specimen(font):
+            return specimen
+
+        curated = _curated_primary_script_specimen(font, script_iso)
+        if curated:
+            return curated
+
+        if _should_suppress_specialized_primary_specimen(font):
+            return ""
+
+        return specimen
 
     script_info = SCRIPT_INFO.get(script_iso)
     if not isinstance(script_info, dict):
         return ""
-    specimen = script_info.get("specimen")
-    if not isinstance(specimen, str):
+    script_specimen = script_info.get("specimen")
+    if not isinstance(script_specimen, str):
         return ""
-    return _filter_renderer_script_specimen(font, specimen)
+    return _filter_renderer_script_specimen(font, script_specimen)
 
 
 def _filter_renderer_script_specimen(
@@ -388,6 +403,95 @@ def _filter_renderer_script_specimen(
         return ""
 
     return _strip_ascii_control_chars(filtered)
+
+
+def _curated_primary_script_specimen(
+    font: CatalogFontEntryV12,
+    script_iso: ScriptISO,
+) -> str:
+    """
+    Return a curated specimen fallback for a low-information primary specimen.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose primary specimen is being evaluated.
+    script_iso : ScriptISO
+        Primary script rendered for the current specimen block.
+
+    Returns
+    -------
+    str
+        Curated script specimen filtered through the font cmap, or an
+        empty string when no suitable curated replacement exists.
+    """
+    script_info = SCRIPT_INFO.get(script_iso)
+    if not isinstance(script_info, dict):
+        return ""
+    specimen = script_info.get("specimen")
+    if not isinstance(specimen, str):
+        return ""
+    return _filter_renderer_script_specimen(font, specimen)
+
+
+def _is_low_information_primary_specimen(font: CatalogFontEntryV12) -> bool:
+    """
+    Return whether the stored primary specimen is too small to be useful.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose primary specimen metadata is inspected.
+
+    Returns
+    -------
+    bool
+        ``True`` when the stored specimen glyph count is below the
+        renderer threshold or the visible specimen is blank.
+    """
+    glyph_count = get_specimen_glyph_count(font)
+    if glyph_count is not None:
+        return glyph_count < MIN_SAMPLE_GLYPHS
+    specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+    return not specimen.strip()
+
+
+def _should_suppress_specialized_primary_specimen(font: CatalogFontEntryV12) -> bool:
+    """
+    Return whether a low-information primary specimen should be suppressed.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose specimen metadata is inspected.
+
+    Returns
+    -------
+    bool
+        ``True`` when the font behaves like a specialized non-text font
+        and the primary specimen should be replaced by a compact notice.
+    """
+    if not _is_low_information_primary_specimen(font):
+        return False
+
+    coverage_raw = font.get("coverage")
+    coverage = coverage_raw if isinstance(coverage_raw, Mapping) else {}
+    inference_raw = font.get("inference")
+    inference = inference_raw if isinstance(inference_raw, Mapping) else {}
+
+    declared_languages = coverage.get("languages")
+    inferred_languages = inference.get("languages")
+    has_languages = any(
+        isinstance(value, str) and value.strip()
+        for values in (declared_languages, inferred_languages)
+        if isinstance(values, list)
+        for value in values
+    )
+    if has_languages:
+        return False
+
+    strategy = get_specimen_strategy(font) or ""
+    return strategy in {"cmap", "validated-fallback"}
 
 
 def _render_script_label(
@@ -512,7 +616,26 @@ def _render_variant_specimen_blocks(
             + (" [OK]}" if variant_renderable else " [MISSING]}")
         )
         body = "\n".join(rendered_blocks) if variant_renderable else "[MISSING]"
+        if not variant_renderable and _should_suppress_specialized_primary_specimen(
+            variant
+        ):
+            return (
+                r"{\footnotesize\ttfamily "
+                + escape_latex(variant_label)
+                + " [SPECIALIZED]}\n"
+                + r"{\footnotesize\ttfamily Specialized font: specimen suppressed}"
+            )
         return header + "\n" + body
+
+    if not variant_renderable and _should_suppress_specialized_primary_specimen(
+        variant
+    ):
+        return (
+            r"{\footnotesize\ttfamily FILE  : "
+            + escape_latex(variant_label)
+            + " [SPECIALIZED]}\n\n"
+            + r"{\footnotesize\ttfamily NOTE  : Specialized font; specimen suppressed}"
+        )
 
     return (
         r"{\footnotesize\ttfamily FILE  : "

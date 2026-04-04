@@ -202,6 +202,27 @@ def get_specimen_strategy(font: Mapping[str, Any]) -> str | None:
     return None
 
 
+def get_specimen_glyph_count(font: Mapping[str, Any]) -> int | None:
+    """
+    Return the accepted specimen glyph count for a font entry.
+
+    Parameters
+    ----------
+    font : collections.abc.Mapping[str, Any]
+        Font entry to inspect.
+
+    Returns
+    -------
+    int | None
+        Glyph-count integer when available, otherwise ``None``.
+    """
+    typography = get_font_typography(font)
+    glyph_count = typography.get("specimen_glyph_count")
+    if isinstance(glyph_count, int):
+        return glyph_count
+    return None
+
+
 def ensure_v13_typography(font: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
     """
     Ensure a mutable v1.3 typography block exists on a font entry.
