@@ -37,7 +37,7 @@ LATEX_INITIAL_CODE: str = (
     r"""% !TeX TS-program = lualatex
 % !TeX spellcheck = en_US
 % !TeX encoding = UTF-8
-\documentclass[11pt,a4paper]{article}
+\documentclass[10pt,a4paper]{article}
 \usepackage{fontspec}
 \ExplSyntaxOn
 \msg_redirect_name:nnn {fontspec} {font-not-found} {warning}
@@ -55,7 +55,7 @@ LATEX_INITIAL_CODE: str = (
 % Secondary languages for testing non-Latin scripts
 %%FONTSHOW_OTHER_LANGUAGES%%
 
-\geometry{margin=2cm}
+\geometry{margin=1.7cm}
 
 % Colors
 \definecolor{titlecolor}{HTML}{667eea}
@@ -80,7 +80,7 @@ LATEX_INITIAL_CODE: str = (
 \SetLipsumText{cicero}
 \newcommand{\Li}{\lipsum[1][1-4]}
 
-\title{\Huge\textbf{\color{titlecolor}System Font Catalog}}
+\title{\LARGE\textbf{\color{titlecolor}System Font Catalog}}
 \author{Generated with fontshow create-catalog """
     + escape_latex(__version__)
     + r"""}
@@ -91,16 +91,16 @@ LATEX_INITIAL_CODE: str = (
 \maketitle
 
 \begin{center}
-{\small\ttfamily System: %%FONTSHOW_SYSTEM_NAME%%}\\
-{\small\ttfamily Host: %%FONTSHOW_HOSTNAME%%}\\
-\vspace{0.5em}
-\parbox{0.95\linewidth}{\raggedright\emph{\footnotesize\ttfamily %%FONTSHOW_COMMAND_LINE%%}}
+{\footnotesize\ttfamily System: %%FONTSHOW_SYSTEM_NAME%%}\\
+{\footnotesize\ttfamily Host: %%FONTSHOW_HOSTNAME%%}\\
+\vspace{0.35em}
+\parbox{0.95\linewidth}{\raggedright\emph{\scriptsize\ttfamily %%FONTSHOW_COMMAND_LINE%%}}
 \end{center}
-\vspace{0.75em}
+\vspace{0.5em}
 
 \begin{abstract}
-This document catalogs the fonts installed on the system.
-Problematic fonts are excluded in advance. The compilation is performed with \textbf{LuaLaTeX}.
+This document catalogs the fonts installed on the system and excludes
+problematic faces in advance. Compilation uses \textbf{LuaLaTeX}.
 \end{abstract}
 """
 )

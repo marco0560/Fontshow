@@ -378,7 +378,7 @@ def test_generate_document_uses_variant_specific_specimens(monkeypatch, tmp_path
     monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
     monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic marker for rendered variants.
 
@@ -838,7 +838,7 @@ def test_generate_document_skips_sparse_renderer_added_specimens(monkeypatch, tm
         lambda _font, specimen: "" if specimen == "Greek sample" else specimen,
     )
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic marker for rendered script variants.
 
@@ -939,7 +939,7 @@ def test_generate_document_adds_multi_script_specimens_from_ontology(
         },
     )
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic marker for rendered script variants.
 
@@ -1043,7 +1043,7 @@ def test_generate_document_escapes_tex_size_and_family_commands(monkeypatch, tmp
         },
     )
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic marker for rendered script variants.
 
@@ -1150,7 +1150,7 @@ def test_generate_latex_compact_layout_includes_frontmatter_and_tighter_blocks(
         },
     )
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic compact marker for rendered script variants.
 
@@ -1200,8 +1200,9 @@ def test_generate_latex_compact_layout_includes_frontmatter_and_tighter_blocks(
         "April 02, 2026 18:15:13 CEST Linux atlas "
         "fontshow create-catalog --inventory inv.json" in latex
     )
-    assert "\\setlength{\\itemsep}{0.45em}" in latex
+    assert "\\setlength{\\itemsep}{0.25em}" in latex
     assert "\\setlength{\\parsep}{0pt}" in latex
+    assert "\\setlength{\\parskip}{0.1em}" in latex
     assert "{\\footnotesize\\ttfamily FreeSans.ttf [OK]}" in latex
     assert "{\\footnotesize\\ttfamily LATN} <LATN|Original Latin>" in latex
     assert "{\\footnotesize\\ttfamily CYRL} <CYRL|Cyrillic sample>" in latex
@@ -1259,7 +1260,7 @@ def test_generate_latex_indexed_navigation_adds_toc_anchors_and_end_index(
         },
     )
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic indexed marker for rendered script variants.
 
@@ -1362,7 +1363,7 @@ def test_generate_latex_replaces_low_information_primary_specimen_with_curated_s
         lambda _path, _idx: {ord(ch) for ch in "Curated Latin sample"},
     )
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic marker for the selected specimen text.
 
@@ -1464,7 +1465,7 @@ def test_generate_latex_marks_specialized_low_information_variant(
     monkeypatch.setattr(
         document,
         "_render_font_entry",
-        lambda font, safe_specimen, script0_iso, fullpath: (
+        lambda font, safe_specimen, script0_iso, fullpath, catalog_detail=None: (
             f"<{script0_iso}|{safe_specimen}>",
             "Path=LATN",
         ),

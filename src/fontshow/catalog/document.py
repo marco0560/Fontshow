@@ -192,6 +192,7 @@ def _render_family_catalog_block(
         safe_specimen=safe_specimen,
         script0_iso=script0_iso,
         fullpath=fullpath,
+        catalog_detail=catalog_detail,
     )
 
     options_pretty = (
@@ -595,6 +596,7 @@ def _render_variant_specimen_blocks(
             safe_specimen=safe_specimen,
             script0_iso=script_iso,
             fullpath=variant_path,
+            catalog_detail=catalog_detail,
         )
         if not variant_render:
             continue
@@ -881,6 +883,7 @@ def _render_font_entry(
     safe_specimen: str,
     script0_iso: ScriptISO,
     fullpath: str,
+    catalog_detail: CatalogDetailLevel = "compact",
 ) -> tuple[str, str]:
     r"""
     Render a single catalog entry specimen block and plain option string.
@@ -895,6 +898,9 @@ def _render_font_entry(
         Primary ISO script code used to choose the rendering policy.
     fullpath : str
         Font file path used to build fontspec path and file options.
+    catalog_detail : {"compact", "extended"}, optional
+        Requested catalog metadata detail level used to tune specimen
+        density.
 
     Returns
     -------
@@ -951,7 +957,10 @@ def _render_font_entry(
     if script_opt and not _omit_script_option_for_font(font, script0_iso):
         options_plain += "," + script_opt
 
-    specimen_prefix = "\\raggedright\\sloppy\\emergencystretch=2em "
+    specimen_size = "\\small " if catalog_detail == "compact" else ""
+    specimen_prefix = (
+        "\\raggedright" + specimen_size + "\\sloppy\\emergencystretch=2em "
+    )
 
     if script0_iso == ScriptISO("LATN"):
         render = (
@@ -1201,7 +1210,7 @@ def generate_latex_with_report(
     navigation_entries: list[tuple[str, str]] = []
     if not indexed_navigation:
         latex_code += "\\begin{itemize}\n"
-        latex_code += "\\setlength{\\itemsep}{0.45em}\n"
+        latex_code += "\\setlength{\\itemsep}{0.25em}\n"
         latex_code += "\\setlength{\\parsep}{0pt}\n"
         latex_code += "\\setlength{\\parskip}{0.1em}\n"
         latex_code += "\\setlength{\\topsep}{0.25em}\n"

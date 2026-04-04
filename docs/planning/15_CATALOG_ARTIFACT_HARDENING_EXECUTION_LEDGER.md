@@ -203,17 +203,35 @@ Verified work:
 
 Commit:
 
-- pending step commit
+- `ca1bea7` - low-information specimen rendering hardened
 
 ### Step 7 - Compact visual layout pass
 
-Status: pending
+Status: completed
 
 Targets:
 
 - `src/fontshow/latex/templates.py`
 - `src/fontshow/catalog/document.py`
 - `tests/test_catalog_document.py`
+
+Verified work:
+
+- tightened the default compact-mode list spacing to reduce vertical
+  waste in non-indexed catalogs
+- reduced compact specimen rendering size without changing the extended
+  metadata contract
+- tightened title-page visual density with smaller frontmatter
+  typography, smaller title scale, and narrower page margins
+- updated compact-layout catalog tests to pin the denser spacing
+- ran focused validation:
+  - `source .venv/bin/activate && pytest -q tests/test_catalog_document.py tests/test_latex_templates.py`
+  - `source .venv/bin/activate && ruff check src/fontshow/catalog/document.py src/fontshow/latex/templates.py tests/test_catalog_document.py tests/test_latex_templates.py`
+  - `source .venv/bin/activate && mypy src/fontshow/catalog/document.py`
+
+Commit:
+
+- pending step commit
 
 ### Step 8 - ADR decision checkpoint
 
