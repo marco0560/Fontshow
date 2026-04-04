@@ -716,7 +716,7 @@ def _render_font_entry(
         inline_options = opts
         if _use_language_wrapper_for_font(font):
             render = (
-                " {\begingroup"
+                " {\\begingroup"
                 "\\foreignlanguage{"
                 + lang
                 + "}{\\parbox{\\linewidth}{"

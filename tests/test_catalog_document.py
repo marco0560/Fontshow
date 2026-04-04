@@ -143,11 +143,13 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
     assert "\\ifcsname" not in render
     assert "\\newfontfamily" not in render
     assert "\\renewfontfamily\\arabicfont" not in render
+    assert "\\begingroup" in render
     assert "\\foreignlanguage{arabic}" in render
     assert "\\fontspec[" in render
     assert render.count("\\emergencystretch=2em") == 1
     assert "Extension=.ttf" not in render
     assert "{\\detokenize{arabic.ttf}}" in render
+    assert "\b" not in render
     assert options == "Renderer=1,Path=/tmp/,File=arabic.ttf,Script=Arabic"
 
 

@@ -35,17 +35,30 @@ Artifacts:
 
 Commit:
 
-- pending first branch commit
+- `72b78a8` - planning baseline committed
 
 ### Step 2 - Fix the non-Latin LaTeX emission defect
 
-Status: pending
+Status: completed
 
 Targets:
 
 - `src/fontshow/catalog/document.py`
 - `tests/test_catalog_document.py`
 - `tests/test_deterministic_output.py`
+
+Verified work:
+
+- fixed the language-wrapped render branch to emit `\\begingroup`
+  literally instead of injecting ASCII backspace via `\b`
+- added a regression assertion that the rendered block contains no
+  backspace control character
+- ran targeted regression test:
+  `source .venv/bin/activate && pytest -q tests/test_catalog_document.py -k non_latin_template_when_language_is_available`
+
+Commit:
+
+- pending step commit
 
 ### Step 3 - Remove obsolete TeX-side bookkeeping from default output
 
