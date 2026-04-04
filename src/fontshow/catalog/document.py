@@ -29,6 +29,7 @@ final LaTeX output written by the create-catalog pipeline.
 import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
 from fontshow.catalog.labels import primary_script
@@ -1211,9 +1212,13 @@ def _render_font_entry(
         render_options.append(renderer_prefix.rstrip(","))
     if use_path_based_loading:
         _dir, _file = _normalize_path_for_latex(fullpath)
+        file_suffix = Path(_file).suffix
+        file_stem = Path(_file).stem
         detok_dir = "\\detokenize{" + _dir + "}"
-        detok_file = "\\detokenize{" + _latex_detokenize_safe(_file) + "}"
+        detok_file = "\\detokenize{" + _latex_detokenize_safe(file_stem) + "}"
         render_options.append("Path=" + detok_dir)
+        if file_suffix:
+            render_options.append("Extension=" + file_suffix)
         inline_font = detok_file
         options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
     else:
