@@ -12,7 +12,7 @@ _FONTSHOW_OPTIONS_DUMP_FONTS="--cache-dir --help --include-fc-charset --no-cache
 _FONTSHOW_PATH_OPTIONS_DUMP_FONTS="--cache-dir --output -c -o"
 _FONTSHOW_POSITIONAL_PATH_DUMP_FONTS=0
 
-_FONTSHOW_OPTIONS_PARSE_INVENTORY="--help --infer-level --list-missing-language-coverage --output --quiet --strict-bcp47 --validate-inventory --verbose --version -I -V -h -i -o -q -s -v"
+_FONTSHOW_OPTIONS_PARSE_INVENTORY="--help --infer-level --list-missing-language-coverage --output --quiet --show-all-missing-language-coverage --strict-bcp47 --validate-inventory --verbose --version -I -V -h -i -o -q -s -v"
 _FONTSHOW_PATH_OPTIONS_PARSE_INVENTORY="--output -o"
 _FONTSHOW_POSITIONAL_PATH_PARSE_INVENTORY=1
 

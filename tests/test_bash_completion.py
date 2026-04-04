@@ -108,6 +108,7 @@ def test_completion_spec_tracks_command_options() -> None:
         "--list-missing-language-coverage",
         "--output",
         "--quiet",
+        "--show-all-missing-language-coverage",
         "--strict-bcp47",
         "--validate-inventory",
         "--verbose",

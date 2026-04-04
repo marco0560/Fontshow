@@ -244,7 +244,15 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--list-missing-language-coverage",
         action="store_true",
-        help="List fonts whose coverage.languages is empty and exit",
+        help="Report fonts whose coverage.languages is empty and exit",
+    )
+    parser.add_argument(
+        "--show-all-missing-language-coverage",
+        action="store_true",
+        help=(
+            "When used with --list-missing-language-coverage, print one "
+            "line per matching font instead of the summary only"
+        ),
     )
     parser.add_argument(
         "-s",
@@ -331,7 +339,9 @@ def _default_write_text(p: Path, s: str) -> None:
     p.write_text(s, encoding="utf-8")
 
 
-def _list_missing_language_coverage(data: dict[str, Any]) -> int:
+def _list_missing_language_coverage(
+    data: dict[str, Any], *, show_all: bool = False
+) -> int:
     """
     List fonts whose declared language coverage is missing.
 
@@ -340,6 +350,10 @@ def _list_missing_language_coverage(data: dict[str, Any]) -> int:
     data : dict[str, Any]
         Inventory root containing a `fonts` list.
 
+    show_all : bool, optional
+        Whether to print one line per matching font instead of only the
+        summary count.
+
     Returns
     -------
     int
@@ -347,10 +361,9 @@ def _list_missing_language_coverage(data: dict[str, Any]) -> int:
 
     Notes
     -----
-    The report is deterministic:
-    - preserves input order,
-    - prints one line per matching font,
-    - uses family name plus path to disambiguate duplicates.
+    The report is deterministic and preserves input order. When
+    ``show_all`` is enabled, it prints one line per matching font and
+    uses family name plus path to disambiguate duplicates.
     """
     fonts = data.get("fonts", [])
     if not isinstance(fonts, list):
@@ -371,6 +384,9 @@ def _list_missing_language_coverage(data: dict[str, Any]) -> int:
         missing.append((family, path))
 
     log_info(f"Fonts with missing declared language coverage: {len(missing)}")
+    if not show_all:
+        return 0
+
     for family, path in missing:
         if path:
             log_info(f"{family} | {path}")
@@ -535,7 +551,13 @@ def run_parse_font_inventory(
                 "fonts": len(data.get("fonts", [])),
             },
         )
-        return _list_missing_language_coverage(data)
+        return _list_missing_language_coverage(
+            data,
+            show_all=bool(
+                getattr(args, "show_all_missing_language_coverage", False)
+                or getattr(args, "verbose", False)
+            ),
+        )
 
     enriched = parse_inventory_fn(
         data,
@@ -584,7 +606,7 @@ def run_parse_font_inventory(
         },
     )
 
-    _emit_verbose_warnings(enriched)
+    _emit_verbose_warnings(enriched, enabled=bool(getattr(args, "verbose", False)))
 
     log_ok("Done.", f"Inventory written to {args.output}")
     log_trace_cat(

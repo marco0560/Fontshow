@@ -184,6 +184,34 @@ def test_parse_inventory_accepts_strict_bcp47_flag(cli_runner, tmp_path):
     assert code == 0
 
 
+def test_parse_inventory_accepts_show_all_missing_language_coverage_flag():
+    """
+    Verify that parse-inventory accepts the expanded report flag.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    from fontshow.cli.parse_inventory import build_parser
+
+    parser = argparse.ArgumentParser()
+    build_parser(parser)
+
+    args = parser.parse_args(
+        [
+            "--list-missing-language-coverage",
+            "--show-all-missing-language-coverage",
+        ]
+    )
+
+    assert args.list_missing_language_coverage is True
+    assert args.show_all_missing_language_coverage is True
+
+
 def test_parse_inventory_defaults_to_raw_inventory_without_validate_flag():
     """
     Verify that parse-inventory defaults to ``font_inventory.json``.

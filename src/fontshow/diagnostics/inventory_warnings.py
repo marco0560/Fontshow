@@ -214,7 +214,7 @@ def _collect_language_warnings(
 # ============================================================
 
 
-def _emit_verbose_warnings(enriched: dict[str, Any]) -> None:
+def _emit_verbose_warnings(enriched: dict[str, Any], *, enabled: bool = False) -> None:
     """
     Emit grouped warnings for verbose CLI mode.
 
@@ -222,6 +222,9 @@ def _emit_verbose_warnings(enriched: dict[str, Any]) -> None:
     ----------
     enriched : dict[str, Any]
         Enriched inventory structure containing a ``fonts`` list.
+    enabled : bool, optional
+        Whether verbose warning emission is enabled for the current CLI
+        invocation.
 
     Returns
     -------
@@ -235,6 +238,9 @@ def _emit_verbose_warnings(enriched: dict[str, Any]) -> None:
     Duplicate warning payloads within a group are collapsed through
     ``set()`` before emission to keep CLI output compact.
     """
+    if not enabled:
+        return
+
     fonts = enriched.get("fonts", [])
     if not isinstance(fonts, list):
         return

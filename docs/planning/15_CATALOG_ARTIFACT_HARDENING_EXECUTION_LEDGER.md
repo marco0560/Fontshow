@@ -313,6 +313,44 @@ Validation result:
 
 - both commands passed on `2026-04-04`
 
+### Step 11 - Parse-inventory CLI noise reduction
+
+Status: completed
+
+Targets:
+
+- `src/fontshow/cli/parse_inventory.py`
+- `src/fontshow/diagnostics/inventory_warnings.py`
+- `tests/test_parse_inventory_runtime.py`
+- `tests/test_inventory_warnings.py`
+- `tests/cli/test_parse-inventory.py`
+- `tests/test_bash_completion.py`
+- `scripts/completions/fontshow.bash`
+
+Verified work:
+
+- changed verbose warning emission so `_emit_verbose_warnings()` is
+  gated by the actual CLI verbose flag
+- changed `--list-missing-language-coverage` to print a summary count by
+  default instead of one line per matching font
+- added `--show-all-missing-language-coverage` to restore the previous
+  full listing behavior explicitly
+- treated `--verbose` as an opt-in expansion path for the
+  missing-language report
+- updated completion expectations and regenerated the checked-in bash
+  completion script
+
+Required validation:
+
+```bash
+source .venv/bin/activate && pre-commit run --all-files
+source .venv/bin/activate && pytest -q
+```
+
+Validation result:
+
+- both commands passed on `2026-04-04`
+
 Issue closure assessment:
 
 - `#70` complete on this branch
