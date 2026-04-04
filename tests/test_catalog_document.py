@@ -148,7 +148,8 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
     assert "\\fontspec[" in render
     assert render.count("\\emergencystretch=2em") == 1
     assert "Extension=.ttf" not in render
-    assert "{\\detokenize{/tmp/arabic.ttf}}" in render
+    assert "Path=\\detokenize{/tmp/}" in render
+    assert "{\\detokenize{arabic.ttf}}" in render
     assert "\b" not in render
     assert options == "Renderer=1,Path=/tmp/,File=arabic.ttf,Script=Arabic"
 
@@ -182,8 +183,8 @@ def test_render_font_entry_falls_back_to_fontspec_without_language(monkeypatch):
     assert "\\newfontfamily\\fontshowentryfont" not in render
     assert "\\fontspec[" in render
     assert "Extension=.otf" not in render
-    assert "Path=\\detokenize{/tmp/}" not in render
-    assert "{\\detokenize{/tmp/foo.otf}}" in render
+    assert "Path=\\detokenize{/tmp/}" in render
+    assert "{\\detokenize{foo.otf}}" in render
     assert options == "Path=/tmp/,File=foo.otf,Script=Foo"
 
 
@@ -218,7 +219,8 @@ def test_render_font_entry_uses_inline_fontspec_for_gujarati_without_language(
     assert "\\fontspec[" in render
     assert "\\newfontfamily\\fontshowentryfont" not in render
     assert "Script=Gujarati" in render
-    assert "{\\detokenize{/tmp/Lohit-Gujarati.ttf}}" in render
+    assert "Path=\\detokenize{/tmp/}" in render
+    assert "{\\detokenize{Lohit-Gujarati.ttf}}" in render
     assert options == "Renderer=1,Path=/tmp/,File=Lohit-Gujarati.ttf,Script=Gujarati"
 
 
@@ -258,8 +260,8 @@ def test_render_font_entry_uses_inline_fontspec_for_bengali_with_language(
     assert "\\renewfontfamily\\bengalifont" not in render
     assert "\\foreignlanguage{bengali}" not in render
     assert "Script=Bengali" in render
-    assert "Path=\\detokenize{/tmp/}" not in render
-    assert "{\\detokenize{/tmp/Lohit-Bengali.ttf}}" in render
+    assert "Path=\\detokenize{/tmp/}" in render
+    assert "{\\detokenize{Lohit-Bengali.ttf}}" in render
     assert options == "Renderer=1,Path=/tmp/,File=Lohit-Bengali.ttf,Script=Bengali"
 
 
@@ -288,8 +290,8 @@ def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
     )
 
     assert "\\fontspec[" in render
-    assert "Path=\\detokenize{/tmp/}" not in render
-    assert "{\\detokenize{/tmp/unknown.ttf}}" in render
+    assert "Path=\\detokenize{/tmp/}" in render
+    assert "{\\detokenize{unknown.ttf}}" in render
     assert options == "Renderer=1,Path=/tmp/,File=unknown.ttf"
 
 

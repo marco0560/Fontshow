@@ -1211,7 +1211,10 @@ def _render_font_entry(
         render_options.append(renderer_prefix.rstrip(","))
     if use_path_based_loading:
         _dir, _file = _normalize_path_for_latex(fullpath)
-        inline_font = "\\detokenize{" + _latex_detokenize_safe(fullpath) + "}"
+        detok_dir = "\\detokenize{" + _dir + "}"
+        detok_file = "\\detokenize{" + _latex_detokenize_safe(_file) + "}"
+        render_options.append("Path=" + detok_dir)
+        inline_font = detok_file
         options_plain = renderer_prefix + "Path=" + _dir + ",File=" + _file
     else:
         family_name = str(font.get("family", "")).strip()
