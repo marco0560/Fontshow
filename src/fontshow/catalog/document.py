@@ -344,23 +344,11 @@ def _render_variant_specimen_blocks(
         if show_script_label:
             label = _render_script_label(script_iso, catalog_detail=catalog_detail)
             block = (
-                label
-                + (" " if catalog_detail == "compact" else "\n")
-                + "\\LogWorking{"
-                + escape_latex(
-                    family_name + " / " + variant_label + " / " + str(script_iso)
-                )
-                + "}"
-                + variant_render
+                label + (" " if catalog_detail == "compact" else "\n") + variant_render
             )
             rendered_blocks.append(block)
         else:
-            rendered_blocks.append(
-                "\\LogWorking{"
-                + escape_latex(family_name + " / " + variant_label)
-                + "}"
-                + variant_render
-            )
+            rendered_blocks.append(variant_render)
 
     variant_renderable = bool(rendered_blocks)
     if catalog_detail == "compact":
@@ -369,13 +357,7 @@ def _render_variant_specimen_blocks(
             + escape_latex(variant_label)
             + (" [OK]}" if variant_renderable else " [MISSING]}")
         )
-        body = (
-            "\n".join(rendered_blocks)
-            if variant_renderable
-            else "\\LogBroken{"
-            + escape_latex(family_name + " / " + variant_label)
-            + "}[MISSING]"
-        )
+        body = "\n".join(rendered_blocks) if variant_renderable else "[MISSING]"
         return header + "\n" + body
 
     return (
@@ -383,13 +365,7 @@ def _render_variant_specimen_blocks(
         + escape_latex(variant_label)
         + (" [OK]}" if variant_renderable else " [MISSING]}")
         + "\n\n"
-        + (
-            "\n\n".join(rendered_blocks)
-            if variant_renderable
-            else "\\LogBroken{"
-            + escape_latex(family_name + " / " + variant_label)
-            + "}[MISSING]"
-        )
+        + ("\n\n".join(rendered_blocks) if variant_renderable else "[MISSING]")
     )
 
 
@@ -1016,11 +992,6 @@ def generate_latex_with_report(
         latex_code += family_intro + "\n\n" + "\n\n".join(variant_blocks) + "\n\n"
 
     latex_code += "\\end{itemize}\n"
-
-    latex_code += "\n\n"
-    for excluded_font in sorted(list(EXCLUDED_FONTS)):
-        excluded_block: str = r"\LogExcluded{" + excluded_font + "}\n"
-        latex_code += excluded_block
 
     # Closing document and printing indices
     latex_code += _render_excluded_fonts_section(excluded_fonts)

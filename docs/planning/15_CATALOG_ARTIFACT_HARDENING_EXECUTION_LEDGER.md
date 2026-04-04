@@ -58,11 +58,11 @@ Verified work:
 
 Commit:
 
-- pending step commit
+- `6a3f64f` - non-Latin render defect fixed and regression-covered
 
 ### Step 3 - Remove obsolete TeX-side bookkeeping from default output
 
-Status: pending
+Status: completed
 
 Targets:
 
@@ -74,6 +74,23 @@ Targets:
 Issue map:
 
 - `#70`
+
+Verified work:
+
+- removed unconditional TOC emission from the default LaTeX template
+- removed legacy default-mode `\openout`, `\LogWorking`, `\LogBroken`,
+  `\LogExcluded`, and `\FileSec` machinery
+- stopped emitting obsolete `\Log*` calls from catalog document
+  rendering
+- reduced the default closing section to a minimal summary without
+  working/broken/excluded end tables
+- ran focused validation:
+  - `source .venv/bin/activate && pytest -q tests/test_catalog_document.py`
+  - `source .venv/bin/activate && pytest -q tests/test_artifact_hygiene.py`
+
+Commit:
+
+- pending step commit
 
 ### Step 4 - Add opt-in indexed navigation mode
 

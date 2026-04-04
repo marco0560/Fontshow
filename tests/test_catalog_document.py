@@ -564,13 +564,9 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert "}\\newline" not in latex
     assert "\\item Beta" in latex.split("\\item Alpha", maxsplit=1)[1]
     assert "\n\n\\item Beta" in latex
-    assert "\\LogWorking{Alpha / alpha.ttf / LATN}" in latex
-    assert "\\LogWorking{Alpha / ignored.ttf / LATN}" in latex
-    assert "\\LogBroken{Beta / beta.bin}" in latex
     assert latex.count("\\allowbreak{}") == 7
     assert "beta.bin [MISSING]" in latex
-    assert "\\LogBroken{Beta / beta.bin}[MISSING]" in latex
-    assert "\\LogExcluded{Zed}" in latex
+    assert "[MISSING]" in latex
     assert latex.endswith("\nEND:2:DONE")
 
 
@@ -633,7 +629,6 @@ def test_generate_latex_skips_excluded_families_from_catalog(monkeypatch):
 
     assert "\\item Skip Me" not in latex
     assert "\\item Keep Me" in latex
-    assert "\\LogExcluded{Skip Me}" in latex
     assert latex.endswith("\nEND:1:DONE")
 
 
@@ -757,11 +752,9 @@ def test_generate_latex_marks_family_fallback_entries_as_working(monkeypatch):
     )
 
     assert "ETbb [OK]" in latex
-    assert "\\LogWorking{ETbb / ETbb / LATN}" in latex
-    assert "\\LogBroken{ETbb / ETbb}[MISSING]" not in latex
     assert "OPTS  : Family=ETbb, UprightFont=*" not in latex
     assert r"{\footnotesize\ttfamily LATN}" in latex
-    assert "\\LogWorking{ETbb / ETbb / LATN}" in latex
+    assert "[MISSING]" not in latex
 
 
 def test_filter_renderer_script_specimen_rejects_sparse_results(monkeypatch):
@@ -1210,11 +1203,5 @@ def test_generate_latex_compact_layout_includes_frontmatter_and_tighter_blocks(
     assert "\\setlength{\\itemsep}{0.45em}" in latex
     assert "\\setlength{\\parsep}{0pt}" in latex
     assert "{\\footnotesize\\ttfamily FreeSans.ttf [OK]}" in latex
-    assert (
-        "{\\footnotesize\\ttfamily LATN} "
-        "\\LogWorking{FreeSans / FreeSans.ttf / LATN}<LATN|Original Latin>"
-    ) in latex
-    assert (
-        "{\\footnotesize\\ttfamily CYRL} "
-        "\\LogWorking{FreeSans / FreeSans.ttf / CYRL}<CYRL|Cyrillic sample>"
-    ) in latex
+    assert "{\\footnotesize\\ttfamily LATN} <LATN|Original Latin>" in latex
+    assert "{\\footnotesize\\ttfamily CYRL} <CYRL|Cyrillic sample>" in latex
