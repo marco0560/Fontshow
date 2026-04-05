@@ -239,6 +239,7 @@ def _validate_specimen(entry: dict, errors: list[str]) -> None:
     if specimen_strategy not in (
         "internal",
         "script",
+        "language",
         "cmap",
         "deferred",
         "validated-language-sample",

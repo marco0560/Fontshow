@@ -371,7 +371,7 @@ def nfss_family_id(font: dict) -> str:
     Parameters
     ----------
     font : dict
-        Font descriptor dictionary containing the schema 1.2 `path`
+        Font descriptor dictionary containing a filesystem `path`
         field.
 
     Returns

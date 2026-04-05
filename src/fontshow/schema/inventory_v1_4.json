@@ -335,6 +335,7 @@
           "enum": [
             "internal",
             "script",
+            "language",
             "cmap",
             "deferred",
             "validated-language-sample",

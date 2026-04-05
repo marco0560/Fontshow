@@ -633,7 +633,7 @@ def _specimen_generate_for_font(
     font_path: str | None,
 ) -> None:
     """
-    Deterministic specimen generator (3-level fallback).
+    Deterministic specimen generator with ordered specimen fallbacks.
 
     Parameters
     ----------
@@ -659,7 +659,8 @@ def _specimen_generate_for_font(
     Fallback order:
     1. internal sample text
     2. script-derived curated sample
-    3. cmap-derived fallback
+    3. language-derived sample
+    4. cmap-derived fallback
 
     The function always leaves a visible specimen in the font record,
     even when curated and cmap-derived samples are both unusable.

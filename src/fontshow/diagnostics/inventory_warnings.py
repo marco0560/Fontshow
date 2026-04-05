@@ -57,7 +57,8 @@ def _format_font_identity(font: dict, index: int) -> str:
 
     Notes
     -----
-    - Uses only the schema 1.2 layout.
+    - Uses only stable cross-schema identity fields such as path,
+      family, and subfamily.
     - Intended for diagnostics and CLI output only.
     - Does not modify the font entry.
     """

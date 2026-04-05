@@ -365,6 +365,7 @@ This document is a human-oriented rendering of that schema.
           "enum": [
             "internal",
             "script",
+            "language",
             "cmap",
             "deferred",
             "validated-language-sample",
