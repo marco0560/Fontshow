@@ -605,15 +605,27 @@ def _ordered_script_candidates(font: CatalogFontEntryV12) -> list[ScriptISO]:
         seen.add(cleaned)
         normalized.append(ScriptISO(cleaned))
 
+    if not normalized:
+        return []
+
+    primary_iso = (
+        ScriptISO(str(primary).strip().upper())
+        if str(primary).strip()
+        else normalized[0]
+    )
+    remaining = [script_iso for script_iso in normalized if script_iso != primary_iso]
+
     def _sort_key(script_iso: ScriptISO) -> tuple[int, str]:
         info: dict[str, object] = dict(SCRIPT_INFO.get(script_iso, {}))
-        if str(script_iso) == "LATN":
-            return (0, str(script_iso))
         if bool(info.get("rtl", False)):
+            return (0, str(script_iso))
+        if str(script_iso) == "LATN":
             return (1, str(script_iso))
         return (2, str(script_iso))
 
-    return sorted(normalized, key=_sort_key)[:_MULTI_SPECIMEN_LIMIT]
+    ordered = [primary_iso]
+    ordered.extend(sorted(remaining, key=_sort_key))
+    return ordered[:_MULTI_SPECIMEN_LIMIT]
 
 
 def _has_persisted_render_variant_success(
@@ -675,7 +687,10 @@ def _specimen_for_rendered_script(
     primary = (primary_script(font) or "").upper()
     if str(script_iso) == primary:
         specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
-        if not _is_low_information_primary_specimen(font):
+        if not (
+            _is_low_information_primary_specimen(font)
+            or _has_low_information_visible_specimen(font)
+        ):
             return specimen
 
         curated = _curated_primary_script_specimen(font, script_iso)
@@ -782,6 +797,30 @@ def _is_low_information_primary_specimen(font: CatalogFontEntryV12) -> bool:
     return not specimen.strip()
 
 
+def _has_low_information_visible_specimen(font: CatalogFontEntryV12) -> bool:
+    """
+    Return whether the accepted specimen remains visually low-value.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose accepted specimen text is being inspected.
+
+    Returns
+    -------
+    bool
+        ``True`` when the visible specimen is still too short or too
+        repetitive to be useful in the main catalog body.
+    """
+    specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+    visible = "".join(ch for ch in specimen if not ch.isspace())
+    if not visible:
+        return True
+    if len(visible) <= 3:
+        return True
+    return len(visible) <= 6 and len(set(visible)) <= 4
+
+
 def _should_suppress_specialized_primary_specimen(font: CatalogFontEntryV12) -> bool:
     """
     Return whether a low-information primary specimen should be suppressed.
@@ -797,7 +836,10 @@ def _should_suppress_specialized_primary_specimen(font: CatalogFontEntryV12) -> 
         ``True`` when the font behaves like a specialized non-text font
         and the primary specimen should be replaced by a compact notice.
     """
-    if not _is_low_information_primary_specimen(font):
+    if not (
+        _is_low_information_primary_specimen(font)
+        or _has_low_information_visible_specimen(font)
+    ):
         return False
 
     coverage_raw = font.get("coverage")
@@ -963,7 +1005,7 @@ def _render_variant_body_block(
                 rendered_specimen=rendered_blocks[0],
             )
         ]
-    return header + "\n" + "\n".join(rendered_blocks)
+    return header + "\\par\n" + "\n".join(rendered_blocks)
 
 
 def _render_family_debug_block(
@@ -1328,17 +1370,17 @@ def _format_specimen_for_latex(specimen: str, script0_iso: ScriptISO) -> str:
     Notes
     -----
     Long specimens without whitespace receive a break opportunity every
-    5 characters, including CJK runs. The explicit markers keep line
+    4 characters, including CJK runs. The explicit markers keep line
     breaking deterministic across specimen scripts.
     """
     if not specimen:
         return ""
 
-    if any(ch.isspace() for ch in specimen) or len(specimen) < 40:
+    if any(ch.isspace() for ch in specimen) or len(specimen) < 24:
         return escape_latex(specimen)
 
     _ = script0_iso
-    chunks = [specimen[idx : idx + 5] for idx in range(0, len(specimen), 5)]
+    chunks = [specimen[idx : idx + 4] for idx in range(0, len(specimen), 4)]
     return r"\allowbreak{}".join(escape_latex(chunk) for chunk in chunks)
 
 
@@ -1423,9 +1465,10 @@ def _render_font_entry(
         options_plain += "," + script_opt
 
     specimen_size = "\\small " if catalog_detail == "compact" else ""
-    specimen_prefix = (
-        "\\raggedright" + specimen_size + "\\sloppy\\emergencystretch=2em "
-    )
+    script_info: dict[str, object] = dict(SCRIPT_INFO.get(script0_iso, {}))
+    rtl = isinstance(script_info, dict) and bool(script_info.get("rtl", False))
+    alignment = "\\raggedleft" if rtl else "\\raggedright"
+    specimen_prefix = alignment + specimen_size + "\\sloppy\\emergencystretch=2em "
 
     if lang:
         _ = lang

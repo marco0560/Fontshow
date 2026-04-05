@@ -288,6 +288,16 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
         "requires_polyglossia": False,
         "specimen": "ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄚㄛㄜ",
     },
+    ScriptISO("BRAI"): {
+        "canonical_name": "Braille",
+        "description": "Braille is a tactile writing system encoded in Unicode as braille patterns. It is used across many languages and is notable for representing characters through raised-cell combinations rather than inked glyph shapes.",
+        "display_language": "zxx",
+        "polyglossia_language": "",
+        "fontspec_opts": "",
+        "rtl": False,
+        "requires_polyglossia": False,
+        "specimen": "⠁⠃⠉⠙⠑⠋ ⠛⠓⠊⠚⠅⠇",
+    },
     ScriptISO("BRAH"): {
         "canonical_name": "Brahmi",
         "description": "Brahmi is an ancient South Asian script attested from the 3rd century BCE. It is notable as the ancestor of most later Brahmic scripts used across South and Southeast Asia.",
@@ -1947,6 +1957,7 @@ _SCRIPT_INFERENCE_PRIORITY: dict[ScriptISO, int] = {
     ScriptISO("ARMN"): 2,
     ScriptISO("BENG"): 3,
     ScriptISO("BOPO"): 4,
+    ScriptISO("BRAI"): 5,
     ScriptISO("BRAH"): 5,
     ScriptISO("BUGI"): 6,
     ScriptISO("BUHD"): 7,
@@ -2046,6 +2057,13 @@ _SCRIPT_INFERENCE_OVERRIDES: dict[ScriptISO, ScriptInferenceOverride] = {
         "optional_blocks": ["Bopomofo Extended"],
         "block_match": "exact",
         "unicode_max_ranges": [(0x3100, 0x312F), (0x31A0, 0x31BF)],
+    },
+    ScriptISO("BRAI"): {
+        "required_blocks": ["Braille Patterns"],
+        "optional_blocks": [],
+        "suppresses": [ScriptISO("LATN")],
+        "preferred_over": [ScriptISO("LATN")],
+        "unicode_max_ranges": [(0x2800, 0x28FF)],
     },
     ScriptISO("BAMU"): {
         "required_blocks": ["Bamum"],

@@ -130,6 +130,24 @@ def test_infer_scripts_unknown_when_no_coverage():
     assert scripts == ["unknown"]
 
 
+def test_infer_scripts_braille_uses_brai_and_suppresses_latin_noise():
+    """
+    Ensure Braille coverage maps to ``brai`` even with Basic Latin noise.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    assert infer_scripts({"unicode_blocks": {"Braille Patterns": 24}}) == ["brai"]
+    assert infer_scripts(
+        {"unicode_blocks": {"Braille Patterns": 24, "Basic Latin": 9}}
+    ) == ["brai"]
+
+
 def test_infer_scripts_cyrillic():
     """
     Verify that Cyrillic block coverage infers the ``cyrl`` script.

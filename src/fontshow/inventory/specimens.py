@@ -66,7 +66,7 @@ from fontshow.ontology.language_tables import SCRIPT_INFO
 # ============================================================
 
 MIN_SAMPLE_GLYPHS = 20
-CMAP_FALLBACK_GLYPHS = 50
+CMAP_FALLBACK_GLYPHS = 40
 
 
 def _specimen_is_variation_selector(cp: int) -> bool:
@@ -200,15 +200,23 @@ def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
     out: list[str] = []
     glyphs = 0
     prev_base = False
+    pending_space = False
 
     for ch in text:
         cp = ord(ch)
+
+        if ch.isspace():
+            if out and prev_base:
+                pending_space = True
+            prev_base = False
+            continue
 
         if (
             cp not in cps
             or _specimen_is_control_like(cp)
             or _specimen_is_variation_selector(cp)
         ):
+            pending_space = False
             prev_base = False
             continue
 
@@ -217,6 +225,10 @@ def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
                 continue
             out.append(ch)
             continue
+
+        if pending_space and out:
+            out.append(" ")
+            pending_space = False
 
         out.append(ch)
         glyphs += 1

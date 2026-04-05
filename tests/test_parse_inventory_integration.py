@@ -298,3 +298,99 @@ def test_parse_inventory_reconciles_primary_script_with_internal_specimen(
     assert font["inference"]["primary_script"] == "ARAB"
     assert font["inference"]["scripts"][0] == "ARAB"
     assert font["typography"]["primary_script"] == "ARAB"
+
+
+def test_parse_inventory_reconciles_mixed_cmap_specimen_away_from_latn(
+    monkeypatch,
+):
+    """
+    Ensure mixed Han-plus-Latin cmap specimens do not stay spuriously Latin.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace parse-stage helpers with deterministic
+        stubs.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "_apply_schema_validation",
+        lambda _data: None,
+    )
+    monkeypatch.setattr(parse_inventory_module, "_process_charset", lambda *_args: None)
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "_process_language_metadata",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "collect_latex_validation_metadata",
+        dict,
+    )
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "probe_and_persist_lualatex_render_variants",
+        lambda _fonts, *, validation_metadata: None,
+    )
+
+    def _fake_infer(font, coverage, *, level, font_path):
+        _ = level, font_path
+        coverage["scripts"] = ["LATN", "HANI", "BOPO"]
+        coverage["primary_script"] = "LATN"
+        font["inference"] = {
+            "level": "aggressive",
+            "scripts": ["LATN", "HANI", "BOPO"],
+            "primary_script": "LATN",
+            "languages": ["zh"],
+            "declared_scripts": [],
+            "declared_languages": [],
+            "unicode_blocks": {
+                "Basic Latin": 25,
+                "CJK Unified Ideographs": 25,
+            },
+        }
+
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "_infer_and_attach_metadata",
+        _fake_infer,
+    )
+
+    def _fake_specimen(font, coverage, font_path):
+        _ = coverage, font_path
+        typography = font.setdefault("typography", {})
+        typography["specimen_text"] = "天地玄黃 宇宙洪荒"
+        typography["specimen_strategy"] = "cmap"
+        typography["specimen_glyph_count"] = 8
+        typography["specimen_rejection_reason"] = "fallback_to_cmap"
+
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "_specimen_generate_for_font",
+        _fake_specimen,
+    )
+
+    data = {
+        "metadata": {"validation": {}},
+        "fonts": [
+            {
+                "path": "/tmp/ARPLKaitiM.ttf",
+                "family": "AR PL KaitiM",
+                "coverage": {"unicode_blocks": {"Basic Latin": 25}},
+            }
+        ],
+    }
+
+    result = parse_inventory(data, level="aggressive")
+    font = result["fonts"][0]
+
+    assert font["coverage"]["primary_script"] == "HANI"
+    assert font["coverage"]["scripts"][0] == "HANI"
+    assert font["inference"]["primary_script"] == "HANI"
+    assert font["inference"]["scripts"][0] == "HANI"
+    assert font["typography"]["primary_script"] == "HANI"

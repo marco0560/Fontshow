@@ -298,7 +298,9 @@ def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
     assert options == "Renderer=1,Path=/tmp/,File=unknown.ttf"
 
 
-def test_ordered_script_candidates_prioritizes_latn_then_rtl(monkeypatch):
+def test_ordered_script_candidates_prioritizes_primary_then_rtl_then_latn(
+    monkeypatch,
+):
     """
     Ensure multi-specimen script ordering follows the renderer policy.
 
@@ -333,11 +335,42 @@ def test_ordered_script_candidates_prioritizes_latn_then_rtl(monkeypatch):
     )
 
     assert scripts == [
-        ScriptISO("LATN"),
+        ScriptISO("KHMR"),
         ScriptISO("ARAB"),
+        ScriptISO("LATN"),
         ScriptISO("CYRL"),
-        ScriptISO("GREK"),
     ]
+
+
+def test_render_font_entry_uses_raggedleft_for_rtl_scripts(monkeypatch):
+    """
+    Ensure RTL scripts render with right-aligned specimen blocks.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace LaTeX helper functions.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(
+        document, "_get_render_policy", lambda _script: ("arabic", "Script=Arabic")
+    )
+    monkeypatch.setattr(document, "SCRIPT_INFO", {ScriptISO("ARAB"): {"rtl": True}})
+
+    render, _options = document._render_font_entry(
+        font={"path": "/tmp/arabic.ttf"},
+        safe_specimen="abc",
+        script0_iso=ScriptISO("ARAB"),
+        fullpath="/tmp/arabic.ttf",
+    )
+
+    assert "\\raggedleft" in render
+    assert "\\raggedright" not in render
 
 
 def test_has_persisted_render_variant_success_requires_matching_success(monkeypatch):
@@ -490,9 +523,9 @@ def test_generate_document_uses_variant_specific_specimens(monkeypatch, tmp_path
     assert f"<{bold_path}|The quick brown fox>" in latex
 
 
-def test_format_specimen_for_latex_chunks_non_space_runs_every_five_characters():
+def test_format_specimen_for_latex_chunks_non_space_runs_every_four_characters():
     """
-    Ensure long runs without spaces receive explicit break hints every five characters.
+    Ensure long runs without spaces receive explicit break hints every four characters.
 
     Parameters
     ----------
@@ -508,7 +541,7 @@ def test_format_specimen_for_latex_chunks_non_space_runs_every_five_characters()
 
     assert (
         formatted
-        == "AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA"
+        == "AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA"
     )
 
 
@@ -530,9 +563,9 @@ def test_format_specimen_for_latex_adds_break_hints_for_cjk_runs():
 
     assert (
         formatted
-        == "漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢"
+        == "漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢"
     )
-    assert formatted.count("\\allowbreak{}") == 7
+    assert formatted.count("\\allowbreak{}") == 9
 
 
 def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkeypatch):
@@ -623,7 +656,7 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert "LANGS : EN" not in latex
     assert "OPTS  : Path=/tmp/, File=alpha.ttf" not in latex
     assert "}\\newline" not in latex
-    assert latex.count("\\allowbreak{}") == 7
+    assert latex.count("\\allowbreak{}") == 9
     assert "[MISSING]" not in latex
     assert "\\section{Unrendered Variants}" in latex
     assert "\\item Beta | beta.bin | /tmp/beta.bin" in latex
@@ -1129,9 +1162,9 @@ def test_generate_document_adds_multi_script_specimens_from_ontology(
     assert "<ARAB|Arabic sample>" in latex
     assert "<KHMR|Original Khmer>" in latex
     assert (
-        latex.index("SPEC  : LATN")
+        latex.index("SPEC  : KHMR")
         < latex.index("SPEC  : ARAB")
-        < latex.index("SPEC  : KHMR")
+        < latex.index("SPEC  : LATN")
     )
 
 
@@ -1347,6 +1380,7 @@ def test_generate_latex_compact_layout_includes_frontmatter_and_tighter_blocks(
     assert "\\setlength{\\parsep}{0pt}" in latex
     assert "\\setlength{\\parskip}{0.1em}" in latex
     assert "{\\footnotesize\\ttfamily FreeSans.ttf}" in latex
+    assert "{\\footnotesize\\ttfamily FreeSans.ttf}\\par" in latex
     assert (
         "\\begin{minipage}[t]{0.18\\linewidth}\\raggedright {\\footnotesize\\ttfamily LATN}\\end{minipage}"
         in latex
@@ -1514,13 +1548,16 @@ def test_generate_latex_replaces_low_information_primary_specimen_with_curated_s
         document,
         "SCRIPT_INFO",
         {
-            ScriptISO("LATN"): {"rtl": False, "specimen": "Curated Latin sample"},
+            ScriptISO("LATN"): {
+                "rtl": False,
+                "specimen": "Curated Latin specimen text",
+            },
         },
     )
     monkeypatch.setattr(
         document,
         "_specimen_collect_cmap",
-        lambda _path, _idx: {ord(ch) for ch in "Curated Latin sample"},
+        lambda _path, _idx: {ord(ch) for ch in "Curated Latin specimen text"},
     )
 
     def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
@@ -1565,7 +1602,7 @@ def test_generate_latex_replaces_low_information_primary_specimen_with_curated_s
         ]
     )
 
-    assert "Curated Latin sample" in latex
+    assert "Curated Latin specimen text" in latex
     assert "<LATN|A>" not in latex
 
 

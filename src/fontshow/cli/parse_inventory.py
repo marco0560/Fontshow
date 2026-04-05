@@ -181,11 +181,6 @@ def _reconcile_primary_script_with_specimen(
     if not specimen_scripts:
         return
 
-    specimen_primary = specimen_scripts[0]
-    current_primary = primary_script(font)
-    if isinstance(current_primary, str) and current_primary.upper() == specimen_primary:
-        return
-
     coverage_scripts_raw = coverage.get("scripts")
     coverage_scripts = (
         [
@@ -208,6 +203,18 @@ def _reconcile_primary_script_with_specimen(
         if isinstance(inference_scripts_raw, list)
         else []
     )
+
+    specimen_primary = specimen_scripts[0]
+    if specimen_primary == "LATN":
+        known_scripts = {script for script in coverage_scripts + inference_scripts}
+        for candidate in specimen_scripts[1:]:
+            if candidate != "LATN" and candidate in known_scripts:
+                specimen_primary = candidate
+                break
+
+    current_primary = primary_script(font)
+    if isinstance(current_primary, str) and current_primary.upper() == specimen_primary:
+        return
 
     if (
         specimen_primary not in coverage_scripts

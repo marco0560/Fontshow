@@ -136,6 +136,48 @@ def test_specimen_from_cmap_returns_fallback_without_warning_record():
     assert "warnings" not in font
 
 
+def test_specimen_filter_text_preserves_separator_spaces_without_counting_them():
+    """
+    Ensure supported whitespace is preserved only between accepted glyphs.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    filtered, glyphs = specimens._specimen_filter_text(
+        "AB CD",
+        {ord("A"), ord("B"), ord("C"), ord("D"), ord(" ")},
+    )
+
+    assert filtered == "AB CD"
+    assert glyphs == 4
+
+
+def test_specimen_filter_text_drops_whitespace_only_support():
+    """
+    Ensure whitespace-only cmap support does not count as a specimen.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    filtered, glyphs = specimens._specimen_filter_text(
+        "The quick brown fox",
+        {ord(" ")},
+    )
+
+    assert filtered == ""
+    assert glyphs == 0
+
+
 def test_specimen_apply_semantic_validation_uses_language_sample_then_ascii(
     monkeypatch,
 ):
@@ -288,7 +330,7 @@ def test_specimen_generate_for_font_uses_language_sample_before_cmap(monkeypatch
     typography = font["typography"]
     assert typography["specimen_text"] == "Hello there General Kenobi"
     assert typography["specimen_strategy"] == "language"
-    assert typography["specimen_glyph_count"] == 26
+    assert typography["specimen_glyph_count"] == 23
     assert typography["specimen_rejection_reason"] == "fallback_to_language"
 
 
