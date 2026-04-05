@@ -50,6 +50,7 @@ LATEX_INITIAL_CODE: str = (
 \usepackage{fancyhdr}
 \usepackage{hyperref}
 \usepackage{booktabs}
+\usepackage{multicol}
 
 \setmainlanguage{english}
 % Secondary languages for testing non-Latin scripts

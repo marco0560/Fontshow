@@ -616,8 +616,8 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     assert latex.count("\\item Alpha") == 1
     assert "\n\n\\item Beta\n" not in latex
     assert "---" not in latex
-    assert "alpha.ttf [OK]" in latex
-    assert "ignored.ttf [OK]" in latex
+    assert "{\\footnotesize\\ttfamily alpha.ttf}" in latex
+    assert "{\\footnotesize\\ttfamily ignored.ttf}" in latex
     assert "LANGDEF" not in latex
     assert "FONTDEF" not in latex
     assert "LANGS : EN" not in latex
@@ -706,8 +706,8 @@ def test_generate_latex_moves_duplicate_variants_to_appendix(monkeypatch):
         ]
     )
 
-    assert "alpha-1.ttf [OK]" in latex
-    assert "alpha-2.ttf [OK]" not in latex
+    assert "{\\footnotesize\\ttfamily alpha-1.ttf}" in latex
+    assert "{\\footnotesize\\ttfamily alpha-2.ttf}" not in latex
     assert "\\section{Duplicate Sources}" in latex
     assert "\\item Alpha | alpha-2.ttf | /tmp/alpha-2.ttf | alpha-1.ttf" in latex
 
@@ -893,7 +893,7 @@ def test_generate_latex_marks_family_fallback_entries_as_working(monkeypatch):
         ]
     )
 
-    assert "ETbb [OK]" in latex
+    assert "{\\footnotesize\\ttfamily ETbb}" in latex
     assert "OPTS  : Family=ETbb, UprightFont=*" not in latex
     assert r"{\footnotesize\ttfamily LATN}" in latex
     assert "[MISSING]" not in latex
@@ -1225,7 +1225,7 @@ def test_generate_document_escapes_tex_size_and_family_commands(monkeypatch, tmp
         catalog_detail="extended",
     )
 
-    assert "{\\footnotesize\\ttfamily FILE  : FreeSans.ttf [OK]}" in latex
+    assert "{\\footnotesize\\ttfamily FILE  : FreeSans.ttf}" in latex
     assert "{\\footnotesize\\ttfamily SPEC  : LATN}" in latex
     assert "{\\footnotesize\\ttfamily SPEC  : KHMR}" in latex
     assert "\x0c" not in latex
@@ -1345,16 +1345,30 @@ def test_generate_latex_compact_layout_includes_frontmatter_and_tighter_blocks(
     assert "\\setlength{\\itemsep}{0.25em}" in latex
     assert "\\setlength{\\parsep}{0pt}" in latex
     assert "\\setlength{\\parskip}{0.1em}" in latex
-    assert "{\\footnotesize\\ttfamily FreeSans.ttf [OK]}" in latex
-    assert "{\\footnotesize\\ttfamily LATN} <LATN|Original Latin>" in latex
-    assert "{\\footnotesize\\ttfamily CYRL} <CYRL|Cyrillic sample>" in latex
+    assert "{\\footnotesize\\ttfamily FreeSans.ttf}" in latex
+    assert (
+        "\\begin{minipage}[t]{0.18\\linewidth}\\raggedright {\\footnotesize\\ttfamily LATN}\\end{minipage}"
+        in latex
+    )
+    assert (
+        "\\begin{minipage}[t]{0.79\\linewidth}<LATN|Original Latin>\\end{minipage}\\par"
+        in latex
+    )
+    assert (
+        "\\begin{minipage}[t]{0.18\\linewidth}\\raggedright {\\footnotesize\\ttfamily CYRL}\\end{minipage}"
+        in latex
+    )
+    assert (
+        "\\begin{minipage}[t]{0.79\\linewidth}<CYRL|Cyrillic sample>\\end{minipage}\\par"
+        in latex
+    )
 
 
 def test_generate_latex_indexed_navigation_adds_toc_anchors_and_end_index(
     monkeypatch, tmp_path
 ):
     """
-    Ensure indexed catalogs include TOC, family anchors, and end index.
+    Ensure indexed catalogs include family anchors, bookmarks, and grouped index.
 
     Parameters
     ----------
@@ -1442,10 +1456,13 @@ def test_generate_latex_indexed_navigation_adds_toc_anchors_and_end_index(
         indexed_navigation=True,
     )
 
-    assert "\\tableofcontents" in latex
+    assert "\\tableofcontents" not in latex
     assert "\\hypertarget{fontshow-family-0001}{}" in latex
-    assert "\\subsection{FreeSans}" in latex
+    assert "\\pdfbookmark[2]{FreeSans}{fontshow-family-0001-bookmark}" in latex
+    assert "\\subsection*{FreeSans}" in latex
     assert "\\section{Navigation Index}" in latex
+    assert "\\begin{multicols}{3}" in latex
+    assert "\\textbf{F}\\par" in latex
     assert "\\hyperlink{fontshow-family-0001}{FreeSans}" in latex
     assert "END:1:DONE" in latex
     assert latex.endswith("\\end{document}\n")
@@ -1630,6 +1647,6 @@ def test_generate_latex_marks_specialized_low_information_variant(
         ]
     )
 
-    assert "[GLYPH SAMPLE]" in latex
-    assert "Glyph sample" in latex
+    assert "{\\footnotesize\\ttfamily Icons.ttf}" in latex
+    assert "{\\footnotesize\\ttfamily GLYPH}" in latex
     assert "<|" in latex

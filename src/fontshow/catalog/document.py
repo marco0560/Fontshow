@@ -197,19 +197,57 @@ def _render_navigation_index(entries: list[tuple[str, str]]) -> str:
     Returns
     -------
     str
-        LaTeX section text for the navigation index, or an empty string
-        when no entries are available.
+        LaTeX section text for the grouped navigation index, or an
+        empty string when no entries are available.
     """
     if not entries:
         return ""
 
-    lines = ["\\section{Navigation Index}", "\\begin{itemize}"]
+    grouped_entries: dict[str, list[tuple[str, str]]] = {}
     for family_name, anchor in entries:
-        lines.append(
-            "\\item \\hyperlink{" + anchor + "}{" + escape_latex(family_name) + "}"
-        )
-    lines.append("\\end{itemize}")
+        group = _navigation_group_key(family_name)
+        grouped_entries.setdefault(group, []).append((family_name, anchor))
+
+    lines = [
+        "\\section{Navigation Index}",
+        "\\begingroup",
+        "\\small",
+        "\\setlength{\\columnsep}{1.2em}",
+        "\\begin{multicols}{3}",
+        "\\raggedright",
+    ]
+    for group in sorted(grouped_entries):
+        lines.append("\\textbf{" + escape_latex(group) + "}\\par")
+        for family_name, anchor in grouped_entries[group]:
+            lines.append(
+                "\\hyperlink{" + anchor + "}{" + escape_latex(family_name) + "}\\\\"
+            )
+        lines.append("\\medskip")
+    lines.extend(["\\end{multicols}", "\\endgroup"])
     return "\n".join(lines) + "\n"
+
+
+def _navigation_group_key(family_name: str) -> str:
+    """
+    Return the grouped navigation bucket for a family name.
+
+    Parameters
+    ----------
+    family_name : str
+        Rendered family name used in the navigation index.
+
+    Returns
+    -------
+    str
+        Uppercase leading alphanumeric bucket, or ``"#"`` when the
+        family starts with a non-alphanumeric character.
+    """
+    normalized = family_name.strip()
+    if not normalized:
+        return "#"
+
+    first = normalized[0].upper()
+    return first if first.isalnum() else "#"
 
 
 def _variant_display_label(variant: CatalogFontEntryV12) -> str:
@@ -443,7 +481,15 @@ def _render_family_catalog_block(
     if indexed_navigation:
         anchor = _catalog_family_anchor(family_index)
         family_intro = (
-            "\\hypertarget{" + anchor + "}{}\n\\subsection{" + safe_name + "}"
+            "\\hypertarget{"
+            + anchor
+            + "}{}\n\\pdfbookmark[2]{"
+            + safe_name
+            + "}{"
+            + anchor
+            + "-bookmark}\n\\subsection*{"
+            + safe_name
+            + "}"
         )
         if debug_block:
             family_intro += "\n\n" + debug_block
@@ -821,12 +867,90 @@ def _render_script_label(
     Returns
     -------
     str
-        Short compact label or extended metadata label.
+        Code-oriented compact label or extended metadata label.
     """
-    display = escape_latex(_format_script_display(str(script_iso)))
+    code = escape_latex(str(script_iso).upper() or "UNKN")
     if catalog_detail == "compact":
-        return r"{\footnotesize\ttfamily " + display + "}"
-    return r"{\footnotesize\ttfamily SPEC  : " + display + "}"
+        return r"{\footnotesize\ttfamily " + code + "}"
+    return r"{\footnotesize\ttfamily SPEC  : " + code + "}"
+
+
+def _render_variant_specimen_row(
+    *,
+    label: str,
+    rendered_specimen: str,
+) -> str:
+    """
+    Render one two-column specimen row.
+
+    Parameters
+    ----------
+    label : str
+        Narrow metadata label shown in the left column.
+    rendered_specimen : str
+        Pre-rendered LaTeX specimen block shown in the right column.
+
+    Returns
+    -------
+    str
+        Two-column LaTeX row with a narrow metadata column and a
+        specimen column that can wrap independently.
+    """
+    return (
+        "\\noindent"
+        "\\begin{minipage}[t]{0.18\\linewidth}\\raggedright "
+        + label
+        + "\\end{minipage}\\hfill"
+        + "\\begin{minipage}[t]{0.79\\linewidth}"
+        + rendered_specimen.lstrip()
+        + "\\end{minipage}\\par"
+    )
+
+
+def _render_variant_body_block(
+    *,
+    variant_label: str,
+    rendered_blocks: list[str],
+    catalog_detail: CatalogDetailLevel,
+    is_glyph_sample: bool = False,
+) -> str:
+    """
+    Render the full body block for a visible family variant.
+
+    Parameters
+    ----------
+    variant_label : str
+        File-oriented label for the rendered variant.
+    rendered_blocks : list[str]
+        Already-rendered specimen rows for the variant.
+    catalog_detail : {"compact", "extended"}
+        Requested catalog metadata detail level.
+    is_glyph_sample : bool, optional
+        Whether the variant renders a curated glyph strip instead of a
+        normal text specimen.
+
+    Returns
+    -------
+    str
+        LaTeX body fragment for the variant.
+    """
+    header_prefix = "FILE  : " if catalog_detail == "extended" else ""
+    header = (
+        r"{\footnotesize\ttfamily " + header_prefix + escape_latex(variant_label) + "}"
+    )
+    if is_glyph_sample:
+        note = (
+            r"{\footnotesize\ttfamily "
+            + ("SPEC  : " if catalog_detail == "extended" else "")
+            + "GLYPH}"
+        )
+        rendered_blocks = [
+            _render_variant_specimen_row(
+                label=note,
+                rendered_specimen=rendered_blocks[0],
+            )
+        ]
+    return header + "\n" + "\n".join(rendered_blocks)
 
 
 def _render_family_debug_block(
@@ -913,8 +1037,9 @@ def _render_variant_specimen_blocks(
         show_script_label = catalog_detail == "compact" or len(script_candidates) > 1
         if show_script_label:
             label = _render_script_label(script_iso, catalog_detail=catalog_detail)
-            block = (
-                label + (" " if catalog_detail == "compact" else "\n") + variant_render
+            block = _render_variant_specimen_row(
+                label=label,
+                rendered_specimen=variant_render,
             )
             rendered_blocks.append(block)
         else:
@@ -935,24 +1060,14 @@ def _render_variant_specimen_blocks(
                 catalog_detail=catalog_detail,
             )
             if glyph_render:
-                if catalog_detail == "compact":
-                    return _VariantRenderResult(
-                        body_block=(
-                            r"{\footnotesize\ttfamily "
-                            + escape_latex(variant_label)
-                            + " [GLYPH SAMPLE]}\n"
-                            + r"{\footnotesize\ttfamily Glyph sample} "
-                            + glyph_render
-                        ),
-                        rendered=True,
-                    )
                 return _VariantRenderResult(
                     body_block=(
-                        r"{\footnotesize\ttfamily FILE  : "
-                        + escape_latex(variant_label)
-                        + " [GLYPH SAMPLE]}\n\n"
-                        + r"{\footnotesize\ttfamily NOTE  : Glyph sample}\n\n"
-                        + glyph_render
+                        _render_variant_body_block(
+                            variant_label=variant_label,
+                            rendered_blocks=[glyph_render],
+                            catalog_detail=catalog_detail,
+                            is_glyph_sample=True,
+                        )
                     ),
                     rendered=True,
                 )
@@ -972,23 +1087,13 @@ def _render_variant_specimen_blocks(
             missing_entry=missing_entry,
         )
 
-    if catalog_detail == "compact":
-        return _VariantRenderResult(
-            body_block=(
-                r"{\footnotesize\ttfamily "
-                + escape_latex(variant_label)
-                + " [OK]}\n"
-                + "\n".join(rendered_blocks)
-            ),
-            rendered=True,
-        )
-
     return _VariantRenderResult(
         body_block=(
-            r"{\footnotesize\ttfamily FILE  : "
-            + escape_latex(variant_label)
-            + " [OK]}\n\n"
-            + "\n\n".join(rendered_blocks)
+            _render_variant_body_block(
+                variant_label=variant_label,
+                rendered_blocks=rendered_blocks,
+                catalog_detail=catalog_detail,
+            )
         ),
         rendered=True,
     )
@@ -1382,8 +1487,8 @@ def generate_latex(
         Family and specimen metadata detail level used in the rendered
         catalog body.
     indexed_navigation : bool, optional
-        When ``True``, emit subsection-based navigation with a clickable
-        table of contents and an end-of-document navigation index.
+        When ``True``, emit anchor-based family navigation with PDF
+        bookmarks and an end-of-document grouped navigation index.
     generation_metadata : collections.abc.Mapping[str, str] | None, optional
         Optional first-page metadata keys used to replace LaTeX
         front-matter placeholders. Missing keys fall back to empty
@@ -1526,9 +1631,6 @@ def generate_latex_with_report(
         system_name=frontmatter.get("system_name", ""),
         hostname=frontmatter.get("hostname", ""),
     )
-
-    if indexed_navigation:
-        latex_code += "\\tableofcontents\n\\newpage\n"
 
     total = len(family_order)
     latex_code += "\\section{Font List}\n"
