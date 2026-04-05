@@ -1414,56 +1414,20 @@ def _render_font_entry(
         "\\raggedright" + specimen_size + "\\sloppy\\emergencystretch=2em "
     )
 
-    if script0_iso == ScriptISO("LATN"):
-        render = (
-            " {\\begingroup\\parbox{\\linewidth}{"
-            + specimen_prefix
-            + "\\fontspec["
-            + opts
-            + "]{"
-            + inline_font
-            + "}"
-            + safe_specimen
-            + "\\par}\\endgroup}"
-        )
-    elif lang:
-        inline_options = opts
+    if lang:
         _ = lang
-        render = (
-            " {\\begingroup\\parbox{\\linewidth}{"
-            + specimen_prefix
-            + "\\fontspec["
-            + inline_options
-            + "]{"
-            + inline_font
-            + "}"
-            + safe_specimen
-            + "\\par}\\endgroup}"
-        )
-    elif script_opt:
-        render = (
-            " {\\begingroup\\parbox{\\linewidth}{"
-            + specimen_prefix
-            + "\\fontspec["
-            + opts
-            + "]{"
-            + inline_font
-            + "}"
-            + safe_specimen
-            + "\\par}\\endgroup}"
-        )
-    else:
-        render = (
-            " {\\begingroup\\parbox{\\linewidth}{"
-            + specimen_prefix
-            + "\\fontspec["
-            + opts
-            + "]{"
-            + inline_font
-            + "}"
-            + safe_specimen
-            + "\\par}\\endgroup}"
-        )
+
+    render = (
+        " {\\begingroup"
+        + specimen_prefix
+        + "\\fontspec["
+        + opts
+        + "]{"
+        + inline_font
+        + "}"
+        + safe_specimen
+        + "\\par\\endgroup}"
+    )
 
     return render, options_plain
 
