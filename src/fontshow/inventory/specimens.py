@@ -496,6 +496,137 @@ def _specimen_apply_semantic_validation(
     return fallback, len(fallback), "validated-fallback"
 
 
+def _specimen_from_language(
+    font: dict[str, Any],
+    cps: set[int],
+) -> tuple[str | None, str | None]:
+    """
+    Build a specimen from inferred language metadata.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry whose inference metadata is consulted.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str | None, str | None]
+        Either ``(filtered_sample, "language")`` on success or
+        ``(None, rejection_reason)`` when no usable language-aware
+        sample can be resolved.
+    """
+    inference_raw = font.get("inference") or {}
+    inference = inference_raw if isinstance(inference_raw, dict) else {}
+
+    langs_raw = inference.get("languages")
+    inferred_languages: list[str] = langs_raw if isinstance(langs_raw, list) else []
+
+    scripts_raw = inference.get("scripts")
+    inferred_scripts: list[str] = scripts_raw if isinstance(scripts_raw, list) else []
+
+    sample = choose_language_sample(inferred_languages, inferred_scripts)
+    if not isinstance(sample, str) or not sample.strip():
+        return None, "no_language_sample"
+
+    filtered, glyphs = _specimen_filter_text(sample, cps)
+    if glyphs == 0:
+        return None, "language_sample_no_supported_glyphs"
+    if glyphs < MIN_SAMPLE_GLYPHS:
+        return None, "language_sample_too_short"
+
+    return filtered, "language"
+
+
+def _specimen_upgrade_low_information_sample(
+    font: dict[str, Any],
+    filtered: str,
+    glyph_count: int,
+    cps: set[int],
+) -> tuple[str, int, str | None]:
+    """
+    Replace a low-information specimen with a stronger language sample.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry whose inference metadata is consulted.
+    filtered : str
+        Current accepted specimen candidate.
+    glyph_count : int
+        Accepted base-glyph count for ``filtered``.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str, int, str | None]
+        Possibly upgraded ``(specimen_text, glyph_count, strategy)``
+        triple. The strategy is ``None`` when no replacement is used.
+    """
+    if glyph_count >= MIN_SAMPLE_GLYPHS:
+        return filtered, glyph_count, None
+
+    replacement, strategy = _specimen_from_language(font, cps)
+    if replacement is None:
+        return filtered, glyph_count, None
+
+    return replacement, len(replacement), strategy
+
+
+def _resolve_initial_specimen(
+    font: dict[str, Any],
+    coverage: dict[str, Any],
+    cps: set[int],
+) -> tuple[str | None, str | None, str | None, int]:
+    """
+    Resolve the initial specimen candidate from the fallback chain.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry being enriched.
+    coverage : dict[str, Any]
+        Coverage block used for script-based specimen resolution.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str | None, str | None, str | None, int]
+        ``(specimen_text, strategy, rejection_reason, fallback_depth)``
+        after evaluating the deterministic fallback chain.
+    """
+    specimen_text, strategy = _specimen_from_internal(font, cps)
+    rejection: str | None = None
+    fallback_depth = 0
+
+    if specimen_text is None:
+        rejection = strategy
+        strategy = None
+        fallback_depth = 1
+
+    if specimen_text is None:
+        specimen_text, strategy = _specimen_from_script(coverage, cps)
+        if specimen_text is not None:
+            fallback_depth = 2
+
+    if specimen_text is None:
+        specimen_text, strategy = _specimen_from_language(font, cps)
+        if specimen_text is not None:
+            rejection = rejection or "fallback_to_language"
+            fallback_depth = 2
+
+    if specimen_text is None and cps:
+        specimen_text, strategy = _specimen_from_cmap(font, cps)
+        rejection = rejection or "fallback_to_cmap"
+        if specimen_text is not None:
+            fallback_depth = 3
+
+    return specimen_text, strategy, rejection, fallback_depth
+
+
 def _specimen_generate_for_font(
     font: dict[str, Any],
     coverage: dict[str, Any],
@@ -535,30 +666,9 @@ def _specimen_generate_for_font(
     """
     cps = _specimen_collect_cmap(font_path, None)
 
-    specimen_text: str | None = None
-    strategy: str | None = None
-    rejection: str | None = None
-    fallback_depth = 0
-
-    # Level 1
-    specimen_text, strategy = _specimen_from_internal(font, cps)
-    if specimen_text is None:
-        rejection = strategy
-        strategy = None
-        fallback_depth = 1
-
-    # Level 2
-    if specimen_text is None:
-        specimen_text, strategy = _specimen_from_script(coverage, cps)
-        if specimen_text is not None:
-            fallback_depth = 2
-
-    # Level 3
-    if specimen_text is None and cps:
-        specimen_text, strategy = _specimen_from_cmap(font, cps)
-        rejection = rejection or "fallback_to_cmap"
-        if specimen_text is not None:
-            fallback_depth = 3
+    specimen_text, strategy, rejection, fallback_depth = _resolve_initial_specimen(
+        font, coverage, cps
+    )
 
     if not specimen_text:
         specimen_text = " "
@@ -594,6 +704,15 @@ def _specimen_generate_for_font(
         filtered = replacement
         g = 1
         rejection = rejection or "no_visible_glyphs"
+
+    upgraded_filtered, upgraded_g, upgraded_strategy = (
+        _specimen_upgrade_low_information_sample(font, filtered, g, cps)
+    )
+    if upgraded_strategy is not None:
+        filtered = upgraded_filtered
+        g = upgraded_g
+        strategy = upgraded_strategy
+        rejection = rejection or "specimen_too_short"
 
     # --- SPECIMEN SEMANTIC VALIDATION ---
     new_filtered, new_g, new_strategy = _specimen_apply_semantic_validation(

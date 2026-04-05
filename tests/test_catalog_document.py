@@ -709,6 +709,7 @@ def test_generate_latex_moves_duplicate_variants_to_appendix(monkeypatch):
     assert "{\\footnotesize\\ttfamily alpha-1.ttf}" in latex
     assert "{\\footnotesize\\ttfamily alpha-2.ttf}" not in latex
     assert "\\section{Duplicate Sources}" in latex
+    assert "already-rendered family variant on stable catalog metadata" in latex
     assert "\\item Alpha | alpha-2.ttf | /tmp/alpha-2.ttf | alpha-1.ttf" in latex
 
 
@@ -1650,3 +1651,46 @@ def test_generate_latex_marks_specialized_low_information_variant(
     assert "{\\footnotesize\\ttfamily Icons.ttf}" in latex
     assert "{\\footnotesize\\ttfamily GLYPH}" in latex
     assert "<|" in latex
+
+
+def test_generate_latex_explains_unrendered_variants_section(monkeypatch):
+    """
+    Ensure the missing-variant appendix includes explanatory lead text.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE\n\\end{document}\n")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(
+        document,
+        "_render_family_catalog_block",
+        lambda **_kwargs: document._FamilyRenderResult(
+            body_block="",
+            navigation_entry=None,
+            rendered=False,
+            missing_entries=("Alpha | alpha.ttf | /tmp/alpha.ttf",),
+            duplicate_entries=(),
+        ),
+    )
+
+    latex = document.generate_latex([{"family": "Alpha"}])
+
+    assert "\\section{Unrendered Variants}" in latex
+    assert "did not produce a" in latex
+    assert "usable catalog specimen" in latex

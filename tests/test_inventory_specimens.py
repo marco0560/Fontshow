@@ -232,6 +232,117 @@ def test_specimen_generate_for_font_uses_visible_replacement_and_semantic_fallba
     ]
 
 
+def test_specimen_generate_for_font_uses_language_sample_before_cmap(monkeypatch):
+    """
+    Ensure language-aware samples are preferred before falling back to cmap.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace specimen-generation helpers and tracing.
+
+    Returns
+    -------
+    None
+    """
+    font = {
+        "path": "/tmp/font.ttf",
+        "sample_text": "A",
+        "inference": {"languages": ["en"], "scripts": ["latn"]},
+    }
+    coverage: dict[str, object] = {"scripts": ["latn"]}
+
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_collect_cmap",
+        lambda path, idx: {ord(ch) for ch in "Hello there General Kenobi"},
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_internal",
+        lambda font, cps: (None, "internal_sample_too_short"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_script",
+        lambda coverage, cps: (None, "script_sample_too_sparse"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "choose_language_sample",
+        lambda langs, scripts: "Hello there General Kenobi",
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_cmap",
+        lambda font, cps: ("SHOULD NOT HAPPEN", "cmap"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "log_trace_cat",
+        lambda *_args, **_kwargs: None,
+    )
+
+    specimens._specimen_generate_for_font(font, coverage, "/tmp/font.ttf")
+
+    typography = font["typography"]
+    assert typography["specimen_text"] == "Hello there General Kenobi"
+    assert typography["specimen_strategy"] == "language"
+    assert typography["specimen_glyph_count"] == 26
+    assert typography["specimen_rejection_reason"] == "internal_sample_too_short"
+
+
+def test_specimen_generate_for_font_upgrades_overshort_visible_sample(monkeypatch):
+    """
+    Ensure short visible samples are upgraded with a stronger language sample.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace specimen-generation helpers and tracing.
+
+    Returns
+    -------
+    None
+    """
+    font = {
+        "path": "/tmp/font.ttf",
+        "sample_text": "T",
+        "inference": {"languages": ["en"], "scripts": ["latn"]},
+    }
+    coverage: dict[str, object] = {"scripts": ["latn"]}
+
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_collect_cmap",
+        lambda path, idx: {
+            ord(ch) for ch in "The quick brown fox jumps over the lazy dog"
+        },
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_internal",
+        lambda font, cps: ("T", "internal"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "choose_language_sample",
+        lambda langs, scripts: "The quick brown fox jumps over the lazy dog",
+    )
+    monkeypatch.setattr(
+        specimens,
+        "log_trace_cat",
+        lambda *_args, **_kwargs: None,
+    )
+
+    specimens._specimen_generate_for_font(font, coverage, "/tmp/font.ttf")
+
+    typography = font["typography"]
+    assert typography["specimen_text"] == "The quick brown fox jumps over the lazy dog"
+    assert typography["specimen_strategy"] == "language"
+    assert typography["specimen_rejection_reason"] == "specimen_too_short"
+
+
 def test_specimen_collect_cmap_returns_empty_for_malformed_subtables(monkeypatch):
     """
     Ensure malformed cmap subtables do not escape as attribute errors.

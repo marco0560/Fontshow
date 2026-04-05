@@ -321,7 +321,13 @@ def _render_missing_variants_section(entries: list[str]) -> str:
     """
     if not entries:
         return ""
-    lines = ["\\section{Unrendered Variants}", "\\begin{itemize}"]
+    lines = [
+        "\\section{Unrendered Variants}",
+        "These variants were discovered in the inventory but did not produce a",
+        "usable catalog specimen. They are listed here for traceability rather",
+        "than being silently dropped.\\\\",
+        "\\begin{itemize}",
+    ]
     lines.extend("\\item " + entry for entry in entries)
     lines.append("\\end{itemize}")
     return "\n".join(lines) + "\n"
@@ -343,7 +349,14 @@ def _render_duplicate_sources_section(entries: list[str]) -> str:
     """
     if not entries:
         return ""
-    lines = ["\\section{Duplicate Sources}", "\\begin{itemize}"]
+    lines = [
+        "\\section{Duplicate Sources}",
+        "These sources were collapsed out of the main body because they match an",
+        "already-rendered family variant on stable catalog metadata: family,",
+        "subfamily, full name, PostScript name, version, primary script,",
+        "specimen text, specimen strategy, and specimen glyph count.\\\\",
+        "\\begin{itemize}",
+    ]
     lines.extend("\\item " + entry for entry in entries)
     lines.append("\\end{itemize}")
     return "\n".join(lines) + "\n"
