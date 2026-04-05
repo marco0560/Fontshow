@@ -289,7 +289,7 @@ def test_specimen_generate_for_font_uses_language_sample_before_cmap(monkeypatch
     assert typography["specimen_text"] == "Hello there General Kenobi"
     assert typography["specimen_strategy"] == "language"
     assert typography["specimen_glyph_count"] == 26
-    assert typography["specimen_rejection_reason"] == "internal_sample_too_short"
+    assert typography["specimen_rejection_reason"] == "fallback_to_language"
 
 
 def test_specimen_generate_for_font_upgrades_overshort_visible_sample(monkeypatch):

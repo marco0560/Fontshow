@@ -615,12 +615,12 @@ def _resolve_initial_specimen(
     if specimen_text is None:
         specimen_text, strategy = _specimen_from_language(font, cps)
         if specimen_text is not None:
-            rejection = rejection or "fallback_to_language"
+            rejection = "fallback_to_language"
             fallback_depth = 2
 
     if specimen_text is None and cps:
         specimen_text, strategy = _specimen_from_cmap(font, cps)
-        rejection = rejection or "fallback_to_cmap"
+        rejection = "fallback_to_cmap"
         if specimen_text is not None:
             fallback_depth = 3
 
@@ -712,7 +712,7 @@ def _specimen_generate_for_font(
         filtered = upgraded_filtered
         g = upgraded_g
         strategy = upgraded_strategy
-        rejection = rejection or "specimen_too_short"
+        rejection = "specimen_too_short"
 
     # --- SPECIMEN SEMANTIC VALIDATION ---
     new_filtered, new_g, new_strategy = _specimen_apply_semantic_validation(
