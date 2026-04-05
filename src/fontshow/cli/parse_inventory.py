@@ -28,6 +28,7 @@ inventory enrichment stage of the Fontshow processing pipeline.
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -61,13 +62,172 @@ from fontshow.inventory.metadata_processing import (
 from fontshow.inventory.platform_metadata import collect_platform_metadata
 from fontshow.inventory.schema_accessors import ensure_v13_typography
 from fontshow.inventory.schema_validation import _validate_inventory_schema_strict
+from fontshow.inventory.script_analysis import infer_scripts
 from fontshow.inventory.specimens import _specimen_generate_for_font
 from fontshow.inventory.validation import _apply_schema_validation, validate_inventory
 from fontshow.latex.policy import _format_script_display, _get_render_policy
+from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
 # ============================================================
 # REFACTORED MAIN FUNCTION
 # ============================================================
+
+
+def _unicode_blocks_from_text(text: str) -> dict[str, int]:
+    """
+    Count Unicode blocks represented in a specimen string.
+
+    Parameters
+    ----------
+    text : str
+        Specimen text to analyze.
+
+    Returns
+    -------
+    dict[str, int]
+        Per-block codepoint counts derived from visible characters in
+        ``text``.
+    """
+    counts: Counter[str] = Counter()
+    for ch in text:
+        if not ch.strip():
+            continue
+        cp = ord(ch)
+        for name, (start, end) in UNICODE_BLOCK_RANGES.items():
+            if start <= cp <= end:
+                counts[name] += 1
+                break
+    return dict(counts)
+
+
+def _promote_primary_script(
+    scripts: list[str],
+    primary: str,
+) -> list[str]:
+    """
+    Move a chosen primary script to the front of an ordered script list.
+
+    Parameters
+    ----------
+    scripts : list[str]
+        Existing ordered script list.
+    primary : str
+        Script code that should become the first element.
+
+    Returns
+    -------
+    list[str]
+        New ordered script list with ``primary`` in front and without
+        duplicates.
+    """
+    ordered = [primary]
+    ordered.extend(script for script in scripts if script != primary)
+    return ordered
+
+
+def _reconcile_primary_script_with_specimen(
+    font: dict[str, Any],
+    coverage: dict[str, Any],
+    *,
+    level: str,
+) -> None:
+    """
+    Align primary-script metadata with the accepted specimen text.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry updated in place.
+    coverage : dict[str, Any]
+        Coverage block whose explicit primary-script metadata may be
+        updated.
+    level : str
+        Inference aggressiveness level used for specimen-text script
+        analysis.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    ``parse-inventory`` owns the semantic coherence contract between
+    ``primary_script`` and ``typography.specimen_text``. When the
+    accepted specimen clearly points to a different writing script than
+    the currently selected primary script, this helper promotes the
+    specimen-derived script to the explicit primary-script fields and
+    reorders the explicit script lists accordingly.
+    """
+    typography = ensure_v13_typography(font)
+    specimen = typography.get("specimen_text")
+    if not isinstance(specimen, str) or not specimen.strip():
+        return
+
+    specimen_blocks = _unicode_blocks_from_text(specimen)
+    if not specimen_blocks:
+        return
+
+    specimen_scripts = [
+        str(script).upper()
+        for script in infer_scripts(
+            {
+                "unicode_blocks": specimen_blocks,
+                "unicode": {"max": max(ord(ch) for ch in specimen)},
+            },
+            level,
+        )
+        if isinstance(script, str) and script and str(script).lower() != "unknown"
+    ]
+    if not specimen_scripts:
+        return
+
+    specimen_primary = specimen_scripts[0]
+    current_primary = primary_script(font)
+    if isinstance(current_primary, str) and current_primary.upper() == specimen_primary:
+        return
+
+    coverage_scripts_raw = coverage.get("scripts")
+    coverage_scripts = (
+        [
+            str(script).upper()
+            for script in coverage_scripts_raw
+            if isinstance(script, str)
+        ]
+        if isinstance(coverage_scripts_raw, list)
+        else []
+    )
+    inference_raw = font.get("inference")
+    inference = inference_raw if isinstance(inference_raw, dict) else {}
+    inference_scripts_raw = inference.get("scripts")
+    inference_scripts = (
+        [
+            str(script).upper()
+            for script in inference_scripts_raw
+            if isinstance(script, str)
+        ]
+        if isinstance(inference_scripts_raw, list)
+        else []
+    )
+
+    if (
+        specimen_primary not in coverage_scripts
+        and specimen_primary not in inference_scripts
+    ):
+        return
+
+    coverage["primary_script"] = specimen_primary
+    if coverage_scripts:
+        coverage["scripts"] = _promote_primary_script(
+            coverage_scripts, specimen_primary
+        )
+
+    if inference:
+        inference["primary_script"] = specimen_primary
+        if inference_scripts:
+            inference["scripts"] = _promote_primary_script(
+                inference_scripts,
+                specimen_primary,
+            )
 
 
 def parse_inventory(
@@ -149,6 +309,11 @@ def parse_inventory(
         )
 
         _specimen_generate_for_font(font, coverage, font_path)
+        _reconcile_primary_script_with_specimen(
+            font,
+            coverage,
+            level=level,
+        )
         typography = ensure_v13_typography(font)
         script = primary_script(font)
         script_iso = script.upper() if isinstance(script, str) and script else ""

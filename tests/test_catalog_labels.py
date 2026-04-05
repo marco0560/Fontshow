@@ -44,3 +44,31 @@ def test_primary_script_falls_back_when_charset_scores_are_not_comparable():
     }
 
     assert primary_script(font) == "latn"
+
+
+def test_primary_script_prefers_explicit_inventory_primary_script():
+    """
+    Ensure explicit persisted primary-script fields beat charset heuristics.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    font = {
+        "typography": {"primary_script": "ARAB"},
+        "coverage": {
+            "primary_script": "LATN",
+            "script_coverage_from_charset": {"LATN": 999, "ARAB": 10},
+            "scripts": ["LATN", "ARAB"],
+        },
+        "inference": {
+            "primary_script": "LATN",
+            "scripts": ["LATN", "ARAB"],
+        },
+    }
+
+    assert primary_script(font) == "ARAB"

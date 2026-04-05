@@ -37,19 +37,51 @@ def primary_script(font: Mapping[str, object]) -> str | None:
     Returns
     -------
     str | None
-        Dominant charset-derived script when available; otherwise the
-        first inferred script; otherwise the first declared coverage
-        script; otherwise None.
+        Explicit persisted primary script when available; otherwise the
+        dominant charset-derived script; otherwise the first inferred
+        script; otherwise the first declared coverage script; otherwise
+        None.
 
     Notes
     -----
-    Script selection is deterministic. When charset-derived script
-    coverage is present under ``font["coverage"]["script_coverage_from_charset"]``,
-    the highest-coverage writing script is preferred. Non-writing
-    scripts are ignored unless no writing scripts are available.
+    Script selection is deterministic. The helper trusts explicit
+    inventory primary-script fields first so catalog generation does
+    not re-derive a different answer from secondary evidence. When no
+    explicit field is available, charset-derived script coverage under
+    ``font["coverage"]["script_coverage_from_charset"]`` is used as a
+    fallback. Non-writing scripts are ignored unless no writing
+    scripts are available.
     """
+    typography_raw = font.get("typography")
+    typography = typography_raw if isinstance(typography_raw, Mapping) else {}
+    explicit_typography_primary = typography.get("primary_script")
+    if (
+        isinstance(explicit_typography_primary, str)
+        and explicit_typography_primary.strip()
+        and explicit_typography_primary.strip().upper() != "UNKNOWN"
+    ):
+        return explicit_typography_primary
+
+    inference_raw = font.get("inference")
+    inference = inference_raw if isinstance(inference_raw, Mapping) else {}
+    explicit_inference_primary = inference.get("primary_script")
+    if (
+        isinstance(explicit_inference_primary, str)
+        and explicit_inference_primary.strip()
+        and explicit_inference_primary.strip().upper() != "UNKNOWN"
+    ):
+        return explicit_inference_primary
+
     coverage_raw = font.get("coverage")
     coverage = coverage_raw if isinstance(coverage_raw, Mapping) else {}
+    explicit_coverage_primary = coverage.get("primary_script")
+    if (
+        isinstance(explicit_coverage_primary, str)
+        and explicit_coverage_primary.strip()
+        and explicit_coverage_primary.strip().upper() != "UNKNOWN"
+    ):
+        return explicit_coverage_primary
+
     script_cov = coverage.get("script_coverage_from_charset")
     if isinstance(script_cov, dict) and script_cov:
         try:
@@ -66,8 +98,6 @@ def primary_script(font: Mapping[str, object]) -> str | None:
         except (TypeError, ValueError):
             pass
 
-    inference_raw = font.get("inference")
-    inference = inference_raw if isinstance(inference_raw, Mapping) else {}
     scripts_raw = inference.get("scripts")
     scripts = scripts_raw if isinstance(scripts_raw, list) else []
     for script in scripts:

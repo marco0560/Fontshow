@@ -17,6 +17,7 @@ This module belongs to the **test infrastructure layer** and verifies
 integration behavior of the inventory parsing pipeline.
 """
 
+from fontshow.cli import parse_inventory as parse_inventory_module
 from fontshow.cli.parse_inventory import parse_inventory
 
 
@@ -202,3 +203,98 @@ def test_missing_declared_languages_uses_inference_without_warning():
     result = parse_inventory(data, level="medium")
     assert result["fonts"][0]["inference"]["languages"] == []
     assert result["fonts"][0].get("warnings", []) == []
+
+
+def test_parse_inventory_reconciles_primary_script_with_internal_specimen(
+    monkeypatch,
+):
+    """
+    Ensure specimen text can correct an incoherent explicit primary script.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace parse-stage helpers with deterministic
+        stubs.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "_apply_schema_validation",
+        lambda _data: None,
+    )
+    monkeypatch.setattr(parse_inventory_module, "_process_charset", lambda *_args: None)
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "_process_language_metadata",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "collect_latex_validation_metadata",
+        dict,
+    )
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "probe_and_persist_lualatex_render_variants",
+        lambda _fonts, *, validation_metadata: None,
+    )
+
+    def _fake_infer(font, coverage, *, level, font_path):
+        _ = level, font_path
+        coverage["scripts"] = ["LATN", "ARAB"]
+        coverage["primary_script"] = "LATN"
+        font["inference"] = {
+            "level": "aggressive",
+            "scripts": ["LATN", "ARAB"],
+            "primary_script": "LATN",
+            "languages": ["en", "ar"],
+            "declared_scripts": [],
+            "declared_languages": [],
+            "unicode_blocks": {"Basic Latin": 95},
+        }
+
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "_infer_and_attach_metadata",
+        _fake_infer,
+    )
+
+    def _fake_specimen(font, coverage, font_path):
+        _ = coverage, font_path
+        typography = font.setdefault("typography", {})
+        typography["specimen_text"] = (
+            "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ ٱلشَّمْسِ إِذْ بَزَغَتْ"
+        )
+        typography["specimen_strategy"] = "internal"
+        typography["specimen_glyph_count"] = 24
+        typography["specimen_rejection_reason"] = None
+
+    monkeypatch.setattr(
+        parse_inventory_module,
+        "_specimen_generate_for_font",
+        _fake_specimen,
+    )
+
+    data = {
+        "metadata": {"validation": {}},
+        "fonts": [
+            {
+                "path": "/tmp/Amiri-Regular.ttf",
+                "family": "Amiri",
+                "coverage": {"unicode_blocks": {"Basic Latin": 95}},
+            }
+        ],
+    }
+
+    result = parse_inventory(data, level="aggressive")
+    font = result["fonts"][0]
+
+    assert font["coverage"]["primary_script"] == "ARAB"
+    assert font["coverage"]["scripts"][0] == "ARAB"
+    assert font["inference"]["primary_script"] == "ARAB"
+    assert font["inference"]["scripts"][0] == "ARAB"
+    assert font["typography"]["primary_script"] == "ARAB"
