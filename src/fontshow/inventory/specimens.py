@@ -556,6 +556,8 @@ def _specimen_upgrade_low_information_sample(
     filtered: str,
     glyph_count: int,
     cps: set[int],
+    *,
+    current_strategy: str | None = None,
 ) -> tuple[str, int, str | None]:
     """
     Replace a low-information specimen with a stronger language sample.
@@ -570,6 +572,8 @@ def _specimen_upgrade_low_information_sample(
         Accepted base-glyph count for ``filtered``.
     cps : set[int]
         Supported Unicode codepoints for the font.
+    current_strategy : str | None, optional
+        Strategy that produced the currently accepted specimen.
 
     Returns
     -------
@@ -582,6 +586,11 @@ def _specimen_upgrade_low_information_sample(
 
     replacement, strategy = _specimen_from_language(font, cps)
     if replacement is None:
+        if cps and current_strategy != "cmap":
+            cmap_replacement, cmap_strategy = _specimen_from_cmap(font, cps)
+            cmap_filtered, cmap_glyphs = _specimen_filter_text(cmap_replacement, cps)
+            if cmap_glyphs > glyph_count and cmap_filtered.strip():
+                return cmap_filtered, cmap_glyphs, cmap_strategy
         return filtered, glyph_count, None
 
     return replacement, len(replacement), strategy
@@ -719,7 +728,13 @@ def _specimen_generate_for_font(
         rejection = rejection or "no_visible_glyphs"
 
     upgraded_filtered, upgraded_g, upgraded_strategy = (
-        _specimen_upgrade_low_information_sample(font, filtered, g, cps)
+        _specimen_upgrade_low_information_sample(
+            font,
+            filtered,
+            g,
+            cps,
+            current_strategy=strategy,
+        )
     )
     if upgraded_strategy is not None:
         filtered = upgraded_filtered

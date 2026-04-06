@@ -57,6 +57,7 @@ LATEX_INITIAL_CODE: str = (
 %%FONTSHOW_OTHER_LANGUAGES%%
 
 \geometry{margin=1.7cm}
+\setlength{\parindent}{0pt}
 
 % Colors
 \definecolor{titlecolor}{HTML}{667eea}

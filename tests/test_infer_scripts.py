@@ -148,6 +148,33 @@ def test_infer_scripts_braille_uses_brai_and_suppresses_latin_noise():
     ) == ["brai"]
 
 
+def test_infer_scripts_braille_keeps_substantial_latin_coverage():
+    """
+    Ensure Braille does not erase strong Latin support from mixed fonts.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    scripts = infer_scripts(
+        {
+            "unicode_blocks": {
+                "Braille Patterns": 256,
+                "Basic Latin": 96,
+                "Latin Extended-A": 128,
+                "Latin-1 Supplement": 96,
+            }
+        }
+    )
+
+    assert "brai" in scripts
+    assert "latn" in scripts
+
+
 def test_infer_scripts_cyrillic():
     """
     Verify that Cyrillic block coverage infers the ``cyrl`` script.
@@ -254,6 +281,33 @@ def test_infer_scripts_second_batch_blocks():
     assert infer_scripts(
         {"unicode_blocks": {"Unified Canadian Aboriginal Syllabics": 120}}
     ) == ["cans"]
+
+
+def test_infer_scripts_cans_keeps_substantial_latin_coverage():
+    """
+    Ensure Canadian Syllabics evidence does not erase strong Latin support.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    scripts = infer_scripts(
+        {
+            "unicode_blocks": {
+                "Unified Canadian Aboriginal Syllabics": 404,
+                "Basic Latin": 96,
+                "Latin Extended-A": 128,
+                "Latin-1 Supplement": 96,
+            }
+        }
+    )
+
+    assert "cans" in scripts
+    assert "latn" in scripts
 
 
 def test_infer_scripts_uses_unicode_max_for_second_batch_ranges():
@@ -695,6 +749,70 @@ def test_infer_scripts_suppresses_neighboring_devanagari_and_thai_noise():
         "laoo",
         "latn",
     ]
+
+
+def test_infer_scripts_prefers_bengali_devanagari_hebrew_and_sinhala_over_latin():
+    """
+    Ensure dedicated writing-system blocks outrank incidental Latin support.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    assert (
+        infer_scripts(
+            {
+                "unicode_blocks": {
+                    "Bengali": 94,
+                    "Basic Latin": 94,
+                    "Latin Extended-A": 128,
+                    "Latin-1 Supplement": 94,
+                }
+            }
+        )[0]
+        == "beng"
+    )
+    assert (
+        infer_scripts(
+            {
+                "unicode_blocks": {
+                    "Devanagari": 128,
+                    "Basic Latin": 95,
+                    "Latin Extended-A": 95,
+                    "Latin-1 Supplement": 94,
+                }
+            }
+        )[0]
+        == "deva"
+    )
+    assert (
+        infer_scripts(
+            {
+                "unicode_blocks": {
+                    "Hebrew": 87,
+                    "Basic Latin": 96,
+                    "Alphabetic Presentation Forms": 51,
+                }
+            }
+        )[0]
+        == "hebr"
+    )
+    assert (
+        infer_scripts(
+            {
+                "unicode_blocks": {
+                    "Sinhala": 91,
+                    "Sinhala Archaic Numbers": 20,
+                    "Basic Latin": 92,
+                }
+            }
+        )[0]
+        == "sinh"
+    )
 
 
 def test_coverage_scripts_never_unknown():

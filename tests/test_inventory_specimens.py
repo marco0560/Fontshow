@@ -274,6 +274,41 @@ def test_specimen_generate_for_font_uses_visible_replacement_and_semantic_fallba
     ]
 
 
+def test_specimen_upgrade_low_information_sample_falls_back_to_cmap(monkeypatch):
+    """
+    Ensure weak accepted samples can be upgraded from the font cmap.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace language and cmap fallback helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_language",
+        lambda _font, _cps: (None, "no_language_sample"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_cmap",
+        lambda _font, _cps: ("ABCDEFGH", "cmap"),
+    )
+
+    upgraded = specimens._specimen_upgrade_low_information_sample(
+        {},
+        "A",
+        1,
+        {ord(ch) for ch in "ABCDEFGH"},
+        current_strategy="script",
+    )
+
+    assert upgraded == ("ABCDEFGH", 8, "cmap")
+
+
 def test_specimen_generate_for_font_uses_language_sample_before_cmap(monkeypatch):
     """
     Ensure language-aware samples are preferred before falling back to cmap.

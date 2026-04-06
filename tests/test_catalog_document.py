@@ -34,6 +34,21 @@ def test_normalize_path_for_latex_handles_windows_and_bare_filenames():
     assert document._normalize_path_for_latex("Alpha.ttf") == ("./", "Alpha.ttf")
 
 
+def test_latex_template_disables_global_paragraph_indentation():
+    """
+    Ensure generated catalogs do not indent variant labels after paragraphs.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    assert r"\setlength{\parindent}{0pt}" in document.LATEX_INITIAL_CODE
+
+
 def test_normalize_path_for_latex_preserves_wsl_mount_paths():
     """
     Ensure WSL-style mount-backed font paths remain absolute and normalized.
@@ -958,6 +973,37 @@ def test_filter_renderer_script_specimen_rejects_sparse_results(monkeypatch):
     )
 
     assert filtered == ""
+
+
+def test_specimen_for_rendered_script_replaces_mismatched_primary_with_curated(
+    monkeypatch,
+):
+    """
+    Ensure primary-script rows do not reuse obviously mismatched specimens.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace script inference and curated fallback helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "primary_script", lambda _font: "ARAB")
+    monkeypatch.setattr(document, "get_specimen_text", lambda _font: "Latin specimen")
+    monkeypatch.setattr(document, "get_specimen_strategy", lambda _font: "cmap")
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "infer_scripts", lambda _coverage: ["latn"])
+    monkeypatch.setattr(
+        document,
+        "_curated_primary_script_specimen",
+        lambda _font, _script: "Arabic sample",
+    )
+
+    specimen = document._specimen_for_rendered_script({}, ScriptISO("ARAB"))
+
+    assert specimen == "Arabic sample"
 
 
 def test_generate_document_skips_sparse_renderer_added_specimens(monkeypatch, tmp_path):

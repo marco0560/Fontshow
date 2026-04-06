@@ -50,6 +50,7 @@ from fontshow.inventory.schema_accessors import (
     get_specimen_strategy,
     get_specimen_text,
 )
+from fontshow.inventory.script_analysis import infer_scripts
 from fontshow.inventory.specimens import (
     MIN_SAMPLE_GLYPHS,
     _specimen_collect_cmap,
@@ -73,6 +74,7 @@ from fontshow.latex.templates import (
     LATEX_INITIAL_CODE,
 )
 from fontshow.ontology.language_tables import SCRIPT_INFO
+from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
 _SUPPORTED_PATH_BASED_EXTENSIONS = (".ttf", ".otf", ".ttc")
 _MULTI_SPECIMEN_LIMIT = 4
@@ -687,6 +689,15 @@ def _specimen_for_rendered_script(
     primary = (primary_script(font) or "").upper()
     if str(script_iso) == primary:
         specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+        strategy = str(get_specimen_strategy(font) or "").strip()
+        if (
+            specimen
+            and strategy in {"cmap", "validated-fallback"}
+            and not _stored_primary_specimen_matches_script(font, script_iso)
+        ):
+            curated = _curated_primary_script_specimen(font, script_iso)
+            if curated:
+                return curated
         if not (
             _is_low_information_primary_specimen(font)
             or _has_low_information_visible_specimen(font)
@@ -773,6 +784,59 @@ def _curated_primary_script_specimen(
     if not isinstance(specimen, str):
         return ""
     return _filter_renderer_script_specimen(font, specimen)
+
+
+def _stored_primary_specimen_matches_script(
+    font: CatalogFontEntryV12,
+    script_iso: ScriptISO,
+) -> bool:
+    """
+    Return whether the stored primary specimen matches the rendered script.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose accepted specimen text is being inspected.
+    script_iso : ScriptISO
+        Primary script rendered for the current specimen block.
+
+    Returns
+    -------
+    bool
+        ``True`` when the visible stored specimen agrees with
+        ``script_iso`` or does not expose enough evidence to infer a
+        competing script.
+    """
+    specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+    visible = "".join(ch for ch in specimen if not ch.isspace())
+    if not visible:
+        return True
+
+    unicode_blocks: dict[str, int] = {}
+    for ch in visible:
+        cp = ord(ch)
+        for block_name, (start, end) in UNICODE_BLOCK_RANGES.items():
+            if start <= cp <= end:
+                unicode_blocks[block_name] = unicode_blocks.get(block_name, 0) + 1
+                break
+
+    if not unicode_blocks:
+        return True
+
+    specimen_scripts = [
+        str(candidate).upper()
+        for candidate in infer_scripts(
+            {
+                "unicode_blocks": unicode_blocks,
+                "unicode": {"max": max(ord(ch) for ch in visible)},
+            }
+        )
+        if isinstance(candidate, str) and candidate and candidate != "unknown"
+    ]
+    if not specimen_scripts:
+        return True
+
+    return specimen_scripts[0] == str(script_iso).upper()
 
 
 def _is_low_information_primary_specimen(font: CatalogFontEntryV12) -> bool:

@@ -2061,8 +2061,8 @@ _SCRIPT_INFERENCE_OVERRIDES: dict[ScriptISO, ScriptInferenceOverride] = {
     ScriptISO("BRAI"): {
         "required_blocks": ["Braille Patterns"],
         "optional_blocks": [],
-        "suppresses": [ScriptISO("LATN")],
-        "preferred_over": [ScriptISO("LATN")],
+        "suppresses": [],
+        "preferred_over": [],
         "unicode_max_ranges": [(0x2800, 0x28FF)],
     },
     ScriptISO("BAMU"): {
@@ -2082,7 +2082,7 @@ _SCRIPT_INFERENCE_OVERRIDES: dict[ScriptISO, ScriptInferenceOverride] = {
             "Unified Canadian Aboriginal Syllabics Extended",
             "Unified Canadian Aboriginal Syllabics Extended-A",
         ],
-        "preferred_over": [ScriptISO("LATN")],
+        "preferred_over": [],
     },
     ScriptISO("CHAK"): {
         "required_blocks": ["Chakma"],
