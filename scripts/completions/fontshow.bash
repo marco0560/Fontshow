@@ -4,7 +4,7 @@
 _FONTSHOW_COMMANDS="create-catalog dump-fonts parse-inventory preflight validate-inventory"
 _FONTSHOW_GLOBAL_OPTIONS="--help --version -V -h"
 
-_FONTSHOW_OPTIONS_CREATE_CATALOG="--catalog-detail --help --indexed-navigation --inventory --language --list-test-fonts --number --output --quiet --script --sort-by --test --test-font --verbose --version -T -V -h -i -l -n -o -q -t -v"
+_FONTSHOW_OPTIONS_CREATE_CATALOG="--catalog-detail --help --indexed-navigation --inventory --language --list-test-fonts --number --output --quiet --script --sort-by --test --test-font --verbose --version -D -I -L -S -T -V -h -i -l -n -o -q -s -t -v"
 _FONTSHOW_PATH_OPTIONS_CREATE_CATALOG="--inventory --output -i -o"
 _FONTSHOW_POSITIONAL_PATH_CREATE_CATALOG=0
 
@@ -12,7 +12,7 @@ _FONTSHOW_OPTIONS_DUMP_FONTS="--cache-dir --help --include-fc-charset --no-cache
 _FONTSHOW_PATH_OPTIONS_DUMP_FONTS="--cache-dir --output -c -o"
 _FONTSHOW_POSITIONAL_PATH_DUMP_FONTS=0
 
-_FONTSHOW_OPTIONS_PARSE_INVENTORY="--help --infer-level --list-missing-language-coverage --output --quiet --show-all-missing-language-coverage --strict-bcp47 --validate-inventory --verbose --version -I -V -h -i -o -q -s -v"
+_FONTSHOW_OPTIONS_PARSE_INVENTORY="--help --infer-level --list-missing-language-coverage --output --quiet --show-all-missing-language-coverage --strict-bcp47 --validate-inventory --verbose --version -I -L -S -V -h -i -o -q -s -v"
 _FONTSHOW_PATH_OPTIONS_PARSE_INVENTORY="--output -o"
 _FONTSHOW_POSITIONAL_PATH_PARSE_INVENTORY=1
 

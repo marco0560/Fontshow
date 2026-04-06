@@ -305,7 +305,9 @@ def _generate_test_output(
 # - Failures in discovery or rendering provoke rejection of the specific
 #   font but do not abort the whole process,
 # - The CLI is intentionally thin: orchestration only, no business logic.
-#
+# ============================================================
+
+
 def build_parser(parser: argparse.ArgumentParser) -> None:
     """
     Register create-catalog CLI arguments on an existing parser.
@@ -370,6 +372,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         help="Limit the number of processed fonts to the first N (if positive) or the last |N| (if negative)",
     )
     parser.add_argument(
+        "-D",
         "--catalog-detail",
         choices=("compact", "extended"),
         default="compact",
@@ -380,6 +383,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
+        "-I",
         "--indexed-navigation",
         action="store_true",
         help=(
@@ -388,6 +392,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
+        "-L",
         "--language",
         action="append",
         metavar="LANG",
@@ -398,6 +403,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
+        "-S",
         "--script",
         action="append",
         metavar="SCRIPT",
@@ -408,6 +414,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
+        "-s",
         "--sort-by",
         action="append",
         choices=("language", "script"),

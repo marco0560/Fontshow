@@ -414,11 +414,13 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         help="Validate inventory structure and exit (no output generation)",
     )
     parser.add_argument(
+        "-L",
         "--list-missing-language-coverage",
         action="store_true",
         help="Report fonts whose coverage.languages is empty and exit",
     )
     parser.add_argument(
+        "-S",
         "--show-all-missing-language-coverage",
         action="store_true",
         help=(
@@ -566,11 +568,6 @@ def _list_missing_language_coverage(
             log_info(family)
 
     return 0
-
-
-# ============================================================
-# REFACTORED MAIN RUNNER
-# ============================================================
 
 
 def run_parse_font_inventory(
