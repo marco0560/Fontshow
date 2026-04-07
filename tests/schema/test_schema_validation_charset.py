@@ -180,3 +180,23 @@ def test_schema_validation_no_spurious_warnings():
 
     # Valid v1.4 inventory must produce no warnings
     assert warnings == []
+
+
+def test_schema_validation_accepts_pua_specimen_strategy():
+    """
+    Verify that schema v1.5 accepts the ``pua`` specimen strategy.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    inventory = _base_inventory_with_charset()
+    inventory["fonts"][0]["typography"]["specimen_strategy"] = "pua"
+
+    warnings = validate_inventory_schema(inventory)
+
+    assert warnings == []

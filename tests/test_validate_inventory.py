@@ -171,6 +171,28 @@ def test_validate_inventory_allows_empty_internal_sample_when_specimen_is_valid(
     assert result == 0
 
 
+def test_validate_inventory_accepts_pua_specimen_strategy():
+    """
+    Verify that validator accepts inventories enriched with PUA specimens.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    entry = minimal_font_entry_v12()
+    entry["typography"]["specimen_strategy"] = "pua"
+
+    data = minimal_inventory_v12()
+    data["fonts"] = [entry]
+
+    result = validate_inventory(data)
+    assert result == 0
+
+
 # ============================================================
 # MISSING SCHEMA VERSION
 # ============================================================

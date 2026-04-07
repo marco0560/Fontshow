@@ -366,6 +366,7 @@ This document is a human-oriented rendering of that schema.
             "internal",
             "script",
             "language",
+            "pua",
             "cmap",
             "deferred",
             "validated-language-sample",

@@ -240,6 +240,7 @@ def _validate_specimen(entry: dict, errors: list[str]) -> None:
         "internal",
         "script",
         "language",
+        "pua",
         "cmap",
         "deferred",
         "validated-language-sample",
