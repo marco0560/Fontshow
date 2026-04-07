@@ -79,12 +79,18 @@ def _is_significant_non_latin_block(count: int, total: int, level: str) -> bool:
     -------
     bool
         True when the non-Latin block should contribute to script inference.
+
+    Notes
+    -----
+    Non-Latin script acceptance requires an absolute glyph floor even at
+    aggressive levels so incidental coverage does not create spurious
+    script inferences from one or two codepoints.
     """
     if level == "conservative":
         return count >= 20 or (count / total) >= 0.05
     if level == "aggressive":
-        return count >= 2
-    return count >= 5 or (count / total) >= 0.01
+        return count >= 5
+    return count >= 5 and (count / total) >= 0.01
 
 
 def _block_is_significant(block_name: str, count: int, total: int, level: str) -> bool:

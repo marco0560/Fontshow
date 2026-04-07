@@ -136,6 +136,35 @@ def test_specimen_from_cmap_returns_fallback_without_warning_record():
     assert "warnings" not in font
 
 
+def test_specimen_from_private_use_returns_visible_pua_sample():
+    """
+    Ensure substantial private-use coverage produces a PUA specimen strip.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    cps = {0xE000 + index for index in range(specimens.MIN_SAMPLE_GLYPHS + 4)}
+    font = {
+        "coverage": {
+            "unicode_blocks": {
+                "Private Use Area": specimens.MIN_SAMPLE_GLYPHS + 4,
+            }
+        }
+    }
+
+    specimen, strategy = specimens._specimen_from_private_use(font, cps)
+
+    assert isinstance(specimen, str)
+    assert len(specimen) == specimens.MIN_SAMPLE_GLYPHS + 4
+    assert strategy == "pua"
+    assert all(0xE000 <= ord(ch) <= 0xF8FF for ch in specimen)
+
+
 def test_specimen_filter_text_preserves_separator_spaces_without_counting_them():
     """
     Ensure supported whitespace is preserved only between accepted glyphs.
@@ -268,10 +297,69 @@ def test_specimen_generate_for_font_uses_visible_replacement_and_semantic_fallba
         {
             "strategy": "validated-language-sample",
             "glyph_count": 3,
-            "fallback_depth": 3,
+            "fallback_depth": 4,
             "rejection": "specimen_not_in_cmap",
         }
     ]
+
+
+def test_specimen_generate_for_font_keeps_private_use_specimen(monkeypatch):
+    """
+    Ensure PUA fallback survives final filtering when coverage is substantial.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace cmap extraction and tracing.
+
+    Returns
+    -------
+    None
+    """
+    pua_chars = "".join(
+        chr(0xE000 + index) for index in range(specimens.MIN_SAMPLE_GLYPHS)
+    )
+    font = {
+        "path": "/tmp/font.ttf",
+        "coverage": {
+            "unicode_blocks": {"Private Use Area": specimens.MIN_SAMPLE_GLYPHS}
+        },
+        "inference": {},
+    }
+    coverage = font["coverage"]
+
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_collect_cmap",
+        lambda path, idx: {ord(ch) for ch in pua_chars},
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_internal",
+        lambda font, cps: (None, "no_internal_sample"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_script",
+        lambda coverage, cps: (None, "no_scripts"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_language",
+        lambda font, cps: (None, "no_language_sample"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_apply_semantic_validation",
+        lambda font, filtered, g, cps: (filtered, g, None),
+    )
+    monkeypatch.setattr(specimens, "log_trace_cat", lambda *args, **kwargs: None)
+
+    specimens._specimen_generate_for_font(font, coverage, "/tmp/font.ttf")
+
+    assert font["typography"]["specimen_text"] == pua_chars
+    assert font["typography"]["specimen_strategy"] == "pua"
+    assert font["typography"]["specimen_glyph_count"] == specimens.MIN_SAMPLE_GLYPHS
 
 
 def test_specimen_upgrade_low_information_sample_falls_back_to_cmap(monkeypatch):

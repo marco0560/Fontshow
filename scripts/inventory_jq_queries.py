@@ -313,8 +313,7 @@ def font_ok:
     family: .value.family,
     subfamily: .value.subfamily,
     path: .value.path,
-    blocks: (.value.coverage.unicode_blocks // {}),
-    block_names: ((.value.coverage.unicode_blocks // {}) | keys)
+    blocks: (.value.coverage.unicode_blocks // {})
   })
 """.strip(),
         interpretation=(

@@ -67,6 +67,11 @@ from fontshow.ontology.language_tables import SCRIPT_INFO
 
 MIN_SAMPLE_GLYPHS = 20
 CMAP_FALLBACK_GLYPHS = 40
+_PRIVATE_USE_BLOCK_NAMES = {
+    "Private Use Area",
+    "Supplementary Private Use Area-A",
+    "Supplementary Private Use Area-B",
+}
 
 
 def _specimen_is_variation_selector(cp: int) -> bool:
@@ -108,6 +113,26 @@ def _specimen_is_control_like(cp: int) -> bool:
         ``Co``, or ``Cn``.
     """
     return unicodedata.category(chr(cp)) in {"Cc", "Cf", "Cs", "Co", "Cn"}
+
+
+def _specimen_is_private_use(cp: int) -> bool:
+    """
+    Check whether a codepoint belongs to a Unicode private-use range.
+
+    Parameters
+    ----------
+    cp : int
+        Unicode codepoint.
+
+    Returns
+    -------
+    bool
+        True when the codepoint is inside one of the Unicode private
+        use areas.
+    """
+    return (
+        0xE000 <= cp <= 0xF8FF or 0xF0000 <= cp <= 0xFFFFF or 0x100000 <= cp <= 0x10FFFF
+    )
 
 
 def _specimen_is_mark(cp: int) -> bool:
@@ -174,7 +199,9 @@ def _specimen_preference(cp: int) -> int:
     return 2
 
 
-def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
+def _specimen_filter_text(
+    text: str, cps: set[int], *, allow_private_use: bool = False
+) -> tuple[str, int]:
     """
     Filter specimen text against cmap support and rendering-safety rules.
 
@@ -184,6 +211,9 @@ def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
         Candidate specimen text.
     cps : set[int]
         Supported Unicode codepoints for the font.
+    allow_private_use : bool, optional
+        Whether private-use codepoints should be retained instead of
+        being treated as control-like placeholders.
 
     Returns
     -------
@@ -213,7 +243,10 @@ def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
 
         if (
             cp not in cps
-            or _specimen_is_control_like(cp)
+            or (
+                _specimen_is_control_like(cp)
+                and not (allow_private_use and _specimen_is_private_use(cp))
+            )
             or _specimen_is_variation_selector(cp)
         ):
             pending_space = False
@@ -450,6 +483,55 @@ def _specimen_from_cmap(
     return "".join(chr(cp) for cp in chosen), "cmap"
 
 
+def _specimen_from_private_use(
+    font: dict[str, Any],
+    cps: set[int],
+) -> tuple[str | None, str | None]:
+    """
+    Build a specimen from private-use glyph coverage when it is substantial.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry being enriched.
+    cps : set[int]
+        Supported Unicode codepoints extracted from the font cmap.
+
+    Returns
+    -------
+    tuple[str | None, str | None]
+        Either ``(specimen_text, "pua")`` on success or
+        ``(None, rejection_reason)`` when private-use coverage is too
+        small or absent.
+    """
+    coverage_raw = font.get("coverage")
+    coverage = coverage_raw if isinstance(coverage_raw, dict) else {}
+    blocks_raw = coverage.get("unicode_blocks")
+    blocks = blocks_raw if isinstance(blocks_raw, dict) else {}
+    pua_total = sum(
+        int(blocks.get(block_name, 0))
+        for block_name in _PRIVATE_USE_BLOCK_NAMES
+        if isinstance(blocks.get(block_name, 0), int)
+    )
+    if pua_total < MIN_SAMPLE_GLYPHS:
+        return None, "private_use_not_significant"
+
+    chosen: list[int] = []
+    for cp in sorted(cps):
+        if not _specimen_is_private_use(cp):
+            continue
+        if _specimen_is_variation_selector(cp):
+            continue
+        chosen.append(cp)
+        if len(chosen) >= CMAP_FALLBACK_GLYPHS:
+            break
+
+    if not chosen:
+        return None, "private_use_no_supported_glyphs"
+
+    return "".join(chr(cp) for cp in chosen), "pua"
+
+
 def _specimen_apply_semantic_validation(
     font: dict[str, Any],
     filtered: str,
@@ -640,10 +722,16 @@ def _resolve_initial_specimen(
             fallback_depth = 2
 
     if specimen_text is None and cps:
+        specimen_text, strategy = _specimen_from_private_use(font, cps)
+        if specimen_text is not None:
+            rejection = "fallback_to_private_use"
+            fallback_depth = 3
+
+    if specimen_text is None and cps:
         specimen_text, strategy = _specimen_from_cmap(font, cps)
         rejection = "fallback_to_cmap"
         if specimen_text is not None:
-            fallback_depth = 3
+            fallback_depth = 4
 
     return specimen_text, strategy, rejection, fallback_depth
 
@@ -671,7 +759,7 @@ def _specimen_generate_for_font(
 
     Notes
     -----
-    Writes the schema v1.4 typography fields:
+    Writes the schema v1.5 typography fields:
     - ``typography.specimen_text``
     - ``typography.specimen_strategy``
     - ``typography.specimen_glyph_count``
@@ -681,7 +769,8 @@ def _specimen_generate_for_font(
     1. internal sample text
     2. script-derived curated sample
     3. language-derived sample
-    4. cmap-derived fallback
+    4. private-use cmap sample when PUA coverage is significant
+    5. cmap-derived fallback
 
     The function always leaves a visible specimen in the font record,
     even when curated and cmap-derived samples are both unusable.
@@ -698,7 +787,11 @@ def _specimen_generate_for_font(
         rejection = rejection or "no_printable_glyphs"
 
     filtered, g = (
-        _specimen_filter_text(specimen_text, cps)
+        _specimen_filter_text(
+            specimen_text,
+            cps,
+            allow_private_use=(strategy == "pua"),
+        )
         if cps
         else (specimen_text, len(specimen_text))
     )
