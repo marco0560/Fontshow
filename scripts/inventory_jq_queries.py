@@ -25,11 +25,19 @@ changing the application itself.
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+from fontshow.core.types import normalize_script_iso
+from fontshow.ontology.language_tables import SCRIPT_INFO
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 @dataclass(frozen=True)
@@ -57,6 +65,65 @@ class QuerySpec:
     summary: str
     query: str
     interpretation: str
+    processor: Callable[[Path, str, str], int] | None = None
+    accepts_filters: bool = False
+
+
+def _load_inventory(inventory_path: Path) -> dict:
+    with inventory_path.open(encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def _filter_fonts(
+    inventory: dict, family: str, font_path: str
+) -> list[tuple[int, dict]]:
+    results: list[tuple[int, dict]] = []
+    for index, entry in enumerate(inventory.get("fonts", [])):
+        if family and entry.get("family", "") != family:
+            continue
+        if font_path and entry.get("path", "") != font_path:
+            continue
+        results.append((index, entry))
+    return results
+
+
+def _summarize_script_blocks(script_token: str) -> dict:
+    script_iso = normalize_script_iso(script_token)
+    info = SCRIPT_INFO.get(script_iso)
+    canonical_name = info["canonical_name"] if info else ""
+    return {
+        "script": str(script_token),
+        "script_iso": str(script_iso) if script_iso else "",
+        "canonical_name": canonical_name,
+        "required_blocks": list(info["required_blocks"]) if info else [],
+        "optional_blocks": list(info["optional_blocks"]) if info else [],
+    }
+
+
+def _run_font_script_blocks_query(
+    inventory_path: Path,
+    *,
+    family: str = "",
+    font_path: str = "",
+) -> int:
+    inventory = _load_inventory(inventory_path)
+    fonts = _filter_fonts(inventory, family, font_path)
+    payload = []
+    for index, font in fonts:
+        coverage_scripts = font.get("coverage", {}).get("scripts", []) or []
+        payload.append(
+            {
+                "index": index,
+                "family": font.get("family", ""),
+                "subfamily": font.get("subfamily", ""),
+                "path": font.get("path", ""),
+                "scripts": [
+                    _summarize_script_blocks(script) for script in coverage_scripts
+                ],
+            }
+        )
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
 
 
 QUERY_SPECS: tuple[QuerySpec, ...] = (
@@ -257,6 +324,23 @@ def font_ok:
             "names with the tables under src/fontshow/ontology to confirm script "
             "support."
         ),
+        accepts_filters=True,
+    ),
+    QuerySpec(
+        name="font-script-blocks",
+        summary="Show ontology block evidence used when inferring scripts for a font.",
+        query=(
+            "(Python processor) Lists each script detected in the font along with "
+            "its canonical required and optional Unicode block names sourced from "
+            "src/fontshow/ontology/language_tables.py."
+        ),
+        interpretation=(
+            "Supply --family or --font-path to isolate one entry. Each returned row "
+            "enumerates the scripts reported in coverage.scripts and the corresponding "
+            "required/optional blocks stored under SCRIPT_INFO, which is derived from "
+            "the ontology tables referenced during inference."
+        ),
+        processor=_run_font_script_blocks_query,
     ),
 )
 
@@ -380,18 +464,23 @@ def render_query_details(spec: QuerySpec) -> str:
         Multi-line help text containing the summary, `jq` program, and
         interpretation guidance.
     """
-    return "\n".join(
+    lines = [
+        f"Query: {spec.name}",
+        f"Summary: {spec.summary}",
+        "",
+    ]
+    if spec.processor is None:
+        lines.extend(["jq program:", spec.query])
+    else:
+        lines.extend(["Processor:", spec.query])
+    lines.extend(
         [
-            f"Query: {spec.name}",
-            f"Summary: {spec.summary}",
-            "",
-            "jq program:",
-            spec.query,
             "",
             "Interpretation:",
             spec.interpretation,
         ]
     )
+    return "\n".join(lines)
 
 
 def run_saved_query(
@@ -422,8 +511,6 @@ def run_saved_query(
         Raised when `jq` is unavailable or the inventory path does not
         exist.
     """
-    if shutil.which("jq") is None:
-        fail("jq is not installed or not available in PATH.")
     if not inventory_path.exists():
         fail(f"Inventory file not found: {inventory_path}")
     if not inventory_path.is_file():
@@ -437,17 +524,25 @@ def run_saved_query(
     for line in spec.interpretation.splitlines():
         print(f"# {line}")
 
-    cmd = [
-        "jq",
-        "--arg",
-        "family",
-        family,
-        "--arg",
-        "font_path",
-        font_path,
-        spec.query,
-        str(inventory_path),
-    ]
+    if spec.processor is not None:
+        return spec.processor(inventory_path, family=family, font_path=font_path)
+
+    if shutil.which("jq") is None:
+        fail("jq is not installed or not available in PATH.")
+
+    cmd = ["jq"]
+    if spec.accepts_filters or family or font_path:
+        cmd.extend(
+            [
+                "--arg",
+                "family",
+                family,
+                "--arg",
+                "font_path",
+                font_path,
+            ]
+        )
+    cmd.extend([spec.query, str(inventory_path)])
     completed = subprocess.run(
         cmd,  # noqa: S607
         check=False,
