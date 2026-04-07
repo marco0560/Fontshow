@@ -354,7 +354,42 @@ def test_ordered_script_candidates_prioritizes_primary_then_rtl_then_latn(
         ScriptISO("ARAB"),
         ScriptISO("LATN"),
         ScriptISO("CYRL"),
+        ScriptISO("GREK"),
     ]
+
+
+def test_ordered_script_candidates_caps_output_at_twenty(monkeypatch):
+    """
+    Ensure multi-specimen expansion honors the current catalog cap.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ontology script metadata.
+
+    Returns
+    -------
+    None
+    """
+    script_names = [f"S{index:03d}" for index in range(25)]
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {ScriptISO(name): {"rtl": False, "specimen": name} for name in script_names},
+    )
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+
+    scripts = document._ordered_script_candidates(
+        {
+            "script": script_names[0].lower(),
+            "inference": {"scripts": [name.lower() for name in script_names[1:]]},
+            "coverage": {"scripts": []},
+        }
+    )
+
+    assert len(scripts) == 20
+    assert scripts[0] == ScriptISO(script_names[0])
+    assert scripts[-1] == ScriptISO(script_names[19])
 
 
 def test_render_font_entry_uses_raggedleft_for_rtl_scripts(monkeypatch):

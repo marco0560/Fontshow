@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 
 from fontshow.cli import parse_inventory
 from fontshow.cli.dump_fonts import run_dump_fonts
+from fontshow.core.types import ScriptISO
 from fontshow.inventory import loadability
 from tests.helpers import create_fake_font_file, simulate_dump_discovery
 
@@ -330,3 +331,45 @@ def test_parse_inventory_refreshes_lualatex_validation_and_probes_variants(monke
     assert result["metadata"]["validation"]["lualatex"]["attempted"] is False
     assert result["metadata"]["validation"]["lualatex"]["runtime_fingerprint"] == "fp-2"
     assert probe_calls == [([], result["metadata"]["validation"]["lualatex"])]
+
+
+def test_render_variant_specimen_falls_back_to_script_scoped_cmap(monkeypatch):
+    """
+    Ensure render-variant probing can fall back to script-scoped cmap text.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace curated specimens and cmap extraction.
+
+    Returns
+    -------
+    None
+    """
+    font = {
+        "path": "/tmp/Alpha.ttf",
+        "typography": {
+            "primary_script": "LATN",
+            "specimen_text": "The quick brown fox jumps over the lazy dog",
+        },
+    }
+    arabic_letters = [0x0627 + index for index in range(20)]
+    monkeypatch.setitem(
+        loadability.SCRIPT_INFO,
+        ScriptISO("ARAB"),
+        {
+            "specimen": "صِفْ خَلْقَ خَوْدٍ",
+            "unicode_max_ranges": [(0x0600, 0x06FF)],
+        },
+    )
+    monkeypatch.setattr(
+        loadability,
+        "_specimen_collect_cmap",
+        lambda _path, _ttc_index: set(arabic_letters) | {ord("A"), ord("B")},
+    )
+
+    specimen = loadability._render_variant_specimen(font, ScriptISO("ARAB"))
+
+    assert specimen
+    assert len(specimen) == loadability.MIN_SAMPLE_GLYPHS
+    assert all(0x0600 <= ord(ch) <= 0x06FF for ch in specimen)

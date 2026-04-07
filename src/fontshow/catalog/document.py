@@ -77,7 +77,7 @@ from fontshow.ontology.language_tables import SCRIPT_INFO
 from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
 _SUPPORTED_PATH_BASED_EXTENSIONS = (".ttf", ".otf", ".ttc")
-_MULTI_SPECIMEN_LIMIT = 4
+_MULTI_SPECIMEN_LIMIT = 20
 
 CatalogDetailLevel = Literal["compact", "extended"]
 

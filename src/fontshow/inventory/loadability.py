@@ -48,6 +48,8 @@ from fontshow.inventory.specimens import (
     MIN_SAMPLE_GLYPHS,
     _specimen_collect_cmap,
     _specimen_filter_text,
+    _specimen_preference,
+    _specimen_skip,
 )
 from fontshow.latex.policy import _get_render_policy
 from fontshow.latex.render import (
@@ -697,8 +699,55 @@ def _render_variant_specimen(
 
     filtered, glyphs = _specimen_filter_text(script_specimen, cps)
     if glyphs < MIN_SAMPLE_GLYPHS:
-        return ""
+        return _render_variant_cmap_fallback(cps, script_iso)
     return _strip_ascii_control_chars(filtered)
+
+
+def _render_variant_cmap_fallback(cps: set[int], script_iso: ScriptISO) -> str:
+    """
+    Build a deterministic script-scoped fallback specimen from cmap data.
+
+    Parameters
+    ----------
+    cps : set[int]
+        Supported Unicode codepoints extracted from the font cmap.
+    script_iso : ScriptISO
+        Script whose ontology ranges constrain the fallback selection.
+
+    Returns
+    -------
+    str
+        Short deterministic script-constrained sample, or an empty
+        string when no suitable codepoints are available.
+
+    Notes
+    -----
+    This helper is used only for render-variant persistence. It avoids
+    leaking unrelated scripts such as Latin into a secondary-script
+    probe when the curated specimen is too short after cmap filtering.
+    """
+    script_info = SCRIPT_INFO.get(script_iso)
+    if not isinstance(script_info, Mapping):
+        return ""
+
+    ranges = script_info.get("unicode_max_ranges")
+    if not isinstance(ranges, list) or not ranges:
+        return ""
+
+    chosen: list[int] = []
+    for cp in sorted(cps, key=_specimen_preference):
+        if _specimen_skip(cp):
+            continue
+        if not any(start <= cp <= end for start, end in ranges):
+            continue
+        chosen.append(cp)
+        if len(chosen) >= MIN_SAMPLE_GLYPHS:
+            break
+
+    if not chosen:
+        return ""
+
+    return "".join(chr(cp) for cp in chosen)
 
 
 def probe_and_persist_lualatex_render_variants(
