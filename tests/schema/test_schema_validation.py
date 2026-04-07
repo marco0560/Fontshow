@@ -49,7 +49,7 @@ def _valid_v12_inventory():
     """
     return {
         "metadata": {
-            "schema_version": "1.4",
+            "schema_version": "1.5",
             "input_inventory_tool": "test",
             "input_inventory_tool_version": "0",
             "inference_level": "none",
@@ -191,7 +191,7 @@ def test_invalid_inventory_structure_raises():
     None
     """
     data = {
-        "metadata": {"schema_version": "1.4"}
+        "metadata": {"schema_version": "1.5"}
         # missing "fonts"
     }
 
@@ -212,7 +212,7 @@ def test_invalid_schema_raises_validation_error():
     None
     """
     data = {
-        "metadata": {"schema_version": "1.4"},
+        "metadata": {"schema_version": "1.5"},
         "fonts": [],
         # missing required metadata fields
     }

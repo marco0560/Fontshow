@@ -480,6 +480,54 @@ def test_has_persisted_render_variant_success_requires_matching_success(monkeypa
     assert not document._has_persisted_render_variant_success(font, ScriptISO("LATN"))
 
 
+def test_specimen_for_rendered_script_prefers_persisted_variant_specimen(monkeypatch):
+    """
+    Ensure non-primary script rendering reuses the persisted validated specimen.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace render-policy and ontology helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        document, "_get_render_policy", lambda _script: ("", "Script=Arabic")
+    )
+    monkeypatch.setattr(
+        document, "SCRIPT_INFO", {ScriptISO("ARAB"): {"specimen": "fallback"}}
+    )
+
+    specimen = document._specimen_for_rendered_script(
+        {
+            "script": "latn",
+            "loadability": {
+                "lualatex": {
+                    "render_variants": [
+                        {
+                            "script": "ARAB",
+                            "fontspec_opts": "Script=Arabic",
+                            "attempted": True,
+                            "loadable": True,
+                            "reason": None,
+                            "runtime_fingerprint": "fp-1",
+                            "probe_input": "U+0620",
+                            "specimen_text": "ابتثجحخدذرزسشصض",
+                            "specimen_glyph_count": 16,
+                            "specimen_strategy": "script-cmap",
+                        }
+                    ]
+                }
+            },
+        },
+        ScriptISO("ARAB"),
+    )
+
+    assert specimen == "ابتثجحخدذرزسشصض"
+
+
 def test_generate_document_uses_variant_specific_specimens(monkeypatch, tmp_path):
     """
     Ensure family variants render using their own specimen metadata.

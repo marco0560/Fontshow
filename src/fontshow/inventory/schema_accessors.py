@@ -383,6 +383,9 @@ def set_lualatex_render_variants(
             "reason": state.get("reason"),
             "runtime_fingerprint": state.get("runtime_fingerprint"),
             "probe_input": state.get("probe_input"),
+            "specimen_text": state.get("specimen_text"),
+            "specimen_glyph_count": state.get("specimen_glyph_count"),
+            "specimen_strategy": state.get("specimen_strategy"),
         }
         for state in states
     ]

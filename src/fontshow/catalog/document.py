@@ -666,6 +666,41 @@ def _has_persisted_render_variant_success(
     return False
 
 
+def _persisted_render_variant(
+    font: CatalogFontEntryV12, script_iso: ScriptISO
+) -> Mapping[str, object] | None:
+    """
+    Return the persisted render-variant record matching one script.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose persisted render variants are inspected.
+    script_iso : ScriptISO
+        Script code about to be rendered.
+
+    Returns
+    -------
+    collections.abc.Mapping[str, object] | None
+        Matching successful render-variant record, otherwise ``None``.
+    """
+    variants = get_font_lualatex_render_variants(font)
+    if not variants:
+        return None
+
+    _lang, fontspec_opts = _get_render_policy(script_iso)
+    expected_script = str(script_iso)
+    expected_opts = fontspec_opts or None
+    for variant in variants:
+        if variant.get("script") != expected_script:
+            continue
+        if variant.get("fontspec_opts") != expected_opts:
+            continue
+        if bool(variant.get("attempted")) and variant.get("loadable") is True:
+            return variant
+    return None
+
+
 def _specimen_for_rendered_script(
     font: CatalogFontEntryV12,
     script_iso: ScriptISO,
@@ -712,6 +747,12 @@ def _specimen_for_rendered_script(
             return ""
 
         return specimen
+
+    persisted_variant = _persisted_render_variant(font, script_iso)
+    if persisted_variant is not None:
+        specimen_text = persisted_variant.get("specimen_text")
+        if isinstance(specimen_text, str) and specimen_text.strip():
+            return _strip_ascii_control_chars(specimen_text)
 
     script_info = SCRIPT_INFO.get(script_iso)
     if not isinstance(script_info, dict):

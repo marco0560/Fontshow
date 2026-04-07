@@ -43,7 +43,7 @@ def _base_inventory_with_charset():
     """
     return {
         "metadata": {
-            "schema_version": "1.4",
+            "schema_version": "1.5",
             "input_inventory_tool": "test",
             "input_inventory_tool_version": "0",
             "inference_level": "none",

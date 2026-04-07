@@ -235,6 +235,9 @@ def test_set_lualatex_render_variants_persists_ordered_records():
                 "reason": None,
                 "runtime_fingerprint": "fp-2",
                 "probe_input": "U+8000",
+                "specimen_text": "カタカナ",
+                "specimen_glyph_count": 4,
+                "specimen_strategy": "script",
             },
             {
                 "script": "BOPO",
@@ -244,6 +247,9 @@ def test_set_lualatex_render_variants_persists_ordered_records():
                 "reason": "fontspec error",
                 "runtime_fingerprint": "fp-2",
                 "probe_input": "U+3105",
+                "specimen_text": "ㄅㄆㄇㄈ",
+                "specimen_glyph_count": 4,
+                "specimen_strategy": "script",
             },
         ],
     )
@@ -257,6 +263,9 @@ def test_set_lualatex_render_variants_persists_ordered_records():
             "reason": None,
             "runtime_fingerprint": "fp-2",
             "probe_input": "U+8000",
+            "specimen_text": "カタカナ",
+            "specimen_glyph_count": 4,
+            "specimen_strategy": "script",
         },
         {
             "script": "BOPO",
@@ -266,5 +275,8 @@ def test_set_lualatex_render_variants_persists_ordered_records():
             "reason": "fontspec error",
             "runtime_fingerprint": "fp-2",
             "probe_input": "U+3105",
+            "specimen_text": "ㄅㄆㄇㄈ",
+            "specimen_glyph_count": 4,
+            "specimen_strategy": "script",
         },
     )

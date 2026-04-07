@@ -177,7 +177,7 @@ def test_load_inventory_rejects_legacy_schema_version(tmp_path, monkeypatch):
     rc, fonts = io._load_inventory(path, require_platform=False)
 
     assert (rc, fonts) == (1, [])
-    assert errors == ["Unsupported inventory schema_version: '1.0' (required 1.4)"]
+    assert errors == ["Unsupported inventory schema_version: '1.0' (required 1.5)"]
 
 
 def test_load_inventory_rejects_mixed_shape_entry(tmp_path, monkeypatch):

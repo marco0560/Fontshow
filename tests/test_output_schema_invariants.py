@@ -24,13 +24,13 @@ from fontshow.core.json_format import dumps_pretty
 from fontshow.inventory.schema_validation import validate_inventory_schema
 
 # ---------------------------------------------------------------------------
-# Minimal valid v1.4 inventory
+# Minimal valid v1.5 inventory
 # ---------------------------------------------------------------------------
 
 
 def _minimal_inventory():
     """
-    Minimal inventory structure that is schema-valid for v1.4.
+    Minimal inventory structure that is schema-valid for v1.5.
 
     Used to verify output invariants.
 
@@ -45,7 +45,7 @@ def _minimal_inventory():
     """
     return {
         "metadata": {
-            "schema_version": "1.4",
+            "schema_version": "1.5",
             "input_inventory_tool": "test",
             "input_inventory_tool_version": "0",
             "inference_level": "none",
@@ -153,7 +153,7 @@ def test_enriched_inventory_is_schema_valid():
     enriched = parse_inventory(data, level="medium")
 
     assert "metadata" in enriched
-    assert enriched["metadata"]["schema_version"] == "1.4"
+    assert enriched["metadata"]["schema_version"] == "1.5"
     assert "fonts" in enriched
 
     # Schema validation must run on JSON-rendered output (Enums → strings)

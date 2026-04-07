@@ -290,7 +290,7 @@ def test_parse_inventory_refreshes_lualatex_validation_and_probes_variants(monke
     """
     data = {
         "metadata": {
-            "schema_version": "1.4",
+            "schema_version": "1.5",
             "run_environment": {
                 "os": "x",
                 "machine": "y",
@@ -373,3 +373,75 @@ def test_render_variant_specimen_falls_back_to_script_scoped_cmap(monkeypatch):
     assert specimen
     assert len(specimen) == loadability.MIN_SAMPLE_GLYPHS
     assert all(0x0600 <= ord(ch) <= 0x06FF for ch in specimen)
+
+
+def test_probe_and_persist_lualatex_render_variants_persists_specimen_data(
+    tmp_path, monkeypatch
+):
+    """
+    Ensure render-variant persistence stores the validated specimen payload.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for fake fonts.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace probing helpers.
+
+    Returns
+    -------
+    None
+    """
+    font_path = create_fake_font_file(tmp_path, "Alpha.ttf")
+    font = _candidate_descriptor(font_path, "Alpha")
+    font["typography"]["primary_script"] = "LATN"
+    font["typography"]["specimen_text"] = "The quick brown fox"
+    font["coverage"]["scripts"] = ["LATN", "ARAB"]
+    font["inference"] = {"scripts": ["LATN", "ARAB"]}
+    metadata = {"attempted": False, "runtime_fingerprint": "fp-1"}
+
+    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
+    monkeypatch.setattr(
+        loadability,
+        "_ordered_render_variant_scripts",
+        lambda _font: [ScriptISO("LATN"), ScriptISO("ARAB")],
+    )
+    monkeypatch.setattr(
+        loadability,
+        "_render_variant_specimen_details",
+        lambda _font, script: (
+            ("The quick brown fox", 16, "script")
+            if str(script) == "LATN"
+            else ("ابتثجحخدذرزسشصض", 16, "script-cmap")
+        ),
+    )
+    monkeypatch.setattr(
+        loadability,
+        "_get_render_policy",
+        lambda script: ("", None if str(script) == "LATN" else "Script=Arabic"),
+    )
+    monkeypatch.setattr(
+        loadability,
+        "_resolve_batch_results",
+        lambda chunk, *, lualatex_bin: {
+            candidate.candidate_index: {
+                "attempted": True,
+                "loadable": True,
+                "reason": None,
+                "probe_input": candidate.probe_input,
+            }
+            for candidate in chunk
+        },
+    )
+
+    loadability.probe_and_persist_lualatex_render_variants(
+        [font], validation_metadata=metadata
+    )
+
+    variants = font["loadability"]["lualatex"]["render_variants"]
+    assert variants[0]["specimen_text"] == "The quick brown fox"
+    assert variants[0]["specimen_glyph_count"] == 16
+    assert variants[0]["specimen_strategy"] == "script"
+    assert variants[1]["specimen_text"] == "ابتثجحخدذرزسشصض"
+    assert variants[1]["specimen_glyph_count"] == 16
+    assert variants[1]["specimen_strategy"] == "script-cmap"

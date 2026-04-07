@@ -38,7 +38,7 @@ def test_run_parse_inventory_lists_missing_language_coverage_summary_only(
 
     inventory = {
         "metadata": {
-            "schema_version": "1.4",
+            "schema_version": "1.5",
             "run_environment": {"os": "x", "machine": "y", "execution_context": "z"},
         },
         "fonts": [
@@ -120,7 +120,7 @@ def test_run_parse_inventory_lists_all_missing_language_coverage_when_requested(
 
     inventory = {
         "metadata": {
-            "schema_version": "1.4",
+            "schema_version": "1.5",
             "run_environment": {"os": "x", "machine": "y", "execution_context": "z"},
         },
         "fonts": [

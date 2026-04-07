@@ -84,7 +84,7 @@ def test_validate_inventory_missing_fonts():
     -------
     None
     """
-    data = {"metadata": {"schema_version": "1.4"}}
+    data = {"metadata": {"schema_version": "1.5"}}
 
     result = validate_inventory(data)
     assert result > 0

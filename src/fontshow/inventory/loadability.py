@@ -85,6 +85,13 @@ class _ProbeCandidate:
         inventory entry.
     script : str | None
         Optional ISO-15924 script identifier associated with the probe.
+    specimen_text : str | None
+        Validated specimen selected for the render-path candidate.
+    specimen_glyph_count : int | None
+        Base-glyph count for ``specimen_text`` after filtering.
+    specimen_strategy : str | None
+        Deterministic strategy label describing how ``specimen_text``
+        was produced.
     """
 
     candidate_index: int
@@ -94,6 +101,9 @@ class _ProbeCandidate:
     probe_input: str
     fontspec_opts: str | None
     script: str | None = None
+    specimen_text: str | None = None
+    specimen_glyph_count: int | None = None
+    specimen_strategy: str | None = None
 
 
 def _is_inventory_validation_candidate(font: MutableMapping[str, Any]) -> bool:
@@ -750,6 +760,64 @@ def _render_variant_cmap_fallback(cps: set[int], script_iso: ScriptISO) -> str:
     return "".join(chr(cp) for cp in chosen)
 
 
+def _render_variant_specimen_details(
+    font: MutableMapping[str, Any], script_iso: ScriptISO
+) -> tuple[str, int, str] | None:
+    """
+    Return persisted specimen details for a render-path candidate.
+
+    Parameters
+    ----------
+    font : collections.abc.MutableMapping[str, Any]
+        Enriched inventory font entry being validated.
+    script_iso : ScriptISO
+        Script code for the render-path candidate.
+
+    Returns
+    -------
+    tuple[str, int, str] | None
+        ``(specimen_text, glyph_count, strategy)`` when a usable
+        render-variant sample exists, otherwise ``None``.
+    """
+    typography = get_font_typography(font)
+    primary_raw = typography.get("primary_script")
+    primary_iso = (
+        ScriptISO(str(primary_raw).strip().upper())
+        if isinstance(primary_raw, str) and str(primary_raw).strip()
+        else ScriptISO("")
+    )
+    if str(script_iso) == str(primary_iso):
+        specimen = get_specimen_text(font)
+        cleaned = (
+            _strip_ascii_control_chars(specimen) if isinstance(specimen, str) else ""
+        )
+        if not cleaned:
+            return None
+        glyph_count = sum(1 for ch in cleaned if not ch.isspace())
+        return cleaned, glyph_count, str(typography.get("specimen_strategy") or "")
+
+    script_info = SCRIPT_INFO.get(script_iso)
+    if not isinstance(script_info, Mapping):
+        return None
+    script_specimen = script_info.get("specimen")
+    variant_path = str(font.get("path", "")).strip()
+    if not isinstance(script_specimen, str) or not variant_path:
+        return None
+
+    cps = _specimen_collect_cmap(variant_path, None)
+    if not cps:
+        return None
+
+    filtered, glyphs = _specimen_filter_text(script_specimen, cps)
+    if glyphs >= MIN_SAMPLE_GLYPHS:
+        return _strip_ascii_control_chars(filtered), glyphs, "script"
+
+    fallback = _render_variant_cmap_fallback(cps, script_iso)
+    if not fallback:
+        return None
+    return _strip_ascii_control_chars(fallback), len(fallback), "script-cmap"
+
+
 def probe_and_persist_lualatex_render_variants(
     fonts: list[MutableMapping[str, Any]],
     *,
@@ -788,9 +856,10 @@ def probe_and_persist_lualatex_render_variants(
             continue
 
         for script_iso in _ordered_render_variant_scripts(font):
-            specimen = _render_variant_specimen(font, script_iso)
-            if not specimen:
+            specimen_details = _render_variant_specimen_details(font, script_iso)
+            if specimen_details is None:
                 continue
+            specimen, specimen_glyph_count, specimen_strategy = specimen_details
             probe_text = _probe_text_from_sample(specimen)
             if not probe_text:
                 continue
@@ -804,6 +873,9 @@ def probe_and_persist_lualatex_render_variants(
                     probe_input=_probe_input_from_text(probe_text),
                     fontspec_opts=script_opt or None,
                     script=str(script_iso),
+                    specimen_text=specimen,
+                    specimen_glyph_count=specimen_glyph_count,
+                    specimen_strategy=specimen_strategy,
                 )
             )
 
@@ -829,6 +901,9 @@ def probe_and_persist_lualatex_render_variants(
                 "reason": state["reason"],
                 "runtime_fingerprint": runtime_fingerprint,
                 "probe_input": state["probe_input"],
+                "specimen_text": candidate.specimen_text,
+                "specimen_glyph_count": candidate.specimen_glyph_count,
+                "specimen_strategy": candidate.specimen_strategy,
             }
         )
 
