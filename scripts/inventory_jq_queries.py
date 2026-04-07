@@ -231,6 +231,33 @@ def font_ok:
             "`specimen_strategy` may still be `deferred`."
         ),
     ),
+    QuerySpec(
+        name="font-block-coverage",
+        summary="Show reported Unicode blocks for a specific family or font path.",
+        query=r"""
+.fonts
+| to_entries
+| map(select(
+    ($family == "" or .value.family == $family)
+    and ($font_path == "" or .value.path == $font_path)
+  ))
+| map({
+    index: .key,
+    family: .value.family,
+    subfamily: .value.subfamily,
+    path: .value.path,
+    blocks: (.value.coverage.unicode_blocks // {}),
+    block_names: ((.value.coverage.unicode_blocks // {}) | keys)
+  })
+""".strip(),
+        interpretation=(
+            "Provide either --family or --font-path (or both) to filter the inventory "
+            "entry you care about. The resulting rows list canonical coverage "
+            "sourced from Unicode block analysis; cross-reference these block "
+            "names with the tables under src/fontshow/ontology to confirm script "
+            "support."
+        ),
+    ),
 )
 
 QUERY_BY_NAME = {spec.name: spec for spec in QUERY_SPECS}
@@ -306,6 +333,16 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Inventory JSON file to inspect",
     )
+    run_parser.add_argument(
+        "--family",
+        default="",
+        help="Optional family name filter applied inside the query",
+    )
+    run_parser.add_argument(
+        "--font-path",
+        default="",
+        help="Optional font path filter applied inside the query",
+    )
     return parser
 
 
@@ -357,7 +394,13 @@ def render_query_details(spec: QuerySpec) -> str:
     )
 
 
-def run_saved_query(spec: QuerySpec, inventory_path: Path) -> int:
+def run_saved_query(
+    spec: QuerySpec,
+    inventory_path: Path,
+    *,
+    family: str = "",
+    font_path: str = "",
+) -> int:
     """
     Execute one saved `jq` program against an inventory file.
 
@@ -394,8 +437,19 @@ def run_saved_query(spec: QuerySpec, inventory_path: Path) -> int:
     for line in spec.interpretation.splitlines():
         print(f"# {line}")
 
+    cmd = [
+        "jq",
+        "--arg",
+        "family",
+        family,
+        "--arg",
+        "font_path",
+        font_path,
+        spec.query,
+        str(inventory_path),
+    ]
     completed = subprocess.run(
-        ["jq", spec.query, str(inventory_path)],  # noqa: S607
+        cmd,  # noqa: S607
         check=False,
     )
     return int(completed.returncode)
@@ -429,7 +483,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "run":
-        return run_saved_query(spec, args.inventory_path)
+        return run_saved_query(
+            spec,
+            args.inventory_path,
+            family=args.family,
+            font_path=args.font_path,
+        )
 
     fail(f"Unhandled command: {args.command}", exit_code=2)
     return 2
