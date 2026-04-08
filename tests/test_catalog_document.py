@@ -392,6 +392,43 @@ def test_ordered_script_candidates_caps_output_at_twenty(monkeypatch):
     assert scripts[-1] == ScriptISO(script_names[19])
 
 
+def test_ordered_script_candidates_appends_private_use_row(monkeypatch):
+    """
+    Ensure significant private-use coverage produces a dedicated catalog row.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ontology helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("LATN"): {"rtl": False, "specimen": "Latin"},
+            ScriptISO("GREK"): {"rtl": False, "specimen": "Greek"},
+        },
+    )
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+
+    scripts = document._ordered_script_candidates(
+        {
+            "script": "latn",
+            "inference": {"scripts": ["grek"]},
+            "coverage": {
+                "scripts": ["latn", "grek"],
+                "unicode_blocks": {"Private Use Area": document.MIN_SAMPLE_GLYPHS},
+            },
+        }
+    )
+
+    assert scripts == [ScriptISO("LATN"), ScriptISO("GREK"), ScriptISO("PUAA")]
+
+
 def test_render_font_entry_uses_raggedleft_for_rtl_scripts(monkeypatch):
     """
     Ensure RTL scripts render with right-aligned specimen blocks.
@@ -1087,6 +1124,39 @@ def test_specimen_for_rendered_script_replaces_mismatched_primary_with_curated(
     specimen = document._specimen_for_rendered_script({}, ScriptISO("ARAB"))
 
     assert specimen == "Arabic sample"
+
+
+def test_specimen_for_rendered_script_replaces_primary_pua_with_script_fallback(
+    monkeypatch,
+):
+    """
+    Ensure real writing systems beat primary PUA strips in the main catalog.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace specimen helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "primary_script", lambda _font: "JPAN")
+    monkeypatch.setattr(document, "get_specimen_text", lambda _font: "\ue000\ue001")
+    monkeypatch.setattr(document, "get_specimen_strategy", lambda _font: "pua")
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(
+        document,
+        "_curated_primary_script_specimen",
+        lambda _font, _script: "あいうえおかきくけこさしすせそたちつてと",
+    )
+
+    specimen = document._specimen_for_rendered_script(
+        {"path": "/tmp/font.ttf"},
+        ScriptISO("JPAN"),
+    )
+
+    assert specimen == "あいうえおかきくけこさしすせそたちつてと"
 
 
 def test_generate_document_skips_sparse_renderer_added_specimens(monkeypatch, tmp_path):

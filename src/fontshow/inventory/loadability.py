@@ -46,8 +46,8 @@ from fontshow.inventory.schema_accessors import (
 )
 from fontshow.inventory.specimens import (
     MIN_SAMPLE_GLYPHS,
+    _script_fallback_specimen,
     _specimen_collect_cmap,
-    _specimen_filter_text,
     _specimen_preference,
     _specimen_skip,
 )
@@ -662,7 +662,7 @@ def _ordered_render_variant_scripts(font: MutableMapping[str, Any]) -> list[Scri
     if primary_script is not None:
         ordered.append(primary_script)
     ordered.extend(sorted(secondary_scripts, key=_sort_key))
-    return ordered[:4]
+    return ordered[:20]
 
 
 def _render_variant_specimen(
@@ -695,22 +695,18 @@ def _render_variant_specimen(
         specimen = get_specimen_text(font)
         return _strip_ascii_control_chars(specimen) if isinstance(specimen, str) else ""
 
-    script_info = SCRIPT_INFO.get(script_iso)
-    if not isinstance(script_info, Mapping):
-        return ""
-    script_specimen = script_info.get("specimen")
     variant_path = str(font.get("path", "")).strip()
-    if not isinstance(script_specimen, str) or not variant_path:
+    if not variant_path:
         return ""
 
     cps = _specimen_collect_cmap(variant_path, None)
     if not cps:
         return ""
 
-    filtered, glyphs = _specimen_filter_text(script_specimen, cps)
-    if glyphs < MIN_SAMPLE_GLYPHS:
-        return _render_variant_cmap_fallback(cps, script_iso)
-    return _strip_ascii_control_chars(filtered)
+    filtered, _glyphs, _strategy = _script_fallback_specimen(script_iso, cps)
+    if filtered is not None:
+        return _strip_ascii_control_chars(filtered)
+    return _render_variant_cmap_fallback(cps, script_iso)
 
 
 def _render_variant_cmap_fallback(cps: set[int], script_iso: ScriptISO) -> str:
@@ -796,21 +792,17 @@ def _render_variant_specimen_details(
         glyph_count = sum(1 for ch in cleaned if not ch.isspace())
         return cleaned, glyph_count, str(typography.get("specimen_strategy") or "")
 
-    script_info = SCRIPT_INFO.get(script_iso)
-    if not isinstance(script_info, Mapping):
-        return None
-    script_specimen = script_info.get("specimen")
     variant_path = str(font.get("path", "")).strip()
-    if not isinstance(script_specimen, str) or not variant_path:
+    if not variant_path:
         return None
 
     cps = _specimen_collect_cmap(variant_path, None)
     if not cps:
         return None
 
-    filtered, glyphs = _specimen_filter_text(script_specimen, cps)
-    if glyphs >= MIN_SAMPLE_GLYPHS:
-        return _strip_ascii_control_chars(filtered), glyphs, "script"
+    filtered, glyphs, strategy = _script_fallback_specimen(script_iso, cps)
+    if filtered is not None and strategy is not None:
+        return _strip_ascii_control_chars(filtered), glyphs, strategy
 
     fallback = _render_variant_cmap_fallback(cps, script_iso)
     if not fallback:

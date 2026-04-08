@@ -72,6 +72,29 @@ _PRIVATE_USE_BLOCK_NAMES = {
     "Supplementary Private Use Area-A",
     "Supplementary Private Use Area-B",
 }
+_LATIN_BLOCK_NAMES = {
+    "Basic Latin",
+    "Latin-1 Supplement",
+    "Latin Extended-A",
+    "Latin Extended-B",
+    "Latin Extended Additional",
+    "Latin Extended-C",
+    "Latin Extended-D",
+    "Latin Extended-E",
+    "Latin Extended-F",
+    "Latin Extended-G",
+}
+_SCRIPT_CORE_SPECIMENS: dict[ScriptISO, str] = {
+    ScriptISO("ARAB"): "ابتثجحخدذرزسشصضطظعغفقكلمنهويءآأؤإئىة",
+    ScriptISO("BOPO"): "ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄚㄛㄜ",
+    ScriptISO("CYRL"): "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩабвгдежзийклмнопрстуфхцчшщ",
+    ScriptISO("GREK"): "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥαβγδεζηθικλμνξοπρστυ",
+    ScriptISO("HANI"): "天地玄黃宇宙洪荒日月盈昃辰宿列張寒來暑往秋收冬藏",
+    ScriptISO(
+        "JPAN"
+    ): "あいうえおかきくけこさしすせそたちつてとアイウエオカキクケコサシスセソ",
+    ScriptISO("LATN"): "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+}
 
 
 def _specimen_is_variation_selector(cp: int) -> bool:
@@ -199,6 +222,45 @@ def _specimen_preference(cp: int) -> int:
     return 2
 
 
+def _specimen_is_latin_block(block_name: str) -> bool:
+    """
+    Return whether a Unicode block should count as Latin-family evidence.
+
+    Parameters
+    ----------
+    block_name : str
+        Unicode block name extracted from specimen text.
+
+    Returns
+    -------
+    bool
+        True when the block is one of the Latin-family Unicode blocks
+        used by specimen reconciliation heuristics.
+    """
+    return block_name in _LATIN_BLOCK_NAMES
+
+
+def _normalize_top_level_specimen_strategy(strategy: str | None) -> str | None:
+    """
+    Normalize detailed specimen strategies to schema-approved top-level values.
+
+    Parameters
+    ----------
+    strategy : str | None
+        Detailed strategy emitted by internal helper stages.
+
+    Returns
+    -------
+    str | None
+        Schema-approved top-level specimen strategy.
+    """
+    if not isinstance(strategy, str) or not strategy:
+        return strategy
+    if strategy.startswith("script"):
+        return "script"
+    return strategy
+
+
 def _specimen_filter_text(
     text: str, cps: set[int], *, allow_private_use: bool = False
 ) -> tuple[str, int]:
@@ -270,6 +332,32 @@ def _specimen_filter_text(
     return "".join(out), glyphs
 
 
+def _specimen_repeat_once(text: str, glyphs: int) -> tuple[str | None, int]:
+    """
+    Duplicate a short specimen once when that reaches the acceptance floor.
+
+    Parameters
+    ----------
+    text : str
+        Filtered specimen candidate.
+    glyphs : int
+        Accepted base-glyph count for ``text``.
+
+    Returns
+    -------
+    tuple[str | None, int]
+        Doubled specimen text and doubled glyph count, or ``(None, glyphs)``
+        when repetition should not be used.
+    """
+    if not text or glyphs <= 0:
+        return None, glyphs
+    if glyphs >= MIN_SAMPLE_GLYPHS:
+        return text, glyphs
+    if glyphs * 2 < MIN_SAMPLE_GLYPHS:
+        return None, glyphs
+    return f"{text} {text}", glyphs * 2
+
+
 def _specimen_collect_cmap(path: str | None, ttc_index: int | None) -> set[int]:
     """
     Collect supported Unicode codepoints from the font cmap.
@@ -324,6 +412,75 @@ def _specimen_collect_cmap(path: str | None, ttc_index: int | None) -> set[int]:
         except (TypeError, ValueError):
             continue
     return cps
+
+
+def _script_core_specimen_seed(script_iso: ScriptISO) -> str:
+    """
+    Return the deterministic core-glyph seed for one script.
+
+    Parameters
+    ----------
+    script_iso : ScriptISO
+        Canonical script identifier.
+
+    Returns
+    -------
+    str
+        Script-specific core glyph seed, or an empty string when none is
+        defined.
+    """
+    seed = _SCRIPT_CORE_SPECIMENS.get(script_iso)
+    return seed if isinstance(seed, str) else ""
+
+
+def _script_fallback_specimen(
+    script_iso: ScriptISO,
+    cps: set[int],
+) -> tuple[str | None, int, str | None]:
+    """
+    Build the best deterministic specimen available for one script.
+
+    Parameters
+    ----------
+    script_iso : ScriptISO
+        Script whose specimen should be resolved.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str | None, int, str | None]
+        ``(specimen_text, glyph_count, strategy)`` for the best script-aware
+        sample, or ``(None, 0, None)`` when no meaningful sample can be built.
+
+    Notes
+    -----
+    Ordered fallback:
+    1. curated ontology specimen as-is
+    2. one doubled copy of the curated result if that reaches the floor
+    3. deterministic script-core seed
+    4. one doubled copy of the core-seed result if that reaches the floor
+    """
+    info = SCRIPT_INFO.get(script_iso)
+    curated = info.get("specimen") if isinstance(info, dict) else None
+    if isinstance(curated, str) and curated.strip():
+        filtered, glyphs = _specimen_filter_text(curated, cps)
+        if glyphs >= MIN_SAMPLE_GLYPHS:
+            return filtered, glyphs, "script"
+        doubled, doubled_glyphs = _specimen_repeat_once(filtered, glyphs)
+        if doubled is not None:
+            return doubled, doubled_glyphs, "script-doubled"
+
+    seed = _script_core_specimen_seed(script_iso)
+    if seed:
+        filtered, glyphs = _specimen_filter_text(seed, cps)
+        if glyphs >= MIN_SAMPLE_GLYPHS:
+            return filtered, glyphs, "script-core"
+        doubled, doubled_glyphs = _specimen_repeat_once(filtered, glyphs)
+        if doubled is not None:
+            return doubled, doubled_glyphs, "script-core-doubled"
+
+    return None, 0, None
 
 
 def _specimen_from_internal(
@@ -424,26 +581,21 @@ def _specimen_from_script(
     if not isinstance(text, str) or not text.strip():
         return None, "no_script_sample"
 
-    filtered, glyphs = _specimen_filter_text(text, cps)
+    filtered, glyphs, strategy = _script_fallback_specimen(script_iso, cps)
+    if filtered is not None and strategy is not None:
+        return filtered, strategy
 
+    seed = _script_core_specimen_seed(script_iso)
+    if seed:
+        core_filtered, core_glyphs = _specimen_filter_text(seed, cps)
+        if core_glyphs == 0:
+            return None, "script_sample_no_supported_glyphs"
+        return None, "script_sample_too_short"
+
+    filtered, glyphs = _specimen_filter_text(text, cps)
     if glyphs == 0:
         return None, "script_sample_no_supported_glyphs"
-
-    # Reject weak script sample when density too low vs cmap.
-    # Large-script fonts (e.g. Hangul) can have a very large cmap even
-    # when the curated specimen is perfectly representative, so a
-    # substantial sample must remain acceptable regardless of cmap size.
-    if cps:
-        try:
-            density = glyphs / max(len(cps), 1)
-        except (TypeError, ZeroDivisionError):
-            density = 0.0
-
-        # empirical safe floor — prevents misleading tiny samples
-        if density < 0.01 and glyphs < MIN_SAMPLE_GLYPHS:
-            return None, "script_sample_too_sparse"
-
-    return filtered, "script"
+    return None, "script_sample_too_short"
 
 
 def _specimen_from_cmap(
@@ -504,15 +656,7 @@ def _specimen_from_private_use(
         ``(None, rejection_reason)`` when private-use coverage is too
         small or absent.
     """
-    coverage_raw = font.get("coverage")
-    coverage = coverage_raw if isinstance(coverage_raw, dict) else {}
-    blocks_raw = coverage.get("unicode_blocks")
-    blocks = blocks_raw if isinstance(blocks_raw, dict) else {}
-    pua_total = sum(
-        int(blocks.get(block_name, 0))
-        for block_name in _PRIVATE_USE_BLOCK_NAMES
-        if isinstance(blocks.get(block_name, 0), int)
-    )
+    pua_total = _significant_private_use_count(font)
     if pua_total < MIN_SAMPLE_GLYPHS:
         return None, "private_use_not_significant"
 
@@ -530,6 +674,48 @@ def _specimen_from_private_use(
         return None, "private_use_no_supported_glyphs"
 
     return "".join(chr(cp) for cp in chosen), "pua"
+
+
+def _significant_private_use_count(font: dict[str, Any]) -> int:
+    """
+    Return the persisted count of private-use coverage for one font.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry whose coverage block is inspected.
+
+    Returns
+    -------
+    int
+        Total number of covered codepoints in Unicode private-use blocks.
+    """
+    coverage_raw = font.get("coverage")
+    coverage = coverage_raw if isinstance(coverage_raw, dict) else {}
+    blocks_raw = coverage.get("unicode_blocks")
+    blocks = blocks_raw if isinstance(blocks_raw, dict) else {}
+    return sum(
+        int(blocks.get(block_name, 0))
+        for block_name in _PRIVATE_USE_BLOCK_NAMES
+        if isinstance(blocks.get(block_name, 0), int)
+    )
+
+
+def _has_significant_private_use(font: dict[str, Any]) -> bool:
+    """
+    Return whether one font covers a meaningful amount of private-use glyphs.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry whose coverage block is inspected.
+
+    Returns
+    -------
+    bool
+        True when the persisted private-use coverage reaches the specimen floor.
+    """
+    return _significant_private_use_count(font) >= MIN_SAMPLE_GLYPHS
 
 
 def _specimen_apply_semantic_validation(
@@ -852,7 +1038,7 @@ def _specimen_generate_for_font(
     set_specimen_fields(
         font,
         specimen_text=filtered,
-        specimen_strategy=strategy or "cmap",
+        specimen_strategy=_normalize_top_level_specimen_strategy(strategy) or "cmap",
         specimen_glyph_count=int(g),
         specimen_rejection_reason=rejection,
     )

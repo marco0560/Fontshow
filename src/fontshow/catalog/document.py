@@ -53,8 +53,13 @@ from fontshow.inventory.schema_accessors import (
 from fontshow.inventory.script_analysis import infer_scripts
 from fontshow.inventory.specimens import (
     MIN_SAMPLE_GLYPHS,
+    _has_significant_private_use,
+    _script_core_specimen_seed,
+    _script_fallback_specimen,
     _specimen_collect_cmap,
     _specimen_filter_text,
+    _specimen_from_private_use,
+    _specimen_repeat_once,
 )
 from fontshow.latex.policy import (
     _format_language_display,
@@ -78,6 +83,7 @@ from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
 _SUPPORTED_PATH_BASED_EXTENSIONS = (".ttf", ".otf", ".ttc")
 _MULTI_SPECIMEN_LIMIT = 20
+_PUA_SCRIPT = ScriptISO("PUAA")
 
 CatalogDetailLevel = Literal["compact", "extended"]
 
@@ -607,6 +613,9 @@ def _ordered_script_candidates(font: CatalogFontEntryV12) -> list[ScriptISO]:
         seen.add(cleaned)
         normalized.append(ScriptISO(cleaned))
 
+    if _has_significant_private_use(dict(font)) and str(_PUA_SCRIPT) not in seen:
+        normalized.append(_PUA_SCRIPT)
+
     if not normalized:
         return []
 
@@ -618,6 +627,8 @@ def _ordered_script_candidates(font: CatalogFontEntryV12) -> list[ScriptISO]:
     remaining = [script_iso for script_iso in normalized if script_iso != primary_iso]
 
     def _sort_key(script_iso: ScriptISO) -> tuple[int, str]:
+        if script_iso == _PUA_SCRIPT:
+            return (3, str(script_iso))
         info: dict[str, object] = dict(SCRIPT_INFO.get(script_iso, {}))
         if bool(info.get("rtl", False)):
             return (0, str(script_iso))
@@ -650,6 +661,9 @@ def _has_persisted_render_variant_success(
         ``True`` when the inventory either has no render-variant data
         yet or contains a matching successful render-path record.
     """
+    if script_iso == _PUA_SCRIPT:
+        return True
+
     variants = get_font_lualatex_render_variants(font)
     if not variants:
         return True
@@ -721,32 +735,12 @@ def _specimen_for_rendered_script(
         Deterministic specimen text for the script, or an empty string
         when no script-appropriate sample can be resolved.
     """
+    if script_iso == _PUA_SCRIPT:
+        return _pua_specimen_for_rendered_script(font)
+
     primary = (primary_script(font) or "").upper()
     if str(script_iso) == primary:
-        specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
-        strategy = str(get_specimen_strategy(font) or "").strip()
-        if (
-            specimen
-            and strategy in {"cmap", "validated-fallback"}
-            and not _stored_primary_specimen_matches_script(font, script_iso)
-        ):
-            curated = _curated_primary_script_specimen(font, script_iso)
-            if curated:
-                return curated
-        if not (
-            _is_low_information_primary_specimen(font)
-            or _has_low_information_visible_specimen(font)
-        ):
-            return specimen
-
-        curated = _curated_primary_script_specimen(font, script_iso)
-        if curated:
-            return curated
-
-        if _should_suppress_specialized_primary_specimen(font):
-            return ""
-
-        return specimen
+        return _primary_specimen_for_rendered_script(font, script_iso)
 
     persisted_variant = _persisted_render_variant(font, script_iso)
     if persisted_variant is not None:
@@ -761,6 +755,79 @@ def _specimen_for_rendered_script(
     if not isinstance(script_specimen, str):
         return ""
     return _filter_renderer_script_specimen(font, script_specimen)
+
+
+def _pua_specimen_for_rendered_script(font: CatalogFontEntryV12) -> str:
+    """
+    Resolve the dedicated private-use specimen row for one font.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose private-use coverage may be rendered.
+
+    Returns
+    -------
+    str
+        Visible private-use specimen strip, or an empty string when no
+        meaningful sample can be built.
+    """
+    strategy = str(get_specimen_strategy(font) or "").strip()
+    if strategy == "pua":
+        stored_specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+        if stored_specimen.strip():
+            return stored_specimen
+    cps = _specimen_collect_cmap(str(font.get("path", "")).strip(), None)
+    if not cps:
+        return ""
+    pua_specimen, _pua_strategy = _specimen_from_private_use(dict(font), cps)
+    if isinstance(pua_specimen, str) and pua_specimen.strip():
+        return _strip_ascii_control_chars(pua_specimen)
+    return ""
+
+
+def _primary_specimen_for_rendered_script(
+    font: CatalogFontEntryV12,
+    script_iso: ScriptISO,
+) -> str:
+    """
+    Resolve the rendered specimen for the primary script row.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose primary row is being rendered.
+    script_iso : ScriptISO
+        Primary script rendered for the current row.
+
+    Returns
+    -------
+    str
+        Primary-row specimen text, or an empty string when the row
+        should be suppressed.
+    """
+    specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+    strategy = str(get_specimen_strategy(font) or "").strip()
+    curated = _curated_primary_script_specimen(font, script_iso)
+    if strategy == "pua" and curated:
+        return curated
+    if (
+        specimen
+        and strategy in {"cmap", "validated-fallback"}
+        and not _stored_primary_specimen_matches_script(font, script_iso)
+        and curated
+    ):
+        return curated
+    if not (
+        _is_low_information_primary_specimen(font)
+        or _has_low_information_visible_specimen(font)
+    ):
+        return specimen
+    if curated:
+        return curated
+    if _should_suppress_specialized_primary_specimen(font):
+        return ""
+    return specimen
 
 
 def _filter_renderer_script_specimen(
@@ -818,13 +885,60 @@ def _curated_primary_script_specimen(
         Curated script specimen filtered through the font cmap, or an
         empty string when no suitable curated replacement exists.
     """
-    script_info = SCRIPT_INFO.get(script_iso)
-    if not isinstance(script_info, dict):
+    if script_iso == _PUA_SCRIPT:
         return ""
-    specimen = script_info.get("specimen")
-    if not isinstance(specimen, str):
+    variant_path = str(font.get("path", "")).strip()
+    if not variant_path:
         return ""
-    return _filter_renderer_script_specimen(font, specimen)
+    cps = _specimen_collect_cmap(variant_path, None)
+    if not cps:
+        return ""
+    specimen, _glyphs, _strategy = _catalog_script_fallback_specimen(script_iso, cps)
+    if specimen is None:
+        return ""
+    return _strip_ascii_control_chars(specimen)
+
+
+def _catalog_script_fallback_specimen(
+    script_iso: ScriptISO,
+    cps: set[int],
+) -> tuple[str | None, int, str | None]:
+    """
+    Build a catalog specimen using the catalog-layer ontology table first.
+
+    Parameters
+    ----------
+    script_iso : ScriptISO
+        Script whose fallback specimen should be resolved.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str | None, int, str | None]
+        ``(specimen_text, glyph_count, strategy)`` when a useful
+        script-aware specimen can be built, otherwise ``(None, 0, None)``.
+    """
+    info = SCRIPT_INFO.get(script_iso)
+    curated = info.get("specimen") if isinstance(info, dict) else None
+    if isinstance(curated, str) and curated.strip():
+        filtered, glyphs = _specimen_filter_text(curated, cps)
+        if glyphs >= MIN_SAMPLE_GLYPHS:
+            return filtered, glyphs, "script"
+        doubled, doubled_glyphs = _specimen_repeat_once(filtered, glyphs)
+        if doubled is not None:
+            return doubled, doubled_glyphs, "script-doubled"
+
+    seed = _script_core_specimen_seed(script_iso)
+    if seed:
+        filtered, glyphs = _specimen_filter_text(seed, cps)
+        if glyphs >= MIN_SAMPLE_GLYPHS:
+            return filtered, glyphs, "script-core"
+        doubled, doubled_glyphs = _specimen_repeat_once(filtered, glyphs)
+        if doubled is not None:
+            return doubled, doubled_glyphs, "script-core-doubled"
+
+    return _script_fallback_specimen(script_iso, cps)
 
 
 def _stored_primary_specimen_matches_script(
@@ -876,6 +990,23 @@ def _stored_primary_specimen_matches_script(
     ]
     if not specimen_scripts:
         return True
+
+    strategy = str(get_specimen_strategy(font) or "").strip()
+    if strategy in {"cmap", "validated-fallback"} and specimen_scripts[0] == "LATN":
+        latin_count = sum(
+            count
+            for block_name, count in unicode_blocks.items()
+            if block_name == "Basic Latin" or block_name.startswith("Latin")
+        )
+        non_latin_count = sum(
+            count
+            for block_name, count in unicode_blocks.items()
+            if not (block_name == "Basic Latin" or block_name.startswith("Latin"))
+        )
+        if str(script_iso).upper() != "LATN" and non_latin_count >= max(
+            8, int(latin_count * 0.75)
+        ):
+            return False
 
     return specimen_scripts[0] == str(script_iso).upper()
 
@@ -1029,7 +1160,8 @@ def _render_script_label(
     str
         Code-oriented compact label or extended metadata label.
     """
-    code = escape_latex(str(script_iso).upper() or "UNKN")
+    raw_code = "PUA" if script_iso == _PUA_SCRIPT else str(script_iso).upper() or "UNKN"
+    code = escape_latex(raw_code)
     if catalog_detail == "compact":
         return r"{\footnotesize\ttfamily " + code + "}"
     return r"{\footnotesize\ttfamily SPEC  : " + code + "}"

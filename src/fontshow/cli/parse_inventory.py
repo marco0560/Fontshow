@@ -125,6 +125,136 @@ def _promote_primary_script(
     return ordered
 
 
+def _latin_block_count(blocks: dict[str, int]) -> int:
+    """
+    Return the amount of Latin-family coverage present in specimen blocks.
+
+    Parameters
+    ----------
+    blocks : dict[str, int]
+        Per-block counts derived from specimen text.
+
+    Returns
+    -------
+    int
+        Sum of counts belonging to Latin-family Unicode blocks.
+    """
+    return sum(
+        count
+        for block_name, count in blocks.items()
+        if block_name == "Basic Latin" or block_name.startswith("Latin")
+    )
+
+
+def _non_latin_block_count(blocks: dict[str, int]) -> int:
+    """
+    Return the amount of non-Latin coverage present in specimen blocks.
+
+    Parameters
+    ----------
+    blocks : dict[str, int]
+        Per-block counts derived from specimen text.
+
+    Returns
+    -------
+    int
+        Sum of counts belonging to non-Latin Unicode blocks.
+    """
+    return sum(
+        count
+        for block_name, count in blocks.items()
+        if not (block_name == "Basic Latin" or block_name.startswith("Latin"))
+    )
+
+
+def _generic_specimen_strategy(strategy: str | None) -> bool:
+    """
+    Return whether a specimen strategy should be treated as generic evidence.
+
+    Parameters
+    ----------
+    strategy : str | None
+        Persisted top-level specimen strategy.
+
+    Returns
+    -------
+    bool
+        True when the specimen was built from a generic fallback rather than
+        trusted script-aware or internal evidence.
+    """
+    return strategy in {"cmap", "validated-fallback", "pua"}
+
+
+def _normalized_script_list(value: object) -> list[str]:
+    """
+    Normalize one script list to uppercase ISO strings.
+
+    Parameters
+    ----------
+    value : object
+        Candidate raw script list read from inventory metadata.
+
+    Returns
+    -------
+    list[str]
+        Uppercase script codes with non-string entries removed.
+    """
+    if not isinstance(value, list):
+        return []
+    return [str(script).upper() for script in value if isinstance(script, str)]
+
+
+def _preferred_specimen_primary(
+    specimen_scripts: list[str],
+    *,
+    known_scripts: list[str],
+    specimen_blocks: dict[str, int],
+    strategy: str | None,
+) -> str:
+    """
+    Resolve the preferred primary script inferred from specimen evidence.
+
+    Parameters
+    ----------
+    specimen_scripts : list[str]
+        Ordered scripts inferred directly from specimen text.
+    known_scripts : list[str]
+        Ordered scripts already known from coverage and inference data.
+    specimen_blocks : dict[str, int]
+        Unicode block counts derived from specimen text.
+    strategy : str | None
+        Persisted specimen strategy associated with the accepted sample.
+
+    Returns
+    -------
+    str
+        Chosen primary script code derived from the specimen.
+    """
+    specimen_primary = specimen_scripts[0]
+    known_non_latin = [
+        script
+        for script in known_scripts
+        if script not in {"LATN", "UNKNOWN"} and script != "PUAA"
+    ]
+    if specimen_primary != "LATN":
+        return specimen_primary
+
+    if _generic_specimen_strategy(strategy) and known_non_latin:
+        non_latin_count = _non_latin_block_count(specimen_blocks)
+        if non_latin_count >= 8:
+            return known_non_latin[0]
+        return specimen_primary
+
+    if _generic_specimen_strategy(strategy):
+        return specimen_primary
+
+    known_script_set = set(known_scripts)
+    for candidate in specimen_scripts[1:]:
+        if candidate != "LATN" and candidate in known_script_set:
+            return candidate
+    return specimen_primary
+
+
 def _reconcile_primary_script_with_specimen(
     font: dict[str, Any],
     coverage: dict[str, Any],
@@ -162,6 +292,9 @@ def _reconcile_primary_script_with_specimen(
     specimen = typography.get("specimen_text")
     if not isinstance(specimen, str) or not specimen.strip():
         return
+    strategy = typography.get("specimen_strategy")
+    if strategy == "pua":
+        return
 
     specimen_blocks = _unicode_blocks_from_text(specimen)
     if not specimen_blocks:
@@ -181,36 +314,17 @@ def _reconcile_primary_script_with_specimen(
     if not specimen_scripts:
         return
 
-    coverage_scripts_raw = coverage.get("scripts")
-    coverage_scripts = (
-        [
-            str(script).upper()
-            for script in coverage_scripts_raw
-            if isinstance(script, str)
-        ]
-        if isinstance(coverage_scripts_raw, list)
-        else []
-    )
+    coverage_scripts = _normalized_script_list(coverage.get("scripts"))
     inference_raw = font.get("inference")
     inference = inference_raw if isinstance(inference_raw, dict) else {}
-    inference_scripts_raw = inference.get("scripts")
-    inference_scripts = (
-        [
-            str(script).upper()
-            for script in inference_scripts_raw
-            if isinstance(script, str)
-        ]
-        if isinstance(inference_scripts_raw, list)
-        else []
+    inference_scripts = _normalized_script_list(inference.get("scripts"))
+    known_scripts = coverage_scripts + inference_scripts
+    specimen_primary = _preferred_specimen_primary(
+        specimen_scripts,
+        known_scripts=known_scripts,
+        specimen_blocks=specimen_blocks,
+        strategy=strategy if isinstance(strategy, str) else None,
     )
-
-    specimen_primary = specimen_scripts[0]
-    if specimen_primary == "LATN":
-        known_scripts = {script for script in coverage_scripts + inference_scripts}
-        for candidate in specimen_scripts[1:]:
-            if candidate != "LATN" and candidate in known_scripts:
-                specimen_primary = candidate
-                break
 
     current_primary = primary_script(font)
     if isinstance(current_primary, str) and current_primary.upper() == specimen_primary:
@@ -235,6 +349,7 @@ def _reconcile_primary_script_with_specimen(
                 inference_scripts,
                 specimen_primary,
             )
+    typography["primary_script"] = specimen_primary
 
 
 def parse_inventory(

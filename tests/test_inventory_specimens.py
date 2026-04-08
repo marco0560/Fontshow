@@ -113,6 +113,67 @@ def test_specimen_from_script_keeps_substantial_sample_for_large_cmap(monkeypatc
     assert result == (hangul_specimen, "script")
 
 
+def test_script_fallback_specimen_repeats_short_curated_sample_once(monkeypatch):
+    """
+    Ensure short curated script specimens may be doubled once deterministically.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace script ontology entries.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        specimens,
+        "SCRIPT_INFO",
+        {specimens.ScriptISO("JPAN"): {"specimen": "いろはにほへと ちりぬるを"}},
+    )
+    cps = {ord(ch) for ch in "いろはにほへとちりぬるを "}
+
+    specimen, glyphs, strategy = specimens._script_fallback_specimen(
+        specimens.ScriptISO("JPAN"),
+        cps,
+    )
+
+    assert specimen == "いろはにほへと ちりぬるを いろはにほへと ちりぬるを"
+    assert glyphs == 24
+    assert strategy == "script-doubled"
+
+
+def test_script_fallback_specimen_uses_core_seed_for_hani(monkeypatch):
+    """
+    Ensure Han script fallback prefers core ideographs before private use.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace script ontology entries.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        specimens,
+        "SCRIPT_INFO",
+        {specimens.ScriptISO("HANI"): {"specimen": "天地玄黃 宇宙洪荒"}},
+    )
+    seed = "天地玄黃宇宙洪荒日月盈昃辰宿列張寒來暑往秋收冬藏"
+    cps = {ord(ch) for ch in seed}
+
+    specimen, glyphs, strategy = specimens._script_fallback_specimen(
+        specimens.ScriptISO("HANI"),
+        cps,
+    )
+
+    assert specimen == seed
+    assert glyphs == len(seed)
+    assert strategy == "script-core"
+
+
 def test_specimen_from_cmap_returns_fallback_without_warning_record():
     """
     Ensure cmap fallback uses preference ordering without adding a warning record.
