@@ -208,6 +208,10 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
         verbose=False,
         test_font=None,
         catalog_detail="compact",
+        indexed_navigation=False,
+        language=None,
+        script=None,
+        sort_by=None,
     )
     assert create_catalog.run_create_catalog(args) == 9
     assert list_calls == [({"Alpha"}, [{"family": "Alpha"}])]
@@ -251,17 +255,18 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
         ),
     )
     latex_calls: list[
-        tuple[list[dict], list[LoadabilityExclusion], str, dict[str, str]]
+        tuple[list[dict], list[LoadabilityExclusion], str, bool, dict[str, str]]
     ] = []
     monkeypatch.setattr(
         create_catalog,
         "generate_latex_with_report",
-        lambda fonts, *, excluded_fonts, catalog_detail, generation_metadata: (
+        lambda fonts, *, excluded_fonts, catalog_detail, indexed_navigation, generation_metadata: (
             latex_calls.append(
                 (
                     list(fonts),
                     list(excluded_fonts),
                     catalog_detail,
+                    indexed_navigation,
                     dict(generation_metadata),
                 )
             )
@@ -307,7 +312,7 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
     assert diagnostics_calls == [[{"family": "Alpha"}]]
     assert loadability_calls == [[{"family": "Alpha"}]]
     assert latex_calls[0][0] == [{"family": "Alpha"}]
-    assert latex_calls[0][3]["hostname"] == "atlas"
+    assert latex_calls[0][4]["hostname"] == "atlas"
     assert latex_calls[0][1] == [
         LoadabilityExclusion(
             identity="bad-1",
@@ -317,6 +322,7 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
         )
     ]
     assert latex_calls[0][2] == "compact"
+    assert latex_calls[0][3] is False
     assert errors[-1] == "Failed to write output file: disk full"
 
 

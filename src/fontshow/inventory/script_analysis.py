@@ -29,7 +29,10 @@ from typing import Any
 
 from fontshow.core.types import ScriptISO
 from fontshow.ontology.language_tables import SCRIPT_INFO
-from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
+from fontshow.ontology.unicode_tables import (
+    UNICODE_BLOCK_RANGES,
+    UNICODE_BLOCK_SIZES,
+)
 
 CHARSET_SCRIPT_WEIGHT = 0.25
 
@@ -76,12 +79,18 @@ def _is_significant_non_latin_block(count: int, total: int, level: str) -> bool:
     -------
     bool
         True when the non-Latin block should contribute to script inference.
+
+    Notes
+    -----
+    Non-Latin script acceptance requires an absolute glyph floor even at
+    aggressive levels so incidental coverage does not create spurious
+    script inferences from one or two codepoints.
     """
     if level == "conservative":
         return count >= 20 or (count / total) >= 0.05
     if level == "aggressive":
-        return count >= 2
-    return count >= 5 or (count / total) >= 0.01
+        return count >= 5
+    return count >= 5 and (count / total) >= 0.01
 
 
 def _block_is_significant(block_name: str, count: int, total: int, level: str) -> bool:
@@ -276,9 +285,99 @@ def _apply_preferred_over(scripts_score: dict[str, float]) -> dict[str, float]:
             preferred_tag = str(preferred_iso).lower()
             if preferred_tag not in adjusted:
                 continue
+            if preferred_tag == "latn" and adjusted[preferred_tag] >= (score * 0.5):
+                continue
             if score >= adjusted[preferred_tag]:
                 adjusted.pop(preferred_tag, None)
 
+    return adjusted
+
+
+def _promote_dedicated_scripts_over_latin(
+    scripts_score: dict[str, float],
+    blocks: dict[str, int],
+) -> dict[str, float]:
+    """
+    Promote strong dedicated-script evidence ahead of incidental Latin support.
+
+    Parameters
+    ----------
+    scripts_score : dict[str, float]
+        Weighted score per inferred script tag.
+    blocks : dict[str, int]
+        Canonical Unicode block coverage used for the current inference.
+
+    Returns
+    -------
+    dict[str, float]
+        Updated score mapping where strong dedicated-script candidates
+        may be nudged ahead of Latin without erasing Latin support.
+    """
+    latin_score = scripts_score.get("latn")
+    if latin_score is None or not blocks:
+        return dict(scripts_score)
+
+    adjusted = dict(scripts_score)
+    promotable = {"beng", "deva", "hebr", "sinh"}
+
+    for script_tag in promotable:
+        score = adjusted.get(script_tag)
+        if score is None:
+            continue
+
+        info = SCRIPT_INFO.get(ScriptISO(script_tag.upper()))
+        if not isinstance(info, dict):
+            continue
+
+        match_mode = str(info.get("block_match", "exact"))
+        required_blocks = list(info.get("required_blocks", []))
+        best_ratio = 0.0
+
+        for pattern in required_blocks:
+            for block_name, count in blocks.items():
+                if not _block_matches_pattern(block_name, pattern, match_mode):
+                    continue
+                size = UNICODE_BLOCK_SIZES.get(block_name, 0)
+                if size <= 0:
+                    continue
+                best_ratio = max(best_ratio, count / size)
+
+        if best_ratio < 0.6:
+            continue
+        if score < (latin_score * 0.25):
+            continue
+        if score <= latin_score:
+            adjusted[script_tag] = latin_score + (score / 1000.0)
+
+    return adjusted
+
+
+def _suppress_latin_noise_for_braille(
+    scripts_score: dict[str, float],
+) -> dict[str, float]:
+    """
+    Suppress incidental Latin noise when Braille evidence is dominant.
+
+    Parameters
+    ----------
+    scripts_score : dict[str, float]
+        Weighted score per inferred script tag.
+
+    Returns
+    -------
+    dict[str, float]
+        Updated score mapping with weak Latin support removed when
+        Braille clearly dominates the evidence.
+    """
+    latin_score = scripts_score.get("latn")
+    braille_score = scripts_score.get("brai")
+    if latin_score is None or braille_score is None:
+        return dict(scripts_score)
+    if latin_score >= (braille_score * 0.5):
+        return dict(scripts_score)
+
+    adjusted = dict(scripts_score)
+    adjusted.pop("latn", None)
     return adjusted
 
 
@@ -597,6 +696,8 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
         scripts_score = _combine_weighted_script_scores(scripts_score, charset_scores)
         scripts_score = _apply_preferred_over(scripts_score)
         scripts_score = _apply_suppressions(scripts_score)
+        scripts_score = _promote_dedicated_scripts_over_latin(scripts_score, blocks)
+        scripts_score = _suppress_latin_noise_for_braille(scripts_score)
         scripts_score = _collapse_script_groups(scripts_score)
         return _sort_scored_scripts(scripts_score)
 

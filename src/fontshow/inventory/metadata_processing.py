@@ -851,7 +851,7 @@ def font_family(font: CatalogFontEntryV12 | dict[str, object]) -> str:
     Parameters
     ----------
     font : dict[str, object]
-        Schema 1.2 font descriptor dictionary.
+        Inventory font descriptor dictionary.
 
     Returns
     -------

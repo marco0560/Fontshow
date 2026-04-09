@@ -76,13 +76,13 @@ class CliRunResult:
 
 
 # ============================================================
-# Canonical minimal VALID schema-1.3 font entry
+# Canonical minimal VALID schema-1.4 font entry
 # ============================================================
 
 
 def minimal_font_entry_v12() -> dict[str, Any]:
     """
-    Canonical minimal VALID font entry for schema 1.3.
+    Canonical minimal VALID font entry for schema 1.5.
 
     Deterministic and schema-compliant.
 
@@ -155,19 +155,20 @@ def minimal_font_entry_v12() -> dict[str, Any]:
                 "reason": None,
                 "runtime_fingerprint": None,
                 "probe_input": None,
+                "render_variants": [],
             }
         },
     }
 
 
 # ============================================================
-# Canonical minimal VALID schema-1.3 inventory
+# Canonical minimal VALID schema-1.5 inventory
 # ============================================================
 
 
 def minimal_inventory_v12() -> dict[str, Any]:
     """
-    Canonical minimal VALID inventory for schema 1.3.
+    Canonical minimal VALID inventory for schema 1.5.
 
     Parameters
     ----------
@@ -181,7 +182,7 @@ def minimal_inventory_v12() -> dict[str, Any]:
     """
     return {
         "metadata": {
-            "schema_version": "1.3",
+            "schema_version": "1.5",
             "run_environment": collect_platform_metadata(),
             "input_inventory_tool": "fontshow-test",
             "input_inventory_tool_version": "0.1",

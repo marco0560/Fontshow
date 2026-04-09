@@ -333,6 +333,7 @@ def test_filter_loadable_catalog_fonts_uses_trusted_persisted_pass(
                     "reason": None,
                     "runtime_fingerprint": "fp-1",
                     "probe_input": "U+0041",
+                    "render_variants": [],
                 }
             },
         }
@@ -384,6 +385,7 @@ def test_filter_loadable_catalog_fonts_uses_trusted_persisted_failure(
                     "reason": "subset-empty",
                     "runtime_fingerprint": "fp-1",
                     "probe_input": "U+0042",
+                    "render_variants": [],
                 }
             },
         }
@@ -437,6 +439,7 @@ def test_filter_loadable_catalog_fonts_falls_back_when_persisted_state_is_stale(
                     "reason": None,
                     "runtime_fingerprint": "fp-old",
                     "probe_input": "U+0041",
+                    "render_variants": [],
                 }
             },
         }

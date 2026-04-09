@@ -37,7 +37,7 @@ LATEX_INITIAL_CODE: str = (
     r"""% !TeX TS-program = lualatex
 % !TeX spellcheck = en_US
 % !TeX encoding = UTF-8
-\documentclass[11pt,a4paper]{article}
+\documentclass[10pt,a4paper]{article}
 \usepackage{fontspec}
 \ExplSyntaxOn
 \msg_redirect_name:nnn {fontspec} {font-not-found} {warning}
@@ -51,44 +51,13 @@ LATEX_INITIAL_CODE: str = (
 \usepackage{hyperref}
 \usepackage{booktabs}
 \usepackage{multicol}
-\usepackage{pdftexcmds}
 
 \setmainlanguage{english}
 % Secondary languages for testing non-Latin scripts
 %%FONTSHOW_OTHER_LANGUAGES%%
 
-\geometry{margin=2cm}
-
-% --- Utility Macros ---
-\makeatletter
-\newcommand{\ifFileNotEmpty}[3]{%
-	\IfFileExists{#1}{%
-		% \pdf@filesize gives size in byte
-		\ifnum\pdf@filesize{#1}>0
-		#2% if it exists and has at least 1 byte
-		\else
-		#3% if it exists but is 0 bytes
-		\fi
-	}{%
-		#3% if the file doesn't exist at all
-	}%
-}
-\makeatother
-
-% --- Macros for summary sections ---
-% #1 filename #2 title of section
-\newcommand{\FileSec}[2]{%
-	\ifFileNotEmpty{#1}{%
-		\section{#2}
-		\begin{multicols}{2}
-			\begin{itemize}
-				\input{#1}
-			\end{itemize}
-		\end{multicols}
-	}
-	{}
-}
-% ---------------------------------------
+\geometry{margin=1.7cm}
+\setlength{\parindent}{0pt}
 
 % Colors
 \definecolor{titlecolor}{HTML}{667eea}
@@ -110,43 +79,10 @@ LATEX_INITIAL_CODE: str = (
 %}
 \newenvironment{errorbox}[1]{}{}
 
-% --- Counters and Indices ---
-\newcounter{cntWorking}
-\newcounter{cntBroken}
-\newcounter{cntExcluded}
-\setcounter{cntWorking}{0}
-\setcounter{cntBroken}{0}
-\setcounter{cntExcluded}{0}
-
-% Temporary output file definition for indices
-\newwrite\fileWorking
-\immediate\openout\fileWorking=\jobname.working
-\newwrite\fileBroken
-\immediate\openout\fileBroken=\jobname.broken
-\newwrite\fileExcluded
-\immediate\openout\fileExcluded=\jobname.excluded
-
-% Robust Macro for counting fonts (avoids expansion errors)
-\protected\def\LogWorking#1{%
-    \stepcounter{cntWorking}%
-    \immediate\write\fileWorking{\string\item\space\detokenize{#1}}%
-}
-
-\protected\def\LogBroken#1{%
-    \stepcounter{cntBroken}%
-    \immediate\write\fileBroken{\string\item\space\detokenize{#1}}%
-}
-
-\protected\def\LogExcluded#1{%
-    \stepcounter{cntExcluded}%
-    \immediate\write\fileExcluded{\string\item\space\detokenize{#1}}%
-}
-% -----------------------------------
-
 \SetLipsumText{cicero}
 \newcommand{\Li}{\lipsum[1][1-4]}
 
-\title{\Huge\textbf{\color{titlecolor}System Font Catalog}}
+\title{\LARGE\textbf{\color{titlecolor}System Font Catalog}}
 \author{Generated with fontshow create-catalog """
     + escape_latex(__version__)
     + r"""}
@@ -157,22 +93,17 @@ LATEX_INITIAL_CODE: str = (
 \maketitle
 
 \begin{center}
-{\small\ttfamily System: %%FONTSHOW_SYSTEM_NAME%%}\\
-{\small\ttfamily Host: %%FONTSHOW_HOSTNAME%%}\\
-\vspace{0.5em}
-\parbox{0.95\linewidth}{\raggedright\emph{\footnotesize\ttfamily %%FONTSHOW_COMMAND_LINE%%}}
+{\footnotesize\ttfamily System: %%FONTSHOW_SYSTEM_NAME%%}\\
+{\footnotesize\ttfamily Host: %%FONTSHOW_HOSTNAME%%}\\
+\vspace{0.35em}
+\parbox{0.95\linewidth}{\raggedright\emph{\scriptsize\ttfamily %%FONTSHOW_COMMAND_LINE%%}}
 \end{center}
-\vspace{0.75em}
+\vspace{0.5em}
 
 \begin{abstract}
-This document catalogs the fonts installed on the system.
-Problematic fonts are excluded in advance. The compilation is performed with \textbf{LuaLaTeX}.
+This document catalogs the fonts installed on the system and excludes
+problematic faces in advance. Compilation uses \textbf{LuaLaTeX}.
 \end{abstract}
-
-\tableofcontents
-\newpage
-
-\section{Detailed Catalog}
 """
 )
 
@@ -210,11 +141,6 @@ NORMAL_BLOCK: str = """\\subsection{{{safe_name}}}
 # --------------------------------------------
 LATEX_END_CODE_1: str = r"""\newpage
 
-% Closing Indices
-\immediate\closeout\fileWorking
-\immediate\closeout\fileBroken
-\immediate\closeout\fileExcluded
-
 \section{Summary and Statistics}
 
 \begin{tcolorbox}[colback=white, colframe=gray]
@@ -226,22 +152,13 @@ LATEX_END_CODE_1: str = r"""\newpage
 \toprule
 \textbf{Category} & \textbf{Quantity} \\
 \midrule
-Analyzed Fonts (Post-Filter) & """
+Analyzed Families & """
 # --------------------------------------------
 LATEX_END_CODE_2: str = r""" \\
-\textcolor{successcolor}{\textbf{Working Fonts}} & \textbf{\arabic{cntWorking}} \\
-\textcolor{errorcolor}{\textbf{Broken Fonts}} & \textbf{\arabic{cntBroken}} \\
-\textcolor{othercolor}{\textbf{Excluded Fonts}} & \textbf{\arabic{cntExcluded}} \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{tcolorbox}
-
-\FileSec{\jobname.working}{Table of Working Fonts}
-
-\FileSec{\jobname.broken}{Table of Broken Fonts}
-
-\FileSec{\jobname.excluded}{Table of Excluded Fonts}
 
 \end{document}
 """

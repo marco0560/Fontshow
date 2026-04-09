@@ -208,7 +208,7 @@ def test_filter_and_prepare_fonts_filters_sorts_and_slices(monkeypatch):
 
     result = pipeline._filter_and_prepare_fonts(
         fonts,
-        SimpleNamespace(number=-1),
+        SimpleNamespace(number=-1, language=None, script=None, sort_by=None),
         {"Alpha", "Beta"},
     )
 
@@ -241,6 +241,101 @@ def test_filter_and_prepare_fonts_propagates_type_errors(monkeypatch):
     with pytest.raises(TypeError, match="Unexpected font entry type"):
         pipeline._filter_and_prepare_fonts(
             [{"family": "Alpha"}, object()],
-            SimpleNamespace(number=None),
+            SimpleNamespace(number=None, language=None, script=None, sort_by=None),
             {"Alpha"},
         )
+
+
+def test_filter_and_prepare_fonts_applies_language_script_filters_and_sorts(
+    monkeypatch,
+):
+    """
+    Ensure selector families are AND-combined and sort keys stay deterministic.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace tracing and normalization helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        pipeline,
+        "log_trace_cat",
+        lambda _log, _cat, _msg, extra: None,
+    )
+    monkeypatch.setattr(pipeline, "as_font_desc_list", lambda fonts: list(fonts))
+
+    fonts = [
+        {
+            "family": "Zulu",
+            "coverage": {"languages": ["en"], "scripts": ["latn"]},
+        },
+        {
+            "family": "Alpha",
+            "coverage": {"languages": ["fr"], "scripts": ["latn"]},
+        },
+        {
+            "family": "Beta",
+            "inference": {"languages": ["en"], "scripts": ["cyrl"]},
+        },
+        {
+            "family": "Gamma",
+            "coverage": {"languages": ["en"], "scripts": ["latn"]},
+        },
+    ]
+
+    result = pipeline._filter_and_prepare_fonts(
+        fonts,
+        SimpleNamespace(
+            number=None,
+            language=["en"],
+            script=["latn"],
+            sort_by=["script", "language"],
+        ),
+        set(),
+    )
+
+    assert [font["family"] for font in result] == ["Gamma", "Zulu"]
+
+
+def test_filter_and_prepare_fonts_uses_any_match_within_selector_family(monkeypatch):
+    """
+    Ensure repeated language or script selectors behave as OR within each family.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace tracing and normalization helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        pipeline,
+        "log_trace_cat",
+        lambda _log, _cat, _msg, extra: None,
+    )
+    monkeypatch.setattr(pipeline, "as_font_desc_list", lambda fonts: list(fonts))
+
+    fonts = [
+        {"family": "Alpha", "coverage": {"languages": ["fr"], "scripts": ["latn"]}},
+        {"family": "Beta", "coverage": {"languages": ["de"], "scripts": ["grek"]}},
+        {"family": "Gamma", "coverage": {"languages": ["it"], "scripts": ["arab"]}},
+    ]
+
+    result = pipeline._filter_and_prepare_fonts(
+        fonts,
+        SimpleNamespace(
+            number=None,
+            language=["fr", "de"],
+            script=["grek", "latn"],
+            sort_by=None,
+        ),
+        set(),
+    )
+
+    assert [font["family"] for font in result] == ["Alpha", "Beta"]

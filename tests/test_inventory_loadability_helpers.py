@@ -5,7 +5,7 @@ Responsibilities
 ----------------
 - Verify deterministic LuaLaTeX runtime fingerprint generation.
 - Verify inventory metadata collection populates the fingerprint.
-- Verify v1.3 LuaLaTeX loadability accessors and mutators.
+- Verify v1.4 LuaLaTeX loadability accessors and mutators.
 """
 
 from __future__ import annotations
@@ -146,7 +146,7 @@ def test_collect_latex_validation_metadata_populates_runtime_fingerprint(monkeyp
 
 def test_get_font_lualatex_loadability_returns_nested_mapping():
     """
-    Ensure the accessor returns the nested v1.3 LuaLaTeX loadability block.
+    Ensure the accessor returns the nested v1.4 LuaLaTeX loadability block.
 
     Parameters
     ----------
@@ -164,6 +164,7 @@ def test_get_font_lualatex_loadability_returns_nested_mapping():
                 "reason": "subset-empty",
                 "runtime_fingerprint": "abc",
                 "probe_input": "U+0041",
+                "render_variants": [],
             }
         }
     }
@@ -205,4 +206,77 @@ def test_set_lualatex_loadability_fields_creates_nested_v13_structure():
         "reason": "timeout",
         "runtime_fingerprint": "fp-1",
         "probe_input": "U+0E01",
+        "render_variants": [],
     }
+
+
+def test_set_lualatex_render_variants_persists_ordered_records():
+    """
+    Ensure render-variant validation records persist deterministically.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    font: dict[str, object] = {}
+
+    schema_accessors.set_lualatex_render_variants(
+        font,
+        states=[
+            {
+                "script": "JPAN",
+                "fontspec_opts": "Script=Kana",
+                "attempted": True,
+                "loadable": True,
+                "reason": None,
+                "runtime_fingerprint": "fp-2",
+                "probe_input": "U+8000",
+                "specimen_text": "カタカナ",
+                "specimen_glyph_count": 4,
+                "specimen_strategy": "script",
+            },
+            {
+                "script": "BOPO",
+                "fontspec_opts": "Script=Bopomofo",
+                "attempted": True,
+                "loadable": False,
+                "reason": "fontspec error",
+                "runtime_fingerprint": "fp-2",
+                "probe_input": "U+3105",
+                "specimen_text": "ㄅㄆㄇㄈ",
+                "specimen_glyph_count": 4,
+                "specimen_strategy": "script",
+            },
+        ],
+    )
+
+    assert schema_accessors.get_font_lualatex_render_variants(font) == (
+        {
+            "script": "JPAN",
+            "fontspec_opts": "Script=Kana",
+            "attempted": True,
+            "loadable": True,
+            "reason": None,
+            "runtime_fingerprint": "fp-2",
+            "probe_input": "U+8000",
+            "specimen_text": "カタカナ",
+            "specimen_glyph_count": 4,
+            "specimen_strategy": "script",
+        },
+        {
+            "script": "BOPO",
+            "fontspec_opts": "Script=Bopomofo",
+            "attempted": True,
+            "loadable": False,
+            "reason": "fontspec error",
+            "runtime_fingerprint": "fp-2",
+            "probe_input": "U+3105",
+            "specimen_text": "ㄅㄆㄇㄈ",
+            "specimen_glyph_count": 4,
+            "specimen_strategy": "script",
+        },
+    )

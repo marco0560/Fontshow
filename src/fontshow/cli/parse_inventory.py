@@ -28,6 +28,7 @@ inventory enrichment stage of the Fontshow processing pipeline.
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -50,7 +51,9 @@ from fontshow.inventory.io import _validate_fonts_container
 from fontshow.inventory.latex_validation_metadata import (
     collect_latex_validation_metadata,
 )
-from fontshow.inventory.loadability import inventory_has_attempted_lualatex_validation
+from fontshow.inventory.loadability import (
+    probe_and_persist_lualatex_render_variants,
+)
 from fontshow.inventory.metadata_processing import (
     _infer_and_attach_metadata,
     _process_charset,
@@ -59,13 +62,294 @@ from fontshow.inventory.metadata_processing import (
 from fontshow.inventory.platform_metadata import collect_platform_metadata
 from fontshow.inventory.schema_accessors import ensure_v13_typography
 from fontshow.inventory.schema_validation import _validate_inventory_schema_strict
+from fontshow.inventory.script_analysis import infer_scripts
 from fontshow.inventory.specimens import _specimen_generate_for_font
 from fontshow.inventory.validation import _apply_schema_validation, validate_inventory
 from fontshow.latex.policy import _format_script_display, _get_render_policy
+from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
 # ============================================================
 # REFACTORED MAIN FUNCTION
 # ============================================================
+
+
+def _unicode_blocks_from_text(text: str) -> dict[str, int]:
+    """
+    Count Unicode blocks represented in a specimen string.
+
+    Parameters
+    ----------
+    text : str
+        Specimen text to analyze.
+
+    Returns
+    -------
+    dict[str, int]
+        Per-block codepoint counts derived from visible characters in
+        ``text``.
+    """
+    counts: Counter[str] = Counter()
+    for ch in text:
+        if not ch.strip():
+            continue
+        cp = ord(ch)
+        for name, (start, end) in UNICODE_BLOCK_RANGES.items():
+            if start <= cp <= end:
+                counts[name] += 1
+                break
+    return dict(counts)
+
+
+def _promote_primary_script(
+    scripts: list[str],
+    primary: str,
+) -> list[str]:
+    """
+    Move a chosen primary script to the front of an ordered script list.
+
+    Parameters
+    ----------
+    scripts : list[str]
+        Existing ordered script list.
+    primary : str
+        Script code that should become the first element.
+
+    Returns
+    -------
+    list[str]
+        New ordered script list with ``primary`` in front and without
+        duplicates.
+    """
+    ordered = [primary]
+    ordered.extend(script for script in scripts if script != primary)
+    return ordered
+
+
+def _latin_block_count(blocks: dict[str, int]) -> int:
+    """
+    Return the amount of Latin-family coverage present in specimen blocks.
+
+    Parameters
+    ----------
+    blocks : dict[str, int]
+        Per-block counts derived from specimen text.
+
+    Returns
+    -------
+    int
+        Sum of counts belonging to Latin-family Unicode blocks.
+    """
+    return sum(
+        count
+        for block_name, count in blocks.items()
+        if block_name == "Basic Latin" or block_name.startswith("Latin")
+    )
+
+
+def _non_latin_block_count(blocks: dict[str, int]) -> int:
+    """
+    Return the amount of non-Latin coverage present in specimen blocks.
+
+    Parameters
+    ----------
+    blocks : dict[str, int]
+        Per-block counts derived from specimen text.
+
+    Returns
+    -------
+    int
+        Sum of counts belonging to non-Latin Unicode blocks.
+    """
+    return sum(
+        count
+        for block_name, count in blocks.items()
+        if not (block_name == "Basic Latin" or block_name.startswith("Latin"))
+    )
+
+
+def _generic_specimen_strategy(strategy: str | None) -> bool:
+    """
+    Return whether a specimen strategy should be treated as generic evidence.
+
+    Parameters
+    ----------
+    strategy : str | None
+        Persisted top-level specimen strategy.
+
+    Returns
+    -------
+    bool
+        True when the specimen was built from a generic fallback rather than
+        trusted script-aware or internal evidence.
+    """
+    return strategy in {"cmap", "validated-fallback", "pua"}
+
+
+def _normalized_script_list(value: object) -> list[str]:
+    """
+    Normalize one script list to uppercase ISO strings.
+
+    Parameters
+    ----------
+    value : object
+        Candidate raw script list read from inventory metadata.
+
+    Returns
+    -------
+    list[str]
+        Uppercase script codes with non-string entries removed.
+    """
+    if not isinstance(value, list):
+        return []
+    return [str(script).upper() for script in value if isinstance(script, str)]
+
+
+def _preferred_specimen_primary(
+    specimen_scripts: list[str],
+    *,
+    known_scripts: list[str],
+    specimen_blocks: dict[str, int],
+    strategy: str | None,
+) -> str:
+    """
+    Resolve the preferred primary script inferred from specimen evidence.
+
+    Parameters
+    ----------
+    specimen_scripts : list[str]
+        Ordered scripts inferred directly from specimen text.
+    known_scripts : list[str]
+        Ordered scripts already known from coverage and inference data.
+    specimen_blocks : dict[str, int]
+        Unicode block counts derived from specimen text.
+    strategy : str | None
+        Persisted specimen strategy associated with the accepted sample.
+
+    Returns
+    -------
+    str
+        Chosen primary script code derived from the specimen.
+    """
+    specimen_primary = specimen_scripts[0]
+    known_non_latin = [
+        script
+        for script in known_scripts
+        if script not in {"LATN", "UNKNOWN"} and script != "PUAA"
+    ]
+    if specimen_primary != "LATN":
+        return specimen_primary
+
+    if _generic_specimen_strategy(strategy) and known_non_latin:
+        non_latin_count = _non_latin_block_count(specimen_blocks)
+        if non_latin_count >= 8:
+            return known_non_latin[0]
+        return specimen_primary
+
+    if _generic_specimen_strategy(strategy):
+        return specimen_primary
+
+    known_script_set = set(known_scripts)
+    for candidate in specimen_scripts[1:]:
+        if candidate != "LATN" and candidate in known_script_set:
+            return candidate
+    return specimen_primary
+
+
+def _reconcile_primary_script_with_specimen(
+    font: dict[str, Any],
+    coverage: dict[str, Any],
+    *,
+    level: str,
+) -> None:
+    """
+    Align primary-script metadata with the accepted specimen text.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry updated in place.
+    coverage : dict[str, Any]
+        Coverage block whose explicit primary-script metadata may be
+        updated.
+    level : str
+        Inference aggressiveness level used for specimen-text script
+        analysis.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    ``parse-inventory`` owns the semantic coherence contract between
+    ``primary_script`` and ``typography.specimen_text``. When the
+    accepted specimen clearly points to a different writing script than
+    the currently selected primary script, this helper promotes the
+    specimen-derived script to the explicit primary-script fields and
+    reorders the explicit script lists accordingly.
+    """
+    typography = ensure_v13_typography(font)
+    specimen = typography.get("specimen_text")
+    if not isinstance(specimen, str) or not specimen.strip():
+        return
+    strategy = typography.get("specimen_strategy")
+    if strategy == "pua":
+        return
+
+    specimen_blocks = _unicode_blocks_from_text(specimen)
+    if not specimen_blocks:
+        return
+
+    specimen_scripts = [
+        str(script).upper()
+        for script in infer_scripts(
+            {
+                "unicode_blocks": specimen_blocks,
+                "unicode": {"max": max(ord(ch) for ch in specimen)},
+            },
+            level,
+        )
+        if isinstance(script, str) and script and str(script).lower() != "unknown"
+    ]
+    if not specimen_scripts:
+        return
+
+    coverage_scripts = _normalized_script_list(coverage.get("scripts"))
+    inference_raw = font.get("inference")
+    inference = inference_raw if isinstance(inference_raw, dict) else {}
+    inference_scripts = _normalized_script_list(inference.get("scripts"))
+    known_scripts = coverage_scripts + inference_scripts
+    specimen_primary = _preferred_specimen_primary(
+        specimen_scripts,
+        known_scripts=known_scripts,
+        specimen_blocks=specimen_blocks,
+        strategy=strategy if isinstance(strategy, str) else None,
+    )
+
+    current_primary = primary_script(font)
+    if isinstance(current_primary, str) and current_primary.upper() == specimen_primary:
+        return
+
+    if (
+        specimen_primary not in coverage_scripts
+        and specimen_primary not in inference_scripts
+    ):
+        return
+
+    coverage["primary_script"] = specimen_primary
+    if coverage_scripts:
+        coverage["scripts"] = _promote_primary_script(
+            coverage_scripts, specimen_primary
+        )
+
+    if inference:
+        inference["primary_script"] = specimen_primary
+        if inference_scripts:
+            inference["scripts"] = _promote_primary_script(
+                inference_scripts,
+                specimen_primary,
+            )
+    typography["primary_script"] = specimen_primary
 
 
 def parse_inventory(
@@ -147,6 +431,11 @@ def parse_inventory(
         )
 
         _specimen_generate_for_font(font, coverage, font_path)
+        _reconcile_primary_script_with_specimen(
+            font,
+            coverage,
+            level=level,
+        )
         typography = ensure_v13_typography(font)
         script = primary_script(font)
         script_iso = script.upper() if isinstance(script, str) and script else ""
@@ -183,8 +472,11 @@ def parse_inventory(
     if not isinstance(validation, dict):
         validation = {}
         metadata["validation"] = validation
-    if not inventory_has_attempted_lualatex_validation(metadata):
-        validation["lualatex"] = collect_latex_validation_metadata()
+    validation["lualatex"] = collect_latex_validation_metadata()
+    probe_and_persist_lualatex_render_variants(
+        data.get("fonts", []),
+        validation_metadata=validation["lualatex"],
+    )
 
     log.info(
         "font inventory parsing completed",
@@ -237,9 +529,19 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         help="Validate inventory structure and exit (no output generation)",
     )
     parser.add_argument(
+        "-L",
         "--list-missing-language-coverage",
         action="store_true",
-        help="List fonts whose coverage.languages is empty and exit",
+        help="Report fonts whose coverage.languages is empty and exit",
+    )
+    parser.add_argument(
+        "-S",
+        "--show-all-missing-language-coverage",
+        action="store_true",
+        help=(
+            "When used with --list-missing-language-coverage, print one "
+            "line per matching font instead of the summary only"
+        ),
     )
     parser.add_argument(
         "-s",
@@ -326,7 +628,9 @@ def _default_write_text(p: Path, s: str) -> None:
     p.write_text(s, encoding="utf-8")
 
 
-def _list_missing_language_coverage(data: dict[str, Any]) -> int:
+def _list_missing_language_coverage(
+    data: dict[str, Any], *, show_all: bool = False
+) -> int:
     """
     List fonts whose declared language coverage is missing.
 
@@ -335,6 +639,10 @@ def _list_missing_language_coverage(data: dict[str, Any]) -> int:
     data : dict[str, Any]
         Inventory root containing a `fonts` list.
 
+    show_all : bool, optional
+        Whether to print one line per matching font instead of only the
+        summary count.
+
     Returns
     -------
     int
@@ -342,10 +650,9 @@ def _list_missing_language_coverage(data: dict[str, Any]) -> int:
 
     Notes
     -----
-    The report is deterministic:
-    - preserves input order,
-    - prints one line per matching font,
-    - uses family name plus path to disambiguate duplicates.
+    The report is deterministic and preserves input order. When
+    ``show_all`` is enabled, it prints one line per matching font and
+    uses family name plus path to disambiguate duplicates.
     """
     fonts = data.get("fonts", [])
     if not isinstance(fonts, list):
@@ -366,6 +673,9 @@ def _list_missing_language_coverage(data: dict[str, Any]) -> int:
         missing.append((family, path))
 
     log_info(f"Fonts with missing declared language coverage: {len(missing)}")
+    if not show_all:
+        return 0
+
     for family, path in missing:
         if path:
             log_info(f"{family} | {path}")
@@ -373,11 +683,6 @@ def _list_missing_language_coverage(data: dict[str, Any]) -> int:
             log_info(family)
 
     return 0
-
-
-# ============================================================
-# REFACTORED MAIN RUNNER
-# ============================================================
 
 
 def run_parse_font_inventory(
@@ -530,7 +835,13 @@ def run_parse_font_inventory(
                 "fonts": len(data.get("fonts", [])),
             },
         )
-        return _list_missing_language_coverage(data)
+        return _list_missing_language_coverage(
+            data,
+            show_all=bool(
+                getattr(args, "show_all_missing_language_coverage", False)
+                or getattr(args, "verbose", False)
+            ),
+        )
 
     enriched = parse_inventory_fn(
         data,
@@ -579,7 +890,7 @@ def run_parse_font_inventory(
         },
     )
 
-    _emit_verbose_warnings(enriched)
+    _emit_verbose_warnings(enriched, enabled=bool(getattr(args, "verbose", False)))
 
     log_ok("Done.", f"Inventory written to {args.output}")
     log_trace_cat(

@@ -55,7 +55,7 @@ Use the following shared skills for the corresponding task classes:
 - `deterministic-change-workflow` for non-trivial code changes, bug fixes, and feature work
 - `numpy-docstring-enforcer` whenever modifying modules, classes, public functions, or private functions
 - `repoindex-workflow` before broad code exploration or patching
-- `commit-block-generator` when proposing the final commit block
+- `commit-block-generator` when committing changes or proposing the final commit block
 
 If a required skill is unavailable, state that explicitly and apply the same rules manually.
 

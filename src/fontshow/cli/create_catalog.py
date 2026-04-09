@@ -137,6 +137,14 @@ def _render_invocation_command(args) -> str:
 
     if getattr(args, "catalog_detail", "compact") != "compact":
         argv.extend(["--catalog-detail", str(args.catalog_detail)])
+    if getattr(args, "indexed_navigation", False):
+        argv.append("--indexed-navigation")
+    for language in getattr(args, "language", None) or []:
+        argv.extend(["--language", str(language)])
+    for script in getattr(args, "script", None) or []:
+        argv.extend(["--script", str(script)])
+    for sort_key in getattr(args, "sort_by", None) or []:
+        argv.extend(["--sort-by", str(sort_key)])
 
     if getattr(args, "test", False):
         argv.append("--test")
@@ -297,7 +305,9 @@ def _generate_test_output(
 # - Failures in discovery or rendering provoke rejection of the specific
 #   font but do not abort the whole process,
 # - The CLI is intentionally thin: orchestration only, no business logic.
-#
+# ============================================================
+
+
 def build_parser(parser: argparse.ArgumentParser) -> None:
     """
     Register create-catalog CLI arguments on an existing parser.
@@ -362,6 +372,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         help="Limit the number of processed fonts to the first N (if positive) or the last |N| (if negative)",
     )
     parser.add_argument(
+        "-D",
         "--catalog-detail",
         choices=("compact", "extended"),
         default="compact",
@@ -369,6 +380,49 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
             "Catalog output detail level. Use 'compact' to keep short "
             "family and specimen labels, or 'extended' to include the full "
             "metadata blocks."
+        ),
+    )
+    parser.add_argument(
+        "-I",
+        "--indexed-navigation",
+        action="store_true",
+        help=(
+            "Enable indexed navigation output with a clickable table of "
+            "contents and end-of-document navigation index."
+        ),
+    )
+    parser.add_argument(
+        "-L",
+        "--language",
+        action="append",
+        metavar="LANG",
+        help=(
+            "Restrict output to fonts matching at least one selected "
+            "language tag. Repeatable and combined AND-wise with other "
+            "selector families."
+        ),
+    )
+    parser.add_argument(
+        "-S",
+        "--script",
+        action="append",
+        metavar="SCRIPT",
+        help=(
+            "Restrict output to fonts matching at least one selected "
+            "script tag. Repeatable and combined AND-wise with other "
+            "selector families."
+        ),
+    )
+    parser.add_argument(
+        "-s",
+        "--sort-by",
+        action="append",
+        choices=("language", "script"),
+        metavar="FIELD",
+        help=(
+            "Add a deterministic catalog sort key before the default "
+            "family ordering. Repeat to sort by multiple metadata "
+            "fields in CLI order."
         ),
     )
     add_common_arguments(
@@ -537,6 +591,7 @@ def run_create_catalog(args) -> int:
         loadability_result.kept,
         excluded_fonts=loadability_result.excluded,
         catalog_detail=args.catalog_detail,
+        indexed_navigation=bool(getattr(args, "indexed_navigation", False)),
         generation_metadata=_build_generation_metadata(args),
     )
 

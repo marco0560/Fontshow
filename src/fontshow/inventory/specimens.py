@@ -66,7 +66,35 @@ from fontshow.ontology.language_tables import SCRIPT_INFO
 # ============================================================
 
 MIN_SAMPLE_GLYPHS = 20
-CMAP_FALLBACK_GLYPHS = 50
+CMAP_FALLBACK_GLYPHS = 40
+_PRIVATE_USE_BLOCK_NAMES = {
+    "Private Use Area",
+    "Supplementary Private Use Area-A",
+    "Supplementary Private Use Area-B",
+}
+_LATIN_BLOCK_NAMES = {
+    "Basic Latin",
+    "Latin-1 Supplement",
+    "Latin Extended-A",
+    "Latin Extended-B",
+    "Latin Extended Additional",
+    "Latin Extended-C",
+    "Latin Extended-D",
+    "Latin Extended-E",
+    "Latin Extended-F",
+    "Latin Extended-G",
+}
+_SCRIPT_CORE_SPECIMENS: dict[ScriptISO, str] = {
+    ScriptISO("ARAB"): "ابتثجحخدذرزسشصضطظعغفقكلمنهويءآأؤإئىة",
+    ScriptISO("BOPO"): "ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄚㄛㄜ",
+    ScriptISO("CYRL"): "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩабвгдежзийклмнопрстуфхцчшщ",
+    ScriptISO("GREK"): "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥαβγδεζηθικλμνξοπρστυ",
+    ScriptISO("HANI"): "天地玄黃宇宙洪荒日月盈昃辰宿列張寒來暑往秋收冬藏",
+    ScriptISO(
+        "JPAN"
+    ): "あいうえおかきくけこさしすせそたちつてとアイウエオカキクケコサシスセソ",
+    ScriptISO("LATN"): "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+}
 
 
 def _specimen_is_variation_selector(cp: int) -> bool:
@@ -108,6 +136,26 @@ def _specimen_is_control_like(cp: int) -> bool:
         ``Co``, or ``Cn``.
     """
     return unicodedata.category(chr(cp)) in {"Cc", "Cf", "Cs", "Co", "Cn"}
+
+
+def _specimen_is_private_use(cp: int) -> bool:
+    """
+    Check whether a codepoint belongs to a Unicode private-use range.
+
+    Parameters
+    ----------
+    cp : int
+        Unicode codepoint.
+
+    Returns
+    -------
+    bool
+        True when the codepoint is inside one of the Unicode private
+        use areas.
+    """
+    return (
+        0xE000 <= cp <= 0xF8FF or 0xF0000 <= cp <= 0xFFFFF or 0x100000 <= cp <= 0x10FFFF
+    )
 
 
 def _specimen_is_mark(cp: int) -> bool:
@@ -174,7 +222,48 @@ def _specimen_preference(cp: int) -> int:
     return 2
 
 
-def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
+def _specimen_is_latin_block(block_name: str) -> bool:
+    """
+    Return whether a Unicode block should count as Latin-family evidence.
+
+    Parameters
+    ----------
+    block_name : str
+        Unicode block name extracted from specimen text.
+
+    Returns
+    -------
+    bool
+        True when the block is one of the Latin-family Unicode blocks
+        used by specimen reconciliation heuristics.
+    """
+    return block_name in _LATIN_BLOCK_NAMES
+
+
+def _normalize_top_level_specimen_strategy(strategy: str | None) -> str | None:
+    """
+    Normalize detailed specimen strategies to schema-approved top-level values.
+
+    Parameters
+    ----------
+    strategy : str | None
+        Detailed strategy emitted by internal helper stages.
+
+    Returns
+    -------
+    str | None
+        Schema-approved top-level specimen strategy.
+    """
+    if not isinstance(strategy, str) or not strategy:
+        return strategy
+    if strategy.startswith("script"):
+        return "script"
+    return strategy
+
+
+def _specimen_filter_text(
+    text: str, cps: set[int], *, allow_private_use: bool = False
+) -> tuple[str, int]:
     """
     Filter specimen text against cmap support and rendering-safety rules.
 
@@ -184,6 +273,9 @@ def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
         Candidate specimen text.
     cps : set[int]
         Supported Unicode codepoints for the font.
+    allow_private_use : bool, optional
+        Whether private-use codepoints should be retained instead of
+        being treated as control-like placeholders.
 
     Returns
     -------
@@ -200,15 +292,26 @@ def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
     out: list[str] = []
     glyphs = 0
     prev_base = False
+    pending_space = False
 
     for ch in text:
         cp = ord(ch)
 
+        if ch.isspace():
+            if out and prev_base:
+                pending_space = True
+            prev_base = False
+            continue
+
         if (
             cp not in cps
-            or _specimen_is_control_like(cp)
+            or (
+                _specimen_is_control_like(cp)
+                and not (allow_private_use and _specimen_is_private_use(cp))
+            )
             or _specimen_is_variation_selector(cp)
         ):
+            pending_space = False
             prev_base = False
             continue
 
@@ -218,11 +321,41 @@ def _specimen_filter_text(text: str, cps: set[int]) -> tuple[str, int]:
             out.append(ch)
             continue
 
+        if pending_space and out:
+            out.append(" ")
+            pending_space = False
+
         out.append(ch)
         glyphs += 1
         prev_base = True
 
     return "".join(out), glyphs
+
+
+def _specimen_repeat_once(text: str, glyphs: int) -> tuple[str | None, int]:
+    """
+    Duplicate a short specimen once when that reaches the acceptance floor.
+
+    Parameters
+    ----------
+    text : str
+        Filtered specimen candidate.
+    glyphs : int
+        Accepted base-glyph count for ``text``.
+
+    Returns
+    -------
+    tuple[str | None, int]
+        Doubled specimen text and doubled glyph count, or ``(None, glyphs)``
+        when repetition should not be used.
+    """
+    if not text or glyphs <= 0:
+        return None, glyphs
+    if glyphs >= MIN_SAMPLE_GLYPHS:
+        return text, glyphs
+    if glyphs * 2 < MIN_SAMPLE_GLYPHS:
+        return None, glyphs
+    return f"{text} {text}", glyphs * 2
 
 
 def _specimen_collect_cmap(path: str | None, ttc_index: int | None) -> set[int]:
@@ -279,6 +412,75 @@ def _specimen_collect_cmap(path: str | None, ttc_index: int | None) -> set[int]:
         except (TypeError, ValueError):
             continue
     return cps
+
+
+def _script_core_specimen_seed(script_iso: ScriptISO) -> str:
+    """
+    Return the deterministic core-glyph seed for one script.
+
+    Parameters
+    ----------
+    script_iso : ScriptISO
+        Canonical script identifier.
+
+    Returns
+    -------
+    str
+        Script-specific core glyph seed, or an empty string when none is
+        defined.
+    """
+    seed = _SCRIPT_CORE_SPECIMENS.get(script_iso)
+    return seed if isinstance(seed, str) else ""
+
+
+def _script_fallback_specimen(
+    script_iso: ScriptISO,
+    cps: set[int],
+) -> tuple[str | None, int, str | None]:
+    """
+    Build the best deterministic specimen available for one script.
+
+    Parameters
+    ----------
+    script_iso : ScriptISO
+        Script whose specimen should be resolved.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str | None, int, str | None]
+        ``(specimen_text, glyph_count, strategy)`` for the best script-aware
+        sample, or ``(None, 0, None)`` when no meaningful sample can be built.
+
+    Notes
+    -----
+    Ordered fallback:
+    1. curated ontology specimen as-is
+    2. one doubled copy of the curated result if that reaches the floor
+    3. deterministic script-core seed
+    4. one doubled copy of the core-seed result if that reaches the floor
+    """
+    info = SCRIPT_INFO.get(script_iso)
+    curated = info.get("specimen") if isinstance(info, dict) else None
+    if isinstance(curated, str) and curated.strip():
+        filtered, glyphs = _specimen_filter_text(curated, cps)
+        if glyphs >= MIN_SAMPLE_GLYPHS:
+            return filtered, glyphs, "script"
+        doubled, doubled_glyphs = _specimen_repeat_once(filtered, glyphs)
+        if doubled is not None:
+            return doubled, doubled_glyphs, "script-doubled"
+
+    seed = _script_core_specimen_seed(script_iso)
+    if seed:
+        filtered, glyphs = _specimen_filter_text(seed, cps)
+        if glyphs >= MIN_SAMPLE_GLYPHS:
+            return filtered, glyphs, "script-core"
+        doubled, doubled_glyphs = _specimen_repeat_once(filtered, glyphs)
+        if doubled is not None:
+            return doubled, doubled_glyphs, "script-core-doubled"
+
+    return None, 0, None
 
 
 def _specimen_from_internal(
@@ -379,26 +581,21 @@ def _specimen_from_script(
     if not isinstance(text, str) or not text.strip():
         return None, "no_script_sample"
 
-    filtered, glyphs = _specimen_filter_text(text, cps)
+    filtered, glyphs, strategy = _script_fallback_specimen(script_iso, cps)
+    if filtered is not None and strategy is not None:
+        return filtered, strategy
 
+    seed = _script_core_specimen_seed(script_iso)
+    if seed:
+        core_filtered, core_glyphs = _specimen_filter_text(seed, cps)
+        if core_glyphs == 0:
+            return None, "script_sample_no_supported_glyphs"
+        return None, "script_sample_too_short"
+
+    filtered, glyphs = _specimen_filter_text(text, cps)
     if glyphs == 0:
         return None, "script_sample_no_supported_glyphs"
-
-    # Reject weak script sample when density too low vs cmap.
-    # Large-script fonts (e.g. Hangul) can have a very large cmap even
-    # when the curated specimen is perfectly representative, so a
-    # substantial sample must remain acceptable regardless of cmap size.
-    if cps:
-        try:
-            density = glyphs / max(len(cps), 1)
-        except (TypeError, ZeroDivisionError):
-            density = 0.0
-
-        # empirical safe floor — prevents misleading tiny samples
-        if density < 0.01 and glyphs < MIN_SAMPLE_GLYPHS:
-            return None, "script_sample_too_sparse"
-
-    return filtered, "script"
+    return None, "script_sample_too_short"
 
 
 def _specimen_from_cmap(
@@ -436,6 +633,89 @@ def _specimen_from_cmap(
             break
 
     return "".join(chr(cp) for cp in chosen), "cmap"
+
+
+def _specimen_from_private_use(
+    font: dict[str, Any],
+    cps: set[int],
+) -> tuple[str | None, str | None]:
+    """
+    Build a specimen from private-use glyph coverage when it is substantial.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry being enriched.
+    cps : set[int]
+        Supported Unicode codepoints extracted from the font cmap.
+
+    Returns
+    -------
+    tuple[str | None, str | None]
+        Either ``(specimen_text, "pua")`` on success or
+        ``(None, rejection_reason)`` when private-use coverage is too
+        small or absent.
+    """
+    pua_total = _significant_private_use_count(font)
+    if pua_total < MIN_SAMPLE_GLYPHS:
+        return None, "private_use_not_significant"
+
+    chosen: list[int] = []
+    for cp in sorted(cps):
+        if not _specimen_is_private_use(cp):
+            continue
+        if _specimen_is_variation_selector(cp):
+            continue
+        chosen.append(cp)
+        if len(chosen) >= CMAP_FALLBACK_GLYPHS:
+            break
+
+    if not chosen:
+        return None, "private_use_no_supported_glyphs"
+
+    return "".join(chr(cp) for cp in chosen), "pua"
+
+
+def _significant_private_use_count(font: dict[str, Any]) -> int:
+    """
+    Return the persisted count of private-use coverage for one font.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry whose coverage block is inspected.
+
+    Returns
+    -------
+    int
+        Total number of covered codepoints in Unicode private-use blocks.
+    """
+    coverage_raw = font.get("coverage")
+    coverage = coverage_raw if isinstance(coverage_raw, dict) else {}
+    blocks_raw = coverage.get("unicode_blocks")
+    blocks = blocks_raw if isinstance(blocks_raw, dict) else {}
+    return sum(
+        int(blocks.get(block_name, 0))
+        for block_name in _PRIVATE_USE_BLOCK_NAMES
+        if isinstance(blocks.get(block_name, 0), int)
+    )
+
+
+def _has_significant_private_use(font: dict[str, Any]) -> bool:
+    """
+    Return whether one font covers a meaningful amount of private-use glyphs.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry whose coverage block is inspected.
+
+    Returns
+    -------
+    bool
+        True when the persisted private-use coverage reaches the specimen floor.
+    """
+    return _significant_private_use_count(font) >= MIN_SAMPLE_GLYPHS
 
 
 def _specimen_apply_semantic_validation(
@@ -496,13 +776,159 @@ def _specimen_apply_semantic_validation(
     return fallback, len(fallback), "validated-fallback"
 
 
+def _specimen_from_language(
+    font: dict[str, Any],
+    cps: set[int],
+) -> tuple[str | None, str | None]:
+    """
+    Build a specimen from inferred language metadata.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry whose inference metadata is consulted.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str | None, str | None]
+        Either ``(filtered_sample, "language")`` on success or
+        ``(None, rejection_reason)`` when no usable language-aware
+        sample can be resolved.
+    """
+    inference_raw = font.get("inference") or {}
+    inference = inference_raw if isinstance(inference_raw, dict) else {}
+
+    langs_raw = inference.get("languages")
+    inferred_languages: list[str] = langs_raw if isinstance(langs_raw, list) else []
+
+    scripts_raw = inference.get("scripts")
+    inferred_scripts: list[str] = scripts_raw if isinstance(scripts_raw, list) else []
+
+    sample = choose_language_sample(inferred_languages, inferred_scripts)
+    if not isinstance(sample, str) or not sample.strip():
+        return None, "no_language_sample"
+
+    filtered, glyphs = _specimen_filter_text(sample, cps)
+    if glyphs == 0:
+        return None, "language_sample_no_supported_glyphs"
+    if glyphs < MIN_SAMPLE_GLYPHS:
+        return None, "language_sample_too_short"
+
+    return filtered, "language"
+
+
+def _specimen_upgrade_low_information_sample(
+    font: dict[str, Any],
+    filtered: str,
+    glyph_count: int,
+    cps: set[int],
+    *,
+    current_strategy: str | None = None,
+) -> tuple[str, int, str | None]:
+    """
+    Replace a low-information specimen with a stronger language sample.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry whose inference metadata is consulted.
+    filtered : str
+        Current accepted specimen candidate.
+    glyph_count : int
+        Accepted base-glyph count for ``filtered``.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+    current_strategy : str | None, optional
+        Strategy that produced the currently accepted specimen.
+
+    Returns
+    -------
+    tuple[str, int, str | None]
+        Possibly upgraded ``(specimen_text, glyph_count, strategy)``
+        triple. The strategy is ``None`` when no replacement is used.
+    """
+    if glyph_count >= MIN_SAMPLE_GLYPHS:
+        return filtered, glyph_count, None
+
+    replacement, strategy = _specimen_from_language(font, cps)
+    if replacement is None:
+        if cps and current_strategy != "cmap":
+            cmap_replacement, cmap_strategy = _specimen_from_cmap(font, cps)
+            cmap_filtered, cmap_glyphs = _specimen_filter_text(cmap_replacement, cps)
+            if cmap_glyphs > glyph_count and cmap_filtered.strip():
+                return cmap_filtered, cmap_glyphs, cmap_strategy
+        return filtered, glyph_count, None
+
+    return replacement, len(replacement), strategy
+
+
+def _resolve_initial_specimen(
+    font: dict[str, Any],
+    coverage: dict[str, Any],
+    cps: set[int],
+) -> tuple[str | None, str | None, str | None, int]:
+    """
+    Resolve the initial specimen candidate from the fallback chain.
+
+    Parameters
+    ----------
+    font : dict[str, Any]
+        Inventory entry being enriched.
+    coverage : dict[str, Any]
+        Coverage block used for script-based specimen resolution.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str | None, str | None, str | None, int]
+        ``(specimen_text, strategy, rejection_reason, fallback_depth)``
+        after evaluating the deterministic fallback chain.
+    """
+    specimen_text, strategy = _specimen_from_internal(font, cps)
+    rejection: str | None = None
+    fallback_depth = 0
+
+    if specimen_text is None:
+        rejection = strategy
+        strategy = None
+        fallback_depth = 1
+
+    if specimen_text is None:
+        specimen_text, strategy = _specimen_from_script(coverage, cps)
+        if specimen_text is not None:
+            fallback_depth = 2
+
+    if specimen_text is None:
+        specimen_text, strategy = _specimen_from_language(font, cps)
+        if specimen_text is not None:
+            rejection = "fallback_to_language"
+            fallback_depth = 2
+
+    if specimen_text is None and cps:
+        specimen_text, strategy = _specimen_from_private_use(font, cps)
+        if specimen_text is not None:
+            rejection = "fallback_to_private_use"
+            fallback_depth = 3
+
+    if specimen_text is None and cps:
+        specimen_text, strategy = _specimen_from_cmap(font, cps)
+        rejection = "fallback_to_cmap"
+        if specimen_text is not None:
+            fallback_depth = 4
+
+    return specimen_text, strategy, rejection, fallback_depth
+
+
 def _specimen_generate_for_font(
     font: dict[str, Any],
     coverage: dict[str, Any],
     font_path: str | None,
 ) -> None:
     """
-    Deterministic specimen generator (3-level fallback).
+    Deterministic specimen generator with ordered specimen fallbacks.
 
     Parameters
     ----------
@@ -519,7 +945,7 @@ def _specimen_generate_for_font(
 
     Notes
     -----
-    Writes the schema v1.3 typography fields:
+    Writes the schema v1.5 typography fields:
     - ``typography.specimen_text``
     - ``typography.specimen_strategy``
     - ``typography.specimen_glyph_count``
@@ -528,37 +954,18 @@ def _specimen_generate_for_font(
     Fallback order:
     1. internal sample text
     2. script-derived curated sample
-    3. cmap-derived fallback
+    3. language-derived sample
+    4. private-use cmap sample when PUA coverage is significant
+    5. cmap-derived fallback
 
     The function always leaves a visible specimen in the font record,
     even when curated and cmap-derived samples are both unusable.
     """
     cps = _specimen_collect_cmap(font_path, None)
 
-    specimen_text: str | None = None
-    strategy: str | None = None
-    rejection: str | None = None
-    fallback_depth = 0
-
-    # Level 1
-    specimen_text, strategy = _specimen_from_internal(font, cps)
-    if specimen_text is None:
-        rejection = strategy
-        strategy = None
-        fallback_depth = 1
-
-    # Level 2
-    if specimen_text is None:
-        specimen_text, strategy = _specimen_from_script(coverage, cps)
-        if specimen_text is not None:
-            fallback_depth = 2
-
-    # Level 3
-    if specimen_text is None and cps:
-        specimen_text, strategy = _specimen_from_cmap(font, cps)
-        rejection = rejection or "fallback_to_cmap"
-        if specimen_text is not None:
-            fallback_depth = 3
+    specimen_text, strategy, rejection, fallback_depth = _resolve_initial_specimen(
+        font, coverage, cps
+    )
 
     if not specimen_text:
         specimen_text = " "
@@ -566,7 +973,11 @@ def _specimen_generate_for_font(
         rejection = rejection or "no_printable_glyphs"
 
     filtered, g = (
-        _specimen_filter_text(specimen_text, cps)
+        _specimen_filter_text(
+            specimen_text,
+            cps,
+            allow_private_use=(strategy == "pua"),
+        )
         if cps
         else (specimen_text, len(specimen_text))
     )
@@ -595,6 +1006,21 @@ def _specimen_generate_for_font(
         g = 1
         rejection = rejection or "no_visible_glyphs"
 
+    upgraded_filtered, upgraded_g, upgraded_strategy = (
+        _specimen_upgrade_low_information_sample(
+            font,
+            filtered,
+            g,
+            cps,
+            current_strategy=strategy,
+        )
+    )
+    if upgraded_strategy is not None:
+        filtered = upgraded_filtered
+        g = upgraded_g
+        strategy = upgraded_strategy
+        rejection = "specimen_too_short"
+
     # --- SPECIMEN SEMANTIC VALIDATION ---
     new_filtered, new_g, new_strategy = _specimen_apply_semantic_validation(
         font,
@@ -612,7 +1038,7 @@ def _specimen_generate_for_font(
     set_specimen_fields(
         font,
         specimen_text=filtered,
-        specimen_strategy=strategy or "cmap",
+        specimen_strategy=_normalize_top_level_specimen_strategy(strategy) or "cmap",
         specimen_glyph_count=int(g),
         specimen_rejection_reason=rejection,
     )

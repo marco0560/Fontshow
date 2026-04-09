@@ -68,7 +68,7 @@ def test_emit_verbose_warnings_handles_non_list_fonts_and_deduplicates(monkeypat
     monkeypatch.setattr(iw, "log_info", infos.append)
     monkeypatch.setattr(iw, "log_warn", warns.append)
 
-    iw._emit_verbose_warnings({"fonts": "bad"})
+    iw._emit_verbose_warnings({"fonts": "bad"}, enabled=True)
     assert infos == []
     assert warns == []
 
@@ -97,8 +97,48 @@ def test_emit_verbose_warnings_handles_non_list_fonts_and_deduplicates(monkeypat
                     ],
                 }
             ]
-        }
+        },
+        enabled=True,
     )
 
     assert any("duplicate_languages: fr" in message for message in infos)
     assert any("other_warn: warn" in message for message in warns)
+
+
+def test_emit_verbose_warnings_is_silent_when_disabled(monkeypatch):
+    """
+    Ensure warning emission is suppressed unless verbose mode is enabled.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to capture info and warning log messages.
+
+    Returns
+    -------
+    None
+    """
+    infos: list[str] = []
+    warns: list[str] = []
+    monkeypatch.setattr(iw, "log_info", infos.append)
+    monkeypatch.setattr(iw, "log_warn", warns.append)
+
+    iw._emit_verbose_warnings(
+        {
+            "fonts": [
+                {
+                    "warnings": [
+                        {
+                            "code": "language_duplicate",
+                            "message": "Duplicate language 'fr'",
+                            "severity": Severity.INFO,
+                        }
+                    ]
+                }
+            ]
+        },
+        enabled=False,
+    )
+
+    assert infos == []
+    assert warns == []

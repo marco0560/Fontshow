@@ -56,6 +56,9 @@ fontshow_snapshot.tar.xz
 issues.json
 milestones_plan.json
 bootstrap_audit_report.txt
+fontspec.log
+luaotfload.log
+polyglossia.log
 
 # --------------------------------------------------
 # Node / tooling

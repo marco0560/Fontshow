@@ -26,7 +26,9 @@ document assembly stage between inventory-derived font metadata and the
 final LaTeX output written by the create-catalog pipeline.
 """
 
+import unicodedata
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Literal
 
 from fontshow.catalog.labels import primary_script
@@ -42,15 +44,24 @@ from fontshow.core.types import (
 )
 from fontshow.inventory.io import as_font_desc_list
 from fontshow.inventory.metadata_processing import font_family
-from fontshow.inventory.schema_accessors import get_specimen_text
+from fontshow.inventory.schema_accessors import (
+    get_font_lualatex_render_variants,
+    get_specimen_glyph_count,
+    get_specimen_strategy,
+    get_specimen_text,
+)
+from fontshow.inventory.script_analysis import infer_scripts
 from fontshow.inventory.specimens import (
     MIN_SAMPLE_GLYPHS,
+    _has_significant_private_use,
+    _script_core_specimen_seed,
+    _script_fallback_specimen,
     _specimen_collect_cmap,
     _specimen_filter_text,
+    _specimen_from_private_use,
+    _specimen_repeat_once,
 )
 from fontshow.latex.policy import (
-    _collect_polyglossia_font_setup,
-    _collect_polyglossia_other_languages,
     _format_language_display,
     _format_script_display,
     _get_render_policy,
@@ -68,11 +79,456 @@ from fontshow.latex.templates import (
     LATEX_INITIAL_CODE,
 )
 from fontshow.ontology.language_tables import SCRIPT_INFO
+from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
 _SUPPORTED_PATH_BASED_EXTENSIONS = (".ttf", ".otf", ".ttc")
-_MULTI_SPECIMEN_LIMIT = 4
+_MULTI_SPECIMEN_LIMIT = 20
+_PUA_SCRIPT = ScriptISO("PUAA")
 
 CatalogDetailLevel = Literal["compact", "extended"]
+
+
+def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -> str:
+    """
+    Return compatibility placeholder text for retired language setup.
+
+    Parameters
+    ----------
+    font_list : list[CatalogFontEntryV12]
+        Catalog entries retained only for call-site compatibility.
+
+    Returns
+    -------
+    str
+        Empty string because specimen rendering no longer relies on
+        predeclared Polyglossia secondary-language setup.
+    """
+    _ = font_list
+    return ""
+
+
+def _collect_polyglossia_font_setup(font_list: list[CatalogFontEntryV12]) -> str:
+    """
+    Return compatibility placeholder text for retired font setup.
+
+    Parameters
+    ----------
+    font_list : list[CatalogFontEntryV12]
+        Catalog entries retained only for call-site compatibility.
+
+    Returns
+    -------
+    str
+        Empty string because direct specimen rendering no longer uses
+        predeclared Polyglossia language-font commands.
+    """
+    _ = font_list
+    return ""
+
+
+@dataclass(frozen=True)
+class _VariantRenderResult:
+    """
+    Structured render result for one family variant.
+
+    Parameters
+    ----------
+    body_block : str
+        LaTeX fragment emitted in the main catalog body.
+    rendered : bool
+        Whether the variant produced a visible main-body specimen block.
+    missing_entry : str | None
+        Appendix entry used when the variant could not be rendered.
+    duplicate_entry : str | None
+        Appendix entry used when the variant was collapsed as a duplicate.
+    """
+
+    body_block: str
+    rendered: bool
+    missing_entry: str | None = None
+    duplicate_entry: str | None = None
+
+
+@dataclass(frozen=True)
+class _FamilyRenderResult:
+    """
+    Structured render result for one catalog family block.
+
+    Parameters
+    ----------
+    body_block : str
+        LaTeX fragment emitted in the main catalog body.
+    navigation_entry : tuple[str, str] | None
+        Optional indexed-navigation entry for the family.
+    rendered : bool
+        Whether the family produced any visible main-body output.
+    missing_entries : tuple[str, ...]
+        Appendix entries for variants that could not be rendered.
+    duplicate_entries : tuple[str, ...]
+        Appendix entries for variants collapsed as duplicates.
+    """
+
+    body_block: str
+    navigation_entry: tuple[str, str] | None
+    rendered: bool
+    missing_entries: tuple[str, ...] = ()
+    duplicate_entries: tuple[str, ...] = ()
+
+
+def _catalog_family_anchor(index: int) -> str:
+    """
+    Build a deterministic hyperlink anchor for a rendered family block.
+
+    Parameters
+    ----------
+    index : int
+        One-based family index in render order.
+
+    Returns
+    -------
+    str
+        Stable Hyperref anchor identifier.
+    """
+    return f"fontshow-family-{index:04d}"
+
+
+def _render_navigation_index(entries: list[tuple[str, str]]) -> str:
+    """
+    Render an end-of-document family navigation index.
+
+    Parameters
+    ----------
+    entries : list[tuple[str, str]]
+        Ordered ``(family_name, anchor_name)`` pairs from the rendered
+        catalog body.
+
+    Returns
+    -------
+    str
+        LaTeX section text for the grouped navigation index, or an
+        empty string when no entries are available.
+    """
+    if not entries:
+        return ""
+
+    grouped_entries: dict[str, list[tuple[str, str]]] = {}
+    for family_name, anchor in entries:
+        group = _navigation_group_key(family_name)
+        grouped_entries.setdefault(group, []).append((family_name, anchor))
+
+    lines = [
+        "\\section{Navigation Index}",
+        "\\begingroup",
+        "\\small",
+        "\\setlength{\\columnsep}{1.2em}",
+        "\\begin{multicols}{3}",
+        "\\raggedright",
+    ]
+    for group in sorted(grouped_entries):
+        lines.append("\\textbf{" + escape_latex(group) + "}\\par")
+        for family_name, anchor in grouped_entries[group]:
+            lines.append(
+                "\\hyperlink{" + anchor + "}{" + escape_latex(family_name) + "}\\\\"
+            )
+        lines.append("\\medskip")
+    lines.extend(["\\end{multicols}", "\\endgroup"])
+    return "\n".join(lines) + "\n"
+
+
+def _navigation_group_key(family_name: str) -> str:
+    """
+    Return the grouped navigation bucket for a family name.
+
+    Parameters
+    ----------
+    family_name : str
+        Rendered family name used in the navigation index.
+
+    Returns
+    -------
+    str
+        Uppercase leading alphanumeric bucket, or ``"#"`` when the
+        family starts with a non-alphanumeric character.
+    """
+    normalized = family_name.strip()
+    if not normalized:
+        return "#"
+
+    first = normalized[0].upper()
+    return first if first.isalnum() else "#"
+
+
+def _variant_display_label(variant: CatalogFontEntryV12) -> str:
+    """
+    Return the visible file-oriented label for a family variant.
+
+    Parameters
+    ----------
+    variant : CatalogFontEntryV12
+        Variant entry being rendered.
+
+    Returns
+    -------
+    str
+        Basename-oriented label used in main-body and appendix output.
+    """
+    variant_path = str(variant.get("path", ""))
+    _directory, variant_file = _normalize_path_for_latex(variant_path)
+    if variant_file:
+        return variant_file
+    return str(variant.get("family", "")).strip() or "UNKNOWN"
+
+
+def _variant_duplicate_key(variant: CatalogFontEntryV12) -> tuple[str, ...]:
+    """
+    Build a conservative duplicate-collapse key for a family variant.
+
+    Parameters
+    ----------
+    variant : CatalogFontEntryV12
+        Variant entry being considered for duplicate collapsing.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Deterministic key built from stable inventory metadata.
+
+    Notes
+    -----
+    The current renderer does not have a persisted content hash. This
+    key therefore stays conservative and family-local, using stable
+    identity and specimen fields rather than weak filesystem metadata
+    such as timestamps.
+    """
+    return (
+        str(variant.get("family", "")).strip(),
+        str(variant.get("subfamily", "")).strip(),
+        str(variant.get("full_name", "")).strip(),
+        str(variant.get("postscript_name", "")).strip(),
+        str(variant.get("version_string", "")).strip(),
+        str(primary_script(variant) or "").strip().upper(),
+        str(get_specimen_text(variant) or "").strip(),
+        str(get_specimen_strategy(variant) or "").strip(),
+        str(get_specimen_glyph_count(variant) or ""),
+    )
+
+
+def _render_missing_variants_section(entries: list[str]) -> str:
+    """
+    Render the appendix section for variants omitted from the main body.
+
+    Parameters
+    ----------
+    entries : list[str]
+        Ordered item strings for missing variants.
+
+    Returns
+    -------
+    str
+        LaTeX section text, or an empty string when no entries exist.
+    """
+    if not entries:
+        return ""
+    lines = [
+        "\\section{Unrendered Variants}",
+        "These variants were discovered in the inventory but did not produce a",
+        "usable catalog specimen. They are listed here for traceability rather",
+        "than being silently dropped.\\\\",
+        "\\begin{itemize}",
+    ]
+    lines.extend("\\item " + entry for entry in entries)
+    lines.append("\\end{itemize}")
+    return "\n".join(lines) + "\n"
+
+
+def _render_duplicate_sources_section(entries: list[str]) -> str:
+    """
+    Render the appendix section for collapsed duplicate font sources.
+
+    Parameters
+    ----------
+    entries : list[str]
+        Ordered item strings describing duplicate sources.
+
+    Returns
+    -------
+    str
+        LaTeX section text, or an empty string when no duplicates exist.
+    """
+    if not entries:
+        return ""
+    lines = [
+        "\\section{Duplicate Sources}",
+        "These sources were collapsed out of the main body because they match an",
+        "already-rendered family variant on stable catalog metadata: family,",
+        "subfamily, full name, PostScript name, version, primary script,",
+        "specimen text, specimen strategy, and specimen glyph count.\\\\",
+        "\\begin{itemize}",
+    ]
+    lines.extend("\\item " + entry for entry in entries)
+    lines.append("\\end{itemize}")
+    return "\n".join(lines) + "\n"
+
+
+def _render_family_catalog_block(
+    *,
+    family_name: str,
+    family_fonts: list[CatalogFontEntryV12],
+    family_index: int,
+    catalog_detail: CatalogDetailLevel,
+    indexed_navigation: bool,
+) -> _FamilyRenderResult:
+    """
+    Render one family block for the catalog body.
+
+    Parameters
+    ----------
+    family_name : str
+        Family label used for rendering and deterministic identifiers.
+    family_fonts : list[CatalogFontEntryV12]
+        Font variants grouped under the same family.
+    family_index : int
+        One-based family index in render order.
+    catalog_detail : {"compact", "extended"}
+        Requested catalog metadata detail level.
+    indexed_navigation : bool
+        Whether indexed navigation output is being generated.
+
+    Returns
+    -------
+    _FamilyRenderResult
+        Structured family render result containing the main-body block,
+        optional navigation entry, and appendix data.
+    """
+    font = family_fonts[0]
+    safe_name = escape_latex(family_name)
+
+    inference_raw = font.get("inference") or {}
+    inference = inference_raw if isinstance(inference_raw, dict) else {}
+
+    scripts_raw_obj = inference.get("scripts")
+    scripts_raw: list[str] = (
+        scripts_raw_obj if isinstance(scripts_raw_obj, list) else []
+    )
+
+    script0 = primary_script(font) or ""
+
+    languages_raw_obj = inference.get("languages")
+    inferred_languages: list[str] = (
+        languages_raw_obj if isinstance(languages_raw_obj, list) else []
+    )
+
+    scripts_pretty = (
+        ", ".join(_format_script_display(str(s)) for s in scripts_raw)
+        if scripts_raw
+        else "N/A"
+    )
+    languages_pretty = (
+        ", ".join(_format_language_display(str(lang)) for lang in inferred_languages)
+        if inferred_languages
+        else "N/A"
+    )
+
+    fullpath = str(font.get("path", ""))
+    script0_iso = ScriptISO(script0.upper()) if script0 else ScriptISO("")
+    specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+    safe_specimen = _format_specimen_for_latex(specimen, script0_iso)
+    _, options_plain = _render_font_entry(
+        font=font,
+        safe_specimen=safe_specimen,
+        script0_iso=script0_iso,
+        fullpath=fullpath,
+        catalog_detail=catalog_detail,
+    )
+
+    options_pretty = (
+        _latex_debug_literal(options_plain.replace(",", ", "))
+        if options_plain
+        else "N/A"
+    )
+    debug_block = _render_family_debug_block(
+        scripts_pretty=scripts_pretty,
+        languages_pretty=languages_pretty,
+        options_pretty=options_pretty,
+        catalog_detail=catalog_detail,
+    )
+
+    variant_blocks: list[str] = []
+    missing_entries: list[str] = []
+    duplicate_entries: list[str] = []
+    duplicate_primary_by_key: dict[tuple[str, ...], str] = {}
+    rendered_variants = 0
+
+    for variant in family_fonts:
+        duplicate_key = _variant_duplicate_key(variant)
+        variant_label = _variant_display_label(variant)
+        variant_path = str(variant.get("path", "")).strip() or "N/A"
+        primary_label = duplicate_primary_by_key.get(duplicate_key)
+        if primary_label is not None:
+            duplicate_entries.append(
+                " | ".join(
+                    escape_latex(part)
+                    for part in (
+                        family_name,
+                        variant_label,
+                        variant_path,
+                        primary_label,
+                    )
+                )
+            )
+            continue
+
+        result = _render_variant_specimen_blocks(
+            variant,
+            family_name=family_name,
+            catalog_detail=catalog_detail,
+        )
+        if result.rendered:
+            variant_blocks.append(result.body_block)
+            duplicate_primary_by_key[duplicate_key] = variant_label
+            rendered_variants += 1
+        elif result.missing_entry is not None:
+            missing_entries.append(result.missing_entry)
+
+    if not variant_blocks:
+        return _FamilyRenderResult(
+            body_block="",
+            navigation_entry=None,
+            rendered=False,
+            missing_entries=tuple(missing_entries),
+            duplicate_entries=tuple(duplicate_entries),
+        )
+
+    if indexed_navigation:
+        anchor = _catalog_family_anchor(family_index)
+        family_intro = (
+            "\\hypertarget{"
+            + anchor
+            + "}{}\n\\pdfbookmark[2]{"
+            + safe_name
+            + "}{"
+            + anchor
+            + "-bookmark}\n\\subsection*{"
+            + safe_name
+            + "}"
+        )
+        if debug_block:
+            family_intro += "\n\n" + debug_block
+        navigation_entry = (family_name, anchor)
+    else:
+        family_intro = "\\item " + safe_name
+        if debug_block:
+            family_intro += " --- " + debug_block
+        navigation_entry = None
+
+    family_block = family_intro + "\n\n" + "\n\n".join(variant_blocks) + "\n\n"
+    return _FamilyRenderResult(
+        body_block=family_block,
+        navigation_entry=navigation_entry,
+        rendered=bool(rendered_variants),
+        missing_entries=tuple(missing_entries),
+        duplicate_entries=tuple(duplicate_entries),
+    )
 
 
 def _apply_frontmatter_metadata(
@@ -157,15 +613,106 @@ def _ordered_script_candidates(font: CatalogFontEntryV12) -> list[ScriptISO]:
         seen.add(cleaned)
         normalized.append(ScriptISO(cleaned))
 
+    if _has_significant_private_use(dict(font)) and str(_PUA_SCRIPT) not in seen:
+        normalized.append(_PUA_SCRIPT)
+
+    if not normalized:
+        return []
+
+    primary_iso = (
+        ScriptISO(str(primary).strip().upper())
+        if str(primary).strip()
+        else normalized[0]
+    )
+    remaining = [script_iso for script_iso in normalized if script_iso != primary_iso]
+
     def _sort_key(script_iso: ScriptISO) -> tuple[int, str]:
+        if script_iso == _PUA_SCRIPT:
+            return (3, str(script_iso))
         info: dict[str, object] = dict(SCRIPT_INFO.get(script_iso, {}))
-        if str(script_iso) == "LATN":
-            return (0, str(script_iso))
         if bool(info.get("rtl", False)):
+            return (0, str(script_iso))
+        if str(script_iso) == "LATN":
             return (1, str(script_iso))
         return (2, str(script_iso))
 
-    return sorted(normalized, key=_sort_key)[:_MULTI_SPECIMEN_LIMIT]
+    ordered = [primary_iso]
+    ordered.extend(sorted(remaining, key=_sort_key))
+    return ordered[:_MULTI_SPECIMEN_LIMIT]
+
+
+def _has_persisted_render_variant_success(
+    font: CatalogFontEntryV12,
+    script_iso: ScriptISO,
+) -> bool:
+    """
+    Return whether a rendered script has persisted validation support.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose persisted render-variant results are read.
+    script_iso : ScriptISO
+        Script code about to be rendered.
+
+    Returns
+    -------
+    bool
+        ``True`` when the inventory either has no render-variant data
+        yet or contains a matching successful render-path record.
+    """
+    if script_iso == _PUA_SCRIPT:
+        return True
+
+    variants = get_font_lualatex_render_variants(font)
+    if not variants:
+        return True
+
+    _lang, fontspec_opts = _get_render_policy(script_iso)
+    expected_script = str(script_iso)
+    expected_opts = fontspec_opts or None
+    for variant in variants:
+        if variant.get("script") != expected_script:
+            continue
+        if variant.get("fontspec_opts") != expected_opts:
+            continue
+        return bool(variant.get("attempted")) and variant.get("loadable") is True
+    return False
+
+
+def _persisted_render_variant(
+    font: CatalogFontEntryV12, script_iso: ScriptISO
+) -> Mapping[str, object] | None:
+    """
+    Return the persisted render-variant record matching one script.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose persisted render variants are inspected.
+    script_iso : ScriptISO
+        Script code about to be rendered.
+
+    Returns
+    -------
+    collections.abc.Mapping[str, object] | None
+        Matching successful render-variant record, otherwise ``None``.
+    """
+    variants = get_font_lualatex_render_variants(font)
+    if not variants:
+        return None
+
+    _lang, fontspec_opts = _get_render_policy(script_iso)
+    expected_script = str(script_iso)
+    expected_opts = fontspec_opts or None
+    for variant in variants:
+        if variant.get("script") != expected_script:
+            continue
+        if variant.get("fontspec_opts") != expected_opts:
+            continue
+        if bool(variant.get("attempted")) and variant.get("loadable") is True:
+            return variant
+    return None
 
 
 def _specimen_for_rendered_script(
@@ -188,17 +735,111 @@ def _specimen_for_rendered_script(
         Deterministic specimen text for the script, or an empty string
         when no script-appropriate sample can be resolved.
     """
+    if script_iso == _PUA_SCRIPT:
+        return _pua_specimen_for_rendered_script(font)
+
     primary = (primary_script(font) or "").upper()
     if str(script_iso) == primary:
-        return _strip_ascii_control_chars(get_specimen_text(font) or "")
+        return _primary_specimen_for_rendered_script(font, script_iso)
+
+    persisted_variant = _persisted_render_variant(font, script_iso)
+    if persisted_variant is not None:
+        specimen_text = persisted_variant.get("specimen_text")
+        if isinstance(specimen_text, str) and specimen_text.strip():
+            return _strip_ascii_control_chars(specimen_text)
 
     script_info = SCRIPT_INFO.get(script_iso)
     if not isinstance(script_info, dict):
         return ""
-    specimen = script_info.get("specimen")
-    if not isinstance(specimen, str):
+    script_specimen = script_info.get("specimen")
+    if not isinstance(script_specimen, str):
         return ""
-    return _filter_renderer_script_specimen(font, specimen)
+    return _filter_renderer_script_specimen(font, script_specimen)
+
+
+def _pua_specimen_for_rendered_script(font: CatalogFontEntryV12) -> str:
+    """
+    Resolve the dedicated private-use specimen row for one font.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose private-use coverage may be rendered.
+
+    Returns
+    -------
+    str
+        Visible private-use specimen strip, or an empty string when no
+        meaningful sample can be built.
+    """
+    strategy = str(get_specimen_strategy(font) or "").strip()
+    if strategy == "pua":
+        stored_specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+        if stored_specimen.strip():
+            return stored_specimen
+    cps = _specimen_collect_cmap(str(font.get("path", "")).strip(), None)
+    if not cps:
+        return ""
+    pua_specimen, _pua_strategy = _specimen_from_private_use(dict(font), cps)
+    if isinstance(pua_specimen, str) and pua_specimen.strip():
+        return _strip_ascii_control_chars(pua_specimen)
+    return ""
+
+
+def _primary_specimen_for_rendered_script(
+    font: CatalogFontEntryV12,
+    script_iso: ScriptISO,
+) -> str:
+    """
+    Resolve the rendered specimen for the primary script row.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose primary row is being rendered.
+    script_iso : ScriptISO
+        Primary script rendered for the current row.
+
+    Returns
+    -------
+    str
+        Primary-row specimen text, or an empty string when the row
+        should be suppressed.
+    """
+    specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+    strategy = str(get_specimen_strategy(font) or "").strip()
+    typography_raw = font.get("typography")
+    typography = typography_raw if isinstance(typography_raw, Mapping) else {}
+    rejection = str(typography.get("specimen_rejection_reason") or "").strip()
+    curated = _curated_primary_script_specimen(font, script_iso)
+    if strategy == "pua" and curated:
+        return curated
+    if rejection == "specimen_not_in_cmap":
+        return curated
+    if (
+        strategy in {"cmap", "validated-fallback"}
+        and _is_low_information_primary_specimen(font)
+        and _should_suppress_specialized_primary_specimen(font)
+        and _specialized_glyph_sample(font)
+    ):
+        return ""
+    if (
+        specimen
+        and strategy in {"cmap", "validated-fallback"}
+        and not _stored_primary_specimen_matches_script(font, script_iso)
+        and curated
+    ):
+        return curated
+    if not (
+        _is_low_information_primary_specimen(font)
+        or _has_low_information_visible_specimen(font)
+    ):
+        return specimen
+    if curated:
+        return curated
+    if _should_suppress_specialized_primary_specimen(font):
+        return ""
+    return specimen
 
 
 def _filter_renderer_script_specimen(
@@ -236,6 +877,287 @@ def _filter_renderer_script_specimen(
     return _strip_ascii_control_chars(filtered)
 
 
+def _curated_primary_script_specimen(
+    font: CatalogFontEntryV12,
+    script_iso: ScriptISO,
+) -> str:
+    """
+    Return a curated specimen fallback for a low-information primary specimen.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose primary specimen is being evaluated.
+    script_iso : ScriptISO
+        Primary script rendered for the current specimen block.
+
+    Returns
+    -------
+    str
+        Curated script specimen filtered through the font cmap, or an
+        empty string when no suitable curated replacement exists.
+    """
+    if script_iso == _PUA_SCRIPT:
+        return ""
+    variant_path = str(font.get("path", "")).strip()
+    if not variant_path:
+        return ""
+    cps = _specimen_collect_cmap(variant_path, None)
+    if not cps:
+        return ""
+    specimen, _glyphs, _strategy = _catalog_script_fallback_specimen(script_iso, cps)
+    if specimen is None:
+        return ""
+    return _strip_ascii_control_chars(specimen)
+
+
+def _catalog_script_fallback_specimen(
+    script_iso: ScriptISO,
+    cps: set[int],
+) -> tuple[str | None, int, str | None]:
+    """
+    Build a catalog specimen using the catalog-layer ontology table first.
+
+    Parameters
+    ----------
+    script_iso : ScriptISO
+        Script whose fallback specimen should be resolved.
+    cps : set[int]
+        Supported Unicode codepoints for the font.
+
+    Returns
+    -------
+    tuple[str | None, int, str | None]
+        ``(specimen_text, glyph_count, strategy)`` when a useful
+        script-aware specimen can be built, otherwise ``(None, 0, None)``.
+    """
+    info = SCRIPT_INFO.get(script_iso)
+    curated = info.get("specimen") if isinstance(info, dict) else None
+    if isinstance(curated, str) and curated.strip():
+        filtered, glyphs = _specimen_filter_text(curated, cps)
+        if glyphs >= MIN_SAMPLE_GLYPHS:
+            return filtered, glyphs, "script"
+        doubled, doubled_glyphs = _specimen_repeat_once(filtered, glyphs)
+        if doubled is not None:
+            return doubled, doubled_glyphs, "script-doubled"
+
+    seed = _script_core_specimen_seed(script_iso)
+    if seed:
+        filtered, glyphs = _specimen_filter_text(seed, cps)
+        if glyphs >= MIN_SAMPLE_GLYPHS:
+            return filtered, glyphs, "script-core"
+        doubled, doubled_glyphs = _specimen_repeat_once(filtered, glyphs)
+        if doubled is not None:
+            return doubled, doubled_glyphs, "script-core-doubled"
+
+    return _script_fallback_specimen(script_iso, cps)
+
+
+def _stored_primary_specimen_matches_script(
+    font: CatalogFontEntryV12,
+    script_iso: ScriptISO,
+) -> bool:
+    """
+    Return whether the stored primary specimen matches the rendered script.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose accepted specimen text is being inspected.
+    script_iso : ScriptISO
+        Primary script rendered for the current specimen block.
+
+    Returns
+    -------
+    bool
+        ``True`` when the visible stored specimen agrees with
+        ``script_iso`` or does not expose enough evidence to infer a
+        competing script.
+    """
+    specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+    visible = "".join(ch for ch in specimen if not ch.isspace())
+    if not visible:
+        return True
+
+    unicode_blocks: dict[str, int] = {}
+    for ch in visible:
+        cp = ord(ch)
+        for block_name, (start, end) in UNICODE_BLOCK_RANGES.items():
+            if start <= cp <= end:
+                unicode_blocks[block_name] = unicode_blocks.get(block_name, 0) + 1
+                break
+
+    if not unicode_blocks:
+        return True
+
+    specimen_scripts = [
+        str(candidate).upper()
+        for candidate in infer_scripts(
+            {
+                "unicode_blocks": unicode_blocks,
+                "unicode": {"max": max(ord(ch) for ch in visible)},
+            }
+        )
+        if isinstance(candidate, str) and candidate and candidate != "unknown"
+    ]
+    if not specimen_scripts:
+        return True
+
+    strategy = str(get_specimen_strategy(font) or "").strip()
+    if strategy in {"cmap", "validated-fallback"} and specimen_scripts[0] == "LATN":
+        latin_count = sum(
+            count
+            for block_name, count in unicode_blocks.items()
+            if block_name == "Basic Latin" or block_name.startswith("Latin")
+        )
+        non_latin_count = sum(
+            count
+            for block_name, count in unicode_blocks.items()
+            if not (block_name == "Basic Latin" or block_name.startswith("Latin"))
+        )
+        if str(script_iso).upper() != "LATN" and non_latin_count >= max(
+            8, int(latin_count * 0.75)
+        ):
+            return False
+
+    return specimen_scripts[0] == str(script_iso).upper()
+
+
+def _is_low_information_primary_specimen(font: CatalogFontEntryV12) -> bool:
+    """
+    Return whether the stored primary specimen is too small to be useful.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose primary specimen metadata is inspected.
+
+    Returns
+    -------
+    bool
+        ``True`` when the stored specimen glyph count is below the
+        renderer threshold or the visible specimen is blank.
+    """
+    glyph_count = get_specimen_glyph_count(font)
+    if glyph_count is not None:
+        return glyph_count < MIN_SAMPLE_GLYPHS
+    specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+    return not specimen.strip()
+
+
+def _has_low_information_visible_specimen(font: CatalogFontEntryV12) -> bool:
+    """
+    Return whether the accepted specimen remains visually low-value.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose accepted specimen text is being inspected.
+
+    Returns
+    -------
+    bool
+        ``True`` when the visible specimen is still too short or too
+        repetitive to be useful in the main catalog body.
+    """
+    specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
+    visible = "".join(ch for ch in specimen if not ch.isspace())
+    if not visible:
+        return True
+    if len(visible) <= 3:
+        return True
+    return len(visible) <= 6 and len(set(visible)) <= 4
+
+
+def _should_suppress_specialized_primary_specimen(font: CatalogFontEntryV12) -> bool:
+    """
+    Return whether a low-information primary specimen should be suppressed.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose specimen metadata is inspected.
+
+    Returns
+    -------
+    bool
+        ``True`` when the font behaves like a specialized non-text font
+        and the primary specimen should be replaced by a compact notice.
+    """
+    typography_raw = font.get("typography")
+    typography = typography_raw if isinstance(typography_raw, Mapping) else {}
+    rejection = str(typography.get("specimen_rejection_reason") or "").strip()
+    if rejection == "specimen_not_in_cmap":
+        return True
+
+    if not (
+        _is_low_information_primary_specimen(font)
+        or _has_low_information_visible_specimen(font)
+    ):
+        return False
+
+    coverage_raw = font.get("coverage")
+    coverage = coverage_raw if isinstance(coverage_raw, Mapping) else {}
+    inference_raw = font.get("inference")
+    inference = inference_raw if isinstance(inference_raw, Mapping) else {}
+
+    declared_languages = coverage.get("languages")
+    inferred_languages = inference.get("languages")
+    has_languages = any(
+        isinstance(value, str) and value.strip()
+        for values in (declared_languages, inferred_languages)
+        if isinstance(values, list)
+        for value in values
+    )
+    if has_languages:
+        return False
+
+    strategy = get_specimen_strategy(font) or ""
+    return strategy in {"cmap", "validated-fallback"}
+
+
+def _specialized_glyph_sample(
+    font: CatalogFontEntryV12, *, max_glyphs: int = 12
+) -> str:
+    """
+    Build a compact glyph-strip sample for a specialized non-text font.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Font descriptor whose cmap is sampled.
+    max_glyphs : int, optional
+        Maximum number of glyphs to include in the strip.
+
+    Returns
+    -------
+    str
+        Space-separated visible glyph strip, or an empty string when no
+        suitable glyphs can be found.
+    """
+    variant_path = str(font.get("path", "")).strip()
+    if not variant_path:
+        return ""
+
+    cps = _specimen_collect_cmap(variant_path, None)
+    if not cps:
+        return ""
+
+    glyphs: list[str] = []
+    for cp in sorted(cps):
+        ch = chr(cp)
+        if not ch.strip():
+            continue
+        category = unicodedata.category(ch)
+        if category in {"Cc", "Cf", "Cs", "Cn"} or category.startswith("M"):
+            continue
+        glyphs.append(ch)
+        if len(glyphs) >= max_glyphs:
+            break
+
+    return " ".join(glyphs)
+
+
 def _render_script_label(
     script_iso: ScriptISO,
     *,
@@ -254,12 +1176,91 @@ def _render_script_label(
     Returns
     -------
     str
-        Short compact label or extended metadata label.
+        Code-oriented compact label or extended metadata label.
     """
-    display = escape_latex(_format_script_display(str(script_iso)))
+    raw_code = "PUA" if script_iso == _PUA_SCRIPT else str(script_iso).upper() or "UNKN"
+    code = escape_latex(raw_code)
     if catalog_detail == "compact":
-        return r"{\footnotesize\ttfamily " + display + "}"
-    return r"{\footnotesize\ttfamily SPEC  : " + display + "}"
+        return r"{\footnotesize\ttfamily " + code + "}"
+    return r"{\footnotesize\ttfamily SPEC  : " + code + "}"
+
+
+def _render_variant_specimen_row(
+    *,
+    label: str,
+    rendered_specimen: str,
+) -> str:
+    """
+    Render one two-column specimen row.
+
+    Parameters
+    ----------
+    label : str
+        Narrow metadata label shown in the left column.
+    rendered_specimen : str
+        Pre-rendered LaTeX specimen block shown in the right column.
+
+    Returns
+    -------
+    str
+        Two-column LaTeX row with a narrow metadata column and a
+        specimen column that can wrap independently.
+    """
+    return (
+        "\\noindent"
+        "\\begin{minipage}[t]{0.18\\linewidth}\\raggedright "
+        + label
+        + "\\end{minipage}\\hfill"
+        + "\\begin{minipage}[t]{0.79\\linewidth}"
+        + rendered_specimen.lstrip()
+        + "\\end{minipage}\\par"
+    )
+
+
+def _render_variant_body_block(
+    *,
+    variant_label: str,
+    rendered_blocks: list[str],
+    catalog_detail: CatalogDetailLevel,
+    is_glyph_sample: bool = False,
+) -> str:
+    """
+    Render the full body block for a visible family variant.
+
+    Parameters
+    ----------
+    variant_label : str
+        File-oriented label for the rendered variant.
+    rendered_blocks : list[str]
+        Already-rendered specimen rows for the variant.
+    catalog_detail : {"compact", "extended"}
+        Requested catalog metadata detail level.
+    is_glyph_sample : bool, optional
+        Whether the variant renders a curated glyph strip instead of a
+        normal text specimen.
+
+    Returns
+    -------
+    str
+        LaTeX body fragment for the variant.
+    """
+    header_prefix = "FILE  : " if catalog_detail == "extended" else ""
+    header = (
+        r"{\footnotesize\ttfamily " + header_prefix + escape_latex(variant_label) + "}"
+    )
+    if is_glyph_sample:
+        note = (
+            r"{\footnotesize\ttfamily "
+            + ("SPEC  : " if catalog_detail == "extended" else "")
+            + "GLYPH}"
+        )
+        rendered_blocks = [
+            _render_variant_specimen_row(
+                label=note,
+                rendered_specimen=rendered_blocks[0],
+            )
+        ]
+    return header + "\\par\n" + "\n".join(rendered_blocks)
 
 
 def _render_family_debug_block(
@@ -302,7 +1303,7 @@ def _render_variant_specimen_blocks(
     *,
     family_name: str,
     catalog_detail: CatalogDetailLevel,
-) -> str:
+) -> _VariantRenderResult:
     """
     Render one or more specimen blocks for a family variant.
 
@@ -317,9 +1318,9 @@ def _render_variant_specimen_blocks(
 
     Returns
     -------
-    str
-        LaTeX fragment containing compact or extended variant metadata
-        plus one or more rendered specimen blocks.
+    _VariantRenderResult
+        Structured result containing the main-body block when
+        renderable, or appendix metadata when the variant is omitted.
     """
     variant_path = str(variant.get("path", ""))
     _, variant_file = _normalize_path_for_latex(variant_path)
@@ -328,6 +1329,8 @@ def _render_variant_specimen_blocks(
     script_candidates = _ordered_script_candidates(variant)
     rendered_blocks: list[str] = []
     for script_iso in script_candidates:
+        if not _has_persisted_render_variant_success(variant, script_iso):
+            continue
         specimen = _specimen_for_rendered_script(variant, script_iso)
         if not specimen:
             continue
@@ -337,59 +1340,72 @@ def _render_variant_specimen_blocks(
             safe_specimen=safe_specimen,
             script0_iso=script_iso,
             fullpath=variant_path,
+            catalog_detail=catalog_detail,
         )
         if not variant_render:
             continue
         show_script_label = catalog_detail == "compact" or len(script_candidates) > 1
         if show_script_label:
             label = _render_script_label(script_iso, catalog_detail=catalog_detail)
-            block = (
-                label
-                + (" " if catalog_detail == "compact" else "\n")
-                + "\\LogWorking{"
-                + escape_latex(
-                    family_name + " / " + variant_label + " / " + str(script_iso)
-                )
-                + "}"
-                + variant_render
+            block = _render_variant_specimen_row(
+                label=label,
+                rendered_specimen=variant_render,
             )
             rendered_blocks.append(block)
         else:
-            rendered_blocks.append(
-                "\\LogWorking{"
-                + escape_latex(family_name + " / " + variant_label)
-                + "}"
-                + variant_render
-            )
+            rendered_blocks.append(variant_render)
 
     variant_renderable = bool(rendered_blocks)
-    if catalog_detail == "compact":
-        header = (
-            r"{\footnotesize\ttfamily "
-            + escape_latex(variant_label)
-            + (" [OK]}" if variant_renderable else " [MISSING]}")
-        )
-        body = (
-            "\n".join(rendered_blocks)
-            if variant_renderable
-            else "\\LogBroken{"
-            + escape_latex(family_name + " / " + variant_label)
-            + "}[MISSING]"
-        )
-        return header + "\n" + body
+    if not variant_renderable and _should_suppress_specialized_primary_specimen(
+        variant
+    ):
+        glyph_sample = _specialized_glyph_sample(variant)
+        if glyph_sample:
+            safe_glyph_sample = _format_specimen_for_latex(glyph_sample, ScriptISO(""))
+            glyph_render, _ = _render_font_entry(
+                font=variant,
+                safe_specimen=safe_glyph_sample,
+                script0_iso=ScriptISO(""),
+                fullpath=variant_path,
+                catalog_detail=catalog_detail,
+            )
+            if glyph_render:
+                return _VariantRenderResult(
+                    body_block=(
+                        _render_variant_body_block(
+                            variant_label=variant_label,
+                            rendered_blocks=[glyph_render],
+                            catalog_detail=catalog_detail,
+                            is_glyph_sample=True,
+                        )
+                    ),
+                    rendered=True,
+                )
 
-    return (
-        r"{\footnotesize\ttfamily FILE  : "
-        + escape_latex(variant_label)
-        + (" [OK]}" if variant_renderable else " [MISSING]}")
-        + "\n\n"
-        + (
-            "\n\n".join(rendered_blocks)
-            if variant_renderable
-            else "\\LogBroken{"
-            + escape_latex(family_name + " / " + variant_label)
-            + "}[MISSING]"
+    if not variant_renderable:
+        missing_entry = " | ".join(
+            escape_latex(part)
+            for part in (
+                family_name,
+                variant_label,
+                variant_path.strip() or "N/A",
+            )
         )
+        return _VariantRenderResult(
+            body_block="",
+            rendered=False,
+            missing_entry=missing_entry,
+        )
+
+    return _VariantRenderResult(
+        body_block=(
+            _render_variant_body_block(
+                variant_label=variant_label,
+                rendered_blocks=rendered_blocks,
+                catalog_detail=catalog_detail,
+            )
+        ),
+        rendered=True,
     )
 
 
@@ -554,11 +1570,12 @@ def _use_language_wrapper_for_font(font: CatalogFontEntryV12) -> bool:
     Notes
     -----
     Deprecated compatibility scaffolding. The current renderer no
-    longer carries per-font or per-script language-wrapper exceptions,
-    so this helper always returns ``True``.
+    longer wraps specimen blocks in ``\\foreignlanguage`` because the
+    wrapper is fragile around paragraph boxes and duplicates shaping
+    responsibility already covered by fontspec script options.
     """
     _ = font
-    return True
+    return False
 
 
 def _use_fontconfig_family_resolution(font: CatalogFontEntryV12) -> bool:
@@ -608,17 +1625,17 @@ def _format_specimen_for_latex(specimen: str, script0_iso: ScriptISO) -> str:
     Notes
     -----
     Long specimens without whitespace receive a break opportunity every
-    5 characters, including CJK runs. The explicit markers keep line
+    4 characters, including CJK runs. The explicit markers keep line
     breaking deterministic across specimen scripts.
     """
     if not specimen:
         return ""
 
-    if any(ch.isspace() for ch in specimen) or len(specimen) < 40:
+    if any(ch.isspace() for ch in specimen) or len(specimen) < 24:
         return escape_latex(specimen)
 
     _ = script0_iso
-    chunks = [specimen[idx : idx + 5] for idx in range(0, len(specimen), 5)]
+    chunks = [specimen[idx : idx + 4] for idx in range(0, len(specimen), 4)]
     return r"\allowbreak{}".join(escape_latex(chunk) for chunk in chunks)
 
 
@@ -628,6 +1645,7 @@ def _render_font_entry(
     safe_specimen: str,
     script0_iso: ScriptISO,
     fullpath: str,
+    catalog_detail: CatalogDetailLevel = "compact",
 ) -> tuple[str, str]:
     r"""
     Render a single catalog entry specimen block and plain option string.
@@ -642,6 +1660,9 @@ def _render_font_entry(
         Primary ISO script code used to choose the rendering policy.
     fullpath : str
         Font file path used to build fontspec path and file options.
+    catalog_detail : {"compact", "extended"}, optional
+        Requested catalog metadata detail level used to tune specimen
+        density.
 
     Returns
     -------
@@ -658,11 +1679,11 @@ def _render_font_entry(
 
     Notes
     -----
-    The rendering path depends on the selected script policy. Latin
-    entries use a direct ``\\fontspec`` block, while eligible non-Latin
-    entries emit a fully expanded Polyglossia/fontspec block with a
-    per-entry font command generated in Python. The helper also returns
-    a plain-text option string so the caller can include debugging
+    The rendering path depends on the selected script policy. Specimens
+    are rendered with direct inline ``\\fontspec`` blocks, and path-backed
+    entries follow the same ``Path=...`` plus full filename contract used
+    by the inventory loadability probes. The helper also returns a
+    plain-text option string so the caller can include debugging
     information alongside the rendered specimen block.
     """
     path = str(font.get("path", "")).strip()
@@ -698,74 +1719,26 @@ def _render_font_entry(
     if script_opt and not _omit_script_option_for_font(font, script0_iso):
         options_plain += "," + script_opt
 
-    specimen_prefix = "\\raggedright\\sloppy\\emergencystretch=2em "
+    specimen_size = "\\small " if catalog_detail == "compact" else ""
+    script_info: dict[str, object] = dict(SCRIPT_INFO.get(script0_iso, {}))
+    rtl = isinstance(script_info, dict) and bool(script_info.get("rtl", False))
+    alignment = "\\raggedleft" if rtl else "\\raggedright"
+    specimen_prefix = alignment + specimen_size + "\\sloppy\\emergencystretch=2em "
 
-    if script0_iso == ScriptISO("LATN"):
-        render = (
-            " {\\begingroup\\parbox{\\linewidth}{"
-            + specimen_prefix
-            + "\\fontspec["
-            + opts
-            + "]{"
-            + inline_font
-            + "}"
-            + safe_specimen
-            + "\\par}\\endgroup}"
-        )
-    elif lang:
-        inline_options = opts
-        if _use_language_wrapper_for_font(font):
-            render = (
-                " {\begingroup"
-                "\\foreignlanguage{"
-                + lang
-                + "}{\\parbox{\\linewidth}{"
-                + specimen_prefix
-                + "\\fontspec["
-                + inline_options
-                + "]{"
-                + inline_font
-                + "}"
-                + safe_specimen
-                + "\\par}}"
-                + "\\endgroup}"
-            )
-        else:
-            render = (
-                " {\\begingroup\\parbox{\\linewidth}{"
-                + specimen_prefix
-                + "\\fontspec["
-                + inline_options
-                + "]{"
-                + inline_font
-                + "}"
-                + safe_specimen
-                + "\\par}\\endgroup}"
-            )
-    elif script_opt:
-        render = (
-            " {\\begingroup\\parbox{\\linewidth}{"
-            + specimen_prefix
-            + "\\fontspec["
-            + opts
-            + "]{"
-            + detok_file
-            + "}"
-            + safe_specimen
-            + "\\par}\\endgroup}"
-        )
-    else:
-        render = (
-            " {\\begingroup\\parbox{\\linewidth}{"
-            + specimen_prefix
-            + "\\fontspec["
-            + opts
-            + "]{"
-            + detok_file
-            + "}"
-            + safe_specimen
-            + "\\par}\\endgroup}"
-        )
+    if lang:
+        _ = lang
+
+    render = (
+        " {\\begingroup"
+        + specimen_prefix
+        + "\\fontspec["
+        + opts
+        + "]{"
+        + inline_font
+        + "}"
+        + safe_specimen
+        + "\\par\\endgroup}"
+    )
 
     return render, options_plain
 
@@ -774,6 +1747,7 @@ def generate_latex(
     font_list: list[CatalogFontEntryV12],
     *,
     catalog_detail: CatalogDetailLevel = "compact",
+    indexed_navigation: bool = False,
     generation_metadata: Mapping[str, str] | None = None,
 ) -> str:
     """
@@ -787,6 +1761,9 @@ def generate_latex(
     catalog_detail : {"compact", "extended"}, optional
         Family and specimen metadata detail level used in the rendered
         catalog body.
+    indexed_navigation : bool, optional
+        When ``True``, emit anchor-based family navigation with PDF
+        bookmarks and an end-of-document grouped navigation index.
     generation_metadata : collections.abc.Mapping[str, str] | None, optional
         Optional first-page metadata keys used to replace LaTeX
         front-matter placeholders. Missing keys fall back to empty
@@ -818,6 +1795,7 @@ def generate_latex(
         font_list,
         excluded_fonts=[],
         catalog_detail=catalog_detail,
+        indexed_navigation=indexed_navigation,
         generation_metadata=generation_metadata,
     )
 
@@ -862,6 +1840,7 @@ def generate_latex_with_report(
     *,
     excluded_fonts: list[LoadabilityExclusion],
     catalog_detail: CatalogDetailLevel = "compact",
+    indexed_navigation: bool = False,
     generation_metadata: Mapping[str, str] | None = None,
 ) -> str:
     """
@@ -877,6 +1856,9 @@ def generate_latex_with_report(
     catalog_detail : {"compact", "extended"}, optional
         Family and specimen metadata detail level used in the rendered
         catalog body.
+    indexed_navigation : bool, optional
+        When ``True``, emit subsection-based navigation with a clickable
+        table of contents and an end-of-document navigation index.
     generation_metadata : collections.abc.Mapping[str, str] | None, optional
         Optional first-page metadata keys used to replace LaTeX
         front-matter placeholders. Missing keys fall back to empty
@@ -908,16 +1890,10 @@ def generate_latex_with_report(
 
     latex_code: str = LATEX_INITIAL_CODE
 
-    other_langs = _strip_ascii_control_chars(
-        _collect_polyglossia_other_languages(font_list)
-    )
-    lang_font_setup = _strip_ascii_control_chars(
-        _collect_polyglossia_font_setup(font_list)
-    )
     if "%%FONTSHOW_OTHER_LANGUAGES%%" in latex_code:
         latex_code = latex_code.replace(
             "%%FONTSHOW_OTHER_LANGUAGES%%",
-            other_langs + lang_font_setup,
+            "",
         )
     else:
         log_warn("LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found")
@@ -933,96 +1909,47 @@ def generate_latex_with_report(
 
     total = len(family_order)
     latex_code += "\\section{Font List}\n"
-    latex_code += "\\begin{itemize}\n"
-    latex_code += "\\setlength{\\itemsep}{0.45em}\n"
-    latex_code += "\\setlength{\\parsep}{0pt}\n"
-    latex_code += "\\setlength{\\parskip}{0.1em}\n"
-    latex_code += "\\setlength{\\topsep}{0.25em}\n"
+    navigation_entries: list[tuple[str, str]] = []
+    missing_entries: list[str] = []
+    duplicate_entries: list[str] = []
+    if not indexed_navigation:
+        latex_code += "\\begin{itemize}\n"
+        latex_code += "\\setlength{\\itemsep}{0.25em}\n"
+        latex_code += "\\setlength{\\parsep}{0pt}\n"
+        latex_code += "\\setlength{\\parskip}{0.1em}\n"
+        latex_code += "\\setlength{\\topsep}{0.25em}\n"
 
     for idx, fam in enumerate(family_order, start=1):
-        family_fonts = fonts_by_family[fam]
-        font = family_fonts[0]
-        safe_name = escape_latex(fam)
-
         if idx % 500 == 0 or idx == total:
             log_info(f"  ... processed {idx}/{total}")
 
-        inference_raw = font.get("inference") or {}
-        inference = inference_raw if isinstance(inference_raw, dict) else {}
-
-        scripts_raw_obj = inference.get("scripts")
-        scripts_raw: list[str] = (
-            scripts_raw_obj if isinstance(scripts_raw_obj, list) else []
-        )
-
-        script0 = primary_script(font) or ""
-
-        languages_raw_obj = inference.get("languages")
-        inferred_languages: list[str] = (
-            languages_raw_obj if isinstance(languages_raw_obj, list) else []
-        )
-
-        scripts_pretty = (
-            ", ".join(_format_script_display(str(s)) for s in scripts_raw)
-            if scripts_raw
-            else "N/A"
-        )
-
-        languages_pretty = (
-            ", ".join(
-                _format_language_display(str(lang)) for lang in inferred_languages
-            )
-            if inferred_languages
-            else "N/A"
-        )
-
-        fullpath = str(font.get("path", ""))
-        script0_iso = ScriptISO(script0.upper()) if script0 else ScriptISO("")
-        specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
-        safe_specimen = _format_specimen_for_latex(specimen, script0_iso)
-        _, options_plain = _render_font_entry(
-            font=font,
-            safe_specimen=safe_specimen,
-            script0_iso=script0_iso,
-            fullpath=fullpath,
-        )
-
-        options_pretty = (
-            _latex_debug_literal(options_plain.replace(",", ", "))
-            if options_plain
-            else "N/A"
-        )
-
-        debug_block = _render_family_debug_block(
-            scripts_pretty=scripts_pretty,
-            languages_pretty=languages_pretty,
-            options_pretty=options_pretty,
+        family_result = _render_family_catalog_block(
+            family_name=fam,
+            family_fonts=fonts_by_family[fam],
+            family_index=idx,
             catalog_detail=catalog_detail,
+            indexed_navigation=indexed_navigation,
         )
+        missing_entries.extend(family_result.missing_entries)
+        duplicate_entries.extend(family_result.duplicate_entries)
+        if family_result.navigation_entry is not None:
+            navigation_entries.append(family_result.navigation_entry)
+        latex_code += family_result.body_block
 
-        variant_blocks: list[str] = []
-        for variant in family_fonts:
-            variant_blocks.append(
-                _render_variant_specimen_blocks(
-                    variant,
-                    family_name=fam,
-                    catalog_detail=catalog_detail,
-                )
-            )
-        family_intro = "\\item " + safe_name
-        if debug_block:
-            family_intro += " --- " + debug_block
-
-        latex_code += family_intro + "\n\n" + "\n\n".join(variant_blocks) + "\n\n"
-
-    latex_code += "\\end{itemize}\n"
-
-    latex_code += "\n\n"
-    for excluded_font in sorted(list(EXCLUDED_FONTS)):
-        excluded_block: str = r"\LogExcluded{" + excluded_font + "}\n"
-        latex_code += excluded_block
+    if not indexed_navigation:
+        latex_code += "\\end{itemize}\n"
 
     # Closing document and printing indices
     latex_code += _render_excluded_fonts_section(excluded_fonts)
-    latex_code += LATEX_END_CODE_1 + str(total) + LATEX_END_CODE_2
+    latex_code += _render_missing_variants_section(missing_entries)
+    latex_code += _render_duplicate_sources_section(duplicate_entries)
+    closing = LATEX_END_CODE_1 + str(total) + LATEX_END_CODE_2
+    document_end = "\n\\end{document}\n"
+    if indexed_navigation and closing.endswith(document_end):
+        closing = (
+            closing[: -len(document_end)]
+            + _render_navigation_index(navigation_entries)
+            + document_end
+        )
+    latex_code += closing
     return latex_code

@@ -23,6 +23,9 @@ This module belongs to the catalog domain layer and provides internal
 pipeline utilities used during catalog generation.
 """
 
+from collections.abc import Mapping, Sequence
+
+from fontshow.catalog.labels import primary_script
 from fontshow.constants.catalog import DEFAULT_TEST_FONTS
 from fontshow.core.cli_utils import log_info, log_warn
 from fontshow.core.logging_utils import log, log_trace_cat
@@ -189,6 +192,215 @@ def _run_inventory_diagnostics(fonts: list) -> None:
         )
 
 
+def _normalized_language_filters(args) -> tuple[str, ...]:
+    """
+    Normalize language selector arguments for deterministic filtering.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments that may contain repeated ``--language``
+        values.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Distinct normalized language tags sorted lexicographically.
+    """
+    raw_values = getattr(args, "language", None) or []
+    normalized = {
+        str(value).strip().lower()
+        for value in raw_values
+        if isinstance(value, str) and str(value).strip()
+    }
+    return tuple(sorted(normalized))
+
+
+def _normalized_script_filters(args) -> tuple[str, ...]:
+    """
+    Normalize script selector arguments for deterministic filtering.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments that may contain repeated ``--script``
+        values.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Distinct normalized script tags sorted lexicographically.
+    """
+    raw_values = getattr(args, "script", None) or []
+    normalized = {
+        str(value).strip().upper()
+        for value in raw_values
+        if isinstance(value, str) and str(value).strip()
+    }
+    return tuple(sorted(normalized))
+
+
+def _normalized_sort_keys(args) -> tuple[str, ...]:
+    """
+    Normalize sort-mode arguments for deterministic catalog ordering.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments that may contain repeated ``--sort-by``
+        values.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Sort keys in CLI order with duplicates removed.
+    """
+    raw_values = getattr(args, "sort_by", None) or []
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for value in raw_values:
+        if not isinstance(value, str):
+            continue
+        normalized = value.strip().lower()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        ordered.append(normalized)
+    return tuple(ordered)
+
+
+def _font_language_tags(font: Mapping[str, object]) -> tuple[str, ...]:
+    """
+    Return the normalized language tags associated with a font.
+
+    Parameters
+    ----------
+    font : Mapping[str, object]
+        Catalog font descriptor whose coverage and inference metadata
+        are inspected.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Distinct normalized language tags sorted lexicographically.
+    """
+    tags: set[str] = set()
+    for section_name in ("coverage", "inference"):
+        section_raw = font.get(section_name)
+        section = section_raw if isinstance(section_raw, Mapping) else {}
+        values = section.get("languages")
+        if isinstance(values, Sequence) and not isinstance(values, str):
+            for value in values:
+                if isinstance(value, str) and value.strip():
+                    tags.add(value.strip().lower())
+    return tuple(sorted(tags))
+
+
+def _font_script_tags(font: Mapping[str, object]) -> tuple[str, ...]:
+    """
+    Return the normalized script tags associated with a font.
+
+    Parameters
+    ----------
+    font : Mapping[str, object]
+        Catalog font descriptor whose script metadata is inspected.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Distinct normalized script tags sorted lexicographically.
+    """
+    tags: set[str] = set()
+    primary = primary_script(font)
+    if isinstance(primary, str) and primary.strip():
+        tags.add(primary.strip().upper())
+
+    for section_name in ("coverage", "inference"):
+        section_raw = font.get(section_name)
+        section = section_raw if isinstance(section_raw, Mapping) else {}
+        values = section.get("scripts")
+        if isinstance(values, Sequence) and not isinstance(values, str):
+            for value in values:
+                if isinstance(value, str) and value.strip():
+                    tags.add(value.strip().upper())
+    return tuple(sorted(tags))
+
+
+def _font_primary_language(font: Mapping[str, object]) -> str:
+    """
+    Return the primary language tag used for sorting a catalog font.
+
+    Parameters
+    ----------
+    font : Mapping[str, object]
+        Catalog font descriptor whose language metadata is inspected.
+
+    Returns
+    -------
+    str
+        The first declared coverage language when present, otherwise the
+        first inferred language, otherwise the empty string.
+    """
+    for section_name in ("coverage", "inference"):
+        section_raw = font.get(section_name)
+        section = section_raw if isinstance(section_raw, Mapping) else {}
+        values = section.get("languages")
+        if isinstance(values, Sequence) and not isinstance(values, str):
+            for value in values:
+                if isinstance(value, str) and value.strip():
+                    return value.strip().lower()
+    return ""
+
+
+def _font_primary_script(font: Mapping[str, object]) -> str:
+    """
+    Return the primary script tag used for sorting a catalog font.
+
+    Parameters
+    ----------
+    font : Mapping[str, object]
+        Catalog font descriptor whose script metadata is inspected.
+
+    Returns
+    -------
+    str
+        Deterministic primary script tag, or the empty string when no
+        script metadata is available.
+    """
+    primary = primary_script(font)
+    if isinstance(primary, str) and primary.strip():
+        return primary.strip().upper()
+    return ""
+
+
+def _catalog_sort_key(
+    font: CatalogFontEntryV12, sort_keys: tuple[str, ...]
+) -> tuple[str, ...]:
+    """
+    Build the deterministic catalog sort key for a font descriptor.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Catalog font descriptor being ordered.
+    sort_keys : tuple[str, ...]
+        Normalized sort modes requested by the CLI.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Composite sort key ending with the canonical family name.
+    """
+    parts: list[str] = []
+    for sort_key in sort_keys:
+        if sort_key == "language":
+            parts.append(_font_primary_language(font))
+        elif sort_key == "script":
+            parts.append(_font_primary_script(font))
+    parts.append(font_family(font))
+    return tuple(parts)
+
+
 def _filter_and_prepare_fonts(
     fonts: list[CatalogFontEntryV12], args, test_fonts: set[str]
 ) -> list[CatalogFontEntryV12]:
@@ -223,7 +435,8 @@ def _filter_and_prepare_fonts(
     Display-name fallbacks are derived transiently to remain compliant
     with the archived schema v1.2 layout.
     Processing order is deterministic: optional test-font filtering,
-    optional count limiting, normalization, and family sorting.
+    optional selector filtering, optional count limiting, normalization,
+    and deterministic sorting.
     """
     log_trace_cat(
         log,
@@ -234,15 +447,33 @@ def _filter_and_prepare_fonts(
         },
     )
 
+    language_filters = _normalized_language_filters(args)
+    script_filters = _normalized_script_filters(args)
+    sort_keys = _normalized_sort_keys(args)
+
     if test_fonts:
         fonts = [f for f in as_font_desc_list(fonts) if font_family(f) in test_fonts]
+
+    if language_filters:
+        fonts = [
+            f
+            for f in as_font_desc_list(fonts)
+            if set(_font_language_tags(f)) & set(language_filters)
+        ]
+
+    if script_filters:
+        fonts = [
+            f
+            for f in as_font_desc_list(fonts)
+            if set(_font_script_tags(f)) & set(script_filters)
+        ]
 
     if args.number:
         fonts = fonts[: args.number] if args.number > 0 else fonts[args.number :]
 
     fonts = sorted(
         as_font_desc_list(fonts),
-        key=lambda f: font_family(f),
+        key=lambda f: _catalog_sort_key(f, sort_keys),
     )
 
     # Inventory descriptors remain schema-shaped; rendering code must not mutate them.

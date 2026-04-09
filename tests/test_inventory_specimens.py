@@ -113,6 +113,67 @@ def test_specimen_from_script_keeps_substantial_sample_for_large_cmap(monkeypatc
     assert result == (hangul_specimen, "script")
 
 
+def test_script_fallback_specimen_repeats_short_curated_sample_once(monkeypatch):
+    """
+    Ensure short curated script specimens may be doubled once deterministically.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace script ontology entries.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        specimens,
+        "SCRIPT_INFO",
+        {specimens.ScriptISO("JPAN"): {"specimen": "いろはにほへと ちりぬるを"}},
+    )
+    cps = {ord(ch) for ch in "いろはにほへとちりぬるを "}
+
+    specimen, glyphs, strategy = specimens._script_fallback_specimen(
+        specimens.ScriptISO("JPAN"),
+        cps,
+    )
+
+    assert specimen == "いろはにほへと ちりぬるを いろはにほへと ちりぬるを"
+    assert glyphs == 24
+    assert strategy == "script-doubled"
+
+
+def test_script_fallback_specimen_uses_core_seed_for_hani(monkeypatch):
+    """
+    Ensure Han script fallback prefers core ideographs before private use.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace script ontology entries.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        specimens,
+        "SCRIPT_INFO",
+        {specimens.ScriptISO("HANI"): {"specimen": "天地玄黃 宇宙洪荒"}},
+    )
+    seed = "天地玄黃宇宙洪荒日月盈昃辰宿列張寒來暑往秋收冬藏"
+    cps = {ord(ch) for ch in seed}
+
+    specimen, glyphs, strategy = specimens._script_fallback_specimen(
+        specimens.ScriptISO("HANI"),
+        cps,
+    )
+
+    assert specimen == seed
+    assert glyphs == len(seed)
+    assert strategy == "script-core"
+
+
 def test_specimen_from_cmap_returns_fallback_without_warning_record():
     """
     Ensure cmap fallback uses preference ordering without adding a warning record.
@@ -134,6 +195,77 @@ def test_specimen_from_cmap_returns_fallback_without_warning_record():
     assert specimen == "AB1!"
     assert strategy == "cmap"
     assert "warnings" not in font
+
+
+def test_specimen_from_private_use_returns_visible_pua_sample():
+    """
+    Ensure substantial private-use coverage produces a PUA specimen strip.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    cps = {0xE000 + index for index in range(specimens.MIN_SAMPLE_GLYPHS + 4)}
+    font = {
+        "coverage": {
+            "unicode_blocks": {
+                "Private Use Area": specimens.MIN_SAMPLE_GLYPHS + 4,
+            }
+        }
+    }
+
+    specimen, strategy = specimens._specimen_from_private_use(font, cps)
+
+    assert isinstance(specimen, str)
+    assert len(specimen) == specimens.MIN_SAMPLE_GLYPHS + 4
+    assert strategy == "pua"
+    assert all(0xE000 <= ord(ch) <= 0xF8FF for ch in specimen)
+
+
+def test_specimen_filter_text_preserves_separator_spaces_without_counting_them():
+    """
+    Ensure supported whitespace is preserved only between accepted glyphs.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    filtered, glyphs = specimens._specimen_filter_text(
+        "AB CD",
+        {ord("A"), ord("B"), ord("C"), ord("D"), ord(" ")},
+    )
+
+    assert filtered == "AB CD"
+    assert glyphs == 4
+
+
+def test_specimen_filter_text_drops_whitespace_only_support():
+    """
+    Ensure whitespace-only cmap support does not count as a specimen.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    filtered, glyphs = specimens._specimen_filter_text(
+        "The quick brown fox",
+        {ord(" ")},
+    )
+
+    assert filtered == ""
+    assert glyphs == 0
 
 
 def test_specimen_apply_semantic_validation_uses_language_sample_then_ascii(
@@ -226,10 +358,215 @@ def test_specimen_generate_for_font_uses_visible_replacement_and_semantic_fallba
         {
             "strategy": "validated-language-sample",
             "glyph_count": 3,
-            "fallback_depth": 3,
+            "fallback_depth": 4,
             "rejection": "specimen_not_in_cmap",
         }
     ]
+
+
+def test_specimen_generate_for_font_keeps_private_use_specimen(monkeypatch):
+    """
+    Ensure PUA fallback survives final filtering when coverage is substantial.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace cmap extraction and tracing.
+
+    Returns
+    -------
+    None
+    """
+    pua_chars = "".join(
+        chr(0xE000 + index) for index in range(specimens.MIN_SAMPLE_GLYPHS)
+    )
+    font = {
+        "path": "/tmp/font.ttf",
+        "coverage": {
+            "unicode_blocks": {"Private Use Area": specimens.MIN_SAMPLE_GLYPHS}
+        },
+        "inference": {},
+    }
+    coverage = font["coverage"]
+
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_collect_cmap",
+        lambda path, idx: {ord(ch) for ch in pua_chars},
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_internal",
+        lambda font, cps: (None, "no_internal_sample"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_script",
+        lambda coverage, cps: (None, "no_scripts"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_language",
+        lambda font, cps: (None, "no_language_sample"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_apply_semantic_validation",
+        lambda font, filtered, g, cps: (filtered, g, None),
+    )
+    monkeypatch.setattr(specimens, "log_trace_cat", lambda *args, **kwargs: None)
+
+    specimens._specimen_generate_for_font(font, coverage, "/tmp/font.ttf")
+
+    assert font["typography"]["specimen_text"] == pua_chars
+    assert font["typography"]["specimen_strategy"] == "pua"
+    assert font["typography"]["specimen_glyph_count"] == specimens.MIN_SAMPLE_GLYPHS
+
+
+def test_specimen_upgrade_low_information_sample_falls_back_to_cmap(monkeypatch):
+    """
+    Ensure weak accepted samples can be upgraded from the font cmap.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace language and cmap fallback helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_language",
+        lambda _font, _cps: (None, "no_language_sample"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_cmap",
+        lambda _font, _cps: ("ABCDEFGH", "cmap"),
+    )
+
+    upgraded = specimens._specimen_upgrade_low_information_sample(
+        {},
+        "A",
+        1,
+        {ord(ch) for ch in "ABCDEFGH"},
+        current_strategy="script",
+    )
+
+    assert upgraded == ("ABCDEFGH", 8, "cmap")
+
+
+def test_specimen_generate_for_font_uses_language_sample_before_cmap(monkeypatch):
+    """
+    Ensure language-aware samples are preferred before falling back to cmap.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace specimen-generation helpers and tracing.
+
+    Returns
+    -------
+    None
+    """
+    font = {
+        "path": "/tmp/font.ttf",
+        "sample_text": "A",
+        "inference": {"languages": ["en"], "scripts": ["latn"]},
+    }
+    coverage: dict[str, object] = {"scripts": ["latn"]}
+
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_collect_cmap",
+        lambda path, idx: {ord(ch) for ch in "Hello there General Kenobi"},
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_internal",
+        lambda font, cps: (None, "internal_sample_too_short"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_script",
+        lambda coverage, cps: (None, "script_sample_too_sparse"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "choose_language_sample",
+        lambda langs, scripts: "Hello there General Kenobi",
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_cmap",
+        lambda font, cps: ("SHOULD NOT HAPPEN", "cmap"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "log_trace_cat",
+        lambda *_args, **_kwargs: None,
+    )
+
+    specimens._specimen_generate_for_font(font, coverage, "/tmp/font.ttf")
+
+    typography = font["typography"]
+    assert typography["specimen_text"] == "Hello there General Kenobi"
+    assert typography["specimen_strategy"] == "language"
+    assert typography["specimen_glyph_count"] == 23
+    assert typography["specimen_rejection_reason"] == "fallback_to_language"
+
+
+def test_specimen_generate_for_font_upgrades_overshort_visible_sample(monkeypatch):
+    """
+    Ensure short visible samples are upgraded with a stronger language sample.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace specimen-generation helpers and tracing.
+
+    Returns
+    -------
+    None
+    """
+    font = {
+        "path": "/tmp/font.ttf",
+        "sample_text": "T",
+        "inference": {"languages": ["en"], "scripts": ["latn"]},
+    }
+    coverage: dict[str, object] = {"scripts": ["latn"]}
+
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_collect_cmap",
+        lambda path, idx: {
+            ord(ch) for ch in "The quick brown fox jumps over the lazy dog"
+        },
+    )
+    monkeypatch.setattr(
+        specimens,
+        "_specimen_from_internal",
+        lambda font, cps: ("T", "internal"),
+    )
+    monkeypatch.setattr(
+        specimens,
+        "choose_language_sample",
+        lambda langs, scripts: "The quick brown fox jumps over the lazy dog",
+    )
+    monkeypatch.setattr(
+        specimens,
+        "log_trace_cat",
+        lambda *_args, **_kwargs: None,
+    )
+
+    specimens._specimen_generate_for_font(font, coverage, "/tmp/font.ttf")
+
+    typography = font["typography"]
+    assert typography["specimen_text"] == "The quick brown fox jumps over the lazy dog"
+    assert typography["specimen_strategy"] == "language"
+    assert typography["specimen_rejection_reason"] == "specimen_too_short"
 
 
 def test_specimen_collect_cmap_returns_empty_for_malformed_subtables(monkeypatch):

@@ -141,6 +141,8 @@ def _record_validation_observations(
     strategy_map = {
         "internal": "specimen_from_internal",
         "script": "specimen_from_script",
+        "language": "specimen_from_language",
+        "pua": "specimen_from_pua",
         "cmap": "specimen_from_cmap",
     }
     strategy_key = (

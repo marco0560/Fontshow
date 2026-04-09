@@ -7,10 +7,10 @@ not duplicate schema-shape assumptions throughout the codebase.
 
 Responsibilities
 ----------------
-- Read metrics and typography data from schema v1.3 font entries.
+- Read metrics and typography data from schema v1.4 font entries.
 - Preserve read compatibility with older flat field layouts when
   needed by tests or intermediate data.
-- Provide small mutation helpers for v1.3 font-entry sections.
+- Provide small mutation helpers for v1.4 font-entry sections.
 
 Design principles
 -----------------
@@ -20,12 +20,12 @@ business logic and only normalize access to inventory data structures.
 Architectural role
 ------------------
 This module belongs to the **inventory subsystem** and supports schema
-migration by isolating v1.3 layout knowledge from downstream consumers.
+migration by isolating v1.4 layout knowledge from downstream consumers.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping, MutableMapping, Sequence
 from typing import Any
 
 
@@ -111,6 +111,30 @@ def get_font_lualatex_loadability(font: Mapping[str, Any]) -> Mapping[str, Any]:
     if isinstance(lualatex, Mapping):
         return lualatex
     return {}
+
+
+def get_font_lualatex_render_variants(
+    font: Mapping[str, Any],
+) -> tuple[Mapping[str, Any], ...]:
+    """
+    Return persisted LuaLaTeX render-variant results for a font entry.
+
+    Parameters
+    ----------
+    font : collections.abc.Mapping[str, Any]
+        Font entry to inspect.
+
+    Returns
+    -------
+    tuple[collections.abc.Mapping[str, Any], ...]
+        Deterministic tuple of ``loadability.lualatex.render_variants``
+        records. Non-mapping items are ignored.
+    """
+    lualatex = get_font_lualatex_loadability(font)
+    raw_variants = lualatex.get("render_variants")
+    if not isinstance(raw_variants, list):
+        return ()
+    return tuple(item for item in raw_variants if isinstance(item, Mapping))
 
 
 def get_sample_text_info(font: Mapping[str, Any]) -> dict[str, Any] | None:
@@ -202,9 +226,30 @@ def get_specimen_strategy(font: Mapping[str, Any]) -> str | None:
     return None
 
 
+def get_specimen_glyph_count(font: Mapping[str, Any]) -> int | None:
+    """
+    Return the accepted specimen glyph count for a font entry.
+
+    Parameters
+    ----------
+    font : collections.abc.Mapping[str, Any]
+        Font entry to inspect.
+
+    Returns
+    -------
+    int | None
+        Glyph-count integer when available, otherwise ``None``.
+    """
+    typography = get_font_typography(font)
+    glyph_count = typography.get("specimen_glyph_count")
+    if isinstance(glyph_count, int):
+        return glyph_count
+    return None
+
+
 def ensure_v13_typography(font: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
     """
-    Ensure a mutable v1.3 typography block exists on a font entry.
+    Ensure a mutable v1.4 typography block exists on a font entry.
 
     Parameters
     ----------
@@ -226,7 +271,7 @@ def ensure_v13_typography(font: MutableMapping[str, Any]) -> MutableMapping[str,
 
 def ensure_v13_loadability(font: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
     """
-    Ensure a mutable v1.3 loadability block exists on a font entry.
+    Ensure a mutable v1.4 loadability block exists on a font entry.
 
     Parameters
     ----------
@@ -272,6 +317,7 @@ def ensure_v13_lualatex_loadability(
         "reason": None,
         "runtime_fingerprint": None,
         "probe_input": None,
+        "render_variants": [],
     }
     loadability["lualatex"] = created
     return created
@@ -283,7 +329,7 @@ def set_lualatex_loadability_fields(
     state: Mapping[str, Any],
 ) -> None:
     """
-    Persist LuaLaTeX loadability fields in the v1.3 font entry.
+    Persist LuaLaTeX loadability fields in the v1.4 font entry.
 
     Parameters
     ----------
@@ -291,7 +337,7 @@ def set_lualatex_loadability_fields(
         Font entry updated in place.
     state : collections.abc.Mapping[str, Any]
         Mapping containing the persisted LuaLaTeX loadability fields to
-        write to the nested v1.3 structure.
+        write to the nested v1.4 structure.
 
     Returns
     -------
@@ -303,6 +349,46 @@ def set_lualatex_loadability_fields(
     lualatex["reason"] = state.get("reason")
     lualatex["runtime_fingerprint"] = state.get("runtime_fingerprint")
     lualatex["probe_input"] = state.get("probe_input")
+    raw_variants = lualatex.get("render_variants")
+    if not isinstance(raw_variants, list):
+        lualatex["render_variants"] = []
+
+
+def set_lualatex_render_variants(
+    font: MutableMapping[str, Any],
+    *,
+    states: Sequence[Mapping[str, Any]],
+) -> None:
+    """
+    Persist LuaLaTeX render-variant validation records in a font entry.
+
+    Parameters
+    ----------
+    font : collections.abc.MutableMapping[str, Any]
+        Font entry updated in place.
+    states : collections.abc.Sequence[collections.abc.Mapping[str, Any]]
+        Ordered render-variant validation states to persist.
+
+    Returns
+    -------
+    None
+    """
+    lualatex = ensure_v13_lualatex_loadability(font)
+    lualatex["render_variants"] = [
+        {
+            "script": state.get("script"),
+            "fontspec_opts": state.get("fontspec_opts"),
+            "attempted": bool(state.get("attempted", False)),
+            "loadable": state.get("loadable"),
+            "reason": state.get("reason"),
+            "runtime_fingerprint": state.get("runtime_fingerprint"),
+            "probe_input": state.get("probe_input"),
+            "specimen_text": state.get("specimen_text"),
+            "specimen_glyph_count": state.get("specimen_glyph_count"),
+            "specimen_strategy": state.get("specimen_strategy"),
+        }
+        for state in states
+    ]
 
 
 def set_specimen_fields(
@@ -314,7 +400,7 @@ def set_specimen_fields(
     specimen_rejection_reason: str | None,
 ) -> None:
     """
-    Persist specimen fields in the schema v1.3 typography block.
+    Persist specimen fields in the schema v1.4 typography block.
 
     Parameters
     ----------

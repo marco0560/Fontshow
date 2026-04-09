@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 
 from fontshow.cli import parse_inventory
 from fontshow.cli.dump_fonts import run_dump_fonts
+from fontshow.core.types import ScriptISO
 from fontshow.inventory import loadability
 from tests.helpers import create_fake_font_file, simulate_dump_discovery
 
@@ -84,6 +85,7 @@ def _candidate_descriptor(path: Path, family: str) -> dict[str, object]:
                 "reason": None,
                 "runtime_fingerprint": None,
                 "probe_input": None,
+                "render_variants": [],
             }
         },
         "warnings": [],
@@ -273,9 +275,9 @@ def test_probe_and_persist_lualatex_loadability_recurses_on_batch_failure(
     assert fonts[2]["loadability"]["lualatex"]["loadable"] is True
 
 
-def test_parse_inventory_preserves_attempted_lualatex_validation(monkeypatch):
+def test_parse_inventory_refreshes_lualatex_validation_and_probes_variants(monkeypatch):
     """
-    Ensure parse-inventory does not overwrite attempted validation metadata.
+    Ensure parse-inventory refreshes validation metadata and probes variants.
 
     Parameters
     ----------
@@ -288,7 +290,7 @@ def test_parse_inventory_preserves_attempted_lualatex_validation(monkeypatch):
     """
     data = {
         "metadata": {
-            "schema_version": "1.3",
+            "schema_version": "1.5",
             "run_environment": {
                 "os": "x",
                 "machine": "y",
@@ -310,13 +312,136 @@ def test_parse_inventory_preserves_attempted_lualatex_validation(monkeypatch):
         "fonts": [],
     }
     monkeypatch.setattr(parse_inventory, "collect_platform_metadata", dict)
+    probe_calls: list[tuple[list[dict[str, object]], dict[str, object]]] = []
     monkeypatch.setattr(
         parse_inventory,
         "collect_latex_validation_metadata",
-        lambda: {"attempted": False, "runtime_fingerprint": None},
+        lambda: {"attempted": False, "runtime_fingerprint": "fp-2"},
+    )
+    monkeypatch.setattr(
+        parse_inventory,
+        "probe_and_persist_lualatex_render_variants",
+        lambda fonts, *, validation_metadata: probe_calls.append(
+            (list(fonts), validation_metadata)
+        ),
     )
 
     result = parse_inventory.parse_inventory(data, level="medium")
 
-    assert result["metadata"]["validation"]["lualatex"]["attempted"] is True
-    assert result["metadata"]["validation"]["lualatex"]["runtime_fingerprint"] == "fp-1"
+    assert result["metadata"]["validation"]["lualatex"]["attempted"] is False
+    assert result["metadata"]["validation"]["lualatex"]["runtime_fingerprint"] == "fp-2"
+    assert probe_calls == [([], result["metadata"]["validation"]["lualatex"])]
+
+
+def test_render_variant_specimen_falls_back_to_script_scoped_cmap(monkeypatch):
+    """
+    Ensure render-variant probing can fall back to script-scoped cmap text.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace curated specimens and cmap extraction.
+
+    Returns
+    -------
+    None
+    """
+    font = {
+        "path": "/tmp/Alpha.ttf",
+        "typography": {
+            "primary_script": "LATN",
+            "specimen_text": "The quick brown fox jumps over the lazy dog",
+        },
+    }
+    arabic_letters = [0x0627 + index for index in range(20)]
+    monkeypatch.setitem(
+        loadability.SCRIPT_INFO,
+        ScriptISO("ARAB"),
+        {
+            "specimen": "صِفْ خَلْقَ خَوْدٍ",
+            "unicode_max_ranges": [(0x0600, 0x06FF)],
+        },
+    )
+    monkeypatch.setattr(
+        loadability,
+        "_specimen_collect_cmap",
+        lambda _path, _ttc_index: set(arabic_letters) | {ord("A"), ord("B")},
+    )
+
+    specimen = loadability._render_variant_specimen(font, ScriptISO("ARAB"))
+
+    assert specimen
+    assert len(specimen) == loadability.MIN_SAMPLE_GLYPHS
+    assert all(0x0600 <= ord(ch) <= 0x06FF for ch in specimen)
+
+
+def test_probe_and_persist_lualatex_render_variants_persists_specimen_data(
+    tmp_path, monkeypatch
+):
+    """
+    Ensure render-variant persistence stores the validated specimen payload.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for fake fonts.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace probing helpers.
+
+    Returns
+    -------
+    None
+    """
+    font_path = create_fake_font_file(tmp_path, "Alpha.ttf")
+    font = _candidate_descriptor(font_path, "Alpha")
+    font["typography"]["primary_script"] = "LATN"
+    font["typography"]["specimen_text"] = "The quick brown fox"
+    font["coverage"]["scripts"] = ["LATN", "ARAB"]
+    font["inference"] = {"scripts": ["LATN", "ARAB"]}
+    metadata = {"attempted": False, "runtime_fingerprint": "fp-1"}
+
+    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
+    monkeypatch.setattr(
+        loadability,
+        "_ordered_render_variant_scripts",
+        lambda _font: [ScriptISO("LATN"), ScriptISO("ARAB")],
+    )
+    monkeypatch.setattr(
+        loadability,
+        "_render_variant_specimen_details",
+        lambda _font, script: (
+            ("The quick brown fox", 16, "script")
+            if str(script) == "LATN"
+            else ("ابتثجحخدذرزسشصض", 16, "script-cmap")
+        ),
+    )
+    monkeypatch.setattr(
+        loadability,
+        "_get_render_policy",
+        lambda script: ("", None if str(script) == "LATN" else "Script=Arabic"),
+    )
+    monkeypatch.setattr(
+        loadability,
+        "_resolve_batch_results",
+        lambda chunk, *, lualatex_bin: {
+            candidate.candidate_index: {
+                "attempted": True,
+                "loadable": True,
+                "reason": None,
+                "probe_input": candidate.probe_input,
+            }
+            for candidate in chunk
+        },
+    )
+
+    loadability.probe_and_persist_lualatex_render_variants(
+        [font], validation_metadata=metadata
+    )
+
+    variants = font["loadability"]["lualatex"]["render_variants"]
+    assert variants[0]["specimen_text"] == "The quick brown fox"
+    assert variants[0]["specimen_glyph_count"] == 16
+    assert variants[0]["specimen_strategy"] == "script"
+    assert variants[1]["specimen_text"] == "ابتثجحخدذرزسشصض"
+    assert variants[1]["specimen_glyph_count"] == 16
+    assert variants[1]["specimen_strategy"] == "script-cmap"

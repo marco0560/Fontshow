@@ -399,6 +399,7 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
                 "reason": None,
                 "runtime_fingerprint": None,
                 "probe_input": None,
+                "render_variants": [],
             }
         },
         "warnings": warnings,

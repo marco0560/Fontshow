@@ -34,6 +34,21 @@ def test_normalize_path_for_latex_handles_windows_and_bare_filenames():
     assert document._normalize_path_for_latex("Alpha.ttf") == ("./", "Alpha.ttf")
 
 
+def test_latex_template_disables_global_paragraph_indentation():
+    """
+    Ensure generated catalogs do not indent variant labels after paragraphs.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    assert r"\setlength{\parindent}{0pt}" in document.LATEX_INITIAL_CODE
+
+
 def test_normalize_path_for_latex_preserves_wsl_mount_paths():
     """
     Ensure WSL-style mount-backed font paths remain absolute and normalized.
@@ -143,11 +158,14 @@ def test_render_font_entry_uses_non_latin_template_when_language_is_available(
     assert "\\ifcsname" not in render
     assert "\\newfontfamily" not in render
     assert "\\renewfontfamily\\arabicfont" not in render
-    assert "\\foreignlanguage{arabic}" in render
+    assert "\\begingroup" in render
+    assert "\\foreignlanguage{arabic}" not in render
     assert "\\fontspec[" in render
     assert render.count("\\emergencystretch=2em") == 1
-    assert "Extension=.ttf" not in render
+    assert "Extension=" not in render
+    assert "Path=\\detokenize{/tmp/}" in render
     assert "{\\detokenize{arabic.ttf}}" in render
+    assert "\b" not in render
     assert options == "Renderer=1,Path=/tmp/,File=arabic.ttf,Script=Arabic"
 
 
@@ -179,7 +197,7 @@ def test_render_font_entry_falls_back_to_fontspec_without_language(monkeypatch):
 
     assert "\\newfontfamily\\fontshowentryfont" not in render
     assert "\\fontspec[" in render
-    assert "Extension=.otf" not in render
+    assert "Extension=" not in render
     assert "Path=\\detokenize{/tmp/}" in render
     assert "{\\detokenize{foo.otf}}" in render
     assert options == "Path=/tmp/,File=foo.otf,Script=Foo"
@@ -215,7 +233,9 @@ def test_render_font_entry_uses_inline_fontspec_for_gujarati_without_language(
 
     assert "\\fontspec[" in render
     assert "\\newfontfamily\\fontshowentryfont" not in render
+    assert "Extension=" not in render
     assert "Script=Gujarati" in render
+    assert "Path=\\detokenize{/tmp/}" in render
     assert "{\\detokenize{Lohit-Gujarati.ttf}}" in render
     assert options == "Renderer=1,Path=/tmp/,File=Lohit-Gujarati.ttf,Script=Gujarati"
 
@@ -254,7 +274,8 @@ def test_render_font_entry_uses_inline_fontspec_for_bengali_with_language(
 
     assert "\\fontspec[" in render
     assert "\\renewfontfamily\\bengalifont" not in render
-    assert "\\foreignlanguage{bengali}" in render
+    assert "\\foreignlanguage{bengali}" not in render
+    assert "Extension=" not in render
     assert "Script=Bengali" in render
     assert "Path=\\detokenize{/tmp/}" in render
     assert "{\\detokenize{Lohit-Bengali.ttf}}" in render
@@ -286,13 +307,15 @@ def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
     )
 
     assert "\\fontspec[" in render
+    assert "Extension=" not in render
     assert "Path=\\detokenize{/tmp/}" in render
     assert "{\\detokenize{unknown.ttf}}" in render
-    assert "{\\detokenize{/tmp/unknown.ttf}}" not in render
     assert options == "Renderer=1,Path=/tmp/,File=unknown.ttf"
 
 
-def test_ordered_script_candidates_prioritizes_latn_then_rtl(monkeypatch):
+def test_ordered_script_candidates_prioritizes_primary_then_rtl_then_latn(
+    monkeypatch,
+):
     """
     Ensure multi-specimen script ordering follows the renderer policy.
 
@@ -327,11 +350,314 @@ def test_ordered_script_candidates_prioritizes_latn_then_rtl(monkeypatch):
     )
 
     assert scripts == [
-        ScriptISO("LATN"),
+        ScriptISO("KHMR"),
         ScriptISO("ARAB"),
+        ScriptISO("LATN"),
         ScriptISO("CYRL"),
         ScriptISO("GREK"),
     ]
+
+
+def test_ordered_script_candidates_caps_output_at_twenty(monkeypatch):
+    """
+    Ensure multi-specimen expansion honors the current catalog cap.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ontology script metadata.
+
+    Returns
+    -------
+    None
+    """
+    script_names = [f"S{index:03d}" for index in range(25)]
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {ScriptISO(name): {"rtl": False, "specimen": name} for name in script_names},
+    )
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+
+    scripts = document._ordered_script_candidates(
+        {
+            "script": script_names[0].lower(),
+            "inference": {"scripts": [name.lower() for name in script_names[1:]]},
+            "coverage": {"scripts": []},
+        }
+    )
+
+    assert len(scripts) == 20
+    assert scripts[0] == ScriptISO(script_names[0])
+    assert scripts[-1] == ScriptISO(script_names[19])
+
+
+def test_ordered_script_candidates_appends_private_use_row(monkeypatch):
+    """
+    Ensure significant private-use coverage produces a dedicated catalog row.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ontology helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("LATN"): {"rtl": False, "specimen": "Latin"},
+            ScriptISO("GREK"): {"rtl": False, "specimen": "Greek"},
+        },
+    )
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+
+    scripts = document._ordered_script_candidates(
+        {
+            "script": "latn",
+            "inference": {"scripts": ["grek"]},
+            "coverage": {
+                "scripts": ["latn", "grek"],
+                "unicode_blocks": {"Private Use Area": document.MIN_SAMPLE_GLYPHS},
+            },
+        }
+    )
+
+    assert scripts == [ScriptISO("LATN"), ScriptISO("GREK"), ScriptISO("PUAA")]
+
+
+def test_render_font_entry_uses_raggedleft_for_rtl_scripts(monkeypatch):
+    """
+    Ensure RTL scripts render with right-aligned specimen blocks.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace LaTeX helper functions.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(
+        document, "_get_render_policy", lambda _script: ("arabic", "Script=Arabic")
+    )
+    monkeypatch.setattr(document, "SCRIPT_INFO", {ScriptISO("ARAB"): {"rtl": True}})
+
+    render, _options = document._render_font_entry(
+        font={"path": "/tmp/arabic.ttf"},
+        safe_specimen="abc",
+        script0_iso=ScriptISO("ARAB"),
+        fullpath="/tmp/arabic.ttf",
+    )
+
+    assert "\\raggedleft" in render
+    assert "\\raggedright" not in render
+
+
+def test_has_persisted_render_variant_success_requires_matching_success(monkeypatch):
+    """
+    Ensure secondary rendering follows persisted render-variant results.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace render-policy resolution.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        document,
+        "_get_render_policy",
+        lambda script: (
+            "",
+            {
+                ScriptISO("JPAN"): "Script=Kana",
+                ScriptISO("BOPO"): "Script=Bopomofo",
+            }.get(script),
+        ),
+    )
+
+    font = {
+        "loadability": {
+            "lualatex": {
+                "render_variants": [
+                    {
+                        "script": "JPAN",
+                        "fontspec_opts": "Script=Kana",
+                        "attempted": True,
+                        "loadable": True,
+                        "reason": None,
+                        "runtime_fingerprint": "fp-1",
+                        "probe_input": "U+8000",
+                    },
+                    {
+                        "script": "BOPO",
+                        "fontspec_opts": "Script=Bopomofo",
+                        "attempted": True,
+                        "loadable": False,
+                        "reason": "fontspec error",
+                        "runtime_fingerprint": "fp-1",
+                        "probe_input": "U+3105",
+                    },
+                ]
+            }
+        }
+    }
+
+    assert document._has_persisted_render_variant_success(font, ScriptISO("JPAN"))
+    assert not document._has_persisted_render_variant_success(font, ScriptISO("BOPO"))
+    assert not document._has_persisted_render_variant_success(font, ScriptISO("LATN"))
+
+
+def test_specimen_for_rendered_script_prefers_persisted_variant_specimen(monkeypatch):
+    """
+    Ensure non-primary script rendering reuses the persisted validated specimen.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace render-policy and ontology helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        document, "_get_render_policy", lambda _script: ("", "Script=Arabic")
+    )
+    monkeypatch.setattr(
+        document, "SCRIPT_INFO", {ScriptISO("ARAB"): {"specimen": "fallback"}}
+    )
+
+    specimen = document._specimen_for_rendered_script(
+        {
+            "script": "latn",
+            "loadability": {
+                "lualatex": {
+                    "render_variants": [
+                        {
+                            "script": "ARAB",
+                            "fontspec_opts": "Script=Arabic",
+                            "attempted": True,
+                            "loadable": True,
+                            "reason": None,
+                            "runtime_fingerprint": "fp-1",
+                            "probe_input": "U+0620",
+                            "specimen_text": "ابتثجحخدذرزسشصض",
+                            "specimen_glyph_count": 16,
+                            "specimen_strategy": "script-cmap",
+                        }
+                    ]
+                }
+            },
+        },
+        ScriptISO("ARAB"),
+    )
+
+    assert specimen == "ابتثجحخدذرزسشصض"
+
+
+def test_primary_specimen_for_rendered_script_rejects_semantically_invalid_sample(
+    monkeypatch,
+):
+    """
+    Ensure semantically invalid stored primary specimens are not rendered.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace curated fallback resolution.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_curated_primary_script_specimen", lambda *_: "")
+
+    specimen = document._primary_specimen_for_rendered_script(
+        {
+            "typography": {
+                "specimen_text": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+                "specimen_strategy": "validated-fallback",
+                "specimen_rejection_reason": "specimen_not_in_cmap",
+            }
+        },
+        ScriptISO("LATN"),
+    )
+
+    assert specimen == ""
+
+
+def test_should_suppress_specialized_primary_specimen_for_invalid_cmap_sample():
+    """
+    Ensure semantically invalid cmap-backed specimens fall back to glyph mode.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    assert document._should_suppress_specialized_primary_specimen(
+        {
+            "coverage": {"languages": []},
+            "inference": {"languages": []},
+            "typography": {
+                "specimen_text": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+                "specimen_strategy": "validated-fallback",
+                "specimen_glyph_count": 52,
+                "specimen_rejection_reason": "specimen_not_in_cmap",
+            },
+        }
+    )
+
+
+def test_primary_specimen_for_rendered_script_prefers_glyph_mode_for_low_info_cmap(
+    monkeypatch,
+):
+    """
+    Ensure low-information cmap fallbacks defer to glyph-mode rendering.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace glyph-sample and suppression helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_curated_primary_script_specimen", lambda *_: "")
+    monkeypatch.setattr(
+        document, "_should_suppress_specialized_primary_specimen", lambda _font: True
+    )
+    monkeypatch.setattr(
+        document, "_specialized_glyph_sample", lambda _font: "█ \ue0a0 \ue0b0"
+    )
+
+    specimen = document._primary_specimen_for_rendered_script(
+        {
+            "typography": {
+                "specimen_text": "█",
+                "specimen_strategy": "cmap",
+                "specimen_glyph_count": 1,
+                "specimen_rejection_reason": "fallback_to_cmap",
+            }
+        },
+        ScriptISO("LATN"),
+    )
+
+    assert specimen == ""
 
 
 def test_generate_document_uses_variant_specific_specimens(monkeypatch, tmp_path):
@@ -376,7 +702,7 @@ def test_generate_document_uses_variant_specific_specimens(monkeypatch, tmp_path
     monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
     monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic marker for rendered variants.
 
@@ -427,9 +753,9 @@ def test_generate_document_uses_variant_specific_specimens(monkeypatch, tmp_path
     assert f"<{bold_path}|The quick brown fox>" in latex
 
 
-def test_format_specimen_for_latex_chunks_non_space_runs_every_five_characters():
+def test_format_specimen_for_latex_chunks_non_space_runs_every_four_characters():
     """
-    Ensure long runs without spaces receive explicit break hints every five characters.
+    Ensure long runs without spaces receive explicit break hints every four characters.
 
     Parameters
     ----------
@@ -445,7 +771,7 @@ def test_format_specimen_for_latex_chunks_non_space_runs_every_five_characters()
 
     assert (
         formatted
-        == "AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA\\allowbreak{}AAAAA"
+        == "AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA\\allowbreak{}AAAA"
     )
 
 
@@ -467,9 +793,9 @@ def test_format_specimen_for_latex_adds_break_hints_for_cjk_runs():
 
     assert (
         formatted
-        == "漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢\\allowbreak{}漢漢漢漢漢"
+        == "漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢\\allowbreak{}漢漢漢漢"
     )
-    assert formatted.count("\\allowbreak{}") == 7
+    assert formatted.count("\\allowbreak{}") == 9
 
 
 def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkeypatch):
@@ -551,25 +877,103 @@ def test_generate_latex_warns_on_missing_marker_and_deduplicates_families(monkey
     ]
     assert warnings == ["LaTeX template marker %%FONTSHOW_OTHER_LANGUAGES%% not found"]
     assert latex.count("\\item Alpha") == 1
-    assert latex.count("\\item Beta") == 1
+    assert "\n\n\\item Beta\n" not in latex
     assert "---" not in latex
-    assert "alpha.ttf [OK]" in latex
-    assert "ignored.ttf [OK]" in latex
+    assert "{\\footnotesize\\ttfamily alpha.ttf}" in latex
+    assert "{\\footnotesize\\ttfamily ignored.ttf}" in latex
     assert "LANGDEF" not in latex
     assert "FONTDEF" not in latex
     assert "LANGS : EN" not in latex
     assert "OPTS  : Path=/tmp/, File=alpha.ttf" not in latex
     assert "}\\newline" not in latex
-    assert "\\item Beta" in latex.split("\\item Alpha", maxsplit=1)[1]
-    assert "\n\n\\item Beta" in latex
-    assert "\\LogWorking{Alpha / alpha.ttf / LATN}" in latex
-    assert "\\LogWorking{Alpha / ignored.ttf / LATN}" in latex
-    assert "\\LogBroken{Beta / beta.bin}" in latex
-    assert latex.count("\\allowbreak{}") == 7
-    assert "beta.bin [MISSING]" in latex
-    assert "\\LogBroken{Beta / beta.bin}[MISSING]" in latex
-    assert "\\LogExcluded{Zed}" in latex
+    assert latex.count("\\allowbreak{}") == 9
+    assert "[MISSING]" not in latex
+    assert "\\section{Unrendered Variants}" in latex
+    assert "\\item Beta | beta.bin | /tmp/beta.bin" in latex
     assert latex.endswith("\nEND:2:DONE")
+
+
+def test_generate_latex_moves_duplicate_variants_to_appendix(monkeypatch):
+    """
+    Ensure duplicate variants are collapsed from the main body to an appendix.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers and logging.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _message: None)
+    monkeypatch.setattr(document, "log_warn", lambda _message: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+    monkeypatch.setattr(
+        document,
+        "_render_font_entry",
+        lambda **kwargs: (f"<{kwargs['font']['path']}>", "Path=/tmp/,File=alpha.ttf"),
+    )
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "Alpha",
+                "path": "/tmp/alpha-1.ttf",
+                "full_name": "Alpha Regular",
+                "subfamily": "Regular",
+                "postscript_name": "Alpha-Regular",
+                "version_string": "1.0",
+                "specimen_text": "Alpha sample",
+                "typography": {
+                    "specimen_text": "Alpha sample",
+                    "specimen_strategy": "language",
+                    "specimen_glyph_count": 12,
+                },
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "script": "latn",
+            },
+            {
+                "family": "Alpha",
+                "path": "/tmp/alpha-2.ttf",
+                "full_name": "Alpha Regular",
+                "subfamily": "Regular",
+                "postscript_name": "Alpha-Regular",
+                "version_string": "1.0",
+                "specimen_text": "Alpha sample",
+                "typography": {
+                    "specimen_text": "Alpha sample",
+                    "specimen_strategy": "language",
+                    "specimen_glyph_count": 12,
+                },
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "script": "latn",
+            },
+        ]
+    )
+
+    assert "{\\footnotesize\\ttfamily alpha-1.ttf}" in latex
+    assert "{\\footnotesize\\ttfamily alpha-2.ttf}" not in latex
+    assert "\\section{Duplicate Sources}" in latex
+    assert "already-rendered family variant on stable catalog metadata" in latex
+    assert "\\item Alpha | alpha-2.ttf | /tmp/alpha-2.ttf | alpha-1.ttf" in latex
 
 
 def test_generate_latex_skips_excluded_families_from_catalog(monkeypatch):
@@ -631,7 +1035,6 @@ def test_generate_latex_skips_excluded_families_from_catalog(monkeypatch):
 
     assert "\\item Skip Me" not in latex
     assert "\\item Keep Me" in latex
-    assert "\\LogExcluded{Skip Me}" in latex
     assert latex.endswith("\nEND:1:DONE")
 
 
@@ -754,12 +1157,10 @@ def test_generate_latex_marks_family_fallback_entries_as_working(monkeypatch):
         ]
     )
 
-    assert "ETbb [OK]" in latex
-    assert "\\LogWorking{ETbb / ETbb / LATN}" in latex
-    assert "\\LogBroken{ETbb / ETbb}[MISSING]" not in latex
+    assert "{\\footnotesize\\ttfamily ETbb}" in latex
     assert "OPTS  : Family=ETbb, UprightFont=*" not in latex
     assert r"{\footnotesize\ttfamily LATN}" in latex
-    assert "\\LogWorking{ETbb / ETbb / LATN}" in latex
+    assert "[MISSING]" not in latex
 
 
 def test_filter_renderer_script_specimen_rejects_sparse_results(monkeypatch):
@@ -787,6 +1188,70 @@ def test_filter_renderer_script_specimen_rejects_sparse_results(monkeypatch):
     )
 
     assert filtered == ""
+
+
+def test_specimen_for_rendered_script_replaces_mismatched_primary_with_curated(
+    monkeypatch,
+):
+    """
+    Ensure primary-script rows do not reuse obviously mismatched specimens.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace script inference and curated fallback helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "primary_script", lambda _font: "ARAB")
+    monkeypatch.setattr(document, "get_specimen_text", lambda _font: "Latin specimen")
+    monkeypatch.setattr(document, "get_specimen_strategy", lambda _font: "cmap")
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "infer_scripts", lambda _coverage: ["latn"])
+    monkeypatch.setattr(
+        document,
+        "_curated_primary_script_specimen",
+        lambda _font, _script: "Arabic sample",
+    )
+
+    specimen = document._specimen_for_rendered_script({}, ScriptISO("ARAB"))
+
+    assert specimen == "Arabic sample"
+
+
+def test_specimen_for_rendered_script_replaces_primary_pua_with_script_fallback(
+    monkeypatch,
+):
+    """
+    Ensure real writing systems beat primary PUA strips in the main catalog.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace specimen helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "primary_script", lambda _font: "JPAN")
+    monkeypatch.setattr(document, "get_specimen_text", lambda _font: "\ue000\ue001")
+    monkeypatch.setattr(document, "get_specimen_strategy", lambda _font: "pua")
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(
+        document,
+        "_curated_primary_script_specimen",
+        lambda _font, _script: "あいうえおかきくけこさしすせそたちつてと",
+    )
+
+    specimen = document._specimen_for_rendered_script(
+        {"path": "/tmp/font.ttf"},
+        ScriptISO("JPAN"),
+    )
+
+    assert specimen == "あいうえおかきくけこさしすせそたちつてと"
 
 
 def test_generate_document_skips_sparse_renderer_added_specimens(monkeypatch, tmp_path):
@@ -843,7 +1308,7 @@ def test_generate_document_skips_sparse_renderer_added_specimens(monkeypatch, tm
         lambda _font, specimen: "" if specimen == "Greek sample" else specimen,
     )
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic marker for rendered script variants.
 
@@ -944,7 +1409,7 @@ def test_generate_document_adds_multi_script_specimens_from_ontology(
         },
     )
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic marker for rendered script variants.
 
@@ -991,9 +1456,9 @@ def test_generate_document_adds_multi_script_specimens_from_ontology(
     assert "<ARAB|Arabic sample>" in latex
     assert "<KHMR|Original Khmer>" in latex
     assert (
-        latex.index("SPEC  : LATN")
+        latex.index("SPEC  : KHMR")
         < latex.index("SPEC  : ARAB")
-        < latex.index("SPEC  : KHMR")
+        < latex.index("SPEC  : LATN")
     )
 
 
@@ -1048,7 +1513,7 @@ def test_generate_document_escapes_tex_size_and_family_commands(monkeypatch, tmp
         },
     )
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic marker for rendered script variants.
 
@@ -1088,7 +1553,7 @@ def test_generate_document_escapes_tex_size_and_family_commands(monkeypatch, tmp
         catalog_detail="extended",
     )
 
-    assert "{\\footnotesize\\ttfamily FILE  : FreeSans.ttf [OK]}" in latex
+    assert "{\\footnotesize\\ttfamily FILE  : FreeSans.ttf}" in latex
     assert "{\\footnotesize\\ttfamily SPEC  : LATN}" in latex
     assert "{\\footnotesize\\ttfamily SPEC  : KHMR}" in latex
     assert "\x0c" not in latex
@@ -1155,7 +1620,7 @@ def test_generate_latex_compact_layout_includes_frontmatter_and_tighter_blocks(
         },
     )
 
-    def render_stub(font, safe_specimen, script0_iso, fullpath):
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
         """
         Return a deterministic compact marker for rendered script variants.
 
@@ -1205,14 +1670,358 @@ def test_generate_latex_compact_layout_includes_frontmatter_and_tighter_blocks(
         "April 02, 2026 18:15:13 CEST Linux atlas "
         "fontshow create-catalog --inventory inv.json" in latex
     )
-    assert "\\setlength{\\itemsep}{0.45em}" in latex
+    assert "\\setlength{\\itemsep}{0.25em}" in latex
     assert "\\setlength{\\parsep}{0pt}" in latex
-    assert "{\\footnotesize\\ttfamily FreeSans.ttf [OK]}" in latex
+    assert "\\setlength{\\parskip}{0.1em}" in latex
+    assert "{\\footnotesize\\ttfamily FreeSans.ttf}" in latex
+    assert "{\\footnotesize\\ttfamily FreeSans.ttf}\\par" in latex
     assert (
-        "{\\footnotesize\\ttfamily LATN} "
-        "\\LogWorking{FreeSans / FreeSans.ttf / LATN}<LATN|Original Latin>"
-    ) in latex
+        "\\begin{minipage}[t]{0.18\\linewidth}\\raggedright {\\footnotesize\\ttfamily LATN}\\end{minipage}"
+        in latex
+    )
     assert (
-        "{\\footnotesize\\ttfamily CYRL} "
-        "\\LogWorking{FreeSans / FreeSans.ttf / CYRL}<CYRL|Cyrillic sample>"
-    ) in latex
+        "\\begin{minipage}[t]{0.79\\linewidth}<LATN|Original Latin>\\end{minipage}\\par"
+        in latex
+    )
+    assert (
+        "\\begin{minipage}[t]{0.18\\linewidth}\\raggedright {\\footnotesize\\ttfamily CYRL}\\end{minipage}"
+        in latex
+    )
+    assert (
+        "\\begin{minipage}[t]{0.79\\linewidth}<CYRL|Cyrillic sample>\\end{minipage}\\par"
+        in latex
+    )
+
+
+def test_generate_latex_indexed_navigation_adds_toc_anchors_and_end_index(
+    monkeypatch, tmp_path
+):
+    """
+    Ensure indexed catalogs include family anchors, bookmarks, and grouped index.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers and ontology data.
+    tmp_path : pathlib.Path
+        Temporary directory used to create a placeholder font file.
+
+    Returns
+    -------
+    None
+    """
+    font_path = tmp_path / "FreeSans.ttf"
+    font_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE\n\\end{document}\n")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+    monkeypatch.setattr(
+        document, "_filter_renderer_script_specimen", lambda _font, specimen: specimen
+    )
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("LATN"): {"rtl": False, "specimen": "Latin sample"},
+        },
+    )
+
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
+        """
+        Return a deterministic indexed marker for rendered script variants.
+
+        Parameters
+        ----------
+        font : dict[str, object]
+            Font descriptor forwarded by the document generator.
+        safe_specimen : str
+            Preformatted specimen string selected for this render.
+        script0_iso : ScriptISO
+            Script code chosen for rendering.
+        fullpath : str
+            Absolute font path.
+
+        Returns
+        -------
+        tuple[str, str]
+            Fake LaTeX render block and plain option string.
+        """
+        _ = font, fullpath
+        return f"<{script0_iso}|{safe_specimen}>", f"Path={script0_iso}"
+
+    monkeypatch.setattr(document, "_render_font_entry", render_stub)
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "FreeSans",
+                "path": str(font_path),
+                "style": "Regular",
+                "script": "latn",
+                "specimen_text": "Original Latin",
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "coverage": {"scripts": ["latn"]},
+            },
+        ],
+        indexed_navigation=True,
+    )
+
+    assert "\\tableofcontents" not in latex
+    assert "\\hypertarget{fontshow-family-0001}{}" in latex
+    assert "\\pdfbookmark[2]{FreeSans}{fontshow-family-0001-bookmark}" in latex
+    assert "\\subsection*{FreeSans}" in latex
+    assert "\\section{Navigation Index}" in latex
+    assert "\\begin{multicols}{3}" in latex
+    assert "\\textbf{F}\\par" in latex
+    assert "\\hyperlink{fontshow-family-0001}{FreeSans}" in latex
+    assert "END:1:DONE" in latex
+    assert latex.endswith("\\end{document}\n")
+
+
+def test_generate_latex_replaces_low_information_primary_specimen_with_curated_script(
+    monkeypatch, tmp_path
+):
+    """
+    Ensure low-information text specimens fall back to curated script samples.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers.
+    tmp_path : pathlib.Path
+        Temporary directory used to create a placeholder font file.
+
+    Returns
+    -------
+    None
+    """
+    font_path = tmp_path / "Alpha.ttf"
+    font_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE\n\\end{document}\n")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "primary_script", lambda font: "latn")
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("LATN"): {
+                "rtl": False,
+                "specimen": "Curated Latin specimen text",
+            },
+        },
+    )
+    monkeypatch.setattr(
+        document,
+        "_specimen_collect_cmap",
+        lambda _path, _idx: {ord(ch) for ch in "Curated Latin specimen text"},
+    )
+
+    def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
+        """
+        Return a deterministic marker for the selected specimen text.
+
+        Parameters
+        ----------
+        font : dict[str, object]
+            Font descriptor forwarded by the document generator.
+        safe_specimen : str
+            Specimen string selected for rendering.
+        script0_iso : ScriptISO
+            Script code chosen for rendering.
+        fullpath : str
+            Absolute font path.
+
+        Returns
+        -------
+        tuple[str, str]
+            Fake LaTeX render block and plain option string.
+        """
+        _ = font, fullpath
+        return f"<{script0_iso}|{safe_specimen}>", "Path=LATN"
+
+    monkeypatch.setattr(document, "_render_font_entry", render_stub)
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "Alpha",
+                "path": str(font_path),
+                "specimen_text": "A",
+                "typography": {
+                    "specimen_text": "A",
+                    "specimen_strategy": "cmap",
+                    "specimen_glyph_count": 1,
+                },
+                "inference": {"scripts": ["latn"], "languages": ["en"]},
+                "coverage": {"scripts": ["latn"], "languages": ["en"]},
+            }
+        ]
+    )
+
+    assert "Curated Latin specimen text" in latex
+    assert "<LATN|A>" not in latex
+
+
+def test_generate_latex_marks_specialized_low_information_variant(
+    monkeypatch, tmp_path
+):
+    """
+    Ensure low-information specialized fonts are labeled instead of faking text.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers.
+    tmp_path : pathlib.Path
+        Temporary directory used to create a placeholder font file.
+
+    Returns
+    -------
+    None
+    """
+    font_path = tmp_path / "Icons.ttf"
+    font_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE\n\\end{document}\n")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.upper()
+    )
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "primary_script", lambda font: "latn")
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("LATN"): {"rtl": False, "specimen": "xy"},
+        },
+    )
+    monkeypatch.setattr(
+        document,
+        "_specimen_collect_cmap",
+        lambda _path, _idx: {ord("x"), ord("y")},
+    )
+    monkeypatch.setattr(
+        document,
+        "_render_font_entry",
+        lambda font, safe_specimen, script0_iso, fullpath, catalog_detail=None: (
+            f"<{script0_iso}|{safe_specimen}>",
+            "Path=LATN",
+        ),
+    )
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "Icons",
+                "path": str(font_path),
+                "specimen_text": "q",
+                "typography": {
+                    "specimen_text": "q",
+                    "specimen_strategy": "cmap",
+                    "specimen_glyph_count": 1,
+                },
+                "inference": {"scripts": ["latn"], "languages": []},
+                "coverage": {"scripts": ["latn"], "languages": []},
+            }
+        ]
+    )
+
+    assert "{\\footnotesize\\ttfamily Icons.ttf}" in latex
+    assert "{\\footnotesize\\ttfamily GLYPH}" in latex
+    assert "<|" in latex
+
+
+def test_generate_latex_explains_unrendered_variants_section(monkeypatch):
+    """
+    Ensure the missing-variant appendix includes explanatory lead text.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE\n\\end{document}\n")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(
+        document,
+        "_render_family_catalog_block",
+        lambda **_kwargs: document._FamilyRenderResult(
+            body_block="",
+            navigation_entry=None,
+            rendered=False,
+            missing_entries=("Alpha | alpha.ttf | /tmp/alpha.ttf",),
+            duplicate_entries=(),
+        ),
+    )
+
+    latex = document.generate_latex([{"family": "Alpha"}])
+
+    assert "\\section{Unrendered Variants}" in latex
+    assert "did not produce a" in latex
+    assert "usable catalog specimen" in latex

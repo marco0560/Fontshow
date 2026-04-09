@@ -126,8 +126,11 @@ def test_infer_scripts_cjk_and_threshold_branches():
     assert infer_scripts(
         {"unicode_blocks": {"Latin Extended-A": 4}}, level="medium"
     ) == ["latn"]
-    assert infer_scripts({"unicode_blocks": {"Buginese": 2}}, level="aggressive") == [
+    assert infer_scripts({"unicode_blocks": {"Buginese": 5}}, level="aggressive") == [
         "bugi"
+    ]
+    assert infer_scripts({"unicode_blocks": {"Buginese": 2}}, level="aggressive") == [
+        "unknown"
     ]
 
 

@@ -1,5 +1,5 @@
 """
-Helpers for schema v1.3 LaTeX validation metadata.
+Helpers for schema v1.4 LaTeX validation metadata.
 
 This module collects deterministic, best-effort metadata about the
 local LaTeX toolchain so inventories can record the runtime surface
@@ -8,7 +8,7 @@ relevant to future loadability validation work.
 Responsibilities
 ----------------
 - Collect version metadata for LuaLaTeX and related packages.
-- Build the schema v1.3 ``metadata.validation.lualatex`` structure.
+- Build the schema v1.4 ``metadata.validation.lualatex`` structure.
 - Avoid hard dependency on a local TeX installation.
 
 Design principles
@@ -208,7 +208,7 @@ def attach_latex_runtime_fingerprint(
 
 def collect_latex_validation_metadata() -> dict[str, object]:
     """
-    Collect the schema v1.3 LaTeX validation metadata block.
+    Collect the schema v1.4 LaTeX validation metadata block.
 
     Parameters
     ----------
