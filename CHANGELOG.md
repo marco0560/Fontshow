@@ -1,3 +1,9 @@
+## [0.67.2](https://github.com/marco0560/Fontshow/compare/v0.67.1...v0.67.2) (2026-04-09)
+
+### Bug Fixes
+
+* **inventory:** preserve substantial suppressed scripts ([f553205](https://github.com/marco0560/Fontshow/commit/f55320568e858fe328bb75e76c122f6c5a5e957f))
+
 ## [0.67.1](https://github.com/marco0560/Fontshow/compare/v0.67.0...v0.67.1) (2026-04-09)
 
 ### Bug Fixes
