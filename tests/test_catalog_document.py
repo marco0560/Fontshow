@@ -565,6 +565,101 @@ def test_specimen_for_rendered_script_prefers_persisted_variant_specimen(monkeyp
     assert specimen == "ابتثجحخدذرزسشصض"
 
 
+def test_primary_specimen_for_rendered_script_rejects_semantically_invalid_sample(
+    monkeypatch,
+):
+    """
+    Ensure semantically invalid stored primary specimens are not rendered.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace curated fallback resolution.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_curated_primary_script_specimen", lambda *_: "")
+
+    specimen = document._primary_specimen_for_rendered_script(
+        {
+            "typography": {
+                "specimen_text": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+                "specimen_strategy": "validated-fallback",
+                "specimen_rejection_reason": "specimen_not_in_cmap",
+            }
+        },
+        ScriptISO("LATN"),
+    )
+
+    assert specimen == ""
+
+
+def test_should_suppress_specialized_primary_specimen_for_invalid_cmap_sample():
+    """
+    Ensure semantically invalid cmap-backed specimens fall back to glyph mode.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    assert document._should_suppress_specialized_primary_specimen(
+        {
+            "coverage": {"languages": []},
+            "inference": {"languages": []},
+            "typography": {
+                "specimen_text": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+                "specimen_strategy": "validated-fallback",
+                "specimen_glyph_count": 52,
+                "specimen_rejection_reason": "specimen_not_in_cmap",
+            },
+        }
+    )
+
+
+def test_primary_specimen_for_rendered_script_prefers_glyph_mode_for_low_info_cmap(
+    monkeypatch,
+):
+    """
+    Ensure low-information cmap fallbacks defer to glyph-mode rendering.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace glyph-sample and suppression helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_curated_primary_script_specimen", lambda *_: "")
+    monkeypatch.setattr(
+        document, "_should_suppress_specialized_primary_specimen", lambda _font: True
+    )
+    monkeypatch.setattr(
+        document, "_specialized_glyph_sample", lambda _font: "█ \ue0a0 \ue0b0"
+    )
+
+    specimen = document._primary_specimen_for_rendered_script(
+        {
+            "typography": {
+                "specimen_text": "█",
+                "specimen_strategy": "cmap",
+                "specimen_glyph_count": 1,
+                "specimen_rejection_reason": "fallback_to_cmap",
+            }
+        },
+        ScriptISO("LATN"),
+    )
+
+    assert specimen == ""
+
+
 def test_generate_document_uses_variant_specific_specimens(monkeypatch, tmp_path):
     """
     Ensure family variants render using their own specimen metadata.

@@ -808,9 +808,21 @@ def _primary_specimen_for_rendered_script(
     """
     specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
     strategy = str(get_specimen_strategy(font) or "").strip()
+    typography_raw = font.get("typography")
+    typography = typography_raw if isinstance(typography_raw, Mapping) else {}
+    rejection = str(typography.get("specimen_rejection_reason") or "").strip()
     curated = _curated_primary_script_specimen(font, script_iso)
     if strategy == "pua" and curated:
         return curated
+    if rejection == "specimen_not_in_cmap":
+        return curated
+    if (
+        strategy in {"cmap", "validated-fallback"}
+        and _is_low_information_primary_specimen(font)
+        and _should_suppress_specialized_primary_specimen(font)
+        and _specialized_glyph_sample(font)
+    ):
+        return ""
     if (
         specimen
         and strategy in {"cmap", "validated-fallback"}
@@ -1072,6 +1084,12 @@ def _should_suppress_specialized_primary_specimen(font: CatalogFontEntryV12) -> 
         ``True`` when the font behaves like a specialized non-text font
         and the primary specimen should be replaced by a compact notice.
     """
+    typography_raw = font.get("typography")
+    typography = typography_raw if isinstance(typography_raw, Mapping) else {}
+    rejection = str(typography.get("specimen_rejection_reason") or "").strip()
+    if rejection == "specimen_not_in_cmap":
+        return True
+
     if not (
         _is_low_information_primary_specimen(font)
         or _has_low_information_visible_specimen(font)
