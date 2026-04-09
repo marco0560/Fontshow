@@ -1,3 +1,9 @@
+## [0.67.1](https://github.com/marco0560/Fontshow/compare/v0.67.0...v0.67.1) (2026-04-09)
+
+### Bug Fixes
+
+* **catalog:** suppress misleading symbol script rows ([28526df](https://github.com/marco0560/Fontshow/commit/28526df60143a6bde87b5da0c3cbed0c3aa74281))
+
 ## [0.67.0](https://github.com/marco0560/Fontshow/compare/v0.66.1...v0.67.0) (2026-04-09)
 
 ### Features
