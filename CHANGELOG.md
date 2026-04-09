@@ -1,3 +1,39 @@
+## [0.67.0](https://github.com/marco0560/Fontshow/compare/v0.66.1...v0.67.0) (2026-04-09)
+
+### Features
+
+* **catalog:** add opt-in indexed navigation mode ([7fac637](https://github.com/marco0560/Fontshow/commit/7fac63729b4d96a1b24ff55d3b04d8c61d628750))
+* **catalog:** add selective archive controls ([e49c719](https://github.com/marco0560/Fontshow/commit/e49c71998a86b31f97146c52afc95209705e4798))
+* **catalog:** harden low-information specimen rendering ([ca1bea7](https://github.com/marco0560/Fontshow/commit/ca1bea755543044bfc53223e4fdcdfb7b4bec5e8))
+* **catalog:** merge catalog artifact hardening ([f82d843](https://github.com/marco0560/Fontshow/commit/f82d843228b393d8e1db9399e9e09999898bd1da)), closes [#70](https://github.com/marco0560/Fontshow/issues/70) [#59](https://github.com/marco0560/Fontshow/issues/59)
+* **discovery:** add font script block query ([280704c](https://github.com/marco0560/Fontshow/commit/280704c92259be61a22b8151f24e919fa933b38f))
+* **ontology:** add script gap report helpers ([7595e9a](https://github.com/marco0560/Fontshow/commit/7595e9a62791834dd65093e306497e629a5bd8a4))
+* **output:** compact catalog rows and navigation ([0be9735](https://github.com/marco0560/Fontshow/commit/0be97355d4399f89f5c564c25f2497ed5c7ecae8))
+* **schema:** add schema 1.4 render-path loadability ([c91edf1](https://github.com/marco0560/Fontshow/commit/c91edf1f1058ad0752ad738a850d45d7976820c4))
+* **schema:** persist validated render specimens ([4744dcc](https://github.com/marco0560/Fontshow/commit/4744dccd982e38bbfcb96fbda95cad3bb3d41066))
+
+### Bug Fixes
+
+* **catalog:** harden script specimen rendering ([aa8fb80](https://github.com/marco0560/Fontshow/commit/aa8fb80f9dec413a79a3a0bcb3a6b57733409c5b))
+* **catalog:** harden script specimen selection ([fcbdf6c](https://github.com/marco0560/Fontshow/commit/fcbdf6c2336f52fb45c16981fa3788be62a33ddc))
+* **catalog:** harden specimen script coherence ([8ca9cdc](https://github.com/marco0560/Fontshow/commit/8ca9cdcb0ad9c7715fe815c32c9d5359ca05c1e4))
+* **catalog:** move omitted variants to appendices ([3488934](https://github.com/marco0560/Fontshow/commit/34889349a42bf3d1637636952950adc008b86a5d))
+* **catalog:** persist more script render variants ([3037b60](https://github.com/marco0560/Fontshow/commit/3037b60a3eda7356a1eae9fafd867e57249796e1))
+* **catalog:** prefer glyph fallback for invalid specimens ([c239276](https://github.com/marco0560/Fontshow/commit/c239276060f708008c8020c94b7ad0ea9c7ba097))
+* **catalog:** remove obsolete polyglossia preamble setup ([cf971fd](https://github.com/marco0560/Fontshow/commit/cf971fd10a8ec4675bdb5b0ad134952f9f45045c))
+* **catalog:** restore canonical path-based fontspec form ([d77130c](https://github.com/marco0560/Fontshow/commit/d77130c16389c940f6f8f8c1978be8c95c3dffc0))
+* **catalog:** restore file-based fontspec loading ([c769a07](https://github.com/marco0560/Fontshow/commit/c769a0786ba945589509e97603bc8858821010c6))
+* **catalog:** stop emitting control bytes in render ([6a3f64f](https://github.com/marco0560/Fontshow/commit/6a3f64f4329f896df66ed5da1ee6835e83fbc354))
+* **catalog:** use stem plus extension in fontspec ([442278a](https://github.com/marco0560/Fontshow/commit/442278af62d5f1867527186bc6f114b35a925bd3))
+* **cli:** reduce parse-inventory default chatter ([6e2422f](https://github.com/marco0560/Fontshow/commit/6e2422fc7517c89b7593947b83108e72ddf23a29))
+* **inventory:** reconcile specimen and primary script ([2202121](https://github.com/marco0560/Fontshow/commit/22021212ed6f70f02b357b4877ff235ffab5c01e))
+* **inventory:** record final specimen fallback reason ([ca85abc](https://github.com/marco0560/Fontshow/commit/ca85abc4a3a10309086d3cdc2bff19f4cc45eb1e))
+* **inventory:** strengthen specimen fallback and appendix text ([5246650](https://github.com/marco0560/Fontshow/commit/5246650bfc982da8ead537c227a3b6a03e005f67))
+* **inventory:** tighten script thresholds and sample pua ([4d03293](https://github.com/marco0560/Fontshow/commit/4d03293a53a0cae8fe4c15ea88cb946e94353210))
+* **output:** drop nested specimen parbox ([17229a5](https://github.com/marco0560/Fontshow/commit/17229a581cfb8be200d959dd32278371696d9b17))
+* **schema:** accept language specimen strategy ([5ded00d](https://github.com/marco0560/Fontshow/commit/5ded00df06ac7f0c529aa8a313df244b83c859ad))
+* **schema:** accept pua specimen strategy ([0e520b2](https://github.com/marco0560/Fontshow/commit/0e520b20da8299047e3d1870b6c49e196f16c284))
+
 ## [0.66.1](https://github.com/marco0560/Fontshow/compare/v0.66.0...v0.66.1) (2026-04-02)
 
 ### Bug Fixes
