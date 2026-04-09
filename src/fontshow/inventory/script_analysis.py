@@ -35,6 +35,7 @@ from fontshow.ontology.unicode_tables import (
 )
 
 CHARSET_SCRIPT_WEIGHT = 0.25
+SUBSTANTIAL_SCRIPT_SCORE_FLOOR = 64
 
 
 def _is_significant_latin_block(count: int, total: int, level: str) -> bool:
@@ -381,7 +382,105 @@ def _suppress_latin_noise_for_braille(
     return adjusted
 
 
-def _apply_suppressions(scripts_score: dict[str, float]) -> dict[str, float]:
+def _significant_contributing_block_count(
+    script_iso: ScriptISO,
+    blocks: dict[str, int],
+    level: str,
+) -> int:
+    """
+    Count significant Unicode blocks contributing evidence to one script.
+
+    Parameters
+    ----------
+    script_iso : ScriptISO
+        Script whose evidence footprint is being inspected.
+    blocks : dict[str, int]
+        Mapping of Unicode block name to covered codepoint count.
+    level : str
+        Inference aggressiveness level.
+
+    Returns
+    -------
+    int
+        Number of significant contributing blocks for ``script_iso``.
+    """
+    if not blocks:
+        return 0
+
+    info = SCRIPT_INFO[script_iso]
+    match_mode = str(info["block_match"])
+    total = sum(blocks.values()) or 1
+    count = 0
+
+    for block_name, block_count in blocks.items():
+        if not _block_is_significant(block_name, block_count, total, level):
+            continue
+        if any(
+            _block_matches_pattern(block_name, pattern, match_mode)
+            for pattern in info["required_blocks"]
+        ) or any(
+            _block_matches_pattern(block_name, pattern, match_mode)
+            for pattern in info["optional_blocks"]
+        ):
+            count += 1
+
+    return count
+
+
+def _substantial_script_candidates(
+    scripts_score: dict[str, float],
+    blocks: dict[str, int],
+    level: str,
+) -> set[str]:
+    """
+    Return scripts whose pre-suppression evidence is too strong to erase.
+
+    Parameters
+    ----------
+    scripts_score : dict[str, float]
+        Weighted score per inferred script tag before suppressions.
+    blocks : dict[str, int]
+        Canonical Unicode block coverage used to derive ``scripts_score``.
+    level : str
+        Inference aggressiveness level.
+
+    Returns
+    -------
+    set[str]
+        Lowercase script tags that should survive ontology suppressions.
+
+    Notes
+    -----
+    Suppression rules are meant to remove neighboring-script noise, not
+    erase independently substantial evidence from genuinely multi-script
+    fonts. A script is therefore protected only when it has both a
+    repository-wide substantial score and diversified evidence across
+    more than one significant contributing block.
+    """
+    if not scripts_score:
+        return set()
+
+    substantial: set[str] = set()
+    for script_tag, score in scripts_score.items():
+        if score <= 0:
+            continue
+        if score < SUBSTANTIAL_SCRIPT_SCORE_FLOOR:
+            continue
+        block_count = _significant_contributing_block_count(
+            ScriptISO(script_tag.upper()),
+            blocks,
+            level,
+        )
+        if block_count >= 2:
+            substantial.add(script_tag)
+    return substantial
+
+
+def _apply_suppressions(
+    scripts_score: dict[str, float],
+    blocks: dict[str, int],
+    level: str,
+) -> dict[str, float]:
     """
     Apply ontology-driven hard suppressions between competing scripts.
 
@@ -389,6 +488,10 @@ def _apply_suppressions(scripts_score: dict[str, float]) -> dict[str, float]:
     ----------
     scripts_score : dict[str, float]
         Weighted score per inferred script tag.
+    blocks : dict[str, int]
+        Canonical Unicode block coverage used for the current inference.
+    level : str
+        Inference aggressiveness level.
 
     Returns
     -------
@@ -396,6 +499,7 @@ def _apply_suppressions(scripts_score: dict[str, float]) -> dict[str, float]:
         Updated score mapping after hard suppressions.
     """
     adjusted = dict(scripts_score)
+    protected_scripts = _substantial_script_candidates(scripts_score, blocks, level)
 
     for script_tag in list(adjusted):
         if script_tag not in adjusted:
@@ -404,7 +508,10 @@ def _apply_suppressions(scripts_score: dict[str, float]) -> dict[str, float]:
         if adjusted[script_tag] <= 0:
             continue
         for suppressed_iso in info["suppresses"]:
-            adjusted.pop(str(suppressed_iso).lower(), None)
+            suppressed_tag = str(suppressed_iso).lower()
+            if suppressed_tag in protected_scripts:
+                continue
+            adjusted.pop(suppressed_tag, None)
 
     return adjusted
 
@@ -695,7 +802,7 @@ def infer_scripts(coverage: dict[str, Any], level: str = "medium") -> list[str]:
         }
         scripts_score = _combine_weighted_script_scores(scripts_score, charset_scores)
         scripts_score = _apply_preferred_over(scripts_score)
-        scripts_score = _apply_suppressions(scripts_score)
+        scripts_score = _apply_suppressions(scripts_score, blocks, level)
         scripts_score = _promote_dedicated_scripts_over_latin(scripts_score, blocks)
         scripts_score = _suppress_latin_noise_for_braille(scripts_score)
         scripts_score = _collapse_script_groups(scripts_score)

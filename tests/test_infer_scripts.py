@@ -310,6 +310,65 @@ def test_infer_scripts_cans_keeps_substantial_latin_coverage():
     assert "latn" in scripts
 
 
+def test_infer_scripts_keeps_substantial_script_under_cross_script_suppression():
+    """
+    Ensure strong suppressed-script evidence survives dedicated neighbors.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    scripts = infer_scripts(
+        {
+            "unicode_blocks": {
+                "Unified Canadian Aboriginal Syllabics": 640,
+                "Unified Canadian Aboriginal Syllabics Extended": 70,
+                "Vai": 300,
+                "Glagolitic": 94,
+                "Cyrillic": 256,
+                "Cyrillic Extended-A": 32,
+                "Cyrillic Extended-B": 95,
+                "Cyrillic Supplement": 48,
+                "Braille Patterns": 256,
+                "Greek and Coptic": 135,
+                "Greek Extended": 233,
+                "Coptic": 123,
+                "Tagalog": 20,
+                "Armenian": 89,
+                "Georgian": 88,
+                "Georgian Supplement": 40,
+                "Hebrew": 87,
+                "Thai": 87,
+                "Cherokee": 85,
+                "Tifinagh": 58,
+                "Carian": 49,
+                "Lisu": 48,
+                "Gothic": 27,
+                "Buhid": 20,
+                "Tagbanwa": 18,
+                "Basic Latin": 95,
+                "Latin-1 Supplement": 96,
+                "Latin Extended-A": 128,
+                "Latin Extended-B": 208,
+                "Latin Extended Additional": 256,
+                "Latin Extended-C": 32,
+                "Latin Extended-D": 152,
+                "Latin Extended-E": 50,
+            }
+        },
+        level="aggressive",
+    )
+
+    assert scripts[0] == "latn"
+    assert "vaii" in scripts
+    assert "cans" in scripts
+    assert "latn" in scripts
+
+
 def test_infer_scripts_uses_unicode_max_for_second_batch_ranges():
     """
     Verify unicode.max fallback covers second-batch script ranges.
@@ -473,6 +532,21 @@ def test_infer_scripts_suppresses_neighboring_scripts_for_dedicated_batches():
     assert infer_scripts(
         {"unicode_blocks": {"Tirhuta": 45, "Bengali": 14, "Devanagari": 13}}
     ) == ["tirh"]
+
+
+def test_infer_scripts_suppresses_non_substantial_neighboring_script_noise():
+    """
+    Ensure weak suppressed neighbors still disappear after refinement.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    assert infer_scripts({"unicode_blocks": {"Vai": 40, "Basic Latin": 20}}) == ["vaii"]
 
 
 def test_infer_scripts_fifth_batch_blocks():
