@@ -82,7 +82,7 @@ from fontshow.ontology.language_tables import SCRIPT_INFO
 from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
 _SUPPORTED_PATH_BASED_EXTENSIONS = (".ttf", ".otf", ".ttc")
-_MULTI_SPECIMEN_LIMIT = 20
+_MULTI_SPECIMEN_LIMIT = 30
 _PUA_SCRIPT = ScriptISO("PUAA")
 
 CatalogDetailLevel = Literal["compact", "extended"]
@@ -746,7 +746,15 @@ def _specimen_for_rendered_script(
     if persisted_variant is not None:
         specimen_text = persisted_variant.get("specimen_text")
         if isinstance(specimen_text, str) and specimen_text.strip():
-            return _strip_ascii_control_chars(specimen_text)
+            filtered = _strip_ascii_control_chars(specimen_text)
+            strategy = str(persisted_variant.get("specimen_strategy") or "").strip()
+            if _should_suppress_non_textual_latin_row(
+                script_iso,
+                filtered,
+                strategy=strategy,
+            ):
+                return ""
+            return filtered
 
     script_info = SCRIPT_INFO.get(script_iso)
     if not isinstance(script_info, dict):
@@ -812,7 +820,7 @@ def _primary_specimen_for_rendered_script(
     typography = typography_raw if isinstance(typography_raw, Mapping) else {}
     rejection = str(typography.get("specimen_rejection_reason") or "").strip()
     curated = _curated_primary_script_specimen(font, script_iso)
-    if strategy == "pua" and curated:
+    if strategy == "pua":
         return curated
     if rejection == "specimen_not_in_cmap":
         return curated
@@ -1067,6 +1075,42 @@ def _has_low_information_visible_specimen(font: CatalogFontEntryV12) -> bool:
     if len(visible) <= 3:
         return True
     return len(visible) <= 6 and len(set(visible)) <= 4
+
+
+def _should_suppress_non_textual_latin_row(
+    script_iso: ScriptISO,
+    specimen: str,
+    *,
+    strategy: str,
+) -> bool:
+    """
+    Return whether a Latin-labeled row should be suppressed as misleading.
+
+    Parameters
+    ----------
+    script_iso : ScriptISO
+        Script code attached to the rendered specimen row.
+    specimen : str
+        Visible specimen text about to be rendered.
+    strategy : str
+        Accepted specimen-selection strategy for the row.
+
+    Returns
+    -------
+    bool
+        ``True`` when a Latin row is backed by private-use fallback or
+        contains only non-textual visible punctuation and symbols.
+    """
+    if str(script_iso).upper() != "LATN":
+        return False
+    if strategy == "pua":
+        return True
+
+    visible = "".join(ch for ch in specimen if not ch.isspace())
+    if not visible:
+        return False
+
+    return not any(unicodedata.category(ch)[0] in {"L", "N"} for ch in visible)
 
 
 def _should_suppress_specialized_primary_specimen(font: CatalogFontEntryV12) -> bool:

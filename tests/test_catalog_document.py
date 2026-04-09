@@ -358,7 +358,7 @@ def test_ordered_script_candidates_prioritizes_primary_then_rtl_then_latn(
     ]
 
 
-def test_ordered_script_candidates_caps_output_at_twenty(monkeypatch):
+def test_ordered_script_candidates_caps_output_at_thirty(monkeypatch):
     """
     Ensure multi-specimen expansion honors the current catalog cap.
 
@@ -371,7 +371,7 @@ def test_ordered_script_candidates_caps_output_at_twenty(monkeypatch):
     -------
     None
     """
-    script_names = [f"S{index:03d}" for index in range(25)]
+    script_names = [f"S{index:03d}" for index in range(35)]
     monkeypatch.setattr(
         document,
         "SCRIPT_INFO",
@@ -387,9 +387,9 @@ def test_ordered_script_candidates_caps_output_at_twenty(monkeypatch):
         }
     )
 
-    assert len(scripts) == 20
+    assert len(scripts) == 30
     assert scripts[0] == ScriptISO(script_names[0])
-    assert scripts[-1] == ScriptISO(script_names[19])
+    assert scripts[-1] == ScriptISO(script_names[29])
 
 
 def test_ordered_script_candidates_appends_private_use_row(monkeypatch):
@@ -653,6 +653,84 @@ def test_primary_specimen_for_rendered_script_prefers_glyph_mode_for_low_info_cm
                 "specimen_glyph_count": 1,
                 "specimen_rejection_reason": "fallback_to_cmap",
             }
+        },
+        ScriptISO("LATN"),
+    )
+
+    assert specimen == ""
+
+
+def test_primary_specimen_for_rendered_script_suppresses_primary_pua_without_curated(
+    monkeypatch,
+):
+    """
+    Ensure PUA-backed primary rows are omitted without a real text fallback.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace curated fallback resolution.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_curated_primary_script_specimen", lambda *_: "")
+
+    specimen = document._primary_specimen_for_rendered_script(
+        {
+            "typography": {
+                "specimen_text": "\ue000\ue001\ue002",
+                "specimen_strategy": "pua",
+                "specimen_rejection_reason": "fallback_to_private_use",
+            }
+        },
+        ScriptISO("LATN"),
+    )
+
+    assert specimen == ""
+
+
+def test_specimen_for_rendered_script_suppresses_punctuation_only_latin_variant(
+    monkeypatch,
+):
+    """
+    Ensure punctuation-only Latin secondary rows are not rendered.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace render-policy resolution.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "primary_script", lambda _font: "ARAB")
+    monkeypatch.setattr(
+        document, "_get_render_policy", lambda _script: ("", "Script=Latin")
+    )
+
+    specimen = document._specimen_for_rendered_script(
+        {
+            "loadability": {
+                "lualatex": {
+                    "render_variants": [
+                        {
+                            "script": "LATN",
+                            "fontspec_opts": "Script=Latin",
+                            "attempted": True,
+                            "loadable": True,
+                            "reason": None,
+                            "runtime_fingerprint": "fp-1",
+                            "probe_input": "U+0021",
+                            "specimen_text": " !\"'(),-.:;?_`",
+                            "specimen_glyph_count": 14,
+                            "specimen_strategy": "script-cmap",
+                        }
+                    ]
+                }
+            },
         },
         ScriptISO("LATN"),
     )
