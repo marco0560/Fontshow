@@ -1,3 +1,9 @@
+## [0.68.0](https://github.com/marco0560/Fontshow/compare/v0.67.3...v0.68.0) (2026-04-10)
+
+### Features
+
+* **ontology:** add dedicated script and language rows ([2aa9bfe](https://github.com/marco0560/Fontshow/commit/2aa9bfe9a02334b886118d0e2ba4344ace8563e4))
+
 ## [0.67.3](https://github.com/marco0560/Fontshow/compare/v0.67.2...v0.67.3) (2026-04-10)
 
 ### Bug Fixes
