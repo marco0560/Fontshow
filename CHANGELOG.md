@@ -1,3 +1,9 @@
+## [0.67.3](https://github.com/marco0560/Fontshow/compare/v0.67.2...v0.67.3) (2026-04-10)
+
+### Bug Fixes
+
+* **catalog:** avoid per-family PDF bookmarks ([e0e01a6](https://github.com/marco0560/Fontshow/commit/e0e01a6ecaf1d2bc03e04d95de030a6ccb9b810d))
+
 ## [0.67.2](https://github.com/marco0560/Fontshow/compare/v0.67.1...v0.67.2) (2026-04-09)
 
 ### Bug Fixes
