@@ -1775,7 +1775,8 @@ def test_generate_latex_indexed_navigation_adds_toc_anchors_and_end_index(
     monkeypatch, tmp_path
 ):
     """
-    Ensure indexed catalogs include family anchors, bookmarks, and grouped index.
+    Ensure indexed catalogs include family anchors and grouped index links
+    without emitting one PDF bookmark per family.
 
     Parameters
     ----------
@@ -1865,8 +1866,8 @@ def test_generate_latex_indexed_navigation_adds_toc_anchors_and_end_index(
 
     assert "\\tableofcontents" not in latex
     assert "\\hypertarget{fontshow-family-0001}{}" in latex
-    assert "\\pdfbookmark[2]{FreeSans}{fontshow-family-0001-bookmark}" in latex
     assert "\\subsection*{FreeSans}" in latex
+    assert "\\pdfbookmark[2]" not in latex
     assert "\\section{Navigation Index}" in latex
     assert "\\begin{multicols}{3}" in latex
     assert "\\textbf{F}\\par" in latex

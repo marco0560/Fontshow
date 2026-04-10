@@ -502,15 +502,7 @@ def _render_family_catalog_block(
     if indexed_navigation:
         anchor = _catalog_family_anchor(family_index)
         family_intro = (
-            "\\hypertarget{"
-            + anchor
-            + "}{}\n\\pdfbookmark[2]{"
-            + safe_name
-            + "}{"
-            + anchor
-            + "-bookmark}\n\\subsection*{"
-            + safe_name
-            + "}"
+            "\\hypertarget{" + anchor + "}{}\n\\subsection*{" + safe_name + "}"
         )
         if debug_block:
             family_intro += "\n\n" + debug_block
@@ -1806,8 +1798,8 @@ def generate_latex(
         Family and specimen metadata detail level used in the rendered
         catalog body.
     indexed_navigation : bool, optional
-        When ``True``, emit anchor-based family navigation with PDF
-        bookmarks and an end-of-document grouped navigation index.
+        When ``True``, emit anchor-based family navigation and an
+        end-of-document grouped navigation index.
     generation_metadata : collections.abc.Mapping[str, str] | None, optional
         Optional first-page metadata keys used to replace LaTeX
         front-matter placeholders. Missing keys fall back to empty
