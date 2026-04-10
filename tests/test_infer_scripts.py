@@ -802,6 +802,31 @@ def test_infer_scripts_supports_eighth_batch_blocks_and_ranges():
     assert infer_scripts({"unicode": {"max": 0x11EF4}}) == ["maka"]
 
 
+def test_infer_scripts_supports_dedicated_unknown_batch_blocks():
+    """
+    Verify script rows added for formerly unknown specimen-only fonts.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    assert infer_scripts({"unicode_blocks": {"Cuneiform": 24}}) == ["xsux"]
+    assert infer_scripts({"unicode_blocks": {"Egyptian Hieroglyphs": 24}}) == ["egyp"]
+    assert infer_scripts({"unicode_blocks": {"Linear B Syllabary": 24}}) == ["linb"]
+    assert infer_scripts({"unicode_blocks": {"New Tai Lue": 24}}) == ["talu"]
+    assert infer_scripts({"unicode_blocks": {"Ol Chiki": 24}}) == ["olck"]
+    assert infer_scripts({"unicode_blocks": {"Sutton SignWriting": 24}}) == ["sgnw"]
+    assert infer_scripts({"unicode_blocks": {"Tamil Supplement": 24}}) == ["taml"]
+    assert infer_scripts({"unicode_blocks": {"Znamenny Musical Notation": 24}}) == [
+        "znam"
+    ]
+    assert infer_scripts({"unicode_blocks": {"Phaistos Disc": 24}}) == ["phai"]
+
+
 def test_infer_scripts_suppresses_neighboring_devanagari_and_thai_noise():
     """
     Verify Bengali and Lao suppress common neighboring false positives.

@@ -59,11 +59,13 @@ def test_build_raw_gap_report_lists_missing_iso_scripts() -> None:
         {
             "LATN": "Latin",
             "ARAB": "Arabic",
-            "HATR": "Hatran",
+            "ZZZZ": "Synthetic Test Script",
         }
     )
 
-    assert report["missing_from_script_info"] == [{"code": "HATR", "name": "Hatran"}]
+    assert report["missing_from_script_info"] == [
+        {"code": "ZZZZ", "name": "Synthetic Test Script"}
+    ]
     assert report["missing_curated_specimen"] == []
 
 
@@ -83,12 +85,12 @@ def test_build_encountered_gap_report_narrows_to_seen_inventory_scripts() -> Non
         {
             "fonts": [
                 {
-                    "coverage": {"scripts": ["latn", "hatr"], "primary_script": "LATN"},
+                    "coverage": {"scripts": ["latn", "zzzz"], "primary_script": "LATN"},
                     "inference": {
-                        "scripts": ["latn", "hatr"],
-                        "primary_script": "HATR",
+                        "scripts": ["latn", "zzzz"],
+                        "primary_script": "ZZZZ",
                     },
-                    "typography": {"primary_script": "HATR"},
+                    "typography": {"primary_script": "ZZZZ"},
                 },
                 {
                     "coverage": {"scripts": ["brai"], "primary_script": "BRAI"},
@@ -99,7 +101,7 @@ def test_build_encountered_gap_report_narrows_to_seen_inventory_scripts() -> Non
         }
     )
 
-    assert report["seen_missing_from_script_info"] == ["HATR"]
+    assert report["seen_missing_from_script_info"] == ["ZZZZ"]
     assert report["seen_missing_curated_specimen"] == []
 
 
@@ -118,7 +120,7 @@ def test_raw_gap_report_main_writes_json(tmp_path: Path) -> None:
     """
     iso_path = tmp_path / "iso15924.txt"
     iso_path.write_text(
-        "# comment\nLatn;215;Latin;;;;\nHatr;127;Hatran;;;;\n",
+        "# comment\nLatn;215;Latin;;;;\nZzzz;999;Synthetic Test Script;;;;\n",
         encoding="utf-8",
     )
     output_path = tmp_path / "raw-gap.json"
@@ -130,7 +132,9 @@ def test_raw_gap_report_main_writes_json(tmp_path: Path) -> None:
     payload = json.loads(output_path.read_text(encoding="utf-8"))
 
     assert rc == 0
-    assert payload["missing_from_script_info"] == [{"code": "HATR", "name": "Hatran"}]
+    assert payload["missing_from_script_info"] == [
+        {"code": "ZZZZ", "name": "Synthetic Test Script"}
+    ]
 
 
 def test_encountered_gap_report_main_writes_json(tmp_path: Path) -> None:
@@ -153,14 +157,14 @@ def test_encountered_gap_report_main_writes_json(tmp_path: Path) -> None:
                 "fonts": [
                     {
                         "coverage": {
-                            "scripts": ["latn", "hatr"],
+                            "scripts": ["latn", "zzzz"],
                             "primary_script": "LATN",
                         },
                         "inference": {
-                            "scripts": ["latn", "hatr"],
-                            "primary_script": "HATR",
+                            "scripts": ["latn", "zzzz"],
+                            "primary_script": "ZZZZ",
                         },
-                        "typography": {"primary_script": "HATR"},
+                        "typography": {"primary_script": "ZZZZ"},
                     }
                 ]
             }
@@ -176,5 +180,5 @@ def test_encountered_gap_report_main_writes_json(tmp_path: Path) -> None:
     payload = json.loads(output_path.read_text(encoding="utf-8"))
 
     assert rc == 0
-    assert payload["seen_missing_from_script_info"] == ["HATR"]
+    assert payload["seen_missing_from_script_info"] == ["ZZZZ"]
     assert payload["seen_missing_curated_specimen"] == []

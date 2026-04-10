@@ -596,3 +596,166 @@ def test_script_info_exposes_inference_metadata():
         assert info["block_match"] in {"exact", "prefix"}
         assert isinstance(info["collapse_group"], str)
         assert isinstance(info["preferred_over"], list)
+
+
+def test_dedicated_script_rows_populate_all_script_fields():
+    """
+    Ensure newly covered script-only rows expose complete ontology fields.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    script_fields = {
+        "canonical_name",
+        "description",
+        "display_language",
+        "polyglossia_language",
+        "fontspec_opts",
+        "rtl",
+        "requires_polyglossia",
+        "specimen",
+        "required_blocks",
+        "optional_blocks",
+        "suppresses",
+        "inference_priority",
+        "unicode_max_ranges",
+        "block_match",
+        "collapse_group",
+        "preferred_over",
+    }
+    dedicated_scripts = [
+        "XSUX",
+        "EGYP",
+        "HATR",
+        "ARMI",
+        "PRTI",
+        "KHAR",
+        "SIND",
+        "LINA",
+        "LINB",
+        "LYCI",
+        "LYDI",
+        "MAND",
+        "MANI",
+        "MARC",
+        "MAYA",
+        "MERO",
+        "PLRD",
+        "MODI",
+        "NBAT",
+        "TALU",
+        "NUSH",
+        "OGAM",
+        "OLCK",
+        "HUNG",
+        "ITAL",
+        "NARB",
+        "XPEO",
+        "SARB",
+        "ORKH",
+        "OSMA",
+        "HMNG",
+        "PALM",
+        "PAUC",
+        "PHAG",
+        "PHNX",
+        "RUNR",
+        "SAMR",
+        "SHRD",
+        "SHAW",
+        "SIDD",
+        "SGNW",
+        "SORA",
+        "SOYO",
+        "TAKR",
+        "TNSA",
+        "UGAR",
+        "ZANB",
+        "HMNP",
+        "OUGR",
+        "OTSY",
+        "TANG",
+        "TOTO",
+        "YEZI",
+        "ZNAM",
+        "PHAI",
+    ]
+
+    for script_iso in dedicated_scripts:
+        info = SCRIPT_INFO[ScriptISO(script_iso)]
+        assert set(info) == script_fields
+        assert info["canonical_name"]
+        assert info["description"]
+        assert info["display_language"]
+        assert info["specimen"]
+        assert info["required_blocks"]
+        assert info["unicode_max_ranges"]
+
+
+def test_dedicated_script_language_rows_are_curated_when_available():
+    """
+    Ensure dedicated script rows use real language profiles when curated.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "EGYP": "egy",
+        "ARMI": "arc",
+        "PRTI": "xpr",
+        "KHAR": "pgd",
+        "SIND": "sd",
+        "LINB": "gmy",
+        "MAND": "mid",
+        "PLRD": "hmd",
+        "MODI": "mr",
+        "OLCK": "sat",
+        "OSMA": "so",
+        "HMNG": "hmn",
+        "TNSA": "nst",
+        "UGAR": "uga",
+        "HMNP": "hnj",
+        "TANG": "txg",
+        "TOTO": "txo",
+        "YEZI": "ku",
+    }
+
+    for script_iso, language in expected.items():
+        script_info = SCRIPT_INFO[ScriptISO(script_iso)]
+        language_info = LANGUAGE_INFO[language]
+        assert script_info["display_language"] == language
+        assert ScriptISO(script_iso) in language_info["scripts"]
+        assert language_info["description"]
+        assert language_info["required_blocks"]
+        assert isinstance(language_info["sample"], str) and language_info["sample"]
+
+
+def test_dedicated_script_fallback_language_rows_remain_generic():
+    """
+    Ensure undeciphered and notation scripts stay on generic fallbacks.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    for script_iso in ["XSUX", "HATR", "LINA", "MARC", "NUSH", "ITAL", "RUNR", "PHAI"]:
+        assert SCRIPT_INFO[ScriptISO(script_iso)]["display_language"] == "und"
+        assert ScriptISO(script_iso) in LANGUAGE_INFO["und"]["scripts"]
+
+    for script_iso in ["MAYA", "SGNW", "OTSY", "ZNAM"]:
+        assert SCRIPT_INFO[ScriptISO(script_iso)]["display_language"] == "zxx"
+        assert ScriptISO(script_iso) in LANGUAGE_INFO["zxx"]["scripts"]

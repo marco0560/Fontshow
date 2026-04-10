@@ -25,6 +25,7 @@ generation.
 
 from __future__ import annotations
 
+import unicodedata
 from typing import Literal, NotRequired, TypedDict
 
 from fontshow.core.types import ScriptISO
@@ -91,6 +92,150 @@ class ScriptInfo(TypedDict):
     preferred_over: NotRequired[list[ScriptISO]]
 
 
+def _script_fontspec_opts(canonical_name: str) -> str:
+    """
+    Build deterministic fontspec script options for ontology-only rows.
+
+    Parameters
+    ----------
+    canonical_name : str
+        Canonical script name to expose through ``fontspec``.
+
+    Returns
+    -------
+    str
+        Fontspec ``Script`` option using braces when the name is not a
+        single word.
+    """
+    if canonical_name.replace("-", "").isalpha():
+        return f"Script={canonical_name}"
+    return f"Script={{{canonical_name}}}"
+
+
+def _script_specimen_from_blocks(block_names: list[str]) -> str:
+    """
+    Build a deterministic script specimen from Unicode block ranges.
+
+    Parameters
+    ----------
+    block_names : list[str]
+        Unicode block names used as primary evidence for the script.
+
+    Returns
+    -------
+    str
+        First printable non-combining characters found in the configured
+        ranges, capped to keep catalog rows compact.
+    """
+    specimen: list[str] = []
+
+    for block_name in block_names:
+        start, end = UNICODE_BLOCK_RANGES[block_name]
+        for codepoint in range(start, end + 1):
+            character = chr(codepoint)
+            category = unicodedata.category(character)
+            if category[0] in {"C", "M"}:
+                continue
+            specimen.append(character)
+            if len(specimen) >= 24:
+                return "".join(specimen)
+
+    return "".join(specimen)
+
+
+def _script_rtl_from_specimen(specimen: str) -> bool:
+    """
+    Infer script direction from Unicode bidirectional classes.
+
+    Parameters
+    ----------
+    specimen : str
+        Representative script specimen.
+
+    Returns
+    -------
+    bool
+        True when the specimen contains right-to-left bidirectional
+        evidence.
+    """
+    return any(
+        unicodedata.bidirectional(character) in {"R", "AL"} for character in specimen
+    )
+
+
+def _script_unicode_max_ranges(block_names: list[str]) -> list[tuple[int, int]]:
+    """
+    Resolve Unicode block names to deterministic range tuples.
+
+    Parameters
+    ----------
+    block_names : list[str]
+        Unicode block names configured for script inference.
+
+    Returns
+    -------
+    list[tuple[int, int]]
+        Unicode ranges in the same order as ``block_names``.
+    """
+    return [UNICODE_BLOCK_RANGES[block_name] for block_name in block_names]
+
+
+def _make_dedicated_script_info(
+    canonical_name: str,
+    display_language: str,
+    required_blocks: list[str],
+    *,
+    optional_blocks: list[str] | None = None,
+    inference_priority: int,
+) -> ScriptInfo:
+    """
+    Create a fully populated ontology row for block-dedicated scripts.
+
+    Parameters
+    ----------
+    canonical_name : str
+        Human-readable script name.
+    display_language : str
+        Representative language code used for rendering fallback.
+    required_blocks : list[str]
+        Unicode blocks that identify this script.
+    optional_blocks : list[str] | None, optional
+        Additional Unicode blocks that support inference.
+    inference_priority : int
+        Deterministic priority used to order inference ties.
+
+    Returns
+    -------
+    ScriptInfo
+        Fully populated script ontology row.
+    """
+    optional = list(optional_blocks or [])
+    specimen = _script_specimen_from_blocks(required_blocks)
+    return {
+        "canonical_name": canonical_name,
+        "description": (
+            f"{canonical_name} is a dedicated script ontology entry used by "
+            "Fontshow for catalog labeling, Unicode-block script inference, "
+            f"and deterministic specimen rendering from the "
+            f"{', '.join(required_blocks)} block evidence."
+        ),
+        "display_language": display_language,
+        "polyglossia_language": "",
+        "fontspec_opts": _script_fontspec_opts(canonical_name),
+        "rtl": _script_rtl_from_specimen(specimen),
+        "requires_polyglossia": False,
+        "specimen": specimen,
+        "required_blocks": list(required_blocks),
+        "optional_blocks": optional,
+        "suppresses": [ScriptISO("LATN")],
+        "inference_priority": inference_priority,
+        "unicode_max_ranges": _script_unicode_max_ranges(required_blocks + optional),
+        "block_match": "exact",
+        "collapse_group": "",
+        "preferred_over": [ScriptISO("LATN")],
+    }
+
+
 class LanguageInfo(TypedDict):
     """
     Canonical description of a language inference profile.
@@ -121,6 +266,45 @@ class LanguageInfo(TypedDict):
     required_blocks: list[str]
     optional_blocks: list[str]
     sample: str | None
+
+
+def _make_script_language_info(
+    canonical_name: str,
+    description: str,
+    scripts: list[ScriptISO],
+    required_blocks: list[str],
+    *,
+    optional_blocks: list[str] | None = None,
+) -> LanguageInfo:
+    """
+    Create a fully populated language row backed by script specimens.
+
+    Parameters
+    ----------
+    canonical_name : str
+        Human-readable language name.
+    description : str
+        Short language description used in diagnostics and ontology dumps.
+    scripts : list[ScriptISO]
+        Scripts associated with the language profile.
+    required_blocks : list[str]
+        Unicode blocks used as primary language evidence.
+    optional_blocks : list[str] | None, optional
+        Additional Unicode blocks that support language inference.
+
+    Returns
+    -------
+    LanguageInfo
+        Fully populated language ontology row.
+    """
+    return {
+        "canonical_name": canonical_name,
+        "description": description,
+        "scripts": list(scripts),
+        "required_blocks": list(required_blocks),
+        "optional_blocks": list(optional_blocks or []),
+        "sample": SCRIPT_INFO[scripts[0]]["specimen"],
+    }
 
 
 class ScriptInferenceOverride(TypedDict, total=False):
@@ -1170,6 +1354,406 @@ SCRIPT_INFO: dict[ScriptISO, ScriptInfo] = {
     },
 }
 
+SCRIPT_INFO.update(
+    {
+        ScriptISO("XSUX"): _make_dedicated_script_info(
+            "Cuneiform",
+            "und",
+            ["Cuneiform"],
+            optional_blocks=[
+                "Cuneiform Numbers and Punctuation",
+                "Early Dynastic Cuneiform",
+            ],
+            inference_priority=87,
+        ),
+        ScriptISO("EGYP"): _make_dedicated_script_info(
+            "Egyptian Hieroglyphs",
+            "und",
+            ["Egyptian Hieroglyphs"],
+            optional_blocks=[
+                "Egyptian Hieroglyph Format Controls",
+                "Egyptian Hieroglyphs Extended-A",
+            ],
+            inference_priority=88,
+        ),
+        ScriptISO("HATR"): _make_dedicated_script_info(
+            "Hatran",
+            "und",
+            ["Hatran"],
+            inference_priority=89,
+        ),
+        ScriptISO("ARMI"): _make_dedicated_script_info(
+            "Imperial Aramaic",
+            "und",
+            ["Imperial Aramaic"],
+            inference_priority=90,
+        ),
+        ScriptISO("PRTI"): _make_dedicated_script_info(
+            "Inscriptional Parthian",
+            "und",
+            ["Inscriptional Parthian"],
+            inference_priority=91,
+        ),
+        ScriptISO("KHAR"): _make_dedicated_script_info(
+            "Kharoshthi",
+            "und",
+            ["Kharoshthi"],
+            inference_priority=92,
+        ),
+        ScriptISO("SIND"): _make_dedicated_script_info(
+            "Khudawadi",
+            "und",
+            ["Khudawadi"],
+            inference_priority=93,
+        ),
+        ScriptISO("LINA"): _make_dedicated_script_info(
+            "Linear A",
+            "und",
+            ["Linear A"],
+            inference_priority=94,
+        ),
+        ScriptISO("LINB"): _make_dedicated_script_info(
+            "Linear B",
+            "und",
+            ["Linear B Syllabary"],
+            optional_blocks=["Linear B Ideograms"],
+            inference_priority=95,
+        ),
+        ScriptISO("LYCI"): _make_dedicated_script_info(
+            "Lycian",
+            "und",
+            ["Lycian"],
+            inference_priority=96,
+        ),
+        ScriptISO("LYDI"): _make_dedicated_script_info(
+            "Lydian",
+            "und",
+            ["Lydian"],
+            inference_priority=97,
+        ),
+        ScriptISO("MAND"): _make_dedicated_script_info(
+            "Mandaic",
+            "und",
+            ["Mandaic"],
+            inference_priority=98,
+        ),
+        ScriptISO("MANI"): _make_dedicated_script_info(
+            "Manichaean",
+            "und",
+            ["Manichaean"],
+            inference_priority=99,
+        ),
+        ScriptISO("MARC"): _make_dedicated_script_info(
+            "Marchen",
+            "und",
+            ["Marchen"],
+            inference_priority=100,
+        ),
+        ScriptISO("MAYA"): _make_dedicated_script_info(
+            "Mayan Numerals",
+            "zxx",
+            ["Mayan Numerals"],
+            inference_priority=101,
+        ),
+        ScriptISO("MERO"): _make_dedicated_script_info(
+            "Meroitic",
+            "und",
+            ["Meroitic Hieroglyphs"],
+            optional_blocks=["Meroitic Cursive"],
+            inference_priority=102,
+        ),
+        ScriptISO("PLRD"): _make_dedicated_script_info(
+            "Miao",
+            "und",
+            ["Miao"],
+            inference_priority=103,
+        ),
+        ScriptISO("MODI"): _make_dedicated_script_info(
+            "Modi",
+            "und",
+            ["Modi"],
+            inference_priority=104,
+        ),
+        ScriptISO("NBAT"): _make_dedicated_script_info(
+            "Nabataean",
+            "und",
+            ["Nabataean"],
+            inference_priority=105,
+        ),
+        ScriptISO("TALU"): _make_dedicated_script_info(
+            "New Tai Lue",
+            "und",
+            ["New Tai Lue"],
+            inference_priority=106,
+        ),
+        ScriptISO("NUSH"): _make_dedicated_script_info(
+            "Nushu",
+            "und",
+            ["Nushu"],
+            inference_priority=107,
+        ),
+        ScriptISO("OGAM"): _make_dedicated_script_info(
+            "Ogham",
+            "und",
+            ["Ogham"],
+            inference_priority=108,
+        ),
+        ScriptISO("OLCK"): _make_dedicated_script_info(
+            "Ol Chiki",
+            "und",
+            ["Ol Chiki"],
+            inference_priority=109,
+        ),
+        ScriptISO("HUNG"): _make_dedicated_script_info(
+            "Old Hungarian",
+            "und",
+            ["Old Hungarian"],
+            inference_priority=110,
+        ),
+        ScriptISO("ITAL"): _make_dedicated_script_info(
+            "Old Italic",
+            "und",
+            ["Old Italic"],
+            inference_priority=111,
+        ),
+        ScriptISO("NARB"): _make_dedicated_script_info(
+            "Old North Arabian",
+            "und",
+            ["Old North Arabian"],
+            inference_priority=112,
+        ),
+        ScriptISO("XPEO"): _make_dedicated_script_info(
+            "Old Persian",
+            "und",
+            ["Old Persian"],
+            inference_priority=113,
+        ),
+        ScriptISO("SARB"): _make_dedicated_script_info(
+            "Old South Arabian",
+            "und",
+            ["Old South Arabian"],
+            inference_priority=114,
+        ),
+        ScriptISO("ORKH"): _make_dedicated_script_info(
+            "Old Turkic",
+            "und",
+            ["Old Turkic"],
+            inference_priority=115,
+        ),
+        ScriptISO("OSMA"): _make_dedicated_script_info(
+            "Osmanya",
+            "und",
+            ["Osmanya"],
+            inference_priority=116,
+        ),
+        ScriptISO("HMNG"): _make_dedicated_script_info(
+            "Pahawh Hmong",
+            "und",
+            ["Pahawh Hmong"],
+            inference_priority=117,
+        ),
+        ScriptISO("PALM"): _make_dedicated_script_info(
+            "Palmyrene",
+            "und",
+            ["Palmyrene"],
+            inference_priority=118,
+        ),
+        ScriptISO("PAUC"): _make_dedicated_script_info(
+            "Pau Cin Hau",
+            "und",
+            ["Pau Cin Hau"],
+            inference_priority=119,
+        ),
+        ScriptISO("PHAG"): _make_dedicated_script_info(
+            "Phags-pa",
+            "und",
+            ["Phags-pa"],
+            inference_priority=120,
+        ),
+        ScriptISO("PHNX"): _make_dedicated_script_info(
+            "Phoenician",
+            "und",
+            ["Phoenician"],
+            inference_priority=121,
+        ),
+        ScriptISO("RUNR"): _make_dedicated_script_info(
+            "Runic",
+            "und",
+            ["Runic"],
+            inference_priority=122,
+        ),
+        ScriptISO("SAMR"): _make_dedicated_script_info(
+            "Samaritan",
+            "und",
+            ["Samaritan"],
+            inference_priority=123,
+        ),
+        ScriptISO("SHRD"): _make_dedicated_script_info(
+            "Sharada",
+            "und",
+            ["Sharada"],
+            optional_blocks=["Sharada Supplement"],
+            inference_priority=124,
+        ),
+        ScriptISO("SHAW"): _make_dedicated_script_info(
+            "Shavian",
+            "und",
+            ["Shavian"],
+            inference_priority=125,
+        ),
+        ScriptISO("SIDD"): _make_dedicated_script_info(
+            "Siddham",
+            "und",
+            ["Siddham"],
+            inference_priority=126,
+        ),
+        ScriptISO("SGNW"): _make_dedicated_script_info(
+            "SignWriting",
+            "zxx",
+            ["Sutton SignWriting"],
+            inference_priority=127,
+        ),
+        ScriptISO("SORA"): _make_dedicated_script_info(
+            "Sora Sompeng",
+            "und",
+            ["Sora Sompeng"],
+            inference_priority=128,
+        ),
+        ScriptISO("SOYO"): _make_dedicated_script_info(
+            "Soyombo",
+            "und",
+            ["Soyombo"],
+            inference_priority=129,
+        ),
+        ScriptISO("TAKR"): _make_dedicated_script_info(
+            "Takri",
+            "und",
+            ["Takri"],
+            inference_priority=130,
+        ),
+        ScriptISO("TNSA"): _make_dedicated_script_info(
+            "Tangsa",
+            "und",
+            ["Tangsa"],
+            inference_priority=131,
+        ),
+        ScriptISO("UGAR"): _make_dedicated_script_info(
+            "Ugaritic",
+            "und",
+            ["Ugaritic"],
+            inference_priority=132,
+        ),
+        ScriptISO("ZANB"): _make_dedicated_script_info(
+            "Zanabazar Square",
+            "und",
+            ["Zanabazar Square"],
+            inference_priority=133,
+        ),
+        ScriptISO("HMNP"): _make_dedicated_script_info(
+            "Nyiakeng Puachue Hmong",
+            "und",
+            ["Nyiakeng Puachue Hmong"],
+            inference_priority=134,
+        ),
+        ScriptISO("OUGR"): _make_dedicated_script_info(
+            "Old Uyghur",
+            "und",
+            ["Old Uyghur"],
+            inference_priority=135,
+        ),
+        ScriptISO("OTSY"): _make_dedicated_script_info(
+            "Ottoman Siyaq Numbers",
+            "zxx",
+            ["Ottoman Siyaq Numbers"],
+            inference_priority=136,
+        ),
+        ScriptISO("TANG"): _make_dedicated_script_info(
+            "Tangut",
+            "und",
+            ["Tangut"],
+            optional_blocks=[
+                "Tangut Components",
+                "Tangut Supplement",
+                "Tangut Components Supplement",
+            ],
+            inference_priority=137,
+        ),
+        ScriptISO("TOTO"): _make_dedicated_script_info(
+            "Toto",
+            "und",
+            ["Toto"],
+            inference_priority=138,
+        ),
+        ScriptISO("YEZI"): _make_dedicated_script_info(
+            "Yezidi",
+            "und",
+            ["Yezidi"],
+            inference_priority=139,
+        ),
+        ScriptISO("ZNAM"): _make_dedicated_script_info(
+            "Znamenny Musical Notation",
+            "zxx",
+            ["Znamenny Musical Notation"],
+            inference_priority=140,
+        ),
+        ScriptISO("PHAI"): _make_dedicated_script_info(
+            "Phaistos Disc",
+            "und",
+            ["Phaistos Disc"],
+            inference_priority=141,
+        ),
+    }
+)
+
+_SCRIPT_DISPLAY_LANGUAGE_OVERRIDES: dict[ScriptISO, str] = {
+    ScriptISO("EGYP"): "egy",
+    ScriptISO("ARMI"): "arc",
+    ScriptISO("PRTI"): "xpr",
+    ScriptISO("KHAR"): "pgd",
+    ScriptISO("SIND"): "sd",
+    ScriptISO("LINB"): "gmy",
+    ScriptISO("LYCI"): "xlc",
+    ScriptISO("LYDI"): "xld",
+    ScriptISO("MAND"): "mid",
+    ScriptISO("MANI"): "xmn",
+    ScriptISO("MERO"): "xmr",
+    ScriptISO("PLRD"): "hmd",
+    ScriptISO("MODI"): "mr",
+    ScriptISO("NBAT"): "arc",
+    ScriptISO("TALU"): "khb",
+    ScriptISO("OGAM"): "sga",
+    ScriptISO("OLCK"): "sat",
+    ScriptISO("HUNG"): "hu",
+    ScriptISO("NARB"): "xna",
+    ScriptISO("XPEO"): "peo",
+    ScriptISO("SARB"): "xsa",
+    ScriptISO("ORKH"): "otk",
+    ScriptISO("OSMA"): "so",
+    ScriptISO("HMNG"): "hmn",
+    ScriptISO("PALM"): "arc",
+    ScriptISO("PAUC"): "ctd",
+    ScriptISO("PHAG"): "mn",
+    ScriptISO("PHNX"): "phn",
+    ScriptISO("SAMR"): "sam",
+    ScriptISO("SHRD"): "ks",
+    ScriptISO("SHAW"): "en",
+    ScriptISO("SIDD"): "sa",
+    ScriptISO("SORA"): "srb",
+    ScriptISO("SOYO"): "mn",
+    ScriptISO("TAKR"): "doi",
+    ScriptISO("TNSA"): "nst",
+    ScriptISO("UGAR"): "uga",
+    ScriptISO("ZANB"): "mn",
+    ScriptISO("HMNP"): "hnj",
+    ScriptISO("OUGR"): "oui",
+    ScriptISO("TANG"): "txg",
+    ScriptISO("TOTO"): "txo",
+    ScriptISO("YEZI"): "ku",
+}
+
+for _script_iso, _display_language in _SCRIPT_DISPLAY_LANGUAGE_OVERRIDES.items():
+    SCRIPT_INFO[_script_iso]["display_language"] = _display_language
+
 
 LANGUAGE_INFO: dict[str, LanguageInfo] = {
     "ae": {
@@ -1950,6 +2534,324 @@ LANGUAGE_INFO: dict[str, LanguageInfo] = {
     },
 }
 
+LANGUAGE_INFO.update(
+    {
+        "egy": _make_script_language_info(
+            "Egyptian",
+            "Egyptian is an ancient Afroasiatic language of the Nile Valley. In this profile it is represented by Egyptian Hieroglyphs and related hieroglyphic Unicode blocks.",
+            [ScriptISO("EGYP")],
+            ["Egyptian Hieroglyphs"],
+            optional_blocks=[
+                "Egyptian Hieroglyph Format Controls",
+                "Egyptian Hieroglyphs Extended-A",
+            ],
+        ),
+        "arc": _make_script_language_info(
+            "Official Aramaic",
+            "Official Aramaic is an ancient Northwest Semitic language. In this profile it covers Aramaic-script evidence represented by Imperial Aramaic, Nabataean, and Palmyrene blocks.",
+            [ScriptISO("ARMI"), ScriptISO("NBAT"), ScriptISO("PALM")],
+            ["Imperial Aramaic"],
+            optional_blocks=["Nabataean", "Palmyrene"],
+        ),
+        "xpr": _make_script_language_info(
+            "Parthian",
+            "Parthian is an extinct Iranian language. In this profile it is represented by the Inscriptional Parthian script block used for deterministic script-language fallback.",
+            [ScriptISO("PRTI")],
+            ["Inscriptional Parthian"],
+        ),
+        "pgd": _make_script_language_info(
+            "Gandhari",
+            "Gandhari is an extinct Indo-Aryan language associated with Kharoshthi manuscript and inscriptional traditions. In this profile it is represented by the Kharoshthi block.",
+            [ScriptISO("KHAR")],
+            ["Kharoshthi"],
+        ),
+        "gmy": _make_script_language_info(
+            "Mycenaean Greek",
+            "Mycenaean Greek is the earliest attested form of Greek. In this profile it is represented by Linear B syllabic and ideographic Unicode blocks.",
+            [ScriptISO("LINB")],
+            ["Linear B Syllabary"],
+            optional_blocks=["Linear B Ideograms"],
+        ),
+        "xlc": _make_script_language_info(
+            "Lycian",
+            "Lycian is an extinct Anatolian language. In this profile it is represented by the Lycian script block.",
+            [ScriptISO("LYCI")],
+            ["Lycian"],
+        ),
+        "xld": _make_script_language_info(
+            "Lydian",
+            "Lydian is an extinct Anatolian language. In this profile it is represented by the Lydian script block.",
+            [ScriptISO("LYDI")],
+            ["Lydian"],
+        ),
+        "mid": _make_script_language_info(
+            "Mandaic",
+            "Mandaic is an Eastern Aramaic language associated with Mandaean religious tradition. In this profile it is represented by the Mandaic script block.",
+            [ScriptISO("MAND")],
+            ["Mandaic"],
+        ),
+        "xmn": _make_script_language_info(
+            "Manichaean Middle Persian",
+            "Manichaean Middle Persian is an extinct Iranian language attested in Manichaean texts. In this profile it is represented by the Manichaean script block.",
+            [ScriptISO("MANI")],
+            ["Manichaean"],
+        ),
+        "xmr": _make_script_language_info(
+            "Meroitic",
+            "Meroitic is an extinct language of the ancient Nile Valley. In this profile it is represented by Meroitic Hieroglyphs with Meroitic Cursive as supporting evidence.",
+            [ScriptISO("MERO")],
+            ["Meroitic Hieroglyphs"],
+            optional_blocks=["Meroitic Cursive"],
+        ),
+        "hmd": _make_script_language_info(
+            "Large Flowery Miao",
+            "Large Flowery Miao is a Hmong-Mien language. In this profile it is represented by the Miao block used for Pollard-script coverage.",
+            [ScriptISO("PLRD")],
+            ["Miao"],
+        ),
+        "sd": _make_script_language_info(
+            "Sindhi",
+            "Sindhi is an Indo-Aryan language of Sindh and neighboring regions. In this profile it is represented by Khudawadi script coverage.",
+            [ScriptISO("SIND")],
+            ["Khudawadi"],
+        ),
+        "mr": _make_script_language_info(
+            "Marathi",
+            "Marathi is an Indo-Aryan language of western India. In this profile it is represented by Modi, a historical administrative script associated with Marathi.",
+            [ScriptISO("MODI")],
+            ["Modi"],
+        ),
+        "khb": _make_script_language_info(
+            "Lü",
+            "Lü is a Southwestern Tai language. In this profile it is represented by the New Tai Lue script block.",
+            [ScriptISO("TALU")],
+            ["New Tai Lue"],
+        ),
+        "sga": _make_script_language_info(
+            "Old Irish",
+            "Old Irish is an early Goidelic language. In this profile it is represented by Ogham as a deterministic fallback for Ogham-script fonts.",
+            [ScriptISO("OGAM")],
+            ["Ogham"],
+        ),
+        "sat": _make_script_language_info(
+            "Santali",
+            "Santali is an Austroasiatic language of eastern India and neighboring regions. In this profile it is represented by the Ol Chiki script block.",
+            [ScriptISO("OLCK")],
+            ["Ol Chiki"],
+        ),
+        "hu": _make_script_language_info(
+            "Hungarian",
+            "Hungarian is a Uralic language spoken mainly in Hungary and neighboring regions. In this profile it is represented by Old Hungarian script coverage.",
+            [ScriptISO("HUNG")],
+            ["Old Hungarian"],
+        ),
+        "xna": _make_script_language_info(
+            "Ancient North Arabian",
+            "Ancient North Arabian is a historical Semitic language grouping. In this profile it is represented by the Old North Arabian block.",
+            [ScriptISO("NARB")],
+            ["Old North Arabian"],
+        ),
+        "peo": _make_script_language_info(
+            "Old Persian",
+            "Old Persian is an extinct Iranian language of Achaemenid inscriptions. In this profile it is represented by the Old Persian cuneiform block.",
+            [ScriptISO("XPEO")],
+            ["Old Persian"],
+        ),
+        "xsa": _make_script_language_info(
+            "Sabaean",
+            "Sabaean is a historical South Semitic language. In this profile it is represented by the Old South Arabian block.",
+            [ScriptISO("SARB")],
+            ["Old South Arabian"],
+        ),
+        "otk": _make_script_language_info(
+            "Old Turkish",
+            "Old Turkish is a historical Turkic language. In this profile it is represented by the Old Turkic script block.",
+            [ScriptISO("ORKH")],
+            ["Old Turkic"],
+        ),
+        "so": _make_script_language_info(
+            "Somali",
+            "Somali is a Cushitic language of the Horn of Africa. In this profile it is represented by Osmanya, one of the dedicated scripts created for Somali.",
+            [ScriptISO("OSMA")],
+            ["Osmanya"],
+        ),
+        "hmn": _make_script_language_info(
+            "Hmong",
+            "Hmong is a Hmong-Mien language cluster. In this profile it is represented by Pahawh Hmong script coverage.",
+            [ScriptISO("HMNG")],
+            ["Pahawh Hmong"],
+        ),
+        "ctd": _make_script_language_info(
+            "Tedim Chin",
+            "Tedim Chin is a Kuki-Chin language of Myanmar and neighboring regions. In this profile it is represented by Pau Cin Hau script coverage.",
+            [ScriptISO("PAUC")],
+            ["Pau Cin Hau"],
+        ),
+        "phn": _make_script_language_info(
+            "Phoenician",
+            "Phoenician is a historical Northwest Semitic language. In this profile it is represented by the Phoenician script block.",
+            [ScriptISO("PHNX")],
+            ["Phoenician"],
+        ),
+        "sam": _make_script_language_info(
+            "Samaritan Aramaic",
+            "Samaritan Aramaic is an Aramaic language associated with Samaritan tradition. In this profile it is represented by the Samaritan block.",
+            [ScriptISO("SAMR")],
+            ["Samaritan"],
+        ),
+        "ks": _make_script_language_info(
+            "Kashmiri",
+            "Kashmiri is an Indo-Aryan language of Kashmir. In this profile it is represented by Sharada as a historical script fallback.",
+            [ScriptISO("SHRD")],
+            ["Sharada"],
+            optional_blocks=["Sharada Supplement"],
+        ),
+        "srb": _make_script_language_info(
+            "Sora",
+            "Sora is a Munda language of eastern India. In this profile it is represented by the Sora Sompeng script block.",
+            [ScriptISO("SORA")],
+            ["Sora Sompeng"],
+        ),
+        "nst": _make_script_language_info(
+            "Tangsa",
+            "Tangsa is a Tibeto-Burman language cluster of northeast India and Myanmar. In this profile it is represented by Tangsa script coverage.",
+            [ScriptISO("TNSA")],
+            ["Tangsa"],
+        ),
+        "uga": _make_script_language_info(
+            "Ugaritic",
+            "Ugaritic is a historical Northwest Semitic language. In this profile it is represented by the Ugaritic cuneiform alphabet block.",
+            [ScriptISO("UGAR")],
+            ["Ugaritic"],
+        ),
+        "hnj": _make_script_language_info(
+            "Hmong Njua",
+            "Hmong Njua is a Hmong-Mien language. In this profile it is represented by Nyiakeng Puachue Hmong script coverage.",
+            [ScriptISO("HMNP")],
+            ["Nyiakeng Puachue Hmong"],
+        ),
+        "oui": _make_script_language_info(
+            "Old Uyghur",
+            "Old Uyghur is a historical Turkic language. In this profile it is represented by the Old Uyghur script block.",
+            [ScriptISO("OUGR")],
+            ["Old Uyghur"],
+        ),
+        "txg": _make_script_language_info(
+            "Tangut",
+            "Tangut is an extinct Sino-Tibetan language of the Western Xia state. In this profile it is represented by Tangut and related component blocks.",
+            [ScriptISO("TANG")],
+            ["Tangut"],
+            optional_blocks=[
+                "Tangut Components",
+                "Tangut Supplement",
+                "Tangut Components Supplement",
+            ],
+        ),
+        "txo": _make_script_language_info(
+            "Toto",
+            "Toto is a Tibeto-Burman language of the eastern Himalayas. In this profile it is represented by the Toto script block.",
+            [ScriptISO("TOTO")],
+            ["Toto"],
+        ),
+        "ku": _make_script_language_info(
+            "Kurdish",
+            "Kurdish is an Iranian language cluster of western Asia. In this profile it is represented by Yezidi script coverage.",
+            [ScriptISO("YEZI")],
+            ["Yezidi"],
+        ),
+    }
+)
+
+LANGUAGE_INFO["doi"]["scripts"] = [
+    ScriptISO("DOGR"),
+    ScriptISO("TAKR"),
+    ScriptISO("DEVA"),
+]
+LANGUAGE_INFO["doi"]["optional_blocks"] = [
+    "Takri",
+    "Devanagari",
+    "Devanagari Extended-A",
+]
+LANGUAGE_INFO["en"]["scripts"] = [
+    ScriptISO("LATN"),
+    ScriptISO("DSRT"),
+    ScriptISO("SHAW"),
+]
+LANGUAGE_INFO["en"]["optional_blocks"] = [
+    "Latin-1 Supplement",
+    "Shavian",
+]
+LANGUAGE_INFO["mn"]["scripts"] = [
+    ScriptISO("MONG"),
+    ScriptISO("PHAG"),
+    ScriptISO("SOYO"),
+    ScriptISO("ZANB"),
+]
+LANGUAGE_INFO["mn"]["optional_blocks"] = [
+    "Phags-pa",
+    "Soyombo",
+    "Zanabazar Square",
+]
+LANGUAGE_INFO["sa"]["scripts"] = [
+    ScriptISO("BRAH"),
+    ScriptISO("GRAN"),
+    ScriptISO("SIDD"),
+    ScriptISO("DEVA"),
+]
+LANGUAGE_INFO["sa"]["optional_blocks"] = [
+    "Grantha",
+    "Siddham",
+    "Devanagari",
+]
+LANGUAGE_INFO["und"] = {
+    "canonical_name": "Undetermined",
+    "description": "Undetermined is a placeholder code used when no specific language can be assigned. In this table it covers undeciphered, multi-language, or script-only catalog fallbacks.",
+    "scripts": [
+        ScriptISO("CPMN"),
+        ScriptISO("XSUX"),
+        ScriptISO("HATR"),
+        ScriptISO("LINA"),
+        ScriptISO("MARC"),
+        ScriptISO("NUSH"),
+        ScriptISO("ITAL"),
+        ScriptISO("RUNR"),
+        ScriptISO("PHAI"),
+    ],
+    "required_blocks": ["Cypro-Minoan"],
+    "optional_blocks": [
+        "Cuneiform",
+        "Hatran",
+        "Linear A",
+        "Marchen",
+        "Nushu",
+        "Old Italic",
+        "Runic",
+        "Phaistos Disc",
+    ],
+    "sample": "𒾐𒾑𒾒𒾓𒾔𒾕𒾖𒾗𒾘𒾙𒾚𒾛𒾜𒾝𒾞𒾟𒾠𒾡𒾢𒾣𒾤𒾥𒾦𒾧",
+}
+LANGUAGE_INFO["zxx"] = {
+    "canonical_name": "No linguistic content",
+    "description": "No linguistic content is a placeholder category for symbols and notation that are not tied to a spoken language.",
+    "scripts": [
+        ScriptISO("BYZM"),
+        ScriptISO("BRAI"),
+        ScriptISO("MAYA"),
+        ScriptISO("SGNW"),
+        ScriptISO("OTSY"),
+        ScriptISO("ZNAM"),
+    ],
+    "required_blocks": ["Byzantine Musical Symbols"],
+    "optional_blocks": [
+        "Braille Patterns",
+        "Mayan Numerals",
+        "Sutton SignWriting",
+        "Ottoman Siyaq Numbers",
+        "Znamenny Musical Notation",
+    ],
+    "sample": "𝀀𝀁𝀂𝀃𝀄𝀅𝀆𝀇𝀈𝀉𝀊𝀋𝀌𝀍𝀎𝀏𝀐𝀑𝀒𝀓𝀔𝀕𝀖𝀗",
+}
+
 
 _SCRIPT_INFERENCE_PRIORITY: dict[ScriptISO, int] = {
     ScriptISO("LATN"): 0,
@@ -2375,6 +3277,11 @@ _SCRIPT_INFERENCE_OVERRIDES: dict[ScriptISO, ScriptInferenceOverride] = {
     ScriptISO("TAVT"): {
         "unicode_max_ranges": [(0xAA80, 0xAADF)],
     },
+    ScriptISO("TAML"): {
+        "required_blocks": ["Tamil", "Tamil Supplement"],
+        "optional_blocks": [],
+        "unicode_max_ranges": [(0x0B80, 0x0BFF), (0x11FC0, 0x11FFF)],
+    },
     ScriptISO("TFNG"): {
         "unicode_max_ranges": [(0x2D30, 0x2D7F)],
     },
@@ -2502,7 +3409,11 @@ def _finalize_script_info() -> None:
     """
     for index, script_iso in enumerate(SCRIPT_INFO):
         info = SCRIPT_INFO[script_iso]
-        required_blocks, optional_blocks = _derive_script_default_blocks(script_iso)
+        if "required_blocks" in info and "optional_blocks" in info:
+            required_blocks = list(info["required_blocks"])
+            optional_blocks = list(info["optional_blocks"])
+        else:
+            required_blocks, optional_blocks = _derive_script_default_blocks(script_iso)
         overrides: ScriptInferenceOverride = _SCRIPT_INFERENCE_OVERRIDES.get(
             script_iso,
             {},
@@ -2514,25 +3425,39 @@ def _finalize_script_info() -> None:
         info["optional_blocks"] = list(
             overrides.get("optional_blocks", optional_blocks)
         )
-        info["suppresses"] = list(overrides.get("suppresses", []))
+        info["suppresses"] = list(
+            overrides.get("suppresses", info.get("suppresses", []))
+        )
         info["inference_priority"] = int(
             overrides.get(
                 "inference_priority",
-                _SCRIPT_INFERENCE_PRIORITY.get(script_iso, index + 100),
-            )
-        )
-        info["block_match"] = overrides.get("block_match", "exact")
-        info["unicode_max_ranges"] = list(
-            overrides.get(
-                "unicode_max_ranges",
-                _derive_unicode_max_ranges(
-                    info["required_blocks"],
-                    info["block_match"],
+                info.get(
+                    "inference_priority",
+                    _SCRIPT_INFERENCE_PRIORITY.get(script_iso, index + 100),
                 ),
             )
         )
-        info["collapse_group"] = str(overrides.get("collapse_group", ""))
-        info["preferred_over"] = list(overrides.get("preferred_over", []))
+        info["block_match"] = overrides.get(
+            "block_match", info.get("block_match", "exact")
+        )
+        info["unicode_max_ranges"] = list(
+            overrides.get(
+                "unicode_max_ranges",
+                info.get(
+                    "unicode_max_ranges",
+                    _derive_unicode_max_ranges(
+                        info["required_blocks"],
+                        info["block_match"],
+                    ),
+                ),
+            )
+        )
+        info["collapse_group"] = str(
+            overrides.get("collapse_group", info.get("collapse_group", ""))
+        )
+        info["preferred_over"] = list(
+            overrides.get("preferred_over", info.get("preferred_over", []))
+        )
 
 
 _finalize_language_info()
