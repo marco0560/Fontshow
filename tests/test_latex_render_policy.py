@@ -62,6 +62,103 @@ def test_get_render_policy_uses_explicit_ontology_mapping_only(monkeypatch):
     assert policy._get_render_policy("ZZZZ") == ("", "")
 
 
+def test_parse_fontspec_script_registry_indexes_names_and_tags():
+    r"""
+    Ensure installed ``\newfontscript`` declarations are machine-readable.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    registry = policy._parse_fontspec_script_registry(
+        "\\newfontscript{Sumero-Akkadian~Cuneiform}{xsux}\n"
+        "\\newfontscript{Tai~Lu}{talu}\n"
+    )
+
+    assert "Sumero-Akkadian Cuneiform" in registry.names
+    assert registry.names_by_tag["xsux"] == "Sumero-Akkadian Cuneiform"
+    assert registry.names_by_tag["talu"] == "Tai Lu"
+
+
+def test_get_render_policy_uses_installed_fontspec_script_name(monkeypatch):
+    """
+    Ensure runtime-compatible script names replace ontology spellings by tag.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ontology and installed fontspec script data.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        policy,
+        "SCRIPT_INFO",
+        {
+            "XSUX": {
+                "polyglossia_language": "",
+                "fontspec_opts": "Script=Cuneiform",
+            },
+        },
+    )
+    monkeypatch.setattr(
+        policy,
+        "_installed_fontspec_script_registry",
+        lambda: policy._FontspecScriptRegistry(
+            names=frozenset({"Sumero-Akkadian Cuneiform"}),
+            names_by_tag={"xsux": "Sumero-Akkadian Cuneiform"},
+        ),
+    )
+
+    assert policy._get_render_policy("XSUX") == (
+        "",
+        "Script={Sumero-Akkadian Cuneiform}",
+    )
+
+
+def test_get_render_policy_suppresses_script_missing_from_installed_fontspec(
+    monkeypatch,
+):
+    """
+    Ensure unsupported installed ``fontspec`` scripts are omitted.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ontology and installed fontspec script data.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        policy,
+        "SCRIPT_INFO",
+        {
+            "ZNAM": {
+                "polyglossia_language": "",
+                "fontspec_opts": "Script={Znamenny Musical Notation}",
+            },
+        },
+    )
+    monkeypatch.setattr(
+        policy,
+        "_installed_fontspec_script_registry",
+        lambda: policy._FontspecScriptRegistry(
+            names=frozenset({"Latin"}),
+            names_by_tag={"latn": "Latin"},
+        ),
+    )
+
+    assert policy._get_render_policy("ZNAM") == ("", "")
+
+
 def test_collect_polyglossia_other_languages_is_sorted_and_filtered(monkeypatch):
     """
     Ensure ``latin`` is always present and ``english`` is excluded from extras.

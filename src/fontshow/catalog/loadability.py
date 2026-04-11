@@ -391,6 +391,35 @@ def _persisted_loadability_state(
     return "needs-runtime", None
 
 
+def _font_warning_identity(font: CatalogFontEntryV12) -> str:
+    """
+    Build a human-readable identity for skipped-font warnings.
+
+    Parameters
+    ----------
+    font : CatalogFontEntryV12
+        Catalog font descriptor used to construct the warning label.
+
+    Returns
+    -------
+    str
+        Human-readable label preferring full name or family, with path
+        and stable font id included when available.
+    """
+    full_name = str(font.get("full_name", "")).strip()
+    family = str(font.get("family", "")).strip()
+    path = str(font.get("path", "")).strip()
+    font_id = str(font.get("unique_font_id", "")).strip()
+
+    label = full_name or family or path or font_id or "unknown-font"
+    parts = [label]
+    if path and path != label:
+        parts.append(f"path={path}")
+    if font_id and font_id != label:
+        parts.append(f"id={font_id}")
+    return " | ".join(parts)
+
+
 def filter_loadable_catalog_fonts(
     fonts: list[CatalogFontEntryV12],
 ) -> list[CatalogFontEntryV12]:
@@ -465,13 +494,7 @@ def filter_loadable_catalog_fonts_with_report(
                 kept.append(font)
                 continue
 
-        identity = (
-            str(font.get("unique_font_id", "")).strip()
-            or str(font.get("full_name", "")).strip()
-            or str(font.get("family", "")).strip()
-            or str(font.get("path", "")).strip()
-            or "unknown-font"
-        )
+        identity = _font_warning_identity(font)
         log_warn(f"Font skipped: {identity}")
         log_warn("Reason: LuaLaTeX load failure")
         log_warn(f"Detail: {detail or 'LuaLaTeX load failure'}")

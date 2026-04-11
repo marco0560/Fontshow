@@ -27,11 +27,34 @@ generation pipeline.
 
 import hashlib
 import json
+import re
+import shutil
+import subprocess
+from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
+from fontshow.constants.runtime import SUBPROCESS_TIMEOUT_SECONDS
 from fontshow.core.types import CatalogFontEntryV12, ScriptISO
 from fontshow.latex.render import _latex_detokenize_safe, _renderer_option_prefix
 from fontshow.ontology.language_tables import LANGUAGE_INFO, SCRIPT_INFO
+
+
+@dataclass(frozen=True)
+class _FontspecScriptRegistry:
+    """
+    Installed ``fontspec`` script names indexed by name and OpenType tag.
+
+    Parameters
+    ----------
+    names : frozenset[str]
+        Script option names accepted by the installed ``fontspec`` file.
+    names_by_tag : dict[str, str]
+        Accepted script names keyed by normalized OpenType script tag.
+    """
+
+    names: frozenset[str]
+    names_by_tag: dict[str, str]
 
 
 def get_render_policy_version() -> str:
@@ -56,7 +79,10 @@ def get_render_policy_version() -> str:
     """
     policy_snapshot = {
         str(script_iso): {
-            "fontspec_opts": info.get("fontspec_opts", ""),
+            "fontspec_opts": _fontspec_compatible_script_opts(
+                script_iso,
+                str(info.get("fontspec_opts", "")),
+            ),
             "polyglossia_language": info.get("polyglossia_language", ""),
             "requires_polyglossia": bool(info.get("requires_polyglossia", False)),
         }
@@ -71,6 +97,210 @@ def get_render_policy_version() -> str:
         separators=(",", ":"),
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()[:16]
+
+
+def _normalize_fontspec_token(value: str) -> str:
+    """
+    Normalize a ``fontspec`` script name or tag for matching.
+
+    Parameters
+    ----------
+    value : str
+        Raw script name or OpenType script tag.
+
+    Returns
+    -------
+    str
+        Lowercase alphanumeric token.
+    """
+    return re.sub(r"[^a-z0-9]", "", value.lower())
+
+
+def _format_fontspec_script_option(script_name: str) -> str:
+    """
+    Format an accepted ``fontspec`` script name as an option string.
+
+    Parameters
+    ----------
+    script_name : str
+        Human-readable script name accepted by ``fontspec``.
+
+    Returns
+    -------
+    str
+        ``Script=...`` option with braces when the name contains
+        non-letter characters.
+    """
+    if script_name.replace("-", "").isalpha():
+        return f"Script={script_name}"
+    return f"Script={{{script_name}}}"
+
+
+def _extract_fontspec_script_name(fontspec_opts: str) -> str | None:
+    """
+    Extract the ``Script=`` value from a fontspec option string.
+
+    Parameters
+    ----------
+    fontspec_opts : str
+        Comma-separated fontspec options.
+
+    Returns
+    -------
+    str | None
+        Script option value without braces, or ``None`` when absent.
+    """
+    for part in fontspec_opts.split(","):
+        stripped = part.strip()
+        if not stripped.startswith("Script="):
+            continue
+        value = stripped.removeprefix("Script=").strip()
+        if value.startswith("{") and value.endswith("}") and len(value) >= 2:
+            value = value[1:-1].strip()
+        return value or None
+    return None
+
+
+def _parse_fontspec_script_registry(text: str) -> _FontspecScriptRegistry:
+    r"""
+    Parse installed ``\newfontscript`` declarations.
+
+    Parameters
+    ----------
+    text : str
+        Contents of ``fontspec-luatex.sty`` or equivalent generated
+        ``fontspec`` source.
+
+    Returns
+    -------
+    _FontspecScriptRegistry
+        Accepted script names and normalized OpenType tag mappings.
+    """
+    names: set[str] = set()
+    names_by_tag: dict[str, str] = {}
+    pattern = re.compile(r"\\newfontscript\{([^{}]+)\}\{([^{}]+)\}")
+    for match in pattern.finditer(text):
+        raw_name, raw_tags = match.groups()
+        script_name = raw_name.replace("~", " ").strip()
+        if not script_name:
+            continue
+        names.add(script_name)
+        for raw_tag in raw_tags.split(","):
+            tag_key = _normalize_fontspec_token(raw_tag.replace("~", ""))
+            if tag_key and tag_key not in names_by_tag:
+                names_by_tag[tag_key] = script_name
+    return _FontspecScriptRegistry(
+        names=frozenset(names),
+        names_by_tag=names_by_tag,
+    )
+
+
+def _read_installed_fontspec_luatex() -> str | None:
+    """
+    Read the installed ``fontspec-luatex.sty`` source when available.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    str | None
+        File contents when ``kpsewhich`` locates the package, otherwise
+        ``None``.
+    """
+    kpsewhich_bin = shutil.which("kpsewhich")
+    if kpsewhich_bin is None:
+        return None
+    try:
+        proc = subprocess.run(
+            [kpsewhich_bin, "fontspec-luatex.sty"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=SUBPROCESS_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None
+    resolved = proc.stdout.strip().splitlines()
+    if not resolved:
+        return None
+    path = Path(resolved[0].strip())
+    if not path.exists():
+        return None
+    try:
+        return path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return None
+
+
+@lru_cache(maxsize=1)
+def _installed_fontspec_script_registry() -> _FontspecScriptRegistry | None:
+    """
+    Return the installed ``fontspec`` script registry.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    _FontspecScriptRegistry | None
+        Parsed registry when the local TeX installation exposes one,
+        otherwise ``None``.
+    """
+    text = _read_installed_fontspec_luatex()
+    if text is None:
+        return None
+    registry = _parse_fontspec_script_registry(text)
+    if not registry.names:
+        return None
+    return registry
+
+
+def _fontspec_compatible_script_opts(script_iso: ScriptISO, opts: str) -> str:
+    """
+    Normalize ``Script=`` options against the installed ``fontspec`` table.
+
+    Parameters
+    ----------
+    script_iso : ScriptISO
+        Canonical script code whose OpenType tag may identify the
+        installed ``fontspec`` spelling.
+    opts : str
+        Ontology-provided fontspec option string.
+
+    Returns
+    -------
+    str
+        Compatible option string. When the installed table is
+        unavailable, the original options are returned. When the table
+        is available and the script is unsupported, ``Script=`` is
+        suppressed.
+    """
+    if not opts:
+        return ""
+    script_name = _extract_fontspec_script_name(opts)
+    if script_name is None:
+        return opts
+
+    registry = _installed_fontspec_script_registry()
+    if registry is None:
+        return opts
+
+    tag_key = _normalize_fontspec_token(str(script_iso))
+    installed_name = registry.names_by_tag.get(tag_key)
+    if installed_name:
+        return _format_fontspec_script_option(installed_name)
+
+    name_key = _normalize_fontspec_token(script_name)
+    for installed in registry.names:
+        if _normalize_fontspec_token(installed) == name_key:
+            return _format_fontspec_script_option(installed)
+
+    return ""
 
 
 def _format_script_display(script_iso: str) -> str:
@@ -156,6 +386,7 @@ def _get_render_policy(script_iso: ScriptISO) -> tuple[str, str]:
 
     lang = info["polyglossia_language"]
     opts = info["fontspec_opts"] or ""
+    opts = _fontspec_compatible_script_opts(script_iso, opts)
 
     return lang, opts
 

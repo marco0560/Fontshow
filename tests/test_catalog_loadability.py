@@ -377,6 +377,7 @@ def test_filter_loadable_catalog_fonts_uses_trusted_persisted_failure(
         {
             "path": str(font_path),
             "family": "Broken",
+            "full_name": "Broken Regular",
             "unique_font_id": "broken-1",
             "loadability": {
                 "lualatex": {
@@ -394,7 +395,7 @@ def test_filter_loadable_catalog_fonts_uses_trusted_persisted_failure(
     assert loadability.filter_loadable_catalog_fonts(fonts) == []
     assert calls == []
     assert warnings == [
-        "Font skipped: broken-1",
+        f"Font skipped: Broken Regular | path={font_path} | id=broken-1",
         "Reason: LuaLaTeX load failure",
         "Detail: subset-empty",
     ]
@@ -502,7 +503,7 @@ def test_filter_loadable_catalog_fonts_skips_only_failed_candidates(
 
     assert kept == [fonts[0], fonts[2]]
     assert warnings == [
-        "Font skipped: bad-1",
+        f"Font skipped: Broken | path={bad_path} | id=bad-1",
         "Reason: LuaLaTeX load failure",
         "Detail: broken cmap",
     ]
