@@ -1,3 +1,9 @@
+## [0.68.1](https://github.com/marco0560/Fontshow/compare/v0.68.0...v0.68.1) (2026-04-11)
+
+### Bug Fixes
+
+* **latex:** align script options with fontspec runtime ([5d806a6](https://github.com/marco0560/Fontshow/commit/5d806a605e1989a5df202a83d3bedfa82d6b993e))
+
 ## [0.68.0](https://github.com/marco0560/Fontshow/compare/v0.67.3...v0.68.0) (2026-04-10)
 
 ### Features
