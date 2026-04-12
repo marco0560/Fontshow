@@ -1,3 +1,9 @@
+## [0.68.2](https://github.com/marco0560/Fontshow/compare/v0.68.1...v0.68.2) (2026-04-12)
+
+### Bug Fixes
+
+* **dev:** switched from repoindex to codira tooling ([7921b05](https://github.com/marco0560/Fontshow/commit/7921b05db5f46063609aeaeb08a6708509638fa1))
+
 ## [0.68.1](https://github.com/marco0560/Fontshow/compare/v0.68.0...v0.68.1) (2026-04-11)
 
 ### Bug Fixes
