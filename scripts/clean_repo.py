@@ -36,7 +36,7 @@ PROTECTED_PATHS = {
     ".venv",
     ".vscode",
     "node_modules",
-    ".repoindex",
+    ".codira",
 }
 
 

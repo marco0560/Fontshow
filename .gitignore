@@ -63,7 +63,7 @@ polyglossia.log
 # --------------------------------------------------
 # Node / tooling
 # --------------------------------------------------
-.repoindex/
+.codira/
 node_modules/
 package-lock.json
 .releaserc.local.json
