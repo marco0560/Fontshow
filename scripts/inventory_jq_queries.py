@@ -498,6 +498,12 @@ def run_saved_query(
         Saved query specification to execute.
     inventory_path : pathlib.Path
         Existing JSON inventory path passed to `jq`.
+    family : str, optional
+        Exact family name filter forwarded to saved queries that accept
+        per-font filtering.
+    font_path : str, optional
+        Exact font path filter forwarded to saved queries that accept
+        per-font filtering.
 
     Returns
     -------
