@@ -21,4 +21,5 @@ This module belongs to the **constants infrastructure layer** and
 provides discovery-specific values used by the platform subsystem.
 """
 
+DISCOVERABLE_FONT_EXTENSIONS = {".otc", ".otf", ".ttc", ".ttf", ".woff", ".woff2"}
 LEGACY_FONT_EXTENSIONS = {".pfb", ".pfa", ".t1", ".pcf", ".pcf.gz", ".bdf"}
