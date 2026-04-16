@@ -1,3 +1,10 @@
+## [0.69.0](https://github.com/marco0560/Fontshow/compare/v0.68.2...v0.69.0) (2026-04-16)
+
+### Features
+
+* **cli:** add controlled dump-fonts discovery paths ([88e66f7](https://github.com/marco0560/Fontshow/commit/88e66f751ef5c400c60326901fc446f5dec928bc)), closes [#73](https://github.com/marco0560/Fontshow/issues/73)
+* **dump:** add dump-fonts-paths command to do restricted font discovery ([aeef7a6](https://github.com/marco0560/Fontshow/commit/aeef7a6edb0759dc99a7fb6cdd59d697574680f0)), closes [#73](https://github.com/marco0560/Fontshow/issues/73)
+
 ## [0.68.2](https://github.com/marco0560/Fontshow/compare/v0.68.1...v0.68.2) (2026-04-12)
 
 ### Bug Fixes
