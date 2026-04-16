@@ -90,6 +90,7 @@ def test_completion_spec_tracks_command_options() -> None:
         "--no-cache",
         "--no-loadability",
         "--output",
+        "--paths",
         "--quiet",
         "--verbose",
         "--version",
@@ -188,6 +189,7 @@ def test_completion_spec_marks_path_arguments() -> None:
     assert spec["command_specs"]["dump-fonts"]["path_options"] == [
         "--cache-dir",
         "--output",
+        "--paths",
         "-c",
         "-o",
     ]

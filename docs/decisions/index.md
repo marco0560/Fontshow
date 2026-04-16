@@ -46,3 +46,4 @@ created before the adoption of the formal decision record system.
 - [0026 — Schema v1.3 nested inventory structure and LaTeX validation metadata](0026-schema-v1-3-nested-inventory-structure-latex-validation-metadata.md)
 - [0027 — Catalog low-information specimen rendering policy](0027-catalog-low-information-specimen-rendering-policy.md)
 - [0028 — Parse-inventory render-path loadability](0028-parse-inventory-render-path-loadability.md)
+- [0029 — dump-fonts controlled discovery paths](0029-dump-fonts-controlled-discovery-paths.md)

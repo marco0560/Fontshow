@@ -37,6 +37,31 @@ fontshow validate-inventory <inventory.json>
 fontshow create-catalog
 ```
 
+## Controlled dump-fonts discovery
+
+By default, `fontshow dump-fonts` discovers fonts from the current
+system using the platform discovery backend.
+
+For reproducible local benchmark inputs, restrict discovery to explicit
+directories:
+
+```bash
+fontshow dump-fonts --paths /path/to/fonts
+```
+
+Multiple directories are supported:
+
+```bash
+fontshow dump-fonts --paths /path/to/fonts-a /path/to/fonts-b
+```
+
+When `--paths` is provided:
+
+- only the provided directories are scanned
+- system-wide font discovery is not used as a fallback
+- traversal output is sorted deterministically
+- missing paths and non-directory paths fail the command
+
 ## Global flags
 
 The following flags are available on **all commands** via the dispatcher:

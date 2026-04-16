@@ -204,3 +204,74 @@ def test_windows_discovery_skips_legacy_and_permission_errors(monkeypatch, tmp_p
 
     assert discovered == [modern.resolve()]
     assert font_discovery.get_last_discovery_stats()["skipped_legacy_extension"] == 1
+
+
+def test_explicit_path_discovery_is_deterministic_and_deduplicated(tmp_path):
+    """
+    Ensure explicit directory discovery returns sorted unique modern font paths.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage controlled discovery roots.
+
+    Returns
+    -------
+    None
+    """
+    root_a = tmp_path / "a"
+    root_b = tmp_path / "b"
+    nested = root_b / "nested"
+    nested.mkdir(parents=True)
+    root_a.mkdir()
+
+    zeta = root_a / "Zeta.ttf"
+    alpha = nested / "Alpha.otf"
+    legacy = nested / "Legacy.pcf"
+    ignored = nested / "README.txt"
+    for path in (zeta, alpha, legacy, ignored):
+        path.write_text("", encoding="utf-8")
+
+    discovered = font_discovery.get_font_files_from_paths([root_b, root_a, root_b])
+
+    assert discovered == [zeta.resolve(), alpha.resolve()]
+    assert font_discovery.get_last_discovery_stats()["skipped_legacy_extension"] == 1
+
+
+def test_explicit_path_discovery_rejects_missing_path(tmp_path):
+    """
+    Ensure controlled discovery hard-fails missing roots.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build a missing path.
+
+    Returns
+    -------
+    None
+    """
+    missing = tmp_path / "missing"
+
+    with pytest.raises(ValueError, match="font discovery path does not exist"):
+        font_discovery.get_font_files_from_paths([missing])
+
+
+def test_explicit_path_discovery_rejects_file_path(tmp_path):
+    """
+    Ensure controlled discovery accepts only directory roots.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage a non-directory path.
+
+    Returns
+    -------
+    None
+    """
+    file_path = tmp_path / "Alpha.ttf"
+    file_path.write_text("", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="font discovery path is not a directory"):
+        font_discovery.get_font_files_from_paths([file_path])

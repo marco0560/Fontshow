@@ -68,6 +68,7 @@ from fontshow.inventory.validation import (
     is_structurally_unloadable_face,
 )
 from fontshow.platform.font_discovery import (
+    get_font_files_from_paths,
     get_installed_font_files,
     get_last_discovery_stats,
 )
@@ -108,6 +109,15 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         "--no-loadability",
         action="store_true",
         help="Skip default LuaLaTeX loadability probing during inventory generation",
+    )
+    parser.add_argument(
+        "--paths",
+        nargs="+",
+        type=Path,
+        help=(
+            "Restrict discovery to one or more directories; disables system "
+            "font discovery fallback"
+        ),
     )
     parser.add_argument(
         "-i",
@@ -220,7 +230,17 @@ def run_dump_fonts(args) -> int:
         },
     )
 
-    font_files = get_installed_font_files()
+    try:
+        paths = getattr(args, "paths", None)
+        font_files = (
+            get_font_files_from_paths(paths)
+            if paths is not None
+            else get_installed_font_files()
+        )
+    except (OSError, ValueError) as exc:
+        log_err(f"Font discovery failed: {exc}")
+        return 1
+
     log_trace_cat(
         log,
         "perf",

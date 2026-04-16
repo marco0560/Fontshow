@@ -36,7 +36,10 @@ import sys
 from pathlib import Path
 
 from fontshow.constants.catalog import IS_LINUX, IS_WINDOWS
-from fontshow.constants.discovery import LEGACY_FONT_EXTENSIONS
+from fontshow.constants.discovery import (
+    DISCOVERABLE_FONT_EXTENSIONS,
+    LEGACY_FONT_EXTENSIONS,
+)
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.inventory.utils import run_command
 
@@ -111,6 +114,63 @@ def get_installed_font_files() -> list[Path]:
         return _get_installed_font_files_windows()
     msg = f"Unsupported platform: {sys.platform}"
     raise RuntimeError(msg)
+
+
+def get_font_files_from_paths(paths: list[Path]) -> list[Path]:
+    """
+    Discover font files below explicit user-provided directories.
+
+    Parameters
+    ----------
+    paths : list[pathlib.Path]
+        Directory roots to scan recursively.
+
+    Returns
+    -------
+    list[pathlib.Path]
+        Sorted list of unique font file paths with recognized extensions.
+
+    Raises
+    ------
+    ValueError
+        If any provided path does not exist or is not a directory.
+    OSError
+        If resolving or traversing a provided directory fails.
+
+    Notes
+    -----
+    This controlled-discovery path does not call platform system
+    discovery backends. Traversal results are resolved, deduplicated,
+    filtered, and sorted for deterministic downstream processing.
+    """
+    global _LAST_DISCOVERY_STATS
+
+    roots: list[Path] = []
+    for raw_path in paths:
+        if not raw_path.exists():
+            msg = f"font discovery path does not exist: {raw_path}"
+            raise ValueError(msg)
+        if not raw_path.is_dir():
+            msg = f"font discovery path is not a directory: {raw_path}"
+            raise ValueError(msg)
+        roots.append(raw_path.resolve())
+
+    found: set[Path] = set()
+    skipped_legacy_extension = 0
+    for root in sorted(set(roots)):
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            if _has_legacy_font_extension(path):
+                skipped_legacy_extension += 1
+                continue
+            if path.suffix.lower() in DISCOVERABLE_FONT_EXTENSIONS:
+                found.add(path.resolve())
+
+    _LAST_DISCOVERY_STATS = {
+        "skipped_legacy_extension": skipped_legacy_extension,
+    }
+    return sorted(found)
 
 
 def get_installed_font_files_linux() -> list[Path]:
@@ -231,7 +291,6 @@ def _get_installed_font_files_windows() -> list[Path]:
     """
     global _LAST_DISCOVERY_STATS
 
-    exts = {".ttf", ".otf", ".ttc", ".otc", ".woff", ".woff2"}
     found: set[Path] = set()
     skipped_legacy_extension = 0
     for d in _windows_font_dirs():
@@ -240,7 +299,7 @@ def _get_installed_font_files_windows() -> list[Path]:
                 if p.is_file() and _has_legacy_font_extension(p):
                     skipped_legacy_extension += 1
                     continue
-                if p.is_file() and p.suffix.lower() in exts:
+                if p.is_file() and p.suffix.lower() in DISCOVERABLE_FONT_EXTENSIONS:
                     found.add(p.resolve())
         except (PermissionError, OSError):
             # ignore permission issues etc.

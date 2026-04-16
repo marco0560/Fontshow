@@ -39,6 +39,7 @@ PATH_DESTINATIONS = frozenset(
         "inventory",
         "output",
         "path",
+        "paths",
     }
 )
 _MISSING_SUBPARSERS_MESSAGE = "Fontshow dispatcher parser does not define subcommands"

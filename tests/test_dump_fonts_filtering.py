@@ -258,6 +258,97 @@ def test_dump_fonts_fails_instead_of_writing_non_schema_fallback(tmp_path, monke
     assert not output.exists()
 
 
+def test_dump_fonts_paths_mode_does_not_use_system_discovery(tmp_path, monkeypatch):
+    """
+    Ensure explicit path mode disables system discovery fallback.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for input roots and output.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace discovery helpers.
+
+    Returns
+    -------
+    None
+    """
+    root = tmp_path / "fonts"
+    root.mkdir()
+
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.get_font_files_from_paths",
+        lambda _paths: [],
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.get_installed_font_files",
+        lambda: (_ for _ in ()).throw(AssertionError("system discovery called")),
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.get_last_discovery_stats",
+        lambda: {"skipped_legacy_extension": 0},
+    )
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.fc_query_extract_many",
+        lambda *_args, **_kwargs: {},
+    )
+
+    output = tmp_path / "fonts.json"
+    args = SimpleNamespace(
+        output=output,
+        cache_dir=tmp_path,
+        include_fc_charset=False,
+        no_cache=True,
+        no_loadability=True,
+        paths=[root],
+        verbose=False,
+    )
+
+    ret = run_dump_fonts(args)
+
+    assert ret == 0
+    assert json.loads(output.read_text())["fonts"] == []
+
+
+def test_dump_fonts_paths_mode_fails_invalid_root(tmp_path, monkeypatch):
+    """
+    Ensure invalid controlled discovery roots abort without writing output.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for input roots and output.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace system discovery.
+
+    Returns
+    -------
+    None
+    """
+    missing = tmp_path / "missing"
+
+    monkeypatch.setattr(
+        "fontshow.cli.dump_fonts.get_installed_font_files",
+        lambda: (_ for _ in ()).throw(AssertionError("system discovery called")),
+    )
+
+    output = tmp_path / "fonts.json"
+    args = SimpleNamespace(
+        output=output,
+        cache_dir=tmp_path,
+        include_fc_charset=False,
+        no_cache=True,
+        no_loadability=True,
+        paths=[missing],
+        verbose=False,
+    )
+
+    ret = run_dump_fonts(args)
+
+    assert ret == 1
+    assert not output.exists()
+
+
 def test_dump_fonts_verbose_reports_style_leak_details(tmp_path, monkeypatch):
     """
     Ensure style-leak details are attached only via the verbose log variant.
