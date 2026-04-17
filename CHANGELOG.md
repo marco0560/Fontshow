@@ -1,3 +1,10 @@
+## [0.70.0](https://github.com/marco0560/Fontshow/compare/v0.69.0...v0.70.0) (2026-04-17)
+
+### Features
+
+* **dev:** add deterministic Hyperfine benchmarking workflow ([e0c0e5b](https://github.com/marco0560/Fontshow/commit/e0c0e5bf05b42cc8b11af0db4ffb523c5c58840d)), closes [#72](https://github.com/marco0560/Fontshow/issues/72)
+* **dev:** add hyperfine benchmark workflow ([dd63988](https://github.com/marco0560/Fontshow/commit/dd639889fcda9eecdbc86337f427a9528f764efa)), closes [#72](https://github.com/marco0560/Fontshow/issues/72)
+
 ## [0.69.0](https://github.com/marco0560/Fontshow/compare/v0.68.2...v0.69.0) (2026-04-16)
 
 ### Features
