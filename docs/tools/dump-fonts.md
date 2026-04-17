@@ -33,19 +33,9 @@ Behavior:
 - the runtime fingerprint allows downstream stages to detect stale
   persisted results
 
-To disable probing explicitly:
-
-<!-- cheatsheet:start -->
-```bash
-python -m fontshow.cli.dump_fonts --no-loadability
-```
-<!-- cheatsheet:end -->
-
-When `--no-loadability` is used:
-
-- no LuaLaTeX probing is performed
-- `metadata.validation.lualatex.attempted` remains false
-- per-font loadability fields remain in their non-attempted state
+Loadability probing is part of the catalog-readiness contract. If the
+local LuaLaTeX runtime is unavailable, regenerate the inventory on the
+machine that will run `parse-inventory` and `create-catalog`.
 
 ---
 
@@ -91,7 +81,7 @@ In particular:
 - No validation errors are raised at this stage
 
 The persisted LuaLaTeX loadability state is an exception to the
-"metadata only" baseline: it is an optional deterministic runtime
+"metadata only" baseline: it is a deterministic runtime
 assessment stored directly in the raw inventory so later stages can
 reuse it instead of recomputing it.
 

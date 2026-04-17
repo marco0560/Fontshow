@@ -86,24 +86,18 @@ inventory by default.
 
 Behavior:
 
-- When persisted loadability is present and the runtime fingerprint
-  matches the current environment, `create-catalog` trusts the
-  persisted per-font `loadability.lualatex` state.
+- `create-catalog` trusts the persisted per-font
+  `loadability.lualatex` state produced by `parse-inventory`.
 - When persisted loadability is missing, incomplete, or stale,
-  `create-catalog` falls back to best-effort runtime LuaLaTeX probing
-  for the affected fonts only.
+  `create-catalog` fails and the inventory must be regenerated through
+  the normal pipeline.
 - Fonts proven unloadable are skipped deterministically and reported in
   the generated `.tex` output under an unloadable-font section.
 
 Notes:
 
-- The normal fast path is to reuse persisted loadability produced by
-  `dump-fonts`.
-- Runtime fallback remains slower because it still uses per-font probes
-  in the catalog stage.
-- The fallback path uses the same render policy as catalog generation so
-  `fontspec` script options remain aligned between probing and final
-  rendering.
+- Loadability probing is completed before catalog generation.
+- The catalog stage does not run runtime LuaLaTeX probes.
 - There is no longer a `--validate-loadability` flag on
   `create-catalog`.
 

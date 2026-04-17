@@ -106,11 +106,6 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         help="Disable fontTools cache reuse",
     )
     parser.add_argument(
-        "--no-loadability",
-        action="store_true",
-        help="Skip default LuaLaTeX loadability probing during inventory generation",
-    )
-    parser.add_argument(
         "--paths",
         nargs="+",
         type=Path,
@@ -367,11 +362,10 @@ def run_dump_fonts(args) -> int:
     }
 
     validation = inventory["metadata"]["validation"]["lualatex"]
-    if not getattr(args, "no_loadability", False):
-        probe_and_persist_lualatex_loadability(
-            inventory["fonts"],
-            validation_metadata=validation,
-        )
+    probe_and_persist_lualatex_loadability(
+        inventory["fonts"],
+        validation_metadata=validation,
+    )
 
     args.output.write_text(
         dumps_pretty(inventory, indent=2, ensure_ascii=False),

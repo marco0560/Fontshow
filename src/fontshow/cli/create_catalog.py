@@ -586,7 +586,11 @@ def run_create_catalog(args) -> int:
     # --------------------------------------------------------------
     _run_inventory_diagnostics(fonts)
 
-    loadability_result = filter_loadable_catalog_fonts_with_report(fonts)
+    try:
+        loadability_result = filter_loadable_catalog_fonts_with_report(fonts)
+    except ValueError as exc:
+        log_err(str(exc))
+        return 1
     latex_content = generate_latex_with_report(
         loadability_result.kept,
         excluded_fonts=loadability_result.excluded,

@@ -38,6 +38,7 @@ from typing import Any
 from fontshow.constants.runtime import SUBPROCESS_TIMEOUT_SECONDS
 from fontshow.core.types import ScriptISO
 from fontshow.inventory.schema_accessors import (
+    get_font_lualatex_loadability,
     get_font_typography,
     get_sample_text_value,
     get_specimen_text,
@@ -106,7 +107,7 @@ class _ProbeCandidate:
     specimen_strategy: str | None = None
 
 
-def _is_inventory_validation_candidate(font: MutableMapping[str, Any]) -> bool:
+def _is_inventory_validation_candidate(font: Mapping[str, Any]) -> bool:
     """
     Return whether an inventory font entry can be loadability-probed.
 
@@ -122,6 +123,97 @@ def _is_inventory_validation_candidate(font: MutableMapping[str, Any]) -> bool:
     """
     path = Path(str(font.get("path", "")).strip())
     return path.suffix.lower() in _SUPPORTED_LOADABILITY_EXTENSIONS and path.exists()
+
+
+def _loadability_identity(font: Mapping[str, Any]) -> str:
+    """
+    Build a stable identity for loadability readiness diagnostics.
+
+    Parameters
+    ----------
+    font : collections.abc.Mapping[str, Any]
+        Inventory font entry being reported.
+
+    Returns
+    -------
+    str
+        Human-readable identity using the best available font metadata.
+    """
+    full_name = str(font.get("full_name", "")).strip()
+    family = str(font.get("family", "")).strip()
+    path = str(font.get("path", "")).strip()
+    font_id = str(font.get("unique_font_id", "")).strip()
+
+    label = full_name or family or path or font_id or "unknown-font"
+    parts = [label]
+    if path and path != label:
+        parts.append(f"path={path}")
+    if font_id and font_id != label:
+        parts.append(f"id={font_id}")
+    return " | ".join(parts)
+
+
+def validate_persisted_lualatex_loadability(
+    fonts: Sequence[Mapping[str, Any]],
+    validation_metadata: Mapping[str, Any],
+) -> list[str]:
+    """
+    Validate that persisted LuaLaTeX loadability is catalog-ready.
+
+    Parameters
+    ----------
+    fonts : collections.abc.Sequence[collections.abc.Mapping[str, Any]]
+        Inventory font entries to inspect.
+    validation_metadata : collections.abc.Mapping[str, Any]
+        Current ``metadata.validation.lualatex`` block whose runtime
+        fingerprint is authoritative for the inventory.
+
+    Returns
+    -------
+    list[str]
+        Deterministic error messages. An empty list means all existing
+        supported font-file candidates have complete persisted loadability.
+    """
+    candidates = [font for font in fonts if _is_inventory_validation_candidate(font)]
+    if not candidates:
+        return []
+
+    errors: list[str] = []
+    if not bool(validation_metadata.get("attempted", False)):
+        errors.append("metadata.validation.lualatex.attempted is not true")
+
+    expected_fingerprint = validation_metadata.get("runtime_fingerprint")
+    if not isinstance(expected_fingerprint, str) or not expected_fingerprint:
+        errors.append("metadata.validation.lualatex.runtime_fingerprint is missing")
+
+    for font in candidates:
+        identity = _loadability_identity(font)
+        persisted = get_font_lualatex_loadability(font)
+        if not persisted:
+            errors.append(f"{identity}: missing loadability.lualatex")
+            continue
+
+        if not bool(persisted.get("attempted", False)):
+            errors.append(f"{identity}: loadability.lualatex.attempted is not true")
+
+        persisted_fingerprint = persisted.get("runtime_fingerprint")
+        if not isinstance(persisted_fingerprint, str) or not persisted_fingerprint:
+            errors.append(
+                f"{identity}: loadability.lualatex.runtime_fingerprint is missing"
+            )
+        elif (
+            isinstance(expected_fingerprint, str)
+            and expected_fingerprint
+            and persisted_fingerprint != expected_fingerprint
+        ):
+            errors.append(
+                f"{identity}: loadability.lualatex.runtime_fingerprint mismatch"
+            )
+
+        if not isinstance(persisted.get("loadable"), bool):
+            errors.append(f"{identity}: loadability.lualatex.loadable is not boolean")
+
+    return errors
 
 
 def _probe_text_from_font(font: MutableMapping[str, Any]) -> str:

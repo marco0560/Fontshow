@@ -1,19 +1,93 @@
 """
-Exercise catalog loadability validation helpers.
+Exercise catalog loadability filtering helpers.
 
 Responsibilities
 ----------------
-- Verify candidate selection only validates real supported font files.
-- Ensure LuaLaTeX validation failures are summarized deterministically.
-- Ensure catalog filtering skips unloadable fonts without aborting.
+- Verify candidate selection only targets real supported font files.
+- Ensure catalog filtering consumes persisted LuaLaTeX loadability only.
+- Ensure trusted persisted failures are reported deterministically.
 """
 
 from __future__ import annotations
 
-import subprocess
-from types import SimpleNamespace
+import pytest
 
 from fontshow.catalog import loadability
+
+
+def _metadata(fingerprint: str = "fp-1") -> dict[str, object]:
+    """
+    Build current LuaLaTeX validation metadata for catalog tests.
+
+    Parameters
+    ----------
+    fingerprint : str, optional
+        Runtime fingerprint exposed to the catalog loadability gate.
+
+    Returns
+    -------
+    dict[str, object]
+        Minimal metadata block accepted by persisted loadability checks.
+    """
+    return {
+        "attempted": True,
+        "runtime_fingerprint": fingerprint,
+    }
+
+
+def _persisted(loadable: bool, *, fingerprint: str = "fp-1") -> dict[str, object]:
+    """
+    Build a persisted per-font LuaLaTeX loadability block.
+
+    Parameters
+    ----------
+    loadable : bool
+        Persisted loadability result.
+    fingerprint : str, optional
+        Runtime fingerprint stored with the persisted result.
+
+    Returns
+    -------
+    dict[str, object]
+        Schema-shaped ``loadability.lualatex`` payload.
+    """
+    return {
+        "attempted": True,
+        "loadable": loadable,
+        "reason": None if loadable else "subset-empty",
+        "runtime_fingerprint": fingerprint,
+        "probe_input": "U+0041",
+        "render_variants": [],
+    }
+
+
+def _font(path, family: str, *, loadable: bool | None = True) -> dict[str, object]:
+    """
+    Build a catalog font entry for loadability filtering tests.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Font path to store in the entry.
+    family : str
+        Font family label.
+    loadable : bool | None, optional
+        Persisted loadability result. If None, omit persisted state.
+
+    Returns
+    -------
+    dict[str, object]
+        Catalog font entry.
+    """
+    font: dict[str, object] = {
+        "path": str(path),
+        "family": family,
+        "full_name": f"{family} Regular",
+        "unique_font_id": f"{family.lower()}-1",
+    }
+    if loadable is not None:
+        font["loadability"] = {"lualatex": _persisted(loadable)}
+    return font
 
 
 def test_is_validation_candidate_requires_existing_supported_font_file(tmp_path):
@@ -28,7 +102,6 @@ def test_is_validation_candidate_requires_existing_supported_font_file(tmp_path)
     Returns
     -------
     None
-
     """
     font_path = tmp_path / "Alpha.ttf"
     font_path.write_bytes(b"")
@@ -45,144 +118,16 @@ def test_is_validation_candidate_requires_existing_supported_font_file(tmp_path)
     assert loadability._is_validation_candidate({"family": "ETbb", "path": ""}) is False
 
 
-def test_validate_font_loadability_returns_subset_failure(monkeypatch, tmp_path):
-    """
-    Ensure subset-empty diagnostics produce a deterministic failure detail.
-
-    Parameters
-    ----------
-    monkeypatch : pytest.MonkeyPatch
-        Fixture used to replace LuaLaTeX discovery and subprocess helpers.
-    tmp_path : pathlib.Path
-        Temporary directory fixture used to stage the test font file.
-
-    Returns
-    -------
-    None
-    """
-    font_path = tmp_path / "Alpha.ttf"
-    font_path.write_bytes(b"")
-
-    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
-    monkeypatch.setattr(
-        loadability.subprocess,
-        "run",
-        lambda *args, **kwargs: SimpleNamespace(
-            returncode=0, stdout="warning: no glyphs in subset"
-        ),
-    )
-
-    ok, detail = loadability.validate_font_loadability({"path": str(font_path)})
-
-    assert ok is False
-    assert detail == "no glyphs in subset"
-
-
-def test_validation_probe_text_prefers_specimen_then_sample_text():
-    """
-    Ensure loadability probes use the font's own specimen data first.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-    """
-    assert (
-        loadability._validation_probe_text(
-            {
-                "specimen_text": "  ابج",
-                "sample_text": {"text": "XYZ"},
-            }
-        )
-        == "ا"
-    )
-    assert (
-        loadability._validation_probe_text(
-            {
-                "specimen_text": "   ",
-                "sample_text": {"text": "  กข"},
-            }
-        )
-        == "ก"
-    )
-    assert loadability._validation_probe_text({"specimen_text": "   "}) == "X"
-
-
-def test_build_validation_tex_uses_specimen_probe_glyph(tmp_path):
-    """
-    Ensure the generated probe document does not hard-code Latin `X`.
-
-    Parameters
-    ----------
-    tmp_path : pathlib.Path
-        Temporary directory fixture used to stage the test font file.
-
-    Returns
-    -------
-    None
-    """
-    font_path = tmp_path / "Arabic.ttf"
-    font_path.write_bytes(b"")
-
-    tex = loadability._build_validation_tex(
-        {
-            "path": str(font_path),
-            "specimen_text": "ابج",
-            "sample_text": {"text": "XYZ"},
-        }
-    )
-
-    assert "}ا\n\\end{document}\n" in tex
-    assert "}X\n\\end{document}\n" not in tex
-
-
-def test_build_validation_tex_reuses_render_policy_script_option(monkeypatch, tmp_path):
-    """
-    Ensure loadability validation uses the same script option as rendering.
-
-    Parameters
-    ----------
-    monkeypatch : pytest.MonkeyPatch
-        Fixture used to replace policy helpers.
-    tmp_path : pathlib.Path
-        Temporary directory fixture used to stage the test font file.
-
-    Returns
-    -------
-    None
-    """
-    font_path = tmp_path / "Georgian.ttf"
-    font_path.write_bytes(b"")
-
-    monkeypatch.setattr(loadability, "primary_script", lambda _font: "geor")
-    monkeypatch.setattr(
-        loadability, "_get_render_policy", lambda _script: ("", "Script=Georgian")
-    )
-
-    tex = loadability._build_validation_tex(
-        {
-            "path": str(font_path),
-            "specimen_text": "ქართული",
-        }
-    )
-
-    assert "Path=\\detokenize{" in tex
-    assert "Script=Georgian]" in tex
-
-
-def test_validate_font_loadability_returns_first_relevant_error_line(
+def test_filter_loadable_catalog_fonts_rejects_missing_persisted_state(
     monkeypatch, tmp_path
 ):
     """
-    Ensure non-zero LuaLaTeX runs return a compact error summary.
+    Ensure catalog filtering rejects loadability-incomplete inventories.
 
     Parameters
     ----------
     monkeypatch : pytest.MonkeyPatch
-        Fixture used to replace LuaLaTeX discovery and subprocess helpers.
+        Fixture used to replace current validation metadata.
     tmp_path : pathlib.Path
         Temporary directory fixture used to stage the test font file.
 
@@ -192,118 +137,24 @@ def test_validate_font_loadability_returns_first_relevant_error_line(
     """
     font_path = tmp_path / "Alpha.ttf"
     font_path.write_bytes(b"")
+    monkeypatch.setattr(loadability, "_current_lualatex_validation_metadata", _metadata)
 
-    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
-    monkeypatch.setattr(
-        loadability.subprocess,
-        "run",
-        lambda *args, **kwargs: SimpleNamespace(
-            returncode=1,
-            stdout='preamble\n! Font \\"Alpha\\" cannot be found.\ntrailer\n',
-        ),
-    )
-
-    ok, detail = loadability.validate_font_loadability({"path": str(font_path)})
-
-    assert ok is False
-    assert detail == '! Font \\"Alpha\\" cannot be found.'
-
-
-def test_validate_font_loadability_handles_timeout(monkeypatch, tmp_path):
-    """
-    Ensure subprocess timeouts become deterministic validation failures.
-
-    Parameters
-    ----------
-    monkeypatch : pytest.MonkeyPatch
-        Fixture used to replace LuaLaTeX discovery and subprocess helpers.
-    tmp_path : pathlib.Path
-        Temporary directory fixture used to stage the test font file.
-
-    Returns
-    -------
-    None
-
-    Raises
-    ------
-    subprocess.TimeoutExpired
-        Raised by the nested subprocess stub and normalized by the helper.
-    """
-    font_path = tmp_path / "Alpha.ttf"
-    font_path.write_bytes(b"")
-
-    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
-
-    def _timeout(*args, **kwargs):
-        """
-        Raise a deterministic timeout for the validation subprocess.
-
-        Parameters
-        ----------
-        *args : object
-            Ignored positional arguments preserved for interface compatibility.
-        **kwargs : object
-            Ignored keyword arguments preserved for interface compatibility.
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        subprocess.TimeoutExpired
-            Always raised to emulate a stalled subprocess.
-        """
-        raise subprocess.TimeoutExpired(cmd=["lualatex"], timeout=1)
-
-    monkeypatch.setattr(loadability.subprocess, "run", _timeout)
-
-    ok, detail = loadability.validate_font_loadability({"path": str(font_path)})
-
-    assert ok is False
-    assert detail == "LuaLaTeX validation timed out"
-
-
-def test_filter_loadable_catalog_fonts_warns_and_keeps_fonts_without_lualatex(
-    monkeypatch, tmp_path
-):
-    """
-    Ensure missing LuaLaTeX does not change the input font set.
-
-    Parameters
-    ----------
-    monkeypatch : pytest.MonkeyPatch
-        Fixture used to replace LuaLaTeX discovery and logging.
-    tmp_path : pathlib.Path
-        Temporary directory fixture used to stage the test font file.
-
-    Returns
-    -------
-    None
-    """
-    font_path = tmp_path / "Alpha.ttf"
-    font_path.write_bytes(b"")
-    warnings: list[str] = []
-
-    monkeypatch.setattr(loadability.shutil, "which", lambda _name: None)
-    monkeypatch.setattr(loadability, "log_warn", warnings.append)
-
-    fonts = [{"path": str(font_path), "family": "Alpha"}]
-
-    assert loadability.filter_loadable_catalog_fonts(fonts) == fonts
-    assert warnings == ["lualatex not available; skipping font loadability validation"]
+    with pytest.raises(ValueError, match="not loadability-ready"):
+        loadability.filter_loadable_catalog_fonts(
+            [_font(font_path, "Alpha", loadable=None)]
+        )
 
 
 def test_filter_loadable_catalog_fonts_uses_trusted_persisted_pass(
     monkeypatch, tmp_path
 ):
     """
-    Ensure trusted persisted loadability avoids runtime probing.
+    Ensure trusted persisted loadability keeps loadable fonts.
 
     Parameters
     ----------
     monkeypatch : pytest.MonkeyPatch
-        Fixture used to replace runtime fingerprint and probing helpers.
+        Fixture used to replace current validation metadata.
     tmp_path : pathlib.Path
         Temporary directory fixture used to stage the test font file.
 
@@ -313,34 +164,11 @@ def test_filter_loadable_catalog_fonts_uses_trusted_persisted_pass(
     """
     font_path = tmp_path / "Alpha.ttf"
     font_path.write_bytes(b"")
-    calls: list[dict] = []
+    monkeypatch.setattr(loadability, "_current_lualatex_validation_metadata", _metadata)
 
-    monkeypatch.setattr(loadability, "_current_runtime_fingerprint", lambda: "fp-1")
-    monkeypatch.setattr(
-        loadability,
-        "validate_font_loadability",
-        lambda font: calls.append(font) or (True, None),
-    )
-
-    fonts = [
-        {
-            "path": str(font_path),
-            "family": "Alpha",
-            "loadability": {
-                "lualatex": {
-                    "attempted": True,
-                    "loadable": True,
-                    "reason": None,
-                    "runtime_fingerprint": "fp-1",
-                    "probe_input": "U+0041",
-                    "render_variants": [],
-                }
-            },
-        }
-    ]
+    fonts = [_font(font_path, "Alpha", loadable=True)]
 
     assert loadability.filter_loadable_catalog_fonts(fonts) == fonts
-    assert calls == []
 
 
 def test_filter_loadable_catalog_fonts_uses_trusted_persisted_failure(
@@ -352,7 +180,7 @@ def test_filter_loadable_catalog_fonts_uses_trusted_persisted_failure(
     Parameters
     ----------
     monkeypatch : pytest.MonkeyPatch
-        Fixture used to replace runtime fingerprint and logging helpers.
+        Fixture used to replace current validation metadata and logging.
     tmp_path : pathlib.Path
         Temporary directory fixture used to stage the test font file.
 
@@ -363,37 +191,13 @@ def test_filter_loadable_catalog_fonts_uses_trusted_persisted_failure(
     font_path = tmp_path / "Broken.ttf"
     font_path.write_bytes(b"")
     warnings: list[str] = []
-    calls: list[dict] = []
 
-    monkeypatch.setattr(loadability, "_current_runtime_fingerprint", lambda: "fp-1")
+    monkeypatch.setattr(loadability, "_current_lualatex_validation_metadata", _metadata)
     monkeypatch.setattr(loadability, "log_warn", warnings.append)
-    monkeypatch.setattr(
-        loadability,
-        "validate_font_loadability",
-        lambda font: calls.append(font) or (True, None),
-    )
 
-    fonts = [
-        {
-            "path": str(font_path),
-            "family": "Broken",
-            "full_name": "Broken Regular",
-            "unique_font_id": "broken-1",
-            "loadability": {
-                "lualatex": {
-                    "attempted": True,
-                    "loadable": False,
-                    "reason": "subset-empty",
-                    "runtime_fingerprint": "fp-1",
-                    "probe_input": "U+0042",
-                    "render_variants": [],
-                }
-            },
-        }
-    ]
+    fonts = [_font(font_path, "Broken", loadable=False)]
 
     assert loadability.filter_loadable_catalog_fonts(fonts) == []
-    assert calls == []
     assert warnings == [
         f"Font skipped: Broken Regular | path={font_path} | id=broken-1",
         "Reason: LuaLaTeX load failure",
@@ -401,16 +205,16 @@ def test_filter_loadable_catalog_fonts_uses_trusted_persisted_failure(
     ]
 
 
-def test_filter_loadable_catalog_fonts_falls_back_when_persisted_state_is_stale(
+def test_filter_loadable_catalog_fonts_rejects_stale_persisted_state(
     monkeypatch, tmp_path
 ):
     """
-    Ensure stale persisted results trigger runtime fallback validation.
+    Ensure stale persisted loadability is a hard catalog input error.
 
     Parameters
     ----------
     monkeypatch : pytest.MonkeyPatch
-        Fixture used to replace runtime fingerprint and probing helpers.
+        Fixture used to replace current validation metadata.
     tmp_path : pathlib.Path
         Temporary directory fixture used to stage the test font file.
 
@@ -420,37 +224,19 @@ def test_filter_loadable_catalog_fonts_falls_back_when_persisted_state_is_stale(
     """
     font_path = tmp_path / "Alpha.ttf"
     font_path.write_bytes(b"")
-    calls: list[dict] = []
-
-    monkeypatch.setattr(loadability, "_current_runtime_fingerprint", lambda: "fp-new")
     monkeypatch.setattr(
         loadability,
-        "validate_font_loadability",
-        lambda font: calls.append(font) or (True, None),
+        "_current_lualatex_validation_metadata",
+        lambda: _metadata("fp-new"),
     )
+    font = _font(font_path, "Alpha", loadable=True)
+    font["loadability"] = {"lualatex": _persisted(True, fingerprint="fp-old")}
 
-    fonts = [
-        {
-            "path": str(font_path),
-            "family": "Alpha",
-            "loadability": {
-                "lualatex": {
-                    "attempted": True,
-                    "loadable": True,
-                    "reason": None,
-                    "runtime_fingerprint": "fp-old",
-                    "probe_input": "U+0041",
-                    "render_variants": [],
-                }
-            },
-        }
-    ]
-
-    assert loadability.filter_loadable_catalog_fonts(fonts) == fonts
-    assert calls == [fonts[0]]
+    with pytest.raises(ValueError, match="runtime_fingerprint mismatch"):
+        loadability.filter_loadable_catalog_fonts([font])
 
 
-def test_filter_loadable_catalog_fonts_skips_only_failed_candidates(
+def test_filter_loadable_catalog_fonts_skips_only_persisted_failed_candidates(
     monkeypatch, tmp_path
 ):
     """
@@ -459,7 +245,7 @@ def test_filter_loadable_catalog_fonts_skips_only_failed_candidates(
     Parameters
     ----------
     monkeypatch : pytest.MonkeyPatch
-        Fixture used to replace validation and logging helpers.
+        Fixture used to replace current validation metadata and logging.
     tmp_path : pathlib.Path
         Temporary directory fixture used to stage the test font files.
 
@@ -473,25 +259,12 @@ def test_filter_loadable_catalog_fonts_skips_only_failed_candidates(
     bad_path.write_bytes(b"")
     warnings: list[str] = []
 
-    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
+    monkeypatch.setattr(loadability, "_current_lualatex_validation_metadata", _metadata)
     monkeypatch.setattr(loadability, "log_warn", warnings.append)
 
-    def _validate(font):
-        return (False, "broken cmap") if "Broken" in str(font["path"]) else (True, None)
-
-    monkeypatch.setattr(loadability, "validate_font_loadability", _validate)
-
     fonts = [
-        {
-            "path": str(good_path),
-            "family": "Alpha",
-            "unique_font_id": "good-1",
-        },
-        {
-            "path": str(bad_path),
-            "family": "Broken",
-            "unique_font_id": "bad-1",
-        },
+        _font(good_path, "Alpha", loadable=True),
+        _font(bad_path, "Broken", loadable=False),
         {
             "path": str(tmp_path / "missing.ttf"),
             "family": "Missing",
@@ -503,7 +276,7 @@ def test_filter_loadable_catalog_fonts_skips_only_failed_candidates(
 
     assert kept == [fonts[0], fonts[2]]
     assert warnings == [
-        f"Font skipped: Broken | path={bad_path} | id=bad-1",
+        f"Font skipped: Broken Regular | path={bad_path} | id=broken-1",
         "Reason: LuaLaTeX load failure",
-        "Detail: broken cmap",
+        "Detail: subset-empty",
     ]
