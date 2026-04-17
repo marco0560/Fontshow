@@ -185,6 +185,30 @@ Status:
 - useful when GitHub Actions deprecates a Node runtime
 - not currently wired into hooks or contributor bootstrap
 
+### setup_benchmark_fonts.sh
+
+Generate ignored benchmark font fixtures under `tests/fixtures/fonts_dir/`.
+
+Status:
+
+- manual performance helper
+- documented in `docs/performance.md`
+- downloads pinned OFL-compatible Google Fonts files
+- idempotent for the selected `light` or `heavy` profile
+
+### benchmark.sh
+
+Run on-demand Hyperfine benchmarks for `dump-fonts`, `parse-inventory`,
+and `create-catalog`.
+
+Status:
+
+- manual performance helper
+- documented in `docs/performance.md`
+- requires the repository `.venv`
+- requires `hyperfine` on `PATH`
+- writes ignored JSON results under `tests/fixtures/benchmark_results/`
+
 ---
 
 ## TeX / Ontology Maintenance Helpers

@@ -79,6 +79,7 @@ nav:
     - Dev environment: dev-environment.md
     - Environment matrix: environment-matrix.md
     - Logging system: logging.md
+    - Performance benchmarks: performance.md
     - Scripts: scripts.md
     - Contributing: CONTRIBUTING.md
 
