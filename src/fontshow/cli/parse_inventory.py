@@ -53,6 +53,7 @@ from fontshow.inventory.latex_validation_metadata import (
 )
 from fontshow.inventory.loadability import (
     probe_and_persist_lualatex_render_variants,
+    validate_persisted_lualatex_loadability,
 )
 from fontshow.inventory.metadata_processing import (
     _infer_and_attach_metadata,
@@ -477,6 +478,15 @@ def parse_inventory(
         data.get("fonts", []),
         validation_metadata=validation["lualatex"],
     )
+    loadability_errors = validate_persisted_lualatex_loadability(
+        data.get("fonts", []),
+        validation["lualatex"],
+    )
+    if loadability_errors:
+        preview = "; ".join(loadability_errors[:5])
+        suffix = "" if len(loadability_errors) <= 5 else "; ..."
+        msg = f"LuaLaTeX loadability incomplete: {preview}{suffix}"
+        raise ValueError(msg)
 
     log.info(
         "font inventory parsing completed",
@@ -843,11 +853,15 @@ def run_parse_font_inventory(
             ),
         )
 
-    enriched = parse_inventory_fn(
-        data,
-        args.infer_level,
-        strict_bcp47=args.strict_bcp47,
-    )
+    try:
+        enriched = parse_inventory_fn(
+            data,
+            args.infer_level,
+            strict_bcp47=args.strict_bcp47,
+        )
+    except ValueError as exc:
+        log_err(f"parse-inventory failed: {exc}")
+        return 1
     log_trace_cat(
         log,
         "flow",

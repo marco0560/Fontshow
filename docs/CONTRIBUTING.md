@@ -34,6 +34,11 @@ For convenience, commonly used helpers are exposed via Git aliases
 
 See `scripts.md` for details.
 
+Performance benchmarking is documented separately because it is an
+on-demand local workflow and is not part of CI:
+
+- `performance.md`
+
 For repository-wide docstring audits, use:
 
 ```bash

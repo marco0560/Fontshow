@@ -88,7 +88,6 @@ def test_completion_spec_tracks_command_options() -> None:
         "--help",
         "--include-fc-charset",
         "--no-cache",
-        "--no-loadability",
         "--output",
         "--paths",
         "--quiet",

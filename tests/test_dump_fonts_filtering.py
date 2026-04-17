@@ -299,7 +299,6 @@ def test_dump_fonts_paths_mode_does_not_use_system_discovery(tmp_path, monkeypat
         cache_dir=tmp_path,
         include_fc_charset=False,
         no_cache=True,
-        no_loadability=True,
         paths=[root],
         verbose=False,
     )
@@ -338,7 +337,6 @@ def test_dump_fonts_paths_mode_fails_invalid_root(tmp_path, monkeypatch):
         cache_dir=tmp_path,
         include_fc_charset=False,
         no_cache=True,
-        no_loadability=True,
         paths=[missing],
         verbose=False,
     )

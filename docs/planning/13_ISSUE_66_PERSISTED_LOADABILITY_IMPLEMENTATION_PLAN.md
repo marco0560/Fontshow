@@ -13,8 +13,8 @@ This document records the approved execution plan for Issue `#66`:
 - persist LuaLaTeX loadability during `dump-fonts`
 - consume persisted loadability in `create-catalog`
 - remove the `create-catalog --validate-loadability` option and code path
-- preserve deterministic fallback behavior when persisted loadability is
-  absent or invalid
+- enforce deterministic failure when persisted loadability is absent,
+  incomplete, or stale
 - update and review repository documentation before merge
 
 This is an execution-tracking document, not a replacement for the
@@ -29,7 +29,7 @@ In scope:
 - persistence of per-font and inventory-level loadability metadata
 - default persisted-loadability consumption in `create-catalog`
 - deterministic reporting of unloadable fonts in generated catalog output
-- deterministic tests covering persistence and fallback
+- deterministic tests covering persistence and strict loadability readiness
 - repository documentation updates and review before merge
 
 Out of scope:
@@ -105,11 +105,10 @@ Deliverables:
 
 Goal:
 Implement `dump-fonts` support for persisted LuaLaTeX loadability via
-default batched probing with an opt-out flag.
+default batched probing.
 
 Deliverables:
 
-- `dump-fonts --no-loadability`
 - batched TeX generation and execution
 - deterministic attribution of probe results to font entries
 - persisted per-font loadability fields
@@ -118,13 +117,13 @@ Deliverables:
 ### Step 5 - Persisted-loadability consumption in `create-catalog`
 
 Goal:
-Make `create-catalog` use persisted loadability by default and fall back
-to runtime probing only when persisted data is absent or invalid.
+Make `create-catalog` use persisted loadability by default and reject
+catalog candidates when persisted data is absent, incomplete, or stale.
 
 Deliverables:
 
 - persisted-first filtering behavior
-- runtime-fallback path on fingerprint mismatch or missing data
+- deterministic failure on fingerprint mismatch or missing data
 - deterministic skip behavior for unloadable fonts
 
 ### Step 6 - Unloadable-font reporting in generated output
@@ -156,12 +155,12 @@ Deliverables:
 Coverage assessment:
 
 - evaluated surfaces from Steps 2-6:
-  - `dump-fonts` default probing and `--no-loadability`
+  - `dump-fonts` default probing
   - batched probing attribution
   - persisted metadata helper behavior
   - `parse-inventory` metadata preservation
   - persisted-first `create-catalog` filtering
-  - runtime fallback on stale or missing persisted state
+  - deterministic failure on stale or missing persisted state
   - generated unloadable-font reporting
   - CLI completion / parser contract updates
   - schema/output invariants and deterministic output
@@ -224,8 +223,8 @@ Deliverables:
 | 1 | Planning artifact and branch setup | completed | Branch created and plan added |
 | 2 | Remove `create-catalog --validate-loadability` | completed | CLI option and runtime branch removed |
 | 3 | Runtime fingerprint and persistence helpers | completed | Fingerprint and v1.3 loadability helpers added |
-| 4 | Batched loadability probing in `dump-fonts` | completed | Default probing with serial batching and `--no-loadability` opt-out |
-| 5 | Persisted-loadability consumption in `create-catalog` | completed | Persisted-first filtering with deterministic runtime fallback |
+| 4 | Batched loadability probing in `dump-fonts` | completed | Default probing with serial batching |
+| 5 | Persisted-loadability consumption in `create-catalog` | completed | Persisted-only filtering with deterministic failure on incomplete or stale state |
 | 6 | Unloadable-font reporting in generated output | completed | Generated catalog now includes deterministic exclusion reporting |
 | 7 | Deterministic test coverage | completed | Coverage evaluated; targeted persisted-loadability suite passed (83 tests) |
 | 8 | Repository documentation update and review | completed | Command docs updated and stale user-facing references removed |

@@ -4,7 +4,6 @@ Exercise persisted loadability behavior in dump-fonts.
 Responsibilities
 ----------------
 - Verify default loadability probing persists per-font state.
-- Verify ``--no-loadability`` disables probing deterministically.
 - Verify batch subdivision attributes failed fonts stably.
 - Verify parse-inventory preserves attempted loadability metadata.
 """
@@ -143,7 +142,6 @@ def test_dump_fonts_runs_loadability_by_default(tmp_path, monkeypatch):
             cache_dir=tmp_path,
             include_fc_charset=False,
             no_cache=True,
-            no_loadability=False,
             verbose=False,
         )
     )
@@ -152,56 +150,6 @@ def test_dump_fonts_runs_loadability_by_default(tmp_path, monkeypatch):
     data = json.loads(output.read_text(encoding="utf-8"))
     assert data["metadata"]["validation"]["lualatex"]["attempted"] is True
     assert data["fonts"][0]["loadability"]["lualatex"]["loadable"] is True
-
-
-def test_dump_fonts_no_loadability_skips_probing(tmp_path, monkeypatch):
-    """
-    Ensure ``--no-loadability`` disables persisted probing.
-
-    Parameters
-    ----------
-    tmp_path : pathlib.Path
-        Temporary directory fixture used for fake fonts and output.
-    monkeypatch : pytest.MonkeyPatch
-        Fixture used to replace discovery and probing helpers.
-
-    Returns
-    -------
-    None
-    """
-    font_path = create_fake_font_file(tmp_path, "Alpha.ttf")
-    output = tmp_path / "inventory.json"
-    simulate_dump_discovery(monkeypatch, [font_path], skipped_legacy=0)
-    monkeypatch.setattr(
-        "fontshow.cli.dump_fonts.fonttools_extract_all",
-        lambda _path, **_kwargs: [{"ok": True, "ttc_index": None}],
-    )
-    monkeypatch.setattr(
-        "fontshow.cli.dump_fonts.build_font_descriptor",
-        lambda _ctx: _candidate_descriptor(font_path, "Alpha"),
-    )
-    probe_calls: list[list[dict[str, object]]] = []
-    monkeypatch.setattr(
-        "fontshow.cli.dump_fonts.probe_and_persist_lualatex_loadability",
-        lambda fonts, *, validation_metadata: probe_calls.append(list(fonts)),
-    )
-
-    rc = run_dump_fonts(
-        SimpleNamespace(
-            output=output,
-            cache_dir=tmp_path,
-            include_fc_charset=False,
-            no_cache=True,
-            no_loadability=True,
-            verbose=False,
-        )
-    )
-
-    assert rc == 0
-    data = json.loads(output.read_text(encoding="utf-8"))
-    assert probe_calls == []
-    assert data["metadata"]["validation"]["lualatex"]["attempted"] is False
-    assert data["fonts"][0]["loadability"]["lualatex"]["attempted"] is False
 
 
 def test_probe_and_persist_lualatex_loadability_recurses_on_batch_failure(
@@ -331,6 +279,61 @@ def test_parse_inventory_refreshes_lualatex_validation_and_probes_variants(monke
     assert result["metadata"]["validation"]["lualatex"]["attempted"] is False
     assert result["metadata"]["validation"]["lualatex"]["runtime_fingerprint"] == "fp-2"
     assert probe_calls == [([], result["metadata"]["validation"]["lualatex"])]
+
+
+def test_parse_inventory_rejects_incomplete_lualatex_loadability(tmp_path, monkeypatch):
+    """
+    Ensure parse-inventory fails when loadability remains incomplete.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for the candidate font path.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace runtime metadata and probing helpers.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    ValueError
+        Raised by parse-inventory when the candidate has no completed
+        persisted LuaLaTeX loadability state.
+    """
+    font_path = create_fake_font_file(tmp_path, "Alpha.ttf")
+    data = {
+        "metadata": {
+            "schema_version": "1.5",
+            "run_environment": {
+                "os": "x",
+                "machine": "y",
+                "execution_context": "native",
+            },
+            "validation": {},
+        },
+        "fonts": [_candidate_descriptor(font_path, "Alpha")],
+    }
+    monkeypatch.setattr(parse_inventory, "collect_platform_metadata", dict)
+    monkeypatch.setattr(
+        parse_inventory,
+        "collect_latex_validation_metadata",
+        lambda: {"attempted": False, "runtime_fingerprint": "fp-2"},
+    )
+    monkeypatch.setattr(
+        parse_inventory,
+        "probe_and_persist_lualatex_render_variants",
+        lambda fonts, *, validation_metadata: None,
+    )
+
+    try:
+        parse_inventory.parse_inventory(data, level="medium")
+    except ValueError as exc:
+        assert "LuaLaTeX loadability incomplete" in str(exc)
+    else:
+        msg = "parse_inventory did not reject incomplete loadability"
+        raise AssertionError(msg)
 
 
 def test_render_variant_specimen_falls_back_to_script_scoped_cmap(monkeypatch):
