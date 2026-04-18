@@ -596,6 +596,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         help="Reject non-compliant BCP-47 language tags",
     )
     parser.add_argument(
+        "-l",
         "--loadability-jobs",
         type=_positive_loadability_jobs,
         default=DEFAULT_LOADABILITY_JOBS,

@@ -225,6 +225,12 @@ def filter_loadable_catalog_fonts_with_report(
     -------
     LoadabilityFilterResult
         Kept render set plus structured exclusion records.
+
+    Raises
+    ------
+    ValueError
+        If a font entry is a loadability validation candidate but
+        persisted loadability is missing, incomplete, or otherwise invalid.
     """
     validation_metadata = _current_lualatex_validation_metadata()
     candidates = [font for font in fonts if _is_validation_candidate(font)]

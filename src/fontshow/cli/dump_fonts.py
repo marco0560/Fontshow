@@ -154,6 +154,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         help="Include Fontconfig-declared Unicode charset information (experimental, best-effort)",
     )
     parser.add_argument(
+        "-l",
         "--loadability-jobs",
         type=_positive_loadability_jobs,
         default=DEFAULT_LOADABILITY_JOBS,
