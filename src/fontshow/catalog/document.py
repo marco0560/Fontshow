@@ -1380,16 +1380,12 @@ def _render_variant_specimen_blocks(
         )
         if not variant_render:
             continue
-        show_script_label = catalog_detail == "compact" or len(script_candidates) > 1
-        if show_script_label:
-            label = _render_script_label(script_iso, catalog_detail=catalog_detail)
-            block = _render_variant_specimen_row(
-                label=label,
-                rendered_specimen=variant_render,
-            )
-            rendered_blocks.append(block)
-        else:
-            rendered_blocks.append(variant_render)
+        label = _render_script_label(script_iso, catalog_detail=catalog_detail)
+        block = _render_variant_specimen_row(
+            label=label,
+            rendered_specimen=variant_render,
+        )
+        rendered_blocks.append(block)
 
     variant_renderable = bool(rendered_blocks)
     if not variant_renderable and _should_suppress_specialized_primary_specimen(
