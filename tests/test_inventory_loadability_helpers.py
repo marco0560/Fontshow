@@ -140,6 +140,7 @@ def test_collect_latex_validation_metadata_populates_runtime_fingerprint(monkeyp
 
     assert metadata["engine"] == "lualatex"
     assert metadata["engine_version"] == "1.18.0"
+    assert metadata["render_policy_version"] == "policy-v1+loadability-probe-v2"
     assert isinstance(metadata["runtime_fingerprint"], str)
     assert len(metadata["runtime_fingerprint"]) == 64
 

@@ -546,7 +546,31 @@ def _resolve_batch_results(
     detail = _summarize_lualatex_output(output)
     successful_ids = _successful_candidate_ids(output)
 
-    if returncode == 0 and len(successful_ids) == len(candidates):
+    if returncode != 0:
+        if len(candidates) == 1:
+            candidate = candidates[0]
+            return {
+                candidate.candidate_index: {
+                    "attempted": True,
+                    "loadable": False,
+                    "reason": detail,
+                    "probe_input": candidate.probe_input,
+                }
+            }
+
+        left, right = _split_candidates(candidates)
+        split_results: dict[int, dict[str, Any]] = {}
+        if left:
+            split_results.update(
+                _resolve_batch_results(left, lualatex_bin=lualatex_bin)
+            )
+        if right:
+            split_results.update(
+                _resolve_batch_results(right, lualatex_bin=lualatex_bin)
+            )
+        return split_results
+
+    if len(successful_ids) == len(candidates):
         return {
             candidate.candidate_index: {
                 "attempted": True,

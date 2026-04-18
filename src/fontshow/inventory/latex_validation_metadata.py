@@ -35,6 +35,8 @@ from typing import Any
 from fontshow.constants.runtime import SUBPROCESS_TIMEOUT_SECONDS
 from fontshow.latex.policy import get_render_policy_version
 
+LOADABILITY_PROBE_VERSION = "loadability-probe-v2"
+
 
 def _read_command_stdout(*argv: str) -> str | None:
     """
@@ -160,8 +162,9 @@ def build_latex_runtime_fingerprint(metadata: dict[str, object]) -> str | None:
     Notes
     -----
     The fingerprint intentionally depends only on stable runtime inputs
-    already recorded in the inventory metadata. Probe outcome fields are
-    excluded so a valid runtime can be compared before or after probing.
+    and loadability-probe semantics already recorded in the inventory
+    metadata. Probe outcome fields are excluded so a valid runtime can
+    be compared before or after probing.
     """
     engine = metadata.get("engine")
     if not isinstance(engine, str) or not engine.strip():
@@ -238,6 +241,8 @@ def collect_latex_validation_metadata() -> dict[str, object]:
         "fontspec_version": _extract_package_version("fontspec"),
         "polyglossia_version": _extract_package_version("polyglossia"),
         "runtime_fingerprint": None,
-        "render_policy_version": get_render_policy_version(),
+        "render_policy_version": (
+            f"{get_render_policy_version()}+{LOADABILITY_PROBE_VERSION}"
+        ),
     }
     return attach_latex_runtime_fingerprint(metadata)

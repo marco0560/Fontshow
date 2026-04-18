@@ -201,6 +201,10 @@ def test_probe_and_persist_lualatex_loadability_recurses_on_batch_failure(
         ids = [candidate.font_index for candidate in candidates]
         if ids == [0, 1, 2]:
             return 1, 'FONTSHOW_LOAD_OK:0\n! Font \\"Beta\\" cannot be found.\n'
+        if ids == [0]:
+            return 0, "FONTSHOW_LOAD_OK:0\n"
+        if ids == [1, 2]:
+            return 1, '! Font \\"Beta\\" cannot be found.\n'
         if ids == [1]:
             return 1, '! Font \\"Beta\\" cannot be found.\n'
         if ids == [2]:
@@ -223,6 +227,57 @@ def test_probe_and_persist_lualatex_loadability_recurses_on_batch_failure(
         '! Font \\"Beta\\" cannot be found.'
     )
     assert fonts[2]["loadability"]["lualatex"]["loadable"] is True
+
+
+def test_resolve_batch_results_rejects_failed_single_candidate_with_ok_marker(
+    tmp_path, monkeypatch
+):
+    """
+    Ensure deferred LuaLaTeX failures override emitted OK markers.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for a fake font path.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace batch execution.
+
+    Returns
+    -------
+    None
+    """
+    candidate = loadability._ProbeCandidate(
+        candidate_index=7,
+        font_index=0,
+        path=create_fake_font_file(tmp_path, "DeferredFail.ttf"),
+        probe_text="ქ",
+        probe_input="U+10E5",
+        fontspec_opts="Script=Georgian",
+        script="GEOR",
+        specimen_text="ქართული",
+        specimen_glyph_count=7,
+        specimen_strategy="script",
+    )
+
+    def _fake_run(candidates, *, lualatex_bin):
+        ids = [item.candidate_index for item in candidates]
+        assert ids == [7]
+        return (
+            1,
+            "FONTSHOW_LOAD_OK:7\n" "! I can't find file `DeferredFail.ttf.fontspec'.\n",
+        )
+
+    monkeypatch.setattr(loadability, "_run_lualatex_batch", _fake_run)
+
+    result = loadability._resolve_batch_results(
+        [candidate],
+        lualatex_bin="/usr/bin/lualatex",
+    )
+
+    assert result[7]["attempted"] is True
+    assert result[7]["loadable"] is False
+    assert result[7]["reason"] == "! I can't find file `DeferredFail.ttf.fontspec'."
+    assert result[7]["probe_input"] == "U+10E5"
 
 
 def test_probe_and_persist_lualatex_loadability_accepts_parallel_jobs(
