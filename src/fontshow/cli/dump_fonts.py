@@ -58,7 +58,10 @@ from fontshow.inventory.fonttools_extraction import (
 from fontshow.inventory.latex_validation_metadata import (
     collect_latex_validation_metadata,
 )
-from fontshow.inventory.loadability import probe_and_persist_lualatex_loadability
+from fontshow.inventory.loadability import (
+    DEFAULT_LOADABILITY_JOBS,
+    probe_and_persist_lualatex_loadability,
+)
 from fontshow.inventory.platform_metadata import collect_platform_metadata
 from fontshow.inventory.schema_accessors import get_font_metrics
 from fontshow.inventory.types import FontBuildContext
@@ -73,6 +76,36 @@ from fontshow.platform.font_discovery import (
     get_last_discovery_stats,
 )
 from fontshow.platform.fontconfig import fc_query_extract_many
+
+
+def _positive_loadability_jobs(value: str) -> int:
+    """
+    Parse a positive loadability job count.
+
+    Parameters
+    ----------
+    value : str
+        Raw command-line argument value.
+
+    Returns
+    -------
+    int
+        Positive integer job count.
+
+    Raises
+    ------
+    argparse.ArgumentTypeError
+        Raised when ``value`` is not a positive integer.
+    """
+    try:
+        jobs = int(value)
+    except ValueError as exc:
+        msg = "loadability jobs must be a positive integer"
+        raise argparse.ArgumentTypeError(msg) from exc
+    if jobs < 1:
+        msg = "loadability jobs must be at least 1"
+        raise argparse.ArgumentTypeError(msg)
+    return jobs
 
 
 def build_parser(parser: argparse.ArgumentParser) -> None:
@@ -119,6 +152,12 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         "--include-fc-charset",
         action="store_true",
         help="Include Fontconfig-declared Unicode charset information (experimental, best-effort)",
+    )
+    parser.add_argument(
+        "--loadability-jobs",
+        type=_positive_loadability_jobs,
+        default=DEFAULT_LOADABILITY_JOBS,
+        help="Maximum parallel LuaLaTeX loadability batches",
     )
     add_common_arguments(
         parser,
@@ -365,6 +404,7 @@ def run_dump_fonts(args) -> int:
     probe_and_persist_lualatex_loadability(
         inventory["fonts"],
         validation_metadata=validation,
+        jobs=getattr(args, "loadability_jobs", DEFAULT_LOADABILITY_JOBS),
     )
 
     args.output.write_text(

@@ -12,6 +12,10 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SETUP_SCRIPT = REPO_ROOT / "scripts" / "setup_benchmark_fonts.sh"
 BENCHMARK_SCRIPT = REPO_ROOT / "scripts" / "benchmark.sh"
+LOADABILITY_BENCHMARK_SCRIPT = (
+    REPO_ROOT / "scripts" / "benchmark_loadability_batches.sh"
+)
+LOADABILITY_REPLAY_SCRIPT = REPO_ROOT / "scripts" / "run_loadability_probe.py"
 FONT_FIXTURE_DIR = REPO_ROOT / "tests" / "fixtures" / "fonts_dir"
 READINESS_ENV = "FONTSHOW_BENCHMARK_READINESS"
 SETUP_COMMAND = "scripts/setup_benchmark_fonts.sh light"
@@ -45,7 +49,7 @@ def test_benchmark_scripts_expose_help_without_external_tools() -> None:
     -------
     None
     """
-    for script in (SETUP_SCRIPT, BENCHMARK_SCRIPT):
+    for script in (SETUP_SCRIPT, BENCHMARK_SCRIPT, LOADABILITY_BENCHMARK_SCRIPT):
         result = subprocess.run(
             ["bash", str(script), "--help"],
             check=False,
@@ -55,6 +59,16 @@ def test_benchmark_scripts_expose_help_without_external_tools() -> None:
 
         assert result.returncode == 0
         assert "Usage:" in result.stdout
+
+    replay_result = subprocess.run(
+        ["python", str(LOADABILITY_REPLAY_SCRIPT), "--help"],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert replay_result.returncode == 0
+    assert "Replay LuaLaTeX loadability probing" in replay_result.stdout
 
 
 def test_hyperfine_readiness_check_is_opt_in() -> None:

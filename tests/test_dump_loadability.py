@@ -118,7 +118,8 @@ def test_dump_fonts_runs_loadability_by_default(tmp_path, monkeypatch):
         lambda _ctx: _candidate_descriptor(font_path, "Alpha"),
     )
 
-    def _persist(fonts, *, validation_metadata):
+    def _persist(fonts, *, validation_metadata, jobs):
+        assert jobs == 4
         validation_metadata["attempted"] = True
         for font in fonts:
             font["loadability"]["lualatex"].update(
@@ -142,6 +143,7 @@ def test_dump_fonts_runs_loadability_by_default(tmp_path, monkeypatch):
             cache_dir=tmp_path,
             include_fc_charset=False,
             no_cache=True,
+            loadability_jobs=4,
             verbose=False,
         )
     )
@@ -223,6 +225,67 @@ def test_probe_and_persist_lualatex_loadability_recurses_on_batch_failure(
     assert fonts[2]["loadability"]["lualatex"]["loadable"] is True
 
 
+def test_probe_and_persist_lualatex_loadability_accepts_parallel_jobs(
+    tmp_path, monkeypatch
+):
+    """
+    Ensure bounded parallel probing preserves per-font loadability results.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for fake fonts.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace LuaLaTeX discovery and batch execution.
+
+    Returns
+    -------
+    None
+    """
+    fonts: list[dict[str, object]] = [
+        _candidate_descriptor(
+            create_fake_font_file(tmp_path, f"Font{index}.ttf"), family
+        )
+        for index, family in enumerate(("Alpha", "Beta", "Gamma", "Delta"))
+    ]
+    metadata = {
+        "attempted": False,
+        "engine": "lualatex",
+        "engine_version": "1.18.0",
+        "luaotfload_version": "3.28",
+        "fontspec_version": "2.9g",
+        "polyglossia_version": "1.60.0",
+        "runtime_fingerprint": "fp-1",
+        "render_policy_version": "policy-v1",
+    }
+    calls: list[tuple[int, ...]] = []
+
+    def _fake_run(candidates, *, lualatex_bin):
+        ids = tuple(candidate.candidate_index for candidate in candidates)
+        calls.append(ids)
+        output = "\n".join(f"FONTSHOW_LOAD_OK:{candidate_id}" for candidate_id in ids)
+        return 0, output
+
+    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
+    monkeypatch.setattr(loadability, "_run_lualatex_batch", _fake_run)
+
+    loadability.probe_and_persist_lualatex_loadability(
+        fonts,
+        validation_metadata=metadata,
+        batch_size=1,
+        jobs=2,
+    )
+
+    assert sorted(calls) == [(0,), (1,), (2,), (3,)]
+    assert metadata["attempted"] is True
+    assert [font["loadability"]["lualatex"]["loadable"] for font in fonts] == [
+        True,
+        True,
+        True,
+        True,
+    ]
+
+
 def test_parse_inventory_refreshes_lualatex_validation_and_probes_variants(monkeypatch):
     """
     Ensure parse-inventory refreshes validation metadata and probes variants.
@@ -260,7 +323,7 @@ def test_parse_inventory_refreshes_lualatex_validation_and_probes_variants(monke
         "fonts": [],
     }
     monkeypatch.setattr(parse_inventory, "collect_platform_metadata", dict)
-    probe_calls: list[tuple[list[dict[str, object]], dict[str, object]]] = []
+    probe_calls: list[tuple[list[dict[str, object]], dict[str, object], int]] = []
     monkeypatch.setattr(
         parse_inventory,
         "collect_latex_validation_metadata",
@@ -269,16 +332,16 @@ def test_parse_inventory_refreshes_lualatex_validation_and_probes_variants(monke
     monkeypatch.setattr(
         parse_inventory,
         "probe_and_persist_lualatex_render_variants",
-        lambda fonts, *, validation_metadata: probe_calls.append(
-            (list(fonts), validation_metadata)
+        lambda fonts, *, validation_metadata, jobs: probe_calls.append(
+            (list(fonts), validation_metadata, jobs)
         ),
     )
 
-    result = parse_inventory.parse_inventory(data, level="medium")
+    result = parse_inventory.parse_inventory(data, level="medium", loadability_jobs=6)
 
     assert result["metadata"]["validation"]["lualatex"]["attempted"] is False
     assert result["metadata"]["validation"]["lualatex"]["runtime_fingerprint"] == "fp-2"
-    assert probe_calls == [([], result["metadata"]["validation"]["lualatex"])]
+    assert probe_calls == [([], result["metadata"]["validation"]["lualatex"], 6)]
 
 
 def test_parse_inventory_rejects_incomplete_lualatex_loadability(tmp_path, monkeypatch):
@@ -324,7 +387,7 @@ def test_parse_inventory_rejects_incomplete_lualatex_loadability(tmp_path, monke
     monkeypatch.setattr(
         parse_inventory,
         "probe_and_persist_lualatex_render_variants",
-        lambda fonts, *, validation_metadata: None,
+        lambda fonts, *, validation_metadata, jobs: None,
     )
 
     try:
@@ -423,25 +486,29 @@ def test_probe_and_persist_lualatex_render_variants_persists_specimen_data(
         "_get_render_policy",
         lambda script: ("", None if str(script) == "LATN" else "Script=Arabic"),
     )
-    monkeypatch.setattr(
-        loadability,
-        "_resolve_batch_results",
-        lambda chunk, *, lualatex_bin: {
+    resolve_calls: list[int] = []
+
+    def _fake_resolve(chunks, *, lualatex_bin, jobs):
+        resolve_calls.append(jobs)
+        return {
             candidate.candidate_index: {
                 "attempted": True,
                 "loadable": True,
                 "reason": None,
                 "probe_input": candidate.probe_input,
             }
+            for chunk in chunks
             for candidate in chunk
-        },
-    )
+        }
+
+    monkeypatch.setattr(loadability, "_resolve_candidate_chunks", _fake_resolve)
 
     loadability.probe_and_persist_lualatex_render_variants(
-        [font], validation_metadata=metadata
+        [font], validation_metadata=metadata, jobs=3
     )
 
     variants = font["loadability"]["lualatex"]["render_variants"]
+    assert resolve_calls == [3]
     assert variants[0]["specimen_text"] == "The quick brown fox"
     assert variants[0]["specimen_glyph_count"] == 16
     assert variants[0]["specimen_strategy"] == "script"

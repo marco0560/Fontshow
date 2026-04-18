@@ -3,12 +3,13 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/setup_benchmark_fonts.sh [light|heavy]
+Usage: scripts/setup_benchmark_fonts.sh [light|medium|heavy]
 
 Generate on-demand benchmark font fixtures under tests/fixtures/fonts_dir.
 
 Profiles:
   light    Download the pinned OFL-safe fixture subset.
+  medium   Download the light subset and add a moderate replicated set.
   heavy    Download the light subset and add replicated stress fixtures.
 EOF
 }
@@ -19,7 +20,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 PROFILE="${1:-light}"
-if [[ "${PROFILE}" != "light" && "${PROFILE}" != "heavy" ]]; then
+if [[ "${PROFILE}" != "light" && "${PROFILE}" != "medium" && "${PROFILE}" != "heavy" ]]; then
   usage >&2
   exit 2
 fi
@@ -118,9 +119,14 @@ download_file \
 
 rm -rf "${HEAVY_DIR}"
 
-if [[ "${PROFILE}" == "heavy" ]]; then
+if [[ "${PROFILE}" != "light" ]]; then
+  if [[ "${PROFILE}" == "medium" ]]; then
+    COPY_COUNT=3
+  else
+    COPY_COUNT=8
+  fi
   mkdir -p "${HEAVY_DIR}"
-  for copy_index in $(seq -w 1 8); do
+  for copy_index in $(seq -w 1 "${COPY_COUNT}"); do
     copy_dir="${HEAVY_DIR}/copy-${copy_index}"
     mkdir -p "${copy_dir}"
     for font_path in "${FONT_DIR}"/*.ttf; do

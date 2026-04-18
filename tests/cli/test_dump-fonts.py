@@ -22,7 +22,11 @@ This module belongs to the **test infrastructure layer** and verifies
 the CLI entry point responsible for font inventory generation.
 """
 
+import argparse
+
 import pytest
+
+from fontshow.inventory.loadability import DEFAULT_LOADABILITY_JOBS
 
 
 @pytest.mark.parametrize("stub_dump_fonts", ["ok"], indirect=True)
@@ -74,6 +78,91 @@ def test_dump_fonts_rejects_removed_no_loadability_flag(cli_runner, tmp_path):
     )
 
     assert code == 2
+
+
+@pytest.mark.parametrize("stub_dump_fonts", ["ok"], indirect=True)
+def test_dump_fonts_accepts_loadability_jobs_flag(
+    cli_runner, stub_dump_fonts, tmp_path
+):
+    """
+    Verify that dump-fonts accepts the loadability parallelism flag.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_dump_fonts : object
+        Indirect fixture configuring the dump-fonts stub to succeed.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build the output file path.
+
+    Returns
+    -------
+    None
+    """
+    code, out = cli_runner(
+        [
+            "fontshow",
+            "dump-fonts",
+            "--loadability-jobs",
+            "8",
+            "-o",
+            str(tmp_path / "inv.json"),
+        ]
+    )
+
+    assert code == 0
+
+
+def test_dump_fonts_rejects_invalid_loadability_jobs(cli_runner, tmp_path):
+    """
+    Verify that dump-fonts rejects non-positive loadability jobs.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build the output file path.
+
+    Returns
+    -------
+    None
+    """
+    code, out = cli_runner(
+        [
+            "fontshow",
+            "dump-fonts",
+            "--loadability-jobs",
+            "0",
+            "-o",
+            str(tmp_path / "inv.json"),
+        ]
+    )
+
+    assert code == 2
+
+
+def test_dump_fonts_loadability_jobs_default():
+    """
+    Verify the dump-fonts loadability job default.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    from fontshow.cli.dump_fonts import build_parser
+
+    parser = argparse.ArgumentParser()
+    build_parser(parser)
+
+    args = parser.parse_args([])
+
+    assert args.loadability_jobs == DEFAULT_LOADABILITY_JOBS
 
 
 @pytest.mark.parametrize("stub_dump_fonts", ["ok"], indirect=True)
