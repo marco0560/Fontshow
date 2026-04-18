@@ -59,6 +59,20 @@ This mode:
 
 Output is deterministic and preserves inventory order.
 
+## Loadability Jobs
+
+`parse-inventory` refreshes LuaLaTeX render-loadability metadata for the
+current TeX/fontspec/luaotfload/polyglossia setup. It can run multiple
+render-loadability batches in parallel:
+
+```bash
+fontshow parse-inventory --loadability-jobs 8
+```
+
+The default is `4`. Use `1` for fully serial probing. Higher values can
+reduce wall-clock time for large inventories, but they also increase CPU
+load and may expose TeX cache contention on some systems.
+
 ## Structured warnings
 
 Fontshow uses **structured warnings** to report non-fatal issues detected

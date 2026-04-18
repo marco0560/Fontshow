@@ -240,7 +240,7 @@ def test_parse_inventory_reconciles_primary_script_with_internal_specimen(
     monkeypatch.setattr(
         parse_inventory_module,
         "probe_and_persist_lualatex_render_variants",
-        lambda _fonts, *, validation_metadata: None,
+        lambda _fonts, *, validation_metadata, jobs: None,
     )
 
     def _fake_infer(font, coverage, *, level, font_path):
@@ -335,7 +335,7 @@ def test_parse_inventory_reconciles_mixed_cmap_specimen_away_from_latn(
     monkeypatch.setattr(
         parse_inventory_module,
         "probe_and_persist_lualatex_render_variants",
-        lambda _fonts, *, validation_metadata: None,
+        lambda _fonts, *, validation_metadata, jobs: None,
     )
 
     def _fake_infer(font, coverage, *, level, font_path):
@@ -427,7 +427,7 @@ def test_parse_inventory_keeps_generic_mixed_specimen_from_promoting_latn(
     monkeypatch.setattr(
         parse_inventory_module,
         "probe_and_persist_lualatex_render_variants",
-        lambda _fonts, *, validation_metadata: None,
+        lambda _fonts, *, validation_metadata, jobs: None,
     )
 
     def _fake_infer(font, coverage, *, level, font_path):

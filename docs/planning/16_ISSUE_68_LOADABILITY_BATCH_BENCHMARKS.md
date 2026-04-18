@@ -5,9 +5,9 @@
 Issue `#68` evaluates whether the persisted LuaLaTeX loadability probe
 should run multiple candidate batches in parallel.
 
-Normal `dump-fonts` behavior remains serial by default. The benchmark
-path added for this issue exercises a benchmark-only `jobs` parameter in
-the inventory loadability helper through:
+`dump-fonts` and `parse-inventory` expose bounded batch parallelism
+through `--loadability-jobs`. The benchmark path added for this issue
+exercises the same `jobs` parameter through:
 
 ```bash
 scripts/benchmark_loadability_batches.sh light 1 2
@@ -111,14 +111,14 @@ priority and the machine can be dedicated to the run.
 
 ## Recommendation
 
-Keep `jobs=1` as the production default. The measured benefit appears
-only once an inventory has more than one loadability chunk, and the
-parallel path remains workload- and machine-dependent.
+Use `jobs=4` as the bounded default for CLI loadability probing. The
+measured benefit appears only once an inventory has more than one
+loadability chunk, and the parallel path remains workload- and
+machine-dependent.
 
-If a future user-facing control is added, make it explicitly opt-in and
-bounded:
+For user-facing controls, keep the setting bounded:
 
-- default: `jobs=1`
+- default: `jobs=4`
 - first useful opt-in value: `jobs=2`
 - recommended full-inventory starting points: `jobs=4` or `jobs=8`
 - use `jobs=12` only when benchmarked locally and the machine can absorb

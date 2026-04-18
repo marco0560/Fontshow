@@ -107,6 +107,7 @@ def test_completion_spec_tracks_command_options() -> None:
         "--help",
         "--infer-level",
         "--list-missing-language-coverage",
+        "--loadability-jobs",
         "--output",
         "--quiet",
         "--show-all-missing-language-coverage",

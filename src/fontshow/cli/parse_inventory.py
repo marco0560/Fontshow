@@ -52,6 +52,7 @@ from fontshow.inventory.latex_validation_metadata import (
     collect_latex_validation_metadata,
 )
 from fontshow.inventory.loadability import (
+    DEFAULT_LOADABILITY_JOBS,
     probe_and_persist_lualatex_render_variants,
     validate_persisted_lualatex_loadability,
 )
@@ -72,6 +73,36 @@ from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 # ============================================================
 # REFACTORED MAIN FUNCTION
 # ============================================================
+
+
+def _positive_loadability_jobs(value: str) -> int:
+    """
+    Parse a positive loadability job count.
+
+    Parameters
+    ----------
+    value : str
+        Raw command-line argument value.
+
+    Returns
+    -------
+    int
+        Positive integer job count.
+
+    Raises
+    ------
+    argparse.ArgumentTypeError
+        Raised when ``value`` is not a positive integer.
+    """
+    try:
+        jobs = int(value)
+    except ValueError as exc:
+        msg = "loadability jobs must be a positive integer"
+        raise argparse.ArgumentTypeError(msg) from exc
+    if jobs < 1:
+        msg = "loadability jobs must be at least 1"
+        raise argparse.ArgumentTypeError(msg)
+    return jobs
 
 
 def _unicode_blocks_from_text(text: str) -> dict[str, int]:
@@ -358,6 +389,7 @@ def parse_inventory(
     level: str,
     *,
     strict_bcp47: bool = False,
+    loadability_jobs: int = DEFAULT_LOADABILITY_JOBS,
 ) -> dict[str, Any]:
     """
     Parse and enrich a font inventory structure.
@@ -371,6 +403,9 @@ def parse_inventory(
     strict_bcp47 : bool, optional
         Whether language-tag normalization must reject non-compliant
         BCP-47 values.
+    loadability_jobs : int, optional
+        Maximum parallel LuaLaTeX loadability batches used for render
+        variant probing.
 
     Returns
     -------
@@ -477,6 +512,7 @@ def parse_inventory(
     probe_and_persist_lualatex_render_variants(
         data.get("fonts", []),
         validation_metadata=validation["lualatex"],
+        jobs=loadability_jobs,
     )
     loadability_errors = validate_persisted_lualatex_loadability(
         data.get("fonts", []),
@@ -558,6 +594,12 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         "--strict-bcp47",
         action="store_true",
         help="Reject non-compliant BCP-47 language tags",
+    )
+    parser.add_argument(
+        "--loadability-jobs",
+        type=_positive_loadability_jobs,
+        default=DEFAULT_LOADABILITY_JOBS,
+        help="Maximum parallel LuaLaTeX render-loadability batches",
     )
     add_common_arguments(
         parser,
@@ -747,6 +789,7 @@ def run_parse_font_inventory(
     inventory and writing it to disk.
     """
     strict_bcp47 = bool(getattr(args, "strict_bcp47", False))
+    loadability_jobs = int(getattr(args, "loadability_jobs", DEFAULT_LOADABILITY_JOBS))
 
     log_trace_cat(
         log,
@@ -757,6 +800,7 @@ def run_parse_font_inventory(
             "output": str(args.output),
             "infer_level": getattr(args, "infer_level", None),
             "strict_bcp47": strict_bcp47,
+            "loadability_jobs": loadability_jobs,
             "validate_only": bool(getattr(args, "validate_inventory", False)),
             "list_missing_language_coverage": bool(
                 getattr(args, "list_missing_language_coverage", False)
@@ -857,7 +901,8 @@ def run_parse_font_inventory(
         enriched = parse_inventory_fn(
             data,
             args.infer_level,
-            strict_bcp47=args.strict_bcp47,
+            strict_bcp47=strict_bcp47,
+            loadability_jobs=loadability_jobs,
         )
     except ValueError as exc:
         log_err(f"parse-inventory failed: {exc}")

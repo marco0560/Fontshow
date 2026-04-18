@@ -958,6 +958,7 @@ def probe_and_persist_lualatex_render_variants(
     *,
     validation_metadata: MutableMapping[str, Any],
     batch_size: int = _DEFAULT_BATCH_SIZE,
+    jobs: int = DEFAULT_LOADABILITY_JOBS,
 ) -> None:
     """
     Probe and persist script-aware LuaLaTeX render-path results.
@@ -972,6 +973,8 @@ def probe_and_persist_lualatex_render_variants(
     batch_size : int, optional
         Maximum number of render-path candidates bundled into one
         serial batch.
+    jobs : int, optional
+        Maximum number of render-path chunks to probe concurrently.
 
     Returns
     -------
@@ -1018,9 +1021,11 @@ def probe_and_persist_lualatex_render_variants(
         return
 
     validation_metadata["attempted"] = True
-    results: dict[int, dict[str, Any]] = {}
-    for chunk in _chunk_candidates(candidates, batch_size=batch_size):
-        results.update(_resolve_batch_results(chunk, lualatex_bin=lualatex_bin))
+    results = _resolve_candidate_chunks(
+        _chunk_candidates(candidates, batch_size=batch_size),
+        lualatex_bin=lualatex_bin,
+        jobs=jobs,
+    )
 
     grouped_states: dict[int, list[dict[str, Any]]] = {}
     for candidate in candidates:

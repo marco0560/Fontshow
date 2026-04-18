@@ -177,10 +177,11 @@ tests/fixtures/benchmark_results/loadability-medium.json
 tests/fixtures/benchmark_results/loadability-heavy.json
 ```
 
-These files are ignored by Git. Keep `jobs=1` as the production default
-unless local `heavy` measurements show a repeatable wall-clock win for a
-bounded parallel setting without unstable failures or obvious TeX cache
-contention.
+These files are ignored by Git. `dump-fonts` and `parse-inventory`
+expose this as `--loadability-jobs`; use `--loadability-jobs 1` when
+fully serial probing is required. Increase the value only when
+measurements show a repeatable wall-clock win without unstable failures
+or obvious TeX cache contention.
 
 For a full local font tree, generate an ignored benchmark input first:
 

@@ -30,6 +30,8 @@ from pathlib import Path
 
 import pytest
 
+from fontshow.inventory.loadability import DEFAULT_LOADABILITY_JOBS
+
 
 def _valid_inventory_from_cli(tmp_path, *_ignored):
     """
@@ -182,6 +184,103 @@ def test_parse_inventory_accepts_strict_bcp47_flag(cli_runner, tmp_path):
     )
 
     assert code == 0
+
+
+@pytest.mark.parametrize("stub_parse_inventory", ["ok"], indirect=True)
+def test_parse_inventory_accepts_loadability_jobs_flag(
+    cli_runner, stub_parse_inventory, tmp_path
+):
+    """
+    Verify that parse-inventory accepts the loadability parallelism flag.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    stub_parse_inventory : object
+        Indirect fixture configuring the parse-inventory stub to succeed.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for input and output files.
+
+    Returns
+    -------
+    None
+    """
+    input_file = tmp_path / "in.json"
+    output_file = tmp_path / "out.json"
+
+    input_file.write_text(json.dumps(_valid_inventory_from_cli(tmp_path, 0)))
+
+    code, out = cli_runner(
+        [
+            "fontshow",
+            "parse-inventory",
+            str(input_file),
+            "-o",
+            str(output_file),
+            "--loadability-jobs",
+            "8",
+        ]
+    )
+
+    assert code == 0
+
+
+def test_parse_inventory_rejects_invalid_loadability_jobs(cli_runner, tmp_path):
+    """
+    Verify that parse-inventory rejects non-positive loadability jobs.
+
+    Parameters
+    ----------
+    cli_runner : object
+        Fixture used to execute the console entry point.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for input and output files.
+
+    Returns
+    -------
+    None
+    """
+    input_file = tmp_path / "in.json"
+    output_file = tmp_path / "out.json"
+
+    input_file.write_text(json.dumps(_valid_inventory_from_cli(tmp_path, 0)))
+
+    code, out = cli_runner(
+        [
+            "fontshow",
+            "parse-inventory",
+            str(input_file),
+            "-o",
+            str(output_file),
+            "--loadability-jobs",
+            "0",
+        ]
+    )
+
+    assert code == 2
+
+
+def test_parse_inventory_loadability_jobs_default():
+    """
+    Verify the parse-inventory loadability job default.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    from fontshow.cli.parse_inventory import build_parser
+
+    parser = argparse.ArgumentParser()
+    build_parser(parser)
+
+    args = parser.parse_args([])
+
+    assert args.loadability_jobs == DEFAULT_LOADABILITY_JOBS
 
 
 def test_parse_inventory_accepts_show_all_missing_language_coverage_flag():

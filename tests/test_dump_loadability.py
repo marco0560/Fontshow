@@ -323,7 +323,7 @@ def test_parse_inventory_refreshes_lualatex_validation_and_probes_variants(monke
         "fonts": [],
     }
     monkeypatch.setattr(parse_inventory, "collect_platform_metadata", dict)
-    probe_calls: list[tuple[list[dict[str, object]], dict[str, object]]] = []
+    probe_calls: list[tuple[list[dict[str, object]], dict[str, object], int]] = []
     monkeypatch.setattr(
         parse_inventory,
         "collect_latex_validation_metadata",
@@ -332,16 +332,16 @@ def test_parse_inventory_refreshes_lualatex_validation_and_probes_variants(monke
     monkeypatch.setattr(
         parse_inventory,
         "probe_and_persist_lualatex_render_variants",
-        lambda fonts, *, validation_metadata: probe_calls.append(
-            (list(fonts), validation_metadata)
+        lambda fonts, *, validation_metadata, jobs: probe_calls.append(
+            (list(fonts), validation_metadata, jobs)
         ),
     )
 
-    result = parse_inventory.parse_inventory(data, level="medium")
+    result = parse_inventory.parse_inventory(data, level="medium", loadability_jobs=6)
 
     assert result["metadata"]["validation"]["lualatex"]["attempted"] is False
     assert result["metadata"]["validation"]["lualatex"]["runtime_fingerprint"] == "fp-2"
-    assert probe_calls == [([], result["metadata"]["validation"]["lualatex"])]
+    assert probe_calls == [([], result["metadata"]["validation"]["lualatex"], 6)]
 
 
 def test_parse_inventory_rejects_incomplete_lualatex_loadability(tmp_path, monkeypatch):
@@ -387,7 +387,7 @@ def test_parse_inventory_rejects_incomplete_lualatex_loadability(tmp_path, monke
     monkeypatch.setattr(
         parse_inventory,
         "probe_and_persist_lualatex_render_variants",
-        lambda fonts, *, validation_metadata: None,
+        lambda fonts, *, validation_metadata, jobs: None,
     )
 
     try:
@@ -486,25 +486,29 @@ def test_probe_and_persist_lualatex_render_variants_persists_specimen_data(
         "_get_render_policy",
         lambda script: ("", None if str(script) == "LATN" else "Script=Arabic"),
     )
-    monkeypatch.setattr(
-        loadability,
-        "_resolve_batch_results",
-        lambda chunk, *, lualatex_bin: {
+    resolve_calls: list[int] = []
+
+    def _fake_resolve(chunks, *, lualatex_bin, jobs):
+        resolve_calls.append(jobs)
+        return {
             candidate.candidate_index: {
                 "attempted": True,
                 "loadable": True,
                 "reason": None,
                 "probe_input": candidate.probe_input,
             }
+            for chunk in chunks
             for candidate in chunk
-        },
-    )
+        }
+
+    monkeypatch.setattr(loadability, "_resolve_candidate_chunks", _fake_resolve)
 
     loadability.probe_and_persist_lualatex_render_variants(
-        [font], validation_metadata=metadata
+        [font], validation_metadata=metadata, jobs=3
     )
 
     variants = font["loadability"]["lualatex"]["render_variants"]
+    assert resolve_calls == [3]
     assert variants[0]["specimen_text"] == "The quick brown fox"
     assert variants[0]["specimen_glyph_count"] == 16
     assert variants[0]["specimen_strategy"] == "script"
