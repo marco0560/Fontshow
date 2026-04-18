@@ -8,11 +8,11 @@ _FONTSHOW_OPTIONS_CREATE_CATALOG="--catalog-detail --help --indexed-navigation -
 _FONTSHOW_PATH_OPTIONS_CREATE_CATALOG="--inventory --output -i -o"
 _FONTSHOW_POSITIONAL_PATH_CREATE_CATALOG=0
 
-_FONTSHOW_OPTIONS_DUMP_FONTS="--cache-dir --help --include-fc-charset --loadability-jobs --no-cache --output --paths --quiet --verbose --version -V -c -h -i -n -o -q -v"
+_FONTSHOW_OPTIONS_DUMP_FONTS="--cache-dir --help --include-fc-charset --loadability-jobs --no-cache --output --paths --quiet --verbose --version -V -c -h -i -l -n -o -q -v"
 _FONTSHOW_PATH_OPTIONS_DUMP_FONTS="--cache-dir --output --paths -c -o"
 _FONTSHOW_POSITIONAL_PATH_DUMP_FONTS=0
 
-_FONTSHOW_OPTIONS_PARSE_INVENTORY="--help --infer-level --list-missing-language-coverage --loadability-jobs --output --quiet --show-all-missing-language-coverage --strict-bcp47 --validate-inventory --verbose --version -I -L -S -V -h -i -o -q -s -v"
+_FONTSHOW_OPTIONS_PARSE_INVENTORY="--help --infer-level --list-missing-language-coverage --loadability-jobs --output --quiet --show-all-missing-language-coverage --strict-bcp47 --validate-inventory --verbose --version -I -L -S -V -h -i -l -o -q -s -v"
 _FONTSHOW_PATH_OPTIONS_PARSE_INVENTORY="--output -o"
 _FONTSHOW_POSITIONAL_PATH_PARSE_INVENTORY=1
 
