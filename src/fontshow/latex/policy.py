@@ -296,7 +296,7 @@ def _fontspec_compatible_script_opts(script_iso: ScriptISO, opts: str) -> str:
         return _format_fontspec_script_option(installed_name)
 
     name_key = _normalize_fontspec_token(script_name)
-    for installed in registry.names:
+    for installed in sorted(registry.names):
         if _normalize_fontspec_token(installed) == name_key:
             return _format_fontspec_script_option(installed)
 

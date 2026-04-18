@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import json
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from fontshow.core.cli_utils import log_err, log_ok
 from fontshow.core.global_constants import SCHEMA_VERSION
@@ -233,9 +233,30 @@ def _validate_fonts_structure(inventory: dict) -> tuple[bool, list]:
     return True, fonts
 
 
+@overload
 def _load_inventory(
-    inv_path: Path, *, require_platform: bool = True
-) -> tuple[int, list]:
+    inv_path: Path,
+    *,
+    require_platform: bool = True,
+    return_metadata: Literal[False] = False,
+) -> tuple[int, list]: ...
+
+
+@overload
+def _load_inventory(
+    inv_path: Path,
+    *,
+    require_platform: bool = True,
+    return_metadata: Literal[True],
+) -> tuple[int, list, dict[str, Any]]: ...
+
+
+def _load_inventory(
+    inv_path: Path,
+    *,
+    require_platform: bool = True,
+    return_metadata: bool = False,
+) -> tuple[int, list] | tuple[int, list, dict[str, Any]]:
     """
     Load and strictly validate an inventory file.
 
@@ -246,11 +267,16 @@ def _load_inventory(
     require_platform : bool, optional
         If True, enforce platform compatibility between inventory metadata
         and the current runtime environment.
+    return_metadata : bool, optional
+        If True, include the validated inventory metadata object in the
+        return tuple.
 
     Returns
     -------
-    tuple[int, list]
-        A pair (exit_code, fonts):
+    tuple[int, list] | tuple[int, list, dict[str, Any]]
+        A pair ``(exit_code, fonts)`` by default, or a triple
+        ``(exit_code, fonts, metadata)`` when ``return_metadata`` is
+        true:
         - exit_code == 0 → success, fonts contains validated descriptors.
         - exit_code == 1 → validation or load error (already logged), fonts empty.
 
@@ -276,14 +302,17 @@ def _load_inventory(
         with inv_path.open(encoding="utf-8") as f:
             inventory = json.load(f)
 
+        failure_result: tuple[int, list] | tuple[int, list, dict[str, Any]]
+        failure_result = (1, [], {}) if return_metadata else (1, [])
+
         if not isinstance(inventory, dict):
             log_err("Invalid inventory JSON: expected top-level object.")
-            return 1, []
+            return failure_result
 
         metadata = inventory.get("metadata", {}) or {}
         if not isinstance(metadata, dict):
             log_err("Invalid inventory JSON: expected 'metadata' to be an object.")
-            return 1, []
+            return failure_result
 
         schema_version = metadata.get("schema_version")
         if schema_version != SCHEMA_VERSION:
@@ -291,7 +320,7 @@ def _load_inventory(
                 f"Unsupported inventory schema_version: {schema_version!r} "
                 f"(required {SCHEMA_VERSION})"
             )
-            return 1, []
+            return failure_result
 
         _validate_inventory_schema_strict(inventory)
 
@@ -301,13 +330,13 @@ def _load_inventory(
                 "Inventory missing required metadata.run_environment "
                 f"(schema v{SCHEMA_VERSION})"
             )
-            return 1, []
+            return failure_result
 
         if require_platform and isinstance(inv_env, dict):
             ok, mismatches = _enforce_platform(inv_env)
             if not ok:
                 log_err(f"Inventory platform mismatch: {', '.join(mismatches)}")
-                return 1, []
+                return failure_result
 
         log_trace_cat(
             log,
@@ -324,7 +353,7 @@ def _load_inventory(
         ok_fonts, fonts = _validate_fonts_structure(inventory)
         if not ok_fonts:
             log_err("Invalid inventory JSON: malformed or empty 'fonts' section.")
-            return 1, []
+            return failure_result
 
         ok, semantic_warnings = enforce_semantic_validation(
             inventory,
@@ -345,12 +374,14 @@ def _load_inventory(
                 sev = w.get("severity", Severity.INFO)
                 if sev in (Severity.ERROR, Severity.WARN):
                     log_err(w.get("message", "semantic validation error"))
-            return 1, []
+            return failure_result
 
         log_ok(f"Inventory loaded: {inv_path} ({len(fonts)} fonts)")
 
     except (OSError, json.JSONDecodeError, TypeError, ValueError) as e:
         log_err(f"failed to load inventory: {e}")
-        return 1, []
+        return (1, [], {}) if return_metadata else (1, [])
     else:
+        if return_metadata:
+            return 0, fonts, metadata
         return 0, fonts

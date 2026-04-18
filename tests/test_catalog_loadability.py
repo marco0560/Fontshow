@@ -171,6 +171,42 @@ def test_filter_loadable_catalog_fonts_uses_trusted_persisted_pass(
     assert loadability.filter_loadable_catalog_fonts(fonts) == fonts
 
 
+def test_filter_loadable_catalog_fonts_uses_inventory_validation_metadata(
+    monkeypatch, tmp_path
+):
+    """
+    Ensure catalog filtering trusts inventory-level attempted state.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace current runtime metadata.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage the test font file.
+
+    Returns
+    -------
+    None
+    """
+    font_path = tmp_path / "Alpha.ttf"
+    font_path.write_bytes(b"")
+    monkeypatch.setattr(
+        loadability,
+        "_current_lualatex_validation_metadata",
+        lambda: {"attempted": False, "runtime_fingerprint": "fp-1"},
+    )
+
+    fonts = [_font(font_path, "Alpha", loadable=True)]
+
+    result = loadability.filter_loadable_catalog_fonts_with_report(
+        fonts,
+        validation_metadata=_metadata("fp-1"),
+    )
+
+    assert result.kept == fonts
+    assert result.excluded == []
+
+
 def test_filter_loadable_catalog_fonts_uses_trusted_persisted_failure(
     monkeypatch, tmp_path
 ):

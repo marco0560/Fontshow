@@ -182,7 +182,9 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
     )
     monkeypatch.setattr(create_catalog, "_resolve_inventory_path", lambda args: inv)
     monkeypatch.setattr(
-        create_catalog, "_load_inventory", lambda path: (0, [{"family": "Alpha"}])
+        create_catalog,
+        "_load_inventory",
+        lambda path, **_kwargs: (0, [{"family": "Alpha"}], {}),
     )
     diagnostics_calls: list[list[dict]] = []
     monkeypatch.setattr(
@@ -239,7 +241,7 @@ def test_run_create_catalog_handles_list_mode_invalid_fonts_and_write_failures(
     monkeypatch.setattr(
         create_catalog,
         "filter_loadable_catalog_fonts_with_report",
-        lambda fonts: (
+        lambda fonts, **_kwargs: (
             loadability_calls.append(list(fonts))
             or LoadabilityFilterResult(
                 kept=list(fonts),

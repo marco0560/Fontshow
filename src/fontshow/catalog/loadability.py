@@ -38,6 +38,8 @@ from fontshow.inventory.schema_accessors import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from fontshow.core.types import CatalogFontEntryV12
 
 _SUPPORTED_LOADABILITY_EXTENSIONS = {".ttf", ".otf", ".ttc"}
@@ -212,6 +214,7 @@ def filter_loadable_catalog_fonts(
 
 def filter_loadable_catalog_fonts_with_report(
     fonts: list[CatalogFontEntryV12],
+    validation_metadata: Mapping[str, object] | None = None,
 ) -> LoadabilityFilterResult:
     """
     Filter fonts and collect structured unloadable-font reporting data.
@@ -220,6 +223,11 @@ def filter_loadable_catalog_fonts_with_report(
     ----------
     fonts : list[CatalogFontEntryV12]
         Catalog font entries ready for rendering.
+    validation_metadata : collections.abc.Mapping[str, object] | None, optional
+        Inventory-level ``metadata.validation.lualatex`` block used as
+        the authoritative persisted loadability context. When omitted,
+        the current runtime metadata is used for backward-compatible
+        direct helper calls.
 
     Returns
     -------
@@ -232,12 +240,17 @@ def filter_loadable_catalog_fonts_with_report(
         If a font entry is a loadability validation candidate but
         persisted loadability is missing, incomplete, or otherwise invalid.
     """
-    validation_metadata = _current_lualatex_validation_metadata()
+    effective_metadata = (
+        _current_lualatex_validation_metadata()
+        if validation_metadata is None
+        else validation_metadata
+    )
     candidates = [font for font in fonts if _is_validation_candidate(font)]
     if not candidates:
         return LoadabilityFilterResult(kept=list(fonts), excluded=[])
 
-    errors = validate_persisted_lualatex_loadability(fonts, validation_metadata)
+    errors = _current_runtime_metadata_errors(effective_metadata)
+    errors.extend(validate_persisted_lualatex_loadability(fonts, effective_metadata))
     if errors:
         preview = "; ".join(errors[:5])
         suffix = "" if len(errors) <= 5 else "; ..."
@@ -275,3 +288,36 @@ def filter_loadable_catalog_fonts_with_report(
         )
 
     return LoadabilityFilterResult(kept=kept, excluded=excluded)
+
+
+def _current_runtime_metadata_errors(
+    validation_metadata: Mapping[str, object],
+) -> list[str]:
+    """
+    Validate persisted inventory metadata against the current runtime.
+
+    Parameters
+    ----------
+    validation_metadata : collections.abc.Mapping[str, object]
+        Inventory-level ``metadata.validation.lualatex`` block whose
+        runtime fingerprint should match the current LaTeX surface.
+
+    Returns
+    -------
+    list[str]
+        Deterministic error messages. An empty list means the persisted
+        metadata is not stale relative to the current runtime.
+    """
+    persisted_fingerprint = validation_metadata.get("runtime_fingerprint")
+    current_fingerprint = _current_lualatex_validation_metadata().get(
+        "runtime_fingerprint"
+    )
+    if (
+        isinstance(persisted_fingerprint, str)
+        and persisted_fingerprint
+        and isinstance(current_fingerprint, str)
+        and current_fingerprint
+        and persisted_fingerprint != current_fingerprint
+    ):
+        return ["metadata.validation.lualatex.runtime_fingerprint mismatch"]
+    return []

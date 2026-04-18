@@ -561,7 +561,7 @@ def run_create_catalog(args) -> int:
         )
         return 1  # MUST fail deterministically even in --quiet mode
 
-    rc, fonts = _load_inventory(inv_path)
+    rc, fonts, inventory_metadata = _load_inventory(inv_path, return_metadata=True)
     if rc != 0:
         return 1
 
@@ -586,8 +586,16 @@ def run_create_catalog(args) -> int:
     # --------------------------------------------------------------
     _run_inventory_diagnostics(fonts)
 
+    validation_raw = inventory_metadata.get("validation")
+    validation = validation_raw if isinstance(validation_raw, dict) else {}
+    lualatex_raw = validation.get("lualatex")
+    lualatex_validation = lualatex_raw if isinstance(lualatex_raw, dict) else {}
+
     try:
-        loadability_result = filter_loadable_catalog_fonts_with_report(fonts)
+        loadability_result = filter_loadable_catalog_fonts_with_report(
+            fonts,
+            validation_metadata=lualatex_validation,
+        )
     except ValueError as exc:
         log_err(str(exc))
         return 1

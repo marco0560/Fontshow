@@ -159,6 +159,41 @@ def test_get_render_policy_suppresses_script_missing_from_installed_fontspec(
     assert policy._get_render_policy("ZNAM") == ("", "")
 
 
+def test_get_render_policy_uses_deterministic_installed_name_order(monkeypatch):
+    """
+    Ensure duplicate normalized fontspec names resolve deterministically.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace ontology and installed fontspec script data.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(
+        policy,
+        "SCRIPT_INFO",
+        {
+            "NKOO": {
+                "polyglossia_language": "",
+                "fontspec_opts": "Script={N'Ko}",
+            },
+        },
+    )
+    monkeypatch.setattr(
+        policy,
+        "_installed_fontspec_script_registry",
+        lambda: policy._FontspecScriptRegistry(
+            names=frozenset({"N'ko", "N'Ko"}),
+            names_by_tag={},
+        ),
+    )
+
+    assert policy._get_render_policy("NKOO") == ("", "Script={N'Ko}")
+
+
 def test_collect_polyglossia_other_languages_is_sorted_and_filtered(monkeypatch):
     """
     Ensure ``latin`` is always present and ``english`` is excluded from extras.
