@@ -1,3 +1,9 @@
+## [0.71.2](https://github.com/marco0560/Fontshow/compare/v0.71.1...v0.71.2) (2026-04-18)
+
+### Bug Fixes
+
+* **catalog:** validate persisted loadability metadata ([d815c2a](https://github.com/marco0560/Fontshow/commit/d815c2a77acb4a2e779ff91697520514d0b44f5e))
+
 ## [0.71.1](https://github.com/marco0560/Fontshow/compare/v0.71.0...v0.71.1) (2026-04-18)
 
 ### Bug Fixes
