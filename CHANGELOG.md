@@ -1,3 +1,9 @@
+## [0.71.1](https://github.com/marco0560/Fontshow/compare/v0.71.0...v0.71.1) (2026-04-18)
+
+### Bug Fixes
+
+* **ontology:** align fontspec script aliases ([67e72b5](https://github.com/marco0560/Fontshow/commit/67e72b5e9222e9fa44252c40f9b73ecf88297b4d))
+
 ## [0.71.0](https://github.com/marco0560/Fontshow/compare/v0.70.0...v0.71.0) (2026-04-18)
 
 ### Features
