@@ -118,7 +118,8 @@ def test_dump_fonts_runs_loadability_by_default(tmp_path, monkeypatch):
         lambda _ctx: _candidate_descriptor(font_path, "Alpha"),
     )
 
-    def _persist(fonts, *, validation_metadata):
+    def _persist(fonts, *, validation_metadata, jobs):
+        assert jobs == 4
         validation_metadata["attempted"] = True
         for font in fonts:
             font["loadability"]["lualatex"].update(
@@ -142,6 +143,7 @@ def test_dump_fonts_runs_loadability_by_default(tmp_path, monkeypatch):
             cache_dir=tmp_path,
             include_fc_charset=False,
             no_cache=True,
+            loadability_jobs=4,
             verbose=False,
         )
     )

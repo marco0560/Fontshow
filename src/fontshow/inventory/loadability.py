@@ -63,6 +63,7 @@ from fontshow.ontology.language_tables import SCRIPT_INFO
 
 _SUPPORTED_LOADABILITY_EXTENSIONS = {".ttf", ".otf", ".ttc"}
 _DEFAULT_BATCH_SIZE = 32
+DEFAULT_LOADABILITY_JOBS = 4
 
 
 @dataclass(frozen=True)

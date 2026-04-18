@@ -26,7 +26,8 @@ and persists the results in the generated inventory.
 
 Behavior:
 
-- candidate fonts are probed in deterministic serial batches
+- candidate fonts are probed in deterministic batches
+- up to four LuaLaTeX batches run in parallel by default
 - per-font results are stored under `loadability.lualatex`
 - inventory-level runtime metadata is stored under
   `metadata.validation.lualatex`
@@ -36,6 +37,21 @@ Behavior:
 Loadability probing is part of the catalog-readiness contract. If the
 local LuaLaTeX runtime is unavailable, regenerate the inventory on the
 machine that will run `parse-inventory` and `create-catalog`.
+
+---
+
+### --loadability-jobs
+
+Set the maximum number of LuaLaTeX loadability batches that may run in
+parallel during `dump-fonts`.
+
+```bash
+fontshow dump-fonts --loadability-jobs 8
+```
+
+The default is `4`. Use `1` for fully serial probing. Higher values can
+reduce wall-clock time on large font trees, but they also increase CPU
+load and may expose TeX cache contention on some systems.
 
 ---
 
