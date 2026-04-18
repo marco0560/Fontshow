@@ -31,6 +31,7 @@ import shutil
 import subprocess
 import tempfile
 from collections.abc import Mapping, MutableMapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -617,11 +618,55 @@ def _chunk_candidates(
     ]
 
 
+def _resolve_candidate_chunks(
+    chunks: Sequence[Sequence[_ProbeCandidate]],
+    *,
+    lualatex_bin: str,
+    jobs: int,
+) -> dict[int, dict[str, Any]]:
+    """
+    Resolve candidate chunks with deterministic result collation.
+
+    Parameters
+    ----------
+    chunks : collections.abc.Sequence[collections.abc.Sequence[_ProbeCandidate]]
+        Ordered candidate chunks to probe.
+    lualatex_bin : str
+        Resolved LuaLaTeX executable path.
+    jobs : int
+        Maximum number of chunks to probe concurrently. Values smaller
+        than ``2`` use serial execution.
+
+    Returns
+    -------
+    dict[int, dict[str, Any]]
+        Per-candidate persisted loadability state keyed by candidate index.
+    """
+    if jobs < 2 or len(chunks) < 2:
+        results: dict[int, dict[str, Any]] = {}
+        for chunk in chunks:
+            results.update(_resolve_batch_results(chunk, lualatex_bin=lualatex_bin))
+        return results
+
+    max_workers = min(jobs, len(chunks))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(_resolve_batch_results, chunk, lualatex_bin=lualatex_bin)
+            for chunk in chunks
+        ]
+
+    parallel_results: dict[int, dict[str, Any]] = {}
+    for future in futures:
+        parallel_results.update(future.result())
+    return parallel_results
+
+
 def probe_and_persist_lualatex_loadability(
     fonts: list[MutableMapping[str, Any]],
     *,
     validation_metadata: MutableMapping[str, Any],
     batch_size: int = _DEFAULT_BATCH_SIZE,
+    jobs: int = 1,
 ) -> None:
     """
     Probe and persist LuaLaTeX loadability for inventory fonts.
@@ -635,6 +680,9 @@ def probe_and_persist_lualatex_loadability(
         in place.
     batch_size : int, optional
         Maximum number of candidate fonts bundled into one serial batch.
+    jobs : int, optional
+        Maximum number of candidate chunks to probe concurrently. The
+        default keeps production probing serial.
 
     Returns
     -------
@@ -677,9 +725,11 @@ def probe_and_persist_lualatex_loadability(
         return
 
     validation_metadata["attempted"] = True
-    results: dict[int, dict[str, Any]] = {}
-    for chunk in _chunk_candidates(candidates, batch_size=batch_size):
-        results.update(_resolve_batch_results(chunk, lualatex_bin=lualatex_bin))
+    results = _resolve_candidate_chunks(
+        _chunk_candidates(candidates, batch_size=batch_size),
+        lualatex_bin=lualatex_bin,
+        jobs=jobs,
+    )
 
     for candidate in candidates:
         state = results.get(candidate.candidate_index)

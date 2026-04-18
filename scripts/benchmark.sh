@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/benchmark.sh [light|heavy]
+Usage: scripts/benchmark.sh [light|medium|heavy]
 
 Run on-demand Hyperfine benchmarks for the Fontshow pipeline stages.
 
@@ -20,7 +20,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 PROFILE="${1:-light}"
-if [[ "${PROFILE}" != "light" && "${PROFILE}" != "heavy" ]]; then
+if [[ "${PROFILE}" != "light" && "${PROFILE}" != "medium" && "${PROFILE}" != "heavy" ]]; then
   usage >&2
   exit 2
 fi

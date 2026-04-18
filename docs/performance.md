@@ -31,13 +31,19 @@ Generate the light fixture set:
 scripts/setup_benchmark_fonts.sh light
 ```
 
+Generate the medium fixture set:
+
+```bash
+scripts/setup_benchmark_fonts.sh medium
+```
+
 Generate the heavy fixture set:
 
 ```bash
 scripts/setup_benchmark_fonts.sh heavy
 ```
 
-Both profiles write generated fonts under:
+All profiles write generated fonts under:
 
 ```text
 tests/fixtures/fonts_dir/
@@ -66,9 +72,12 @@ Light profile families:
 | `SourceCodePro.ttf` | `ofl/sourcecodepro` |
 | `Inconsolata.ttf` | `ofl/inconsolata` |
 
-The heavy profile starts from the same files and adds replicated local
-copies under `tests/fixtures/fonts_dir/.heavy/`. This gives a larger
-deterministic stress input without committing or redistributing fonts.
+The medium and heavy profiles start from the same files and add
+replicated local copies under `tests/fixtures/fonts_dir/.heavy/`. The
+medium profile adds three replicated copies for a 32-font inventory. The
+heavy profile adds eight replicated copies for a 72-font inventory. This
+gives larger deterministic stress inputs without committing or
+redistributing fonts.
 
 The generated fixture directory is ignored by Git.
 
@@ -78,6 +87,12 @@ Run the light profile:
 
 ```bash
 scripts/benchmark.sh light
+```
+
+Run the medium profile:
+
+```bash
+scripts/benchmark.sh medium
 ```
 
 Run the heavy profile:
@@ -117,6 +132,55 @@ tests/fixtures/benchmark_results/fontshow-heavy.json
 ```
 
 Those result files are ignored by Git.
+
+## Loadability Batch Benchmarks
+
+LuaLaTeX loadability probing is serial in normal `dump-fonts` runs. To
+evaluate whether bounded parallel batch execution is worth adding later,
+run the dedicated local benchmark:
+
+```bash
+scripts/benchmark_loadability_batches.sh light
+```
+
+For the stress profile:
+
+```bash
+scripts/benchmark_loadability_batches.sh heavy
+```
+
+For the medium profile:
+
+```bash
+scripts/benchmark_loadability_batches.sh medium
+```
+
+By default, the loadability benchmark compares:
+
+- `jobs=1` serial batch execution
+- `jobs=2` bounded parallel batch execution
+- `jobs=4` bounded parallel batch execution
+
+To choose explicit job counts:
+
+```bash
+scripts/benchmark_loadability_batches.sh heavy 1 2 4
+```
+
+The script prepares a fixed inventory input, then replays only the
+LuaLaTeX loadability probe through `scripts/run_loadability_probe.py`.
+Results are exported to:
+
+```text
+tests/fixtures/benchmark_results/loadability-light.json
+tests/fixtures/benchmark_results/loadability-medium.json
+tests/fixtures/benchmark_results/loadability-heavy.json
+```
+
+These files are ignored by Git. Keep `jobs=1` as the production default
+unless local `heavy` measurements show a repeatable wall-clock win for a
+bounded parallel setting without unstable failures or obvious TeX cache
+contention.
 
 ## Readiness Checks
 

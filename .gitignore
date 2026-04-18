@@ -64,6 +64,7 @@ polyglossia.log
 tests/fixtures/fonts_dir/
 tests/fixtures/raw_inventory.json
 tests/fixtures/sample_inventory.json
+tests/fixtures/loadability_benchmark_inventory.json
 tests/fixtures/benchmark_results/
 
 # --------------------------------------------------

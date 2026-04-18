@@ -223,6 +223,67 @@ def test_probe_and_persist_lualatex_loadability_recurses_on_batch_failure(
     assert fonts[2]["loadability"]["lualatex"]["loadable"] is True
 
 
+def test_probe_and_persist_lualatex_loadability_accepts_parallel_jobs(
+    tmp_path, monkeypatch
+):
+    """
+    Ensure bounded parallel probing preserves per-font loadability results.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used for fake fonts.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace LuaLaTeX discovery and batch execution.
+
+    Returns
+    -------
+    None
+    """
+    fonts: list[dict[str, object]] = [
+        _candidate_descriptor(
+            create_fake_font_file(tmp_path, f"Font{index}.ttf"), family
+        )
+        for index, family in enumerate(("Alpha", "Beta", "Gamma", "Delta"))
+    ]
+    metadata = {
+        "attempted": False,
+        "engine": "lualatex",
+        "engine_version": "1.18.0",
+        "luaotfload_version": "3.28",
+        "fontspec_version": "2.9g",
+        "polyglossia_version": "1.60.0",
+        "runtime_fingerprint": "fp-1",
+        "render_policy_version": "policy-v1",
+    }
+    calls: list[tuple[int, ...]] = []
+
+    def _fake_run(candidates, *, lualatex_bin):
+        ids = tuple(candidate.candidate_index for candidate in candidates)
+        calls.append(ids)
+        output = "\n".join(f"FONTSHOW_LOAD_OK:{candidate_id}" for candidate_id in ids)
+        return 0, output
+
+    monkeypatch.setattr(loadability.shutil, "which", lambda _name: "/usr/bin/lualatex")
+    monkeypatch.setattr(loadability, "_run_lualatex_batch", _fake_run)
+
+    loadability.probe_and_persist_lualatex_loadability(
+        fonts,
+        validation_metadata=metadata,
+        batch_size=1,
+        jobs=2,
+    )
+
+    assert sorted(calls) == [(0,), (1,), (2,), (3,)]
+    assert metadata["attempted"] is True
+    assert [font["loadability"]["lualatex"]["loadable"] for font in fonts] == [
+        True,
+        True,
+        True,
+        True,
+    ]
+
+
 def test_parse_inventory_refreshes_lualatex_validation_and_probes_variants(monkeypatch):
     """
     Ensure parse-inventory refreshes validation metadata and probes variants.

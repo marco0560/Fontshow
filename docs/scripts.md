@@ -194,7 +194,7 @@ Status:
 - manual performance helper
 - documented in `docs/performance.md`
 - downloads pinned OFL-compatible Google Fonts files
-- idempotent for the selected `light` or `heavy` profile
+- idempotent for the selected `light`, `medium`, or `heavy` profile
 
 ### benchmark.sh
 
@@ -208,6 +208,30 @@ Status:
 - requires the repository `.venv`
 - requires `hyperfine` on `PATH`
 - writes ignored JSON results under `tests/fixtures/benchmark_results/`
+
+### benchmark_loadability_batches.sh
+
+Run on-demand Hyperfine benchmarks for serial and bounded parallel
+LuaLaTeX loadability batch probing.
+
+Status:
+
+- manual performance helper
+- documented in `docs/performance.md`
+- requires the repository `.venv`
+- requires `hyperfine` and `lualatex` on `PATH`
+- writes ignored JSON results under `tests/fixtures/benchmark_results/`
+
+### run_loadability_probe.py
+
+Replay LuaLaTeX loadability probing from a prepared inventory with a
+selected batch size and job count.
+
+Status:
+
+- internal helper for `benchmark_loadability_batches.sh`
+- not part of the user-facing `fontshow` CLI
+- preserves serial production defaults unless called explicitly
 
 ---
 
