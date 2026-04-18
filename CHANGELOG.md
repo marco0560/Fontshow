@@ -1,3 +1,15 @@
+## [0.71.0](https://github.com/marco0560/Fontshow/compare/v0.70.0...v0.71.0) (2026-04-18)
+
+### Features
+
+* **dump:** expose loadability job control ([082e14d](https://github.com/marco0560/Fontshow/commit/082e14d307b900017e9bbbbc2366160955b9b4d2))
+* **latex:** add parallel loadability job controls to dump-fonts and parse-inventory ([a4d8cd4](https://github.com/marco0560/Fontshow/commit/a4d8cd4ca6d91a2fcdea1750ebb37b3209a1b4de)), closes [#68](https://github.com/marco0560/Fontshow/issues/68)
+* **parser:** expose loadability job control ([091a80c](https://github.com/marco0560/Fontshow/commit/091a80c8519f241abb7b7fe0c4296c16ea1b1de7))
+
+### Performance Improvements
+
+* **latex:** benchmark loadability batch jobs ([4934682](https://github.com/marco0560/Fontshow/commit/4934682f72b9f76b02c34e8f7f0948f95eb75b3e)), closes [#68](https://github.com/marco0560/Fontshow/issues/68)
+
 ## [0.70.0](https://github.com/marco0560/Fontshow/compare/v0.69.0...v0.70.0) (2026-04-17)
 
 ### Features
