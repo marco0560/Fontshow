@@ -69,6 +69,31 @@ def test_cli_default_output():
     assert result.stderr.strip() == ""
 
 
+def test_create_catalog_help_documents_selector_identifiers():
+    """
+    Verify that catalog selector help names accepted identifier forms.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    result = run_cli(["create-catalog", "--help"])
+
+    help_text = " ".join(result.stdout.split())
+
+    assert result.returncode == 0
+    assert "BCP 47 language tag" in help_text
+    assert "'th', 'en', or 'zh-hant'" in help_text
+    assert "use tags, not language names" in help_text
+    assert "ISO 15924 script code" in help_text
+    assert "'THAI', 'LATN', or 'ARAB'" in help_text
+    assert "case is ignored" in help_text
+
+
 def test_cli_quiet_suppresses_stdout():
     """
     Verify that ``--quiet`` suppresses stdout even when execution fails.

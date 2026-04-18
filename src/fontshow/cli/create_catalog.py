@@ -398,8 +398,9 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         metavar="LANG",
         help=(
             "Restrict output to fonts matching at least one selected "
-            "language tag. Repeatable and combined AND-wise with other "
-            "selector families."
+            "BCP 47 language tag from inventory metadata, for example "
+            "'th', 'en', or 'zh-hant'; use tags, not language names. "
+            "Repeatable and combined AND-wise with other selector families."
         ),
     )
     parser.add_argument(
@@ -409,8 +410,9 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         metavar="SCRIPT",
         help=(
             "Restrict output to fonts matching at least one selected "
-            "script tag. Repeatable and combined AND-wise with other "
-            "selector families."
+            "ISO 15924 script code from inventory metadata, for example "
+            "'THAI', 'LATN', or 'ARAB'; case is ignored. Repeatable and "
+            "combined AND-wise with other selector families."
         ),
     )
     parser.add_argument(
