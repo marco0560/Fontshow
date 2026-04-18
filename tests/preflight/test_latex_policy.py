@@ -226,9 +226,9 @@ def test_audit_ontology_tex_capabilities_detects_missing_items(tmp_path, monkeyp
     assert gap.missing_polyglossia_languages == ("odia",)
 
 
-def test_lualatex_capability_reports_missing_ontology_support_on_linux(monkeypatch):
+def test_lualatex_capability_warns_on_missing_ontology_support_on_linux(monkeypatch):
     """
-    Verify that Linux preflight fails on missing ontology TeX capabilities.
+    Verify that Linux preflight warns on missing ontology TeX capabilities.
 
     Parameters
     ----------
@@ -253,7 +253,11 @@ def test_lualatex_capability_reports_missing_ontology_support_on_linux(monkeypat
     result = runner.run_preflight()
 
     latex_result = next(r for r in result.results if r.check_id == "latex.capability")
-    assert latex_result.severity is Severity.ERROR
+    assert latex_result.severity is Severity.WARN
+    assert (
+        "the local LaTeX installation lacks ontology-driven rendering support"
+        in latex_result.message
+    )
     assert "missing fontspec scripts: Kawi" in latex_result.message
     assert "missing Polyglossia modules: odia" in latex_result.message
 
@@ -286,4 +290,8 @@ def test_lualatex_capability_reports_missing_ontology_support_on_windows(monkeyp
 
     latex_result = next(r for r in result.results if r.check_id == "latex.capability")
     assert latex_result.severity is Severity.WARN
+    assert (
+        "the local LaTeX installation lacks ontology-driven rendering support"
+        in latex_result.message
+    )
     assert "missing fontspec scripts: Cypro-Minoan" in latex_result.message

@@ -1755,6 +1755,20 @@ for _script_iso, _display_language in _SCRIPT_DISPLAY_LANGUAGE_OVERRIDES.items()
     SCRIPT_INFO[_script_iso]["display_language"] = _display_language
 
 
+_SCRIPT_FONTSPEC_OPTION_OVERRIDES: dict[ScriptISO, str] = {
+    ScriptISO("XSUX"): "Script={Sumero-Akkadian Cuneiform}",
+    ScriptISO("KHAR"): "Script=Kharosthi",
+    ScriptISO("MERO"): "Script={Meroitic Hieroglyphs}",
+    ScriptISO("TALU"): "Script={Tai Lu}",
+    ScriptISO("XPEO"): "Script={Old Persian Cuneiform}",
+    ScriptISO("SGNW"): "Script={Sign Writing}",
+    ScriptISO("UGAR"): "Script={Ugaritic Cuneiform}",
+}
+
+for _script_iso, _fontspec_opts in _SCRIPT_FONTSPEC_OPTION_OVERRIDES.items():
+    SCRIPT_INFO[_script_iso]["fontspec_opts"] = _fontspec_opts
+
+
 LANGUAGE_INFO: dict[str, LanguageInfo] = {
     "ae": {
         "canonical_name": "Avestan",

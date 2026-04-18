@@ -342,8 +342,8 @@ def _render_capability_gap_message(gap: _TeXOntologyCapabilityGap) -> str:
         suffix = "" if len(gap.missing_polyglossia_languages) <= 5 else ", ..."
         parts.append(f"missing Polyglossia modules: {preview}{suffix}")
     return (
-        "LuaLaTeX available, but ontology-driven rendering support is incomplete: "
-        + "; ".join(parts)
+        "LuaLaTeX available, but the local LaTeX installation lacks "
+        "ontology-driven rendering support: " + "; ".join(parts)
     )
 
 
@@ -442,18 +442,17 @@ def _capability_gap_result(
     Returns
     -------
     CheckResult | None
-        Error or warning result when ontology-required TeX capabilities
-        are missing, otherwise ``None``.
+        Warning result when ontology-required TeX capabilities are
+        missing from the local LaTeX installation, otherwise ``None``.
     """
-    _ = execution_mode
+    _ = (os_name, execution_mode)
     gap = audit_ontology_tex_capabilities()
     if not gap.missing_fontspec_scripts and not gap.missing_polyglossia_languages:
         return None
 
-    severity = Severity.WARN if os_name == "windows" else Severity.ERROR
     return CheckResult(
         "latex.capability",
-        severity,
+        Severity.WARN,
         _render_capability_gap_message(gap),
     )
 

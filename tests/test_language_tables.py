@@ -759,3 +759,29 @@ def test_dedicated_script_fallback_language_rows_remain_generic():
     for script_iso in ["MAYA", "SGNW", "OTSY", "ZNAM"]:
         assert SCRIPT_INFO[ScriptISO(script_iso)]["display_language"] == "zxx"
         assert ScriptISO(script_iso) in LANGUAGE_INFO["zxx"]["scripts"]
+
+
+def test_dedicated_script_fontspec_aliases_match_installed_script_names():
+    """
+    Ensure ontology fontspec options use supported installed aliases.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    expected = {
+        "XSUX": "Script={Sumero-Akkadian Cuneiform}",
+        "KHAR": "Script=Kharosthi",
+        "MERO": "Script={Meroitic Hieroglyphs}",
+        "TALU": "Script={Tai Lu}",
+        "XPEO": "Script={Old Persian Cuneiform}",
+        "SGNW": "Script={Sign Writing}",
+        "UGAR": "Script={Ugaritic Cuneiform}",
+    }
+
+    for script_iso, fontspec_opts in expected.items():
+        assert SCRIPT_INFO[ScriptISO(script_iso)]["fontspec_opts"] == fontspec_opts
