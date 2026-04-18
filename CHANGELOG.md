@@ -1,3 +1,10 @@
+## [0.71.3](https://github.com/marco0560/Fontshow/compare/v0.71.2...v0.71.3) (2026-04-18)
+
+### Bug Fixes
+
+* **catalog:** label extended specimen rows ([e42c781](https://github.com/marco0560/Fontshow/commit/e42c78127e0d3984fa5b5ca33f49452ce90d29a7))
+* **cli:** document catalog selector identifiers ([2eb70e1](https://github.com/marco0560/Fontshow/commit/2eb70e11761d8beac7fb1c3b4dbfd178fd6ad6fa))
+
 ## [0.71.2](https://github.com/marco0560/Fontshow/compare/v0.71.1...v0.71.2) (2026-04-18)
 
 ### Bug Fixes
