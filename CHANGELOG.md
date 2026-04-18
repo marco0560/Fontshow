@@ -1,3 +1,9 @@
+## [0.71.4](https://github.com/marco0560/Fontshow/compare/v0.71.3...v0.71.4) (2026-04-18)
+
+### Bug Fixes
+
+* **inventory:** reject deferred lualatex probe failures ([a793a1f](https://github.com/marco0560/Fontshow/commit/a793a1f310f3486980f7b0a5e36fd249dd5bd940))
+
 ## [0.71.3](https://github.com/marco0560/Fontshow/compare/v0.71.2...v0.71.3) (2026-04-18)
 
 ### Bug Fixes
