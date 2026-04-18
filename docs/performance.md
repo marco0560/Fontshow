@@ -182,6 +182,22 @@ unless local `heavy` measurements show a repeatable wall-clock win for a
 bounded parallel setting without unstable failures or obvious TeX cache
 contention.
 
+For a full local font tree, generate an ignored benchmark input first:
+
+```bash
+fontshow dump-fonts \
+  --paths /path/to/fonts \
+  --cache-dir tests/fixtures/benchmark_results/full-input-cache \
+  --output tests/fixtures/full_loadability_benchmark_inventory.json
+```
+
+Then benchmark explicit job counts with `scripts/run_loadability_probe.py`
+and Hyperfine. On a 12-thread machine with a large font tree, local
+measurements showed useful scaling through `jobs=8` and a smaller
+additional gain at `jobs=12`, with byte-identical output across job
+counts. Prefer `jobs=4` or `jobs=8` as first full-inventory trials, then
+try `jobs=12` if the machine can be dedicated to the run.
+
 ## Readiness Checks
 
 The normal pytest suite does not run benchmarks and does not require
