@@ -73,7 +73,6 @@ tests/fixtures/benchmark_results/
 # --------------------------------------------------
 .codira/
 node_modules/
-package-lock.json
 .releaserc.local.json
 .codex
 

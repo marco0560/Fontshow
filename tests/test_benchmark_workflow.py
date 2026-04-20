@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -61,7 +62,7 @@ def test_benchmark_scripts_expose_help_without_external_tools() -> None:
         assert "Usage:" in result.stdout
 
     replay_result = subprocess.run(
-        ["python", str(LOADABILITY_REPLAY_SCRIPT), "--help"],
+        [sys.executable, str(LOADABILITY_REPLAY_SCRIPT), "--help"],
         check=False,
         text=True,
         capture_output=True,
