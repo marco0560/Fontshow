@@ -27,21 +27,21 @@ Rules:
 
 If required information is missing:
 
-→ STOP
-→ Ask for clarification
+-> STOP
+-> Ask for clarification
 
 ## 2. Sources of Truth (SOT)
 
 Priority order:
 
 1. Repository files (filesystem)
-2. Tests (`tests/`) → authoritative behavior contract
+2. Tests (`tests/`) -> authoritative behavior contract
 3. Project documentation (`docs/`)
 4. User instructions
 
 Previous assistant output is NOT a source of truth.
 
-If something is not visible → STOP.
+If something is not visible -> STOP.
 
 ## 3. Core Principles
 
@@ -74,10 +74,26 @@ Forbidden unless explicitly required:
 
 If a change risks unintended impact:
 
-→ STOP
-→ Ask for clarification
+-> STOP
+-> Ask for clarification
 
-## 4. Execution Workflow (MANDATORY)
+## 4. Repository-Specific Constraints
+
+These constraints define the **real behavior surface** of the system.
+
+- CLI behavior and output format are stability contracts
+- Configuration and preflight behavior are part of the user-facing contract
+- Deterministic output is required across environments
+- Optional features must remain optional
+- Performance regressions are considered bugs
+- Changes must not silently alter user-visible behavior
+
+If a change affects any of the above:
+
+-> Treat as high risk
+-> Validate explicitly
+
+## 5. Execution Workflow (MANDATORY)
 
 For any non-trivial task:
 
@@ -87,13 +103,13 @@ For any non-trivial task:
 4. Propose a concrete plan
 5. WAIT for approval
 6. Execute the plan
-7. Validate (Section 7)
+7. Validate (Section 8)
 8. Ensure behavioral correctness (tests)
 9. Produce commit block (if applicable)
 
 Do NOT skip steps.
 
-## 5. Deterministic Exploration
+## 6. Deterministic Exploration
 
 Before modifying code:
 
@@ -103,30 +119,19 @@ Before modifying code:
     rg <query>
     ```
 
-2. If available, use repository tools (e.g. context/index tools)
-
+2. Use repository tools when available (index/context systems)
 3. Read actual source files before editing
 
 Never modify code based only on assumptions.
 
-## 6. Strict Patch Discipline
+## 7. Change Strategy
 
-All code changes MUST be provided as:
+- Prefer multiple small commits over large changes
+- Limit changes to one subsystem when possible
+- Decompose complex work into incremental steps
+- Avoid mixing refactor, feature, and bugfix in a single change
 
-- explicit file paths
-- exact OLD block (byte-identical)
-- exact NEW block
-
-Rules:
-
-- No summaries
-- No partial edits
-- No reconstructed context
-- No “approximate matches”
-
-If OLD block cannot be matched exactly → STOP.
-
-## 7. Validation Contract
+## 8. Validation Contract
 
 All required checks MUST pass before concluding.
 
@@ -137,7 +142,7 @@ pre-commit run --all-files
 pytest -q
 ```
 
-If `pre-commit` is not available, run equivalent toolchain:
+Fallback:
 
 ```bash
 black --check .
@@ -152,7 +157,13 @@ Rules:
 - Do not ignore warnings/errors
 - Do not weaken tests to pass validation
 
-## 8. Test Contract
+## 9. Targeted Validation
+
+- Identify affected subsystems
+- Run focused tests first (fast feedback)
+- Run full test suite before commit
+
+## 10. Test Contract
 
 Tests are the authoritative behavioral specification.
 
@@ -168,60 +179,37 @@ Forbidden:
 - Introducing flakiness
 - Bypassing failing tests
 
-If tests contradict assumptions → tests win.
+If tests contradict assumptions -> tests win.
 
-## 9. Environment Constraints
+## 11. Strict Patch Discipline
 
-Assume execution inside project-local environment:
+All code changes MUST be provided as:
 
-- `.venv` MUST be used when present
+- explicit file paths
+- exact OLD block (byte-identical)
+- exact NEW block
 
-Use one of:
+Rules:
 
-```bash
-source .venv/bin/activate
-```
+- No summaries
+- No partial edits
+- No reconstructed context
+- No “approximate matches”
 
-or explicit paths:
+If OLD block cannot be matched exactly -> STOP.
 
-```bash
-.venv/bin/<tool>
-```
-
-Never rely on global/system Python or tools.
-
-## 10. Repository Awareness
-
-Understand repository structure before changes.
-
-Typical subsystems may include:
-
-- CLI
-- Core logic
-- Data/processing layers
-- Validation/preflight
-- Output/rendering
-
-Consult when relevant:
-
-- `issues.json`
-- `milestones_plan.json`
-- other planning artifacts
-
-Do NOT reinterpret issue intent.
-
-## 11. Architecture Constraints
+## 12. Architecture Constraints
 
 Respect separation of concerns.
 
 Example pattern:
 
-| Layer      | Responsibility       |
-|------------|----------------------|
-| scanner    | filesystem → symbols |
-| indexer    | symbols → database   |
-| query      | database → results   |
-| CLI        | user interface       |
+| Layer      | Responsibility        |
+|------------|-------------------- --|
+| scanner    | filesystem -> symbols |
+| indexer    | symbols -> database   |
+| query      | database -> results   |
+| CLI        | user interface        |
 
 Rules:
 
@@ -229,7 +217,14 @@ Rules:
 - Do not bypass abstractions
 - Do not duplicate existing logic
 
-## 12. Coding Standards
+## 13. Build System & Generated Artifacts
+
+- Keep build configuration and outputs in sync
+- Do not manually edit generated files
+- Modify generators and regenerate outputs instead
+- Treat build or packaging regressions as real bugs
+
+## 14. Coding Standards
 
 ### Python
 
@@ -260,13 +255,36 @@ Include when applicable:
 
 Docstrings must reflect actual behavior (no drift).
 
-## 13. Error Handling
+## 15. Error Handling
 
 - Fail fast
 - Catch only expected exceptions
 - Avoid broad `except Exception`
 
-## 14. Commit Contract
+## 16. Regression Policy
+
+The following are considered bugs:
+
+- platform-specific breakages
+- optional feature regressions
+- performance regressions
+- CLI or output contract changes
+
+## 17. Debugging Discipline
+
+- Reproduce the issue before fixing
+- Identify root cause before writing code
+- Avoid speculative fixes
+
+## 18. Hidden Complexity Rule
+
+If code appears complex or redundant:
+
+- Assume it encodes real edge cases
+- Check history/tests before simplifying
+- Do not “clean up” without proof
+
+## 19. Commit Contract
 
 If committing or proposing a commit:
 
@@ -279,9 +297,15 @@ Commit message MUST:
 - match format: `type(scope): summary`
 - be CI-compliant
 
+Commit body MUST include:
+
+- root cause
+- implemented fix
+- validation performed (when applicable)
+
 Do NOT include toolchain status lines.
 
-## 15. Required Shared Skills
+## 20. Required Shared Skills
 
 When available, MUST be used:
 
@@ -292,10 +316,10 @@ When available, MUST be used:
 
 If unavailable:
 
-→ state explicitly
-→ apply rules manually
+-> state explicitly
+-> apply rules manually
 
-## 16. Anti-Patterns (Forbidden)
+## 21. Anti-Patterns (Forbidden)
 
 - Guessing missing code
 - Blind filesystem scanning when structured tools exist
@@ -305,7 +329,7 @@ If unavailable:
 - Skipping validation
 - Modifying unrelated code
 
-## 17. Session Stability
+## 22. Session Stability
 
 Continuously monitor for:
 
@@ -315,16 +339,24 @@ Continuously monitor for:
 
 If detected:
 
-→ STOP
-→ Recommend RESET
+-> STOP
+-> Recommend RESET
 
-## 18. When in Doubt
+## 23. Engineering Heuristics
+
+- Small changes can have wide effects
+- Complex code often encodes edge cases
+- Prefer correctness over elegance
+- Validate changes beyond the immediate scope
+- When duplication spreads, extract shared logic
+
+## 24. When in Doubt
 
 STOP and ask for clarification.
 
 Never proceed with assumptions.
 
-## 19. Future Extensions
+## 25. Future Extensions
 
 This contract may evolve to include:
 
