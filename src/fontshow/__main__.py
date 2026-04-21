@@ -24,20 +24,20 @@ runtime entry point when Fontshow is executed as a module
 """
 
 import argparse
+import importlib
+import pkgutil
 import sys
+from collections.abc import Callable
+from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version
-from typing import Any
+from types import ModuleType
+from typing import Any, cast
 
 from fontshow.core.cli_utils import log_err
 
 try:
+    import fontshow.cli
     import fontshow.preflight
-    from fontshow.cli import (
-        create_catalog,
-        dump_fonts,
-        parse_inventory,
-        validate_inventory,
-    )
     from fontshow.core.logging_utils import log, log_trace_cat
 except ModuleNotFoundError as e:
     missing = e.name or "<unknown>"
@@ -45,6 +45,167 @@ except ModuleNotFoundError as e:
     sys.exit(1)
 
 from fontshow.core.cli_utils import add_common_arguments
+
+_CLI_HELP_TEXT = {
+    "dump-fonts": "Extract raw font inventory",
+    "parse-inventory": "Enrich and validate a font inventory",
+    "validate-inventory": "Validate a Fontshow inventory file against the JSON schema",
+    "create-catalog": "Generate output artifacts from an inventory",
+}
+_CLI_ORDER = {
+    "dump-fonts": 0,
+    "parse-inventory": 1,
+    "validate-inventory": 2,
+    "create-catalog": 3,
+}
+
+
+@dataclass(frozen=True)
+class _CliCommandSpec:
+    """
+    Deterministic metadata for one auto-discovered CLI subcommand.
+
+    Parameters
+    ----------
+    command_name : str
+        Hyphenated dispatcher subcommand name derived from the module name.
+    help_text : str
+        Short help text rendered in the top-level dispatcher help output.
+    register : Callable[[argparse.ArgumentParser], None]
+        Callable that configures the subparser in place.
+
+    Returns
+    -------
+    None
+    """
+
+    command_name: str
+    help_text: str
+    register: Callable[[argparse.ArgumentParser], None]
+
+
+def _derive_command_help(command_name: str, module: ModuleType) -> str:
+    """
+    Resolve deterministic help text for one CLI command module.
+
+    Parameters
+    ----------
+    command_name : str
+        Hyphenated dispatcher subcommand name.
+    module : types.ModuleType
+        Imported CLI module associated with ``command_name``.
+
+    Returns
+    -------
+    str
+        Help text used when registering the command parser.
+    """
+    if command_name in _CLI_HELP_TEXT:
+        return _CLI_HELP_TEXT[command_name]
+
+    parser = argparse.ArgumentParser(add_help=False)
+    build_parser = getattr(module, "build_parser", None)
+    if callable(build_parser):
+        build_parser(parser)
+        if parser.description:
+            return str(parser.description).strip()
+
+    return command_name.replace("-", " ")
+
+
+def _build_register_callback(
+    module: ModuleType,
+) -> Callable[[argparse.ArgumentParser], None]:
+    """
+    Build the parser-registration callback for one CLI module.
+
+    Parameters
+    ----------
+    module : types.ModuleType
+        Imported CLI module from ``fontshow.cli``.
+
+    Returns
+    -------
+    Callable[[argparse.ArgumentParser], None]
+        Callback that configures the command parser in place.
+
+    Raises
+    ------
+    TypeError
+        Raised when the module does not expose a supported CLI registration
+        interface.
+    """
+    register_cli = getattr(module, "register_cli", None)
+    if callable(register_cli):
+        return cast("Callable[[argparse.ArgumentParser], None]", register_cli)
+
+    build_parser = getattr(module, "build_parser", None)
+    main = getattr(module, "main", None)
+    run = getattr(module, "run", None)
+    handler = main if callable(main) else run if callable(run) else None
+    if not callable(build_parser) or not callable(handler):
+        msg = (
+            f"CLI module '{module.__name__}' must expose either register_cli(parser) "
+            "or build_parser(parser) plus main(args)/run(args)"
+        )
+        raise TypeError(msg)
+
+    def _register(parser: argparse.ArgumentParser) -> None:
+        """
+        Configure a dispatcher subparser from a discovered CLI module.
+
+        Parameters
+        ----------
+        parser : argparse.ArgumentParser
+            Subparser instance to configure in place.
+
+        Returns
+        -------
+        None
+        """
+        build_parser(parser)
+        parser.set_defaults(func=handler)
+
+    return _register
+
+
+def _iter_cli_command_specs() -> list[_CliCommandSpec]:
+    """
+    Discover dispatcher commands exposed by the ``fontshow.cli`` package.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    list[_CliCommandSpec]
+        Deterministically ordered command specifications.
+    """
+    command_specs: list[_CliCommandSpec] = []
+
+    for module_info in pkgutil.iter_modules(fontshow.cli.__path__):
+        if module_info.name.startswith("_"):
+            continue
+        module = importlib.import_module(f"fontshow.cli.{module_info.name}")
+        command_name = module_info.name.replace("_", "-")
+        try:
+            register = _build_register_callback(module)
+        except TypeError:
+            continue
+        help_text = _derive_command_help(command_name, module)
+        command_specs.append(
+            _CliCommandSpec(
+                command_name=command_name,
+                help_text=help_text,
+                register=register,
+            )
+        )
+
+    return sorted(
+        command_specs,
+        key=lambda spec: (_CLI_ORDER.get(spec.command_name, 999), spec.command_name),
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -111,37 +272,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     fontshow.preflight.register_cli(preflight_parser)
 
-    # ------------------------------------------------------------------
-    # dump-fonts
-    dump_parser = subparsers.add_parser(
-        "dump-fonts",
-        help="Extract raw font inventory",
-    )
-    dump_fonts.register_cli(dump_parser)
-
-    # ------------------------------------------------------------------
-    # parse-inventory
-    parse_parser = subparsers.add_parser(
-        "parse-inventory",
-        help="Enrich and validate a font inventory",
-    )
-    parse_inventory.register_cli(parse_parser)
-
-    # ------------------------------------------------------------------
-    # validate-inventory
-    validate_parser = subparsers.add_parser(
-        "validate-inventory",
-        help="Validate a Fontshow inventory file against the JSON schema",
-    )
-    validate_inventory.register_cli(validate_parser)
-
-    # ------------------------------------------------------------------
-    # create-catalog
-    catalog_parser = subparsers.add_parser(
-        "create-catalog",
-        help="Generate output artifacts from an inventory",
-    )
-    create_catalog.register_cli(catalog_parser)
+    for command_spec in _iter_cli_command_specs():
+        command_parser = subparsers.add_parser(
+            command_spec.command_name,
+            help=command_spec.help_text,
+        )
+        command_spec.register(command_parser)
 
     return parser
 
