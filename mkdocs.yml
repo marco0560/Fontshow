@@ -57,6 +57,7 @@ nav:
     - Changelog summary: changelog-summary.md
     - Overview: pipeline.md
     - CLI: cli.md
+    - Bash completion: bash-completion.md
     - Cheatsheet: cheatsheet.md
     - Testing strategy: testing.md
 
@@ -70,7 +71,7 @@ nav:
   - Data model:
     - Data dictionary: data_dictionary.md
     - Schema overview: schema/index.md
-    - Inventory schema v1.3: schema/inventory_v1_3.md
+    - Inventory schema v1.5: schema/inventory_v1_5.md
     - Language normalization: schema/language-normalization.md
 
   - Development:
@@ -109,9 +110,42 @@ nav:
       - Governance Notes: planning/11_GOVERNANCE_NOTES.md
       - V2 Design Spike: planning/12_V2_DESIGN_SPIKE.md
       - Issue 66 Implementation Plan: planning/13_ISSUE_66_PERSISTED_LOADABILITY_IMPLEMENTATION_PLAN.md
+      - Catalog Hardening Plan: planning/14_CATALOG_ARTIFACT_HARDENING_IMPLEMENTATION_PLAN.md
+      - Catalog Hardening Ledger: planning/15_CATALOG_ARTIFACT_HARDENING_EXECUTION_LEDGER.md
+      - Issue 68 Loadability Batches: planning/16_ISSUE_68_LOADABILITY_BATCH_BENCHMARKS.md
 
     - Decisions:
-        decisions/index.md
+      - Index: decisions/index.md
+      - Legacy Decisions: decisions/legacy_decisions.md
+      - ADR 0001 Base Zero Replanning: decisions/0001-base-zero-replanning.md
+      - ADR 0002 Planning System Formalization: decisions/0002-planning-system-formalization.md
+      - ADR 0003 Python Node Coexistence: decisions/0003-python-node-coexistence.md
+      - ADR 0004 Branch Strategy: decisions/0004-branch-strategy.md
+      - ADR 0005 CLI Error Handling Normalization: decisions/0005-cli-error-handling-normalization.md
+      - ADR 0006 CLI Dispatch Testability Limit: decisions/0006-cli-dispatch-testability-limit.md
+      - ADR 0007 Standardization Project Scripts Python: decisions/0007-standardization-project-scripts-python.md
+      - ADR 0008 Developer Tooling First Class Project Code: decisions/0008-developer-tooling-first-class-project-code.md
+      - ADR 0009 CLI Verbosity Contract: decisions/0009-cli-verbosity-contract.md
+      - ADR 0010 Separation CLI Verbosity Debug: decisions/0010-separation-cli-verbosity-debug.md
+      - ADR 0011 CLI Stdout Stderr Quiet Behavior: decisions/0011-cli-stdout-stderr-semantics-quiet-behavior.md
+      - ADR 0012 GitHub Pages Deployment Strategy: decisions/0012-github-pages-deployment-strategy.md
+      - ADR 0013 Language Normalization Strategy: decisions/0013-language-normalization-strategy.md
+      - ADR 0014 Exclude Bitmap Non OpenType Fonts Inventory: decisions/0014-exclude-bitmap-non-opentype-fonts-inventory.md
+      - ADR 0015 ASCII Console Output: decisions/0015-ascii-console-output.md
+      - ADR 0016 Language Normalization Validation Strategy: decisions/0016-language-normalization-validation-strategy.md
+      - ADR 0017 Ruff Linting Policy Staged Adoption: decisions/0017-ruff-linting-policy-staged-adoption.md
+      - ADR 0018 TRACE Logging Architecture Semantics: decisions/0018-trace-logging-architecture-semantics.md
+      - ADR 0019 Enum JSON Boundary Invariant: decisions/0019-enum-json-boundary-invariant.md
+      - ADR 0020 Schema v1.2 Unification: decisions/0020-schema-v1-2-unification-deprecation-previous-versions.md
+      - ADR 0021 Authoritative Unicode Ontology: decisions/0021-authoritative-unicode-ontology.md
+      - ADR 0022 Specimen Inference Inputs Matrix: decisions/0022-fontshow-specimen-inference-inputs-matrix-v1-0.md
+      - ADR 0023 Font Skip Accounting: decisions/0023-font-skip-accounting-legacy-format-filtering.md
+      - ADR 0024 Validation Summary Fallback Handling: decisions/0024-parse-inventory-validation-summary-fallback-handling.md
+      - ADR 0025 Script Inference Ontology Data: decisions/0025-drive-script-inference-ontology-data.md
+      - ADR 0026 Schema v1.3 Nested Inventory Structure: decisions/0026-schema-v1-3-nested-inventory-structure-latex-validation-metadata.md
+      - ADR 0027 Catalog Low Information Specimen Rendering: decisions/0027-catalog-low-information-specimen-rendering-policy.md
+      - ADR 0028 Parse Inventory Render Path Loadability: decisions/0028-parse-inventory-render-path-loadability.md
+      - ADR 0029 Dump Fonts Controlled Discovery Paths: decisions/0029-dump-fonts-controlled-discovery-paths.md
 
   - Project:
     - Roadmap: roadmap.md

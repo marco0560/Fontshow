@@ -19,6 +19,8 @@ The following schemas are archived and no longer supported:
 * Inventory Schema v1.0
 * Inventory Schema v1.1
 * Inventory Schema v1.2
+* Inventory Schema v1.3
+* Inventory Schema v1.4
 
 See: `_archive/schema/`
 
