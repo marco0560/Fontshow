@@ -139,6 +139,7 @@ def test_completion_spec_tracks_command_options() -> None:
         "-v",
     ]
     assert spec["command_specs"]["create-catalog"]["options"] == [
+        "--appendix-descriptions",
         "--catalog-detail",
         "--help",
         "--indexed-navigation",
@@ -154,6 +155,7 @@ def test_completion_spec_tracks_command_options() -> None:
         "--test-font",
         "--verbose",
         "--version",
+        "-A",
         "-D",
         "-I",
         "-L",

@@ -79,6 +79,30 @@ filtering, not for the full loaded inventory.
 
 ---
 
+## Optional appendix descriptions
+
+`create-catalog` can append ontology-backed reference sections at the
+end of the generated document:
+
+- `--appendix-descriptions`
+- `-A`
+
+When enabled:
+
+- the catalog adds a script appendix for scripts present in the
+  rendered catalog
+- the catalog adds a language appendix for languages present in the
+  rendered catalog
+- entries are deduplicated and sorted lexicographically
+- descriptions are sourced directly from the ontology tables without
+  rewriting
+
+When not enabled:
+
+- catalog output remains unchanged
+
+---
+
 ## Loadability Validation
 
 `create-catalog` now uses **persisted LuaLaTeX loadability** from the

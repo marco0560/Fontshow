@@ -1980,6 +1980,129 @@ def test_generate_latex_indexed_navigation_adds_toc_anchors_and_end_index(
     assert latex.endswith("\\end{document}\n")
 
 
+def test_generate_latex_appendix_descriptions_renders_sorted_sections(
+    monkeypatch, tmp_path
+):
+    """
+    Ensure the optional appendix renders sorted script and language sections.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace document helpers and ontology data.
+    tmp_path : pathlib.Path
+        Temporary directory used to create placeholder font files.
+
+    Returns
+    -------
+    None
+    """
+    alpha_path = tmp_path / "Alpha.ttf"
+    beta_path = tmp_path / "Beta.ttf"
+    alpha_path.write_text("", encoding="utf-8")
+    beta_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(document, "LATEX_INITIAL_CODE", "HEADER\n")
+    monkeypatch.setattr(document, "LATEX_END_CODE_1", "\nEND:")
+    monkeypatch.setattr(document, "LATEX_END_CODE_2", ":DONE\n\\end{document}\n")
+    monkeypatch.setattr(document, "EXCLUDED_FONTS", set())
+    monkeypatch.setattr(document, "log_info", lambda _msg: None)
+    monkeypatch.setattr(document, "log_warn", lambda _msg: None)
+    monkeypatch.setattr(document, "as_font_desc_list", lambda fonts: list(fonts))
+    monkeypatch.setattr(
+        document, "_collect_polyglossia_other_languages", lambda _fonts: ""
+    )
+    monkeypatch.setattr(document, "_collect_polyglossia_font_setup", lambda _fonts: "")
+    monkeypatch.setattr(document, "_latex_debug_literal", lambda value: value)
+    monkeypatch.setattr(document, "_format_script_display", lambda value: value.upper())
+    monkeypatch.setattr(
+        document, "_format_language_display", lambda value: value.lower()
+    )
+    monkeypatch.setattr(document, "_strip_ascii_control_chars", lambda value: value)
+    monkeypatch.setattr(document, "escape_latex", lambda value: value)
+    monkeypatch.setattr(document, "_latex_detokenize_safe", lambda value: value)
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
+    monkeypatch.setattr(
+        document,
+        "SCRIPT_INFO",
+        {
+            ScriptISO("ARAB"): {
+                "rtl": True,
+                "specimen": "Arabic sample",
+                "canonical_name": "Arabic",
+                "description": "Arabic description",
+            },
+            ScriptISO("LATN"): {
+                "rtl": False,
+                "specimen": "Latin sample",
+                "canonical_name": "Latin",
+                "description": "Latin description",
+            },
+        },
+    )
+    monkeypatch.setattr(
+        document,
+        "LANGUAGE_INFO",
+        {
+            "ar": {
+                "canonical_name": "Arabic",
+                "description": "Arabic language description",
+            },
+            "en": {
+                "canonical_name": "English",
+                "description": "English language description",
+            },
+        },
+    )
+    monkeypatch.setattr(
+        document,
+        "_render_font_entry",
+        lambda font, safe_specimen, script0_iso, fullpath, catalog_detail=None: (
+            f"<{script0_iso}|{safe_specimen}>",
+            f"Path={script0_iso}",
+        ),
+    )
+
+    latex = document.generate_latex(
+        [
+            {
+                "family": "Beta",
+                "path": str(beta_path),
+                "style": "Regular",
+                "script": "latn",
+                "specimen_text": "Latin sample",
+                "inference": {"scripts": ["latn", "arab"], "languages": ["en", "ar"]},
+                "coverage": {"scripts": ["latn", "arab"]},
+            },
+            {
+                "family": "Alpha",
+                "path": str(alpha_path),
+                "style": "Regular",
+                "script": "arab",
+                "specimen_text": "Arabic sample",
+                "inference": {"scripts": ["arab"], "languages": ["ar"]},
+                "coverage": {"scripts": ["arab"]},
+            },
+        ],
+        appendix_descriptions=True,
+    )
+
+    assert "\\appendix" in latex
+    assert "\\section{Scripts}" in latex
+    assert "\\section{Languages}" in latex
+    assert "\\subsection{ARAB}" in latex
+    assert "\\subsection{LATN}" in latex
+    assert "\\subsection{ar}" in latex
+    assert "\\subsection{en}" in latex
+    assert "Arabic description" in latex
+    assert "Latin description" in latex
+    assert "Arabic language description" in latex
+    assert "English language description" in latex
+    assert latex.index("\\subsection{ARAB}") < latex.index("\\subsection{LATN}")
+    assert latex.index("\\subsection{ar}") < latex.index("\\subsection{en}")
+
+
 def test_generate_latex_replaces_low_information_primary_specimen_with_curated_script(
     monkeypatch, tmp_path
 ):

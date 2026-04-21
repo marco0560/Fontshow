@@ -4,7 +4,7 @@
 _FONTSHOW_COMMANDS="create-catalog dump-fonts parse-inventory preflight validate-inventory"
 _FONTSHOW_GLOBAL_OPTIONS="--help --version -V -h"
 
-_FONTSHOW_OPTIONS_CREATE_CATALOG="--catalog-detail --help --indexed-navigation --inventory --language --list-test-fonts --number --output --quiet --script --sort-by --test --test-font --verbose --version -D -I -L -S -T -V -h -i -l -n -o -q -s -t -v"
+_FONTSHOW_OPTIONS_CREATE_CATALOG="--appendix-descriptions --catalog-detail --help --indexed-navigation --inventory --language --list-test-fonts --number --output --quiet --script --sort-by --test --test-font --verbose --version -A -D -I -L -S -T -V -h -i -l -n -o -q -s -t -v"
 _FONTSHOW_PATH_OPTIONS_CREATE_CATALOG="--inventory --output -i -o"
 _FONTSHOW_POSITIONAL_PATH_CREATE_CATALOG=0
 

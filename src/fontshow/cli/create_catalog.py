@@ -36,7 +36,10 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from fontshow.catalog.document import generate_latex_with_report
+from fontshow.catalog.document import (
+    _CatalogDocumentOptions,
+    generate_latex_with_report,
+)
 from fontshow.catalog.loadability import filter_loadable_catalog_fonts_with_report
 from fontshow.catalog.output import (
     _prepare_output_filename,
@@ -123,33 +126,31 @@ def _render_invocation_command(args) -> str:
         Stable command line string suitable for human-readable output.
     """
     argv = ["fontshow", "create-catalog"]
-    inventory = str(getattr(args, "inventory", "") or "")
-    if inventory:
-        argv.extend(["--inventory", _format_display_path(inventory)])
-
-    output = getattr(args, "output", None)
-    if output is not None:
-        argv.extend(["--output", _format_display_path(str(output))])
-
-    number = getattr(args, "number", None)
-    if number is not None:
-        argv.extend(["--number", str(number)])
+    _append_optional_path_argument(
+        argv, "--inventory", getattr(args, "inventory", None)
+    )
+    _append_optional_path_argument(argv, "--output", getattr(args, "output", None))
+    _append_optional_scalar_argument(argv, "--number", getattr(args, "number", None))
 
     if getattr(args, "catalog_detail", "compact") != "compact":
         argv.extend(["--catalog-detail", str(args.catalog_detail)])
-    if getattr(args, "indexed_navigation", False):
-        argv.append("--indexed-navigation")
-    for language in getattr(args, "language", None) or []:
-        argv.extend(["--language", str(language)])
-    for script in getattr(args, "script", None) or []:
-        argv.extend(["--script", str(script)])
-    for sort_key in getattr(args, "sort_by", None) or []:
-        argv.extend(["--sort-by", str(sort_key)])
 
-    if getattr(args, "test", False):
-        argv.append("--test")
-    if getattr(args, "list_test_fonts", False):
-        argv.append("--list-test-fonts")
+    for flag in (
+        "--indexed-navigation",
+        "--appendix-descriptions",
+        "--test",
+        "--list-test-fonts",
+        "--quiet",
+        "--verbose",
+    ):
+        if getattr(args, flag.removeprefix("--").replace("-", "_"), False):
+            argv.append(flag)
+
+    _append_repeated_arguments(
+        argv, "--language", getattr(args, "language", None) or []
+    )
+    _append_repeated_arguments(argv, "--script", getattr(args, "script", None) or [])
+    _append_repeated_arguments(argv, "--sort-by", getattr(args, "sort_by", None) or [])
 
     test_fonts = getattr(args, "test_font", None) or []
     for test_font in test_fonts:
@@ -157,12 +158,81 @@ def _render_invocation_command(args) -> str:
         if test_font != "__DEFAULT__":
             argv.append(str(test_font))
 
-    if getattr(args, "quiet", False):
-        argv.append("--quiet")
-    if getattr(args, "verbose", False):
-        argv.append("--verbose")
-
     return shlex.join(argv)
+
+
+def _append_optional_path_argument(
+    argv: list[str], option: str, raw_value: object | None
+) -> None:
+    """
+    Append one path-valued CLI argument when a value is present.
+
+    Parameters
+    ----------
+    argv : list[str]
+        Mutable command vector being assembled.
+    option : str
+        CLI option name to append.
+    raw_value : object | None
+        Path-like value to render when present.
+
+    Returns
+    -------
+    None
+    """
+    if raw_value is None:
+        return
+    rendered = str(raw_value)
+    if not rendered:
+        return
+    argv.extend([option, _format_display_path(rendered)])
+
+
+def _append_optional_scalar_argument(
+    argv: list[str], option: str, raw_value: object | None
+) -> None:
+    """
+    Append one scalar CLI argument when a value is present.
+
+    Parameters
+    ----------
+    argv : list[str]
+        Mutable command vector being assembled.
+    option : str
+        CLI option name to append.
+    raw_value : object | None
+        Value to stringify and append when present.
+
+    Returns
+    -------
+    None
+    """
+    if raw_value is None:
+        return
+    argv.extend([option, str(raw_value)])
+
+
+def _append_repeated_arguments(
+    argv: list[str], option: str, values: list[object]
+) -> None:
+    """
+    Append one repeatable CLI option for each provided value.
+
+    Parameters
+    ----------
+    argv : list[str]
+        Mutable command vector being assembled.
+    option : str
+        Repeatable CLI option name to append.
+    values : list[object]
+        Values rendered in order.
+
+    Returns
+    -------
+    None
+    """
+    for value in values:
+        argv.extend([option, str(value)])
 
 
 def _build_generation_metadata(args) -> dict[str, str]:
@@ -392,6 +462,15 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
+        "-A",
+        "--appendix-descriptions",
+        action="store_true",
+        help=(
+            "Append script and language description sections sourced "
+            "from the ontology at the end of the catalog."
+        ),
+    )
+    parser.add_argument(
         "-L",
         "--language",
         action="append",
@@ -604,8 +683,11 @@ def run_create_catalog(args) -> int:
     latex_content = generate_latex_with_report(
         loadability_result.kept,
         excluded_fonts=loadability_result.excluded,
-        catalog_detail=args.catalog_detail,
-        indexed_navigation=bool(getattr(args, "indexed_navigation", False)),
+        render_options=_CatalogDocumentOptions(
+            catalog_detail=args.catalog_detail,
+            indexed_navigation=bool(getattr(args, "indexed_navigation", False)),
+            appendix_descriptions=bool(getattr(args, "appendix_descriptions", False)),
+        ),
         generation_metadata=_build_generation_metadata(args),
     )
 

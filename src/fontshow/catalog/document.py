@@ -78,7 +78,7 @@ from fontshow.latex.templates import (
     LATEX_END_CODE_2,
     LATEX_INITIAL_CODE,
 )
-from fontshow.ontology.language_tables import SCRIPT_INFO
+from fontshow.ontology.language_tables import LANGUAGE_INFO, SCRIPT_INFO
 from fontshow.ontology.unicode_tables import UNICODE_BLOCK_RANGES
 
 _SUPPORTED_PATH_BASED_EXTENSIONS = (".ttf", ".otf", ".ttc")
@@ -86,6 +86,43 @@ _MULTI_SPECIMEN_LIMIT = 30
 _PUA_SCRIPT = ScriptISO("PUAA")
 
 CatalogDetailLevel = Literal["compact", "extended"]
+
+
+@dataclass(frozen=True)
+class _DescriptionAppendixEntry:
+    """
+    Structured appendix entry for ontology-backed descriptions.
+
+    Parameters
+    ----------
+    display_label : str
+        Human-readable appendix heading label.
+    description : str
+        Ontology description rendered verbatim apart from LaTeX escaping.
+    """
+
+    display_label: str
+    description: str
+
+
+@dataclass(frozen=True)
+class _CatalogDocumentOptions:
+    """
+    Normalized rendering options for catalog document assembly.
+
+    Parameters
+    ----------
+    catalog_detail : {"compact", "extended"}
+        Family and specimen metadata detail level.
+    indexed_navigation : bool
+        Whether navigation anchors and the end-of-document index are emitted.
+    appendix_descriptions : bool
+        Whether ontology-backed script and language appendices are emitted.
+    """
+
+    catalog_detail: CatalogDetailLevel = "compact"
+    indexed_navigation: bool = False
+    appendix_descriptions: bool = False
 
 
 def _collect_polyglossia_other_languages(font_list: list[CatalogFontEntryV12]) -> str:
@@ -233,6 +270,150 @@ def _render_navigation_index(entries: list[tuple[str, str]]) -> str:
         lines.append("\\medskip")
     lines.extend(["\\end{multicols}", "\\endgroup"])
     return "\n".join(lines) + "\n"
+
+
+def _collect_script_description_entries(
+    fonts_by_family: Mapping[str, list[CatalogFontEntryV12]],
+) -> list[_DescriptionAppendixEntry]:
+    """
+    Collect deterministic script description entries for rendered families.
+
+    Parameters
+    ----------
+    fonts_by_family : collections.abc.Mapping[str, list[CatalogFontEntryV12]]
+        Catalog families retained for rendering after excluded-family filtering.
+
+    Returns
+    -------
+    list[_DescriptionAppendixEntry]
+        Deduplicated script appendix entries sorted lexicographically by
+        display label.
+    """
+    entries_by_label: dict[str, _DescriptionAppendixEntry] = {}
+    for family_fonts in fonts_by_family.values():
+        for font in family_fonts:
+            inference_raw = font.get("inference")
+            inference = inference_raw if isinstance(inference_raw, Mapping) else {}
+            scripts_raw = inference.get("scripts")
+            if not isinstance(scripts_raw, list):
+                continue
+            for raw_script in scripts_raw:
+                cleaned = str(raw_script).strip().upper()
+                if not cleaned:
+                    continue
+                info = SCRIPT_INFO.get(ScriptISO(cleaned))
+                if not isinstance(info, Mapping):
+                    continue
+                description = info.get("description")
+                if not isinstance(description, str) or not description:
+                    continue
+                label = _format_script_display(cleaned)
+                entries_by_label[label] = _DescriptionAppendixEntry(
+                    display_label=label,
+                    description=description,
+                )
+    return [entries_by_label[label] for label in sorted(entries_by_label)]
+
+
+def _collect_language_description_entries(
+    fonts_by_family: Mapping[str, list[CatalogFontEntryV12]],
+) -> list[_DescriptionAppendixEntry]:
+    """
+    Collect deterministic language description entries for rendered families.
+
+    Parameters
+    ----------
+    fonts_by_family : collections.abc.Mapping[str, list[CatalogFontEntryV12]]
+        Catalog families retained for rendering after excluded-family filtering.
+
+    Returns
+    -------
+    list[_DescriptionAppendixEntry]
+        Deduplicated language appendix entries sorted lexicographically by
+        display label.
+    """
+    entries_by_label: dict[str, _DescriptionAppendixEntry] = {}
+    for family_fonts in fonts_by_family.values():
+        for font in family_fonts:
+            inference_raw = font.get("inference")
+            inference = inference_raw if isinstance(inference_raw, Mapping) else {}
+            languages_raw = inference.get("languages")
+            if not isinstance(languages_raw, list):
+                continue
+            for raw_language in languages_raw:
+                cleaned = str(raw_language).strip().lower()
+                if not cleaned:
+                    continue
+                info = LANGUAGE_INFO.get(cleaned)
+                if not isinstance(info, Mapping):
+                    continue
+                description = info.get("description")
+                if not isinstance(description, str) or not description:
+                    continue
+                label = _format_language_display(cleaned)
+                entries_by_label[label] = _DescriptionAppendixEntry(
+                    display_label=label,
+                    description=description,
+                )
+    return [entries_by_label[label] for label in sorted(entries_by_label)]
+
+
+def _render_description_appendix_section(
+    section_title: str, entries: list[_DescriptionAppendixEntry]
+) -> str:
+    """
+    Render one appendix section containing ontology-backed descriptions.
+
+    Parameters
+    ----------
+    section_title : str
+        Visible appendix section heading.
+    entries : list[_DescriptionAppendixEntry]
+        Ordered entries to render within the section.
+
+    Returns
+    -------
+    str
+        LaTeX section text, or an empty string when no entries exist.
+    """
+    if not entries:
+        return ""
+
+    lines = ["\\section{" + escape_latex(section_title) + "}"]
+    for entry in entries:
+        lines.append("\\subsection{" + escape_latex(entry.display_label) + "}")
+        lines.append(escape_latex(entry.description))
+    return "\n".join(lines) + "\n"
+
+
+def _render_descriptions_appendix(
+    fonts_by_family: Mapping[str, list[CatalogFontEntryV12]],
+) -> str:
+    """
+    Render the optional appendix containing script and language descriptions.
+
+    Parameters
+    ----------
+    fonts_by_family : collections.abc.Mapping[str, list[CatalogFontEntryV12]]
+        Catalog families retained for rendering after excluded-family filtering.
+
+    Returns
+    -------
+    str
+        Complete appendix fragment including ``\\appendix`` when at least
+        one section contains entries, otherwise an empty string.
+    """
+    scripts_section = _render_description_appendix_section(
+        "Scripts",
+        _collect_script_description_entries(fonts_by_family),
+    )
+    languages_section = _render_description_appendix_section(
+        "Languages",
+        _collect_language_description_entries(fonts_by_family),
+    )
+    if not scripts_section and not languages_section:
+        return ""
+    return "\\appendix\n" + scripts_section + languages_section
 
 
 def _navigation_group_key(family_name: str) -> str:
@@ -1781,6 +1962,7 @@ def generate_latex(
     catalog_detail: CatalogDetailLevel = "compact",
     indexed_navigation: bool = False,
     generation_metadata: Mapping[str, str] | None = None,
+    appendix_descriptions: bool = False,
 ) -> str:
     """
     Generate the full LaTeX document for the provided font descriptors.
@@ -1800,6 +1982,9 @@ def generate_latex(
         Optional first-page metadata keys used to replace LaTeX
         front-matter placeholders. Missing keys fall back to empty
         strings.
+    appendix_descriptions : bool, optional
+        When ``True``, append ontology-backed script and language
+        description sections at the end of the document.
 
     Returns
     -------
@@ -1826,8 +2011,11 @@ def generate_latex(
     return generate_latex_with_report(
         font_list,
         excluded_fonts=[],
-        catalog_detail=catalog_detail,
-        indexed_navigation=indexed_navigation,
+        render_options=_CatalogDocumentOptions(
+            catalog_detail=catalog_detail,
+            indexed_navigation=indexed_navigation,
+            appendix_descriptions=appendix_descriptions,
+        ),
         generation_metadata=generation_metadata,
     )
 
@@ -1871,8 +2059,7 @@ def generate_latex_with_report(
     font_list: list[CatalogFontEntryV12],
     *,
     excluded_fonts: list[LoadabilityExclusion],
-    catalog_detail: CatalogDetailLevel = "compact",
-    indexed_navigation: bool = False,
+    render_options: _CatalogDocumentOptions | None = None,
     generation_metadata: Mapping[str, str] | None = None,
 ) -> str:
     """
@@ -1885,12 +2072,9 @@ def generate_latex_with_report(
         final document.
     excluded_fonts : list[LoadabilityExclusion]
         Structured skipped-font records to include in the report.
-    catalog_detail : {"compact", "extended"}, optional
-        Family and specimen metadata detail level used in the rendered
-        catalog body.
-    indexed_navigation : bool, optional
-        When ``True``, emit subsection-based navigation with a clickable
-        table of contents and an end-of-document navigation index.
+    render_options : _CatalogDocumentOptions | None, optional
+        Normalized rendering options controlling detail level,
+        indexed navigation, and optional appendix emission.
     generation_metadata : collections.abc.Mapping[str, str] | None, optional
         Optional first-page metadata keys used to replace LaTeX
         front-matter placeholders. Missing keys fall back to empty
@@ -1902,6 +2086,7 @@ def generate_latex_with_report(
         Complete LaTeX document as a string.
     """
     font_list = as_font_desc_list(font_list)
+    options = render_options or _CatalogDocumentOptions()
 
     # --- GROUP BY FAMILY, PRESERVING FIRST-SEEN ORDER ---
     seen_families: set[str] = set()
@@ -1944,7 +2129,7 @@ def generate_latex_with_report(
     navigation_entries: list[tuple[str, str]] = []
     missing_entries: list[str] = []
     duplicate_entries: list[str] = []
-    if not indexed_navigation:
+    if not options.indexed_navigation:
         latex_code += "\\begin{itemize}\n"
         latex_code += "\\setlength{\\itemsep}{0.25em}\n"
         latex_code += "\\setlength{\\parsep}{0pt}\n"
@@ -1959,8 +2144,8 @@ def generate_latex_with_report(
             family_name=fam,
             family_fonts=fonts_by_family[fam],
             family_index=idx,
-            catalog_detail=catalog_detail,
-            indexed_navigation=indexed_navigation,
+            catalog_detail=options.catalog_detail,
+            indexed_navigation=options.indexed_navigation,
         )
         missing_entries.extend(family_result.missing_entries)
         duplicate_entries.extend(family_result.duplicate_entries)
@@ -1968,16 +2153,18 @@ def generate_latex_with_report(
             navigation_entries.append(family_result.navigation_entry)
         latex_code += family_result.body_block
 
-    if not indexed_navigation:
+    if not options.indexed_navigation:
         latex_code += "\\end{itemize}\n"
 
     # Closing document and printing indices
     latex_code += _render_excluded_fonts_section(excluded_fonts)
     latex_code += _render_missing_variants_section(missing_entries)
     latex_code += _render_duplicate_sources_section(duplicate_entries)
+    if options.appendix_descriptions:
+        latex_code += _render_descriptions_appendix(fonts_by_family)
     closing = LATEX_END_CODE_1 + str(total) + LATEX_END_CODE_2
     document_end = "\n\\end{document}\n"
-    if indexed_navigation and closing.endswith(document_end):
+    if options.indexed_navigation and closing.endswith(document_end):
         closing = (
             closing[: -len(document_end)]
             + _render_navigation_index(navigation_entries)
