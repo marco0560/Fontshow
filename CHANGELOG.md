@@ -1,3 +1,9 @@
+## [0.72.0](https://github.com/marco0560/Fontshow/compare/v0.71.4...v0.72.0) (2026-04-21)
+
+### Features
+
+* **catalog:** add optional ontology description appendix ([38dbc35](https://github.com/marco0560/Fontshow/commit/38dbc355af582032c0b99d36023466e04c5db79f)), closes [#74](https://github.com/marco0560/Fontshow/issues/74)
+
 ## [0.71.4](https://github.com/marco0560/Fontshow/compare/v0.71.3...v0.71.4) (2026-04-18)
 
 ### Bug Fixes
