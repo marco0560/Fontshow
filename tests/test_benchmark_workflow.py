@@ -50,6 +50,7 @@ def test_benchmark_scripts_expose_help_without_external_tools() -> None:
     -------
     None
     """
+    _skip_unless_readiness_enabled()
     for script in (SETUP_SCRIPT, BENCHMARK_SCRIPT, LOADABILITY_BENCHMARK_SCRIPT):
         result = subprocess.run(
             ["bash", str(script), "--help"],
