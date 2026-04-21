@@ -1,3 +1,9 @@
+## [0.73.0](https://github.com/marco0560/Fontshow/compare/v0.72.0...v0.73.0) (2026-04-21)
+
+### Features
+
+* **docs:** generate field reference table from schema ([6050fa4](https://github.com/marco0560/Fontshow/commit/6050fa440d459863a92ba881cf3a2aafe0e8b7ae)), closes [#61](https://github.com/marco0560/Fontshow/issues/61)
+
 ## [0.72.0](https://github.com/marco0560/Fontshow/compare/v0.71.4...v0.72.0) (2026-04-21)
 
 ### Features
