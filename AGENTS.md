@@ -109,6 +109,8 @@ For any non-trivial task:
 
 Do NOT skip steps.
 
+When the task is non-trivial and the planning phase is ambiguous, underconstrained, or has multiple viable approaches, use `planning-refinement-gate` before producing the concrete plan. Do not proceed to detailed planning until all required operator decisions are explicitly confirmed.
+
 ## 6. Deterministic Exploration
 
 Before modifying code:
@@ -312,6 +314,7 @@ When available, MUST be used:
 - `deterministic-change-workflow`
 - `numpy-docstring-enforcer`
 - `commit-block-generator`
+- `planning-refinement-gate` for ambiguous or multi-option planning work
 - repository-specific workflow tools
 
 If unavailable:
