@@ -1,3 +1,9 @@
+## [0.73.1](https://github.com/marco0560/Fontshow/compare/v0.73.0...v0.73.1) (2026-04-23)
+
+### Bug Fixes
+
+* **docs:** normalize mkdocs nav path comparison ([8bcb753](https://github.com/marco0560/Fontshow/commit/8bcb753589582d5290d20749fbfe627d8f1ca12a))
+
 ## [0.73.0](https://github.com/marco0560/Fontshow/compare/v0.72.0...v0.73.0) (2026-04-21)
 
 ### Features
