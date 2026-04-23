@@ -1,3 +1,10 @@
+## [0.73.2](https://github.com/marco0560/Fontshow/compare/v0.73.1...v0.73.2) (2026-04-23)
+
+### Bug Fixes
+
+* **dev:** avoid recreating active bootstrap venv ([95ae72e](https://github.com/marco0560/Fontshow/commit/95ae72ec4fa6caa018c53fb9500942c88e34ef7d))
+* **dev:** isolate pytest temp roots ([1bd2368](https://github.com/marco0560/Fontshow/commit/1bd2368ec0e09b0cc271bb69c8f676b94d9fd4af))
+
 ## [0.73.1](https://github.com/marco0560/Fontshow/compare/v0.73.0...v0.73.1) (2026-04-23)
 
 ### Bug Fixes
