@@ -21,7 +21,9 @@ shared pytest configuration and fixtures for the Fontshow test suite.
 
 import importlib
 import logging
+import os
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -29,6 +31,13 @@ import pytest
 
 from fontshow.__main__ import main as fontshow_main
 from tests.helpers import run_cli
+
+TEST_RUNTIME_TEMP = (Path.home() / "Documents" / "FontshowPytestTemp").resolve()
+TEST_RUNTIME_TEMP.mkdir(parents=True, exist_ok=True)
+os.environ["TMPDIR"] = str(TEST_RUNTIME_TEMP)
+os.environ["TMP"] = str(TEST_RUNTIME_TEMP)
+os.environ["TEMP"] = str(TEST_RUNTIME_TEMP)
+tempfile.tempdir = str(TEST_RUNTIME_TEMP)
 
 # ---------------------------------------------------------------------------
 # Path & import hygiene

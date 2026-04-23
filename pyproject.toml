@@ -50,6 +50,19 @@ docs = [
 [project.scripts]
 fontshow = "fontshow.__main__:main"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = [
+    ".git",
+    ".venv",
+    ".pytest_cache",
+    ".pytest_tmp",
+    ".pytest-basetemp",
+    "pytest-cache-files-*",
+    "pytest-runtime",
+    "node_modules",
+]
+
 # -------------------------------------------------
 # Formatting
 # -------------------------------------------------

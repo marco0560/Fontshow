@@ -16,6 +16,10 @@ site/
 
 # pytest / coverage artifacts
 .pytest_cache/
+.pytest_tmp/
+.pytest-basetemp/
+pytest-cache-files-*/
+pytest-runtime/
 .coverage
 .coverage.*
 htmlcov/

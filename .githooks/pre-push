@@ -56,7 +56,15 @@ echo "🔍 Running pre-commit checks before push..."
 echo "✅ pre-commit checks passed"
 
 echo "🧪 Running test suite..."
-"$PYTEST_BIN" -q
+if [ -n "${USERPROFILE:-}" ]; then
+  PYTEST_RUNTIME_ROOT="$USERPROFILE/Documents/FontshowPytestTemp"
+else
+  PYTEST_RUNTIME_ROOT="$HOME/Documents/FontshowPytestTemp"
+fi
+mkdir -p "$PYTEST_RUNTIME_ROOT"
+PYTEST_TEMP_DIR="$PYTEST_RUNTIME_ROOT"
+TMPDIR="$PYTEST_TEMP_DIR" TMP="$PYTEST_TEMP_DIR" TEMP="$PYTEST_TEMP_DIR" \
+  "$PYTEST_BIN" -q tests
 echo "✅ Tests passed"
 
 # ------------------------------------------------------------
