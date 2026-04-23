@@ -260,7 +260,7 @@ def test_mkdocs_navigation_covers_all_live_markdown_docs() -> None:
 
     nav_paths = _flatten_nav(mkdocs_config["nav"])
     live_docs = {
-        str(path.relative_to(REPO_ROOT / "docs"))
+        path.relative_to(REPO_ROOT / "docs").as_posix()
         for path in (REPO_ROOT / "docs").rglob("*.md")
         if "_archive" not in path.parts
     }
