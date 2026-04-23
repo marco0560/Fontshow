@@ -58,6 +58,52 @@ def test_git_alias_entries_are_repo_safe_and_self_contained() -> None:
     assert ".venv" in entries["alias.clean-artifacts"]
 
 
+def test_select_bootstrap_python_uses_base_interpreter_for_target_venv() -> None:
+    """
+    Ensure bootstrap avoids recreating the target virtual environment with itself.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    repo_root = Path("/tmp/fontshow")
+    selected = bootstrap_dev_environment.select_bootstrap_python(
+        "/tmp/fontshow/.venv/bin/python",
+        repo_root=repo_root,
+        venv_dir=".venv",
+    )
+
+    assert Path(selected).resolve() == Path(sys._base_executable).resolve()
+
+
+def test_select_bootstrap_python_preserves_explicit_external_interpreter() -> None:
+    """
+    Ensure an explicit external interpreter is preserved unchanged.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    repo_root = Path("/tmp/fontshow")
+    requested_python = "/usr/bin/python3"
+
+    selected = bootstrap_dev_environment.select_bootstrap_python(
+        requested_python,
+        repo_root=repo_root,
+        venv_dir=".venv",
+    )
+
+    assert selected == requested_python
+
+
 def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
     """
     Ensure the default bootstrap plan covers install, config, and validation.
@@ -79,6 +125,7 @@ def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
             venv_dir=".venv",
             with_docs=False,
             run_validation=True,
+            create_venv=True,
         ),
     )
 
@@ -88,6 +135,7 @@ def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
         "venv",
     )
     assert Path(commands[0].argv[3]) == repo_root / ".venv"
+    assert bootstrap_dev_environment.BOOTSTRAP_SETUPTOOLS_SPEC in commands[1].argv
     assert commands[2].argv[-1] == ".[dev]"
     assert any(
         command.argv[:4] == ("/usr/bin/git", "config", "--local", "alias.rel")
@@ -118,9 +166,11 @@ def test_build_bootstrap_commands_can_skip_validation_and_include_docs() -> None
             venv_dir=".venv",
             with_docs=True,
             run_validation=False,
+            create_venv=False,
         ),
     )
 
-    assert commands[2].argv[-1] == ".[dev,docs]"
+    assert commands[1].argv[-1] == ".[dev,docs]"
+    assert all(command.argv[1:3] != ("-m", "venv") for command in commands)
     assert not any("pre-commit" in command.description for command in commands)
     assert not any("pytest" in command.description for command in commands)

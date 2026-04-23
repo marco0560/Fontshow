@@ -41,6 +41,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 DEFAULT_VENV_DIR = ".venv"
+BOOTSTRAP_SETUPTOOLS_SPEC = "setuptools<82"
 REQUIRED_REPO_MARKERS = (
     ".git",
     ".githooks",
@@ -82,11 +83,14 @@ class BootstrapOptions:
         Whether to include documentation dependencies in the editable install.
     run_validation : bool
         Whether to append repository validation commands.
+    create_venv : bool
+        Whether to create or refresh the repository virtual environment.
     """
 
     venv_dir: str
     with_docs: bool
     run_validation: bool
+    create_venv: bool
 
 
 def fail(msg: str, *, exit_code: int = 1) -> None:
@@ -222,6 +226,83 @@ def install_target(*, with_docs: bool) -> str:
     return f'.[{",".join(extras)}]'
 
 
+def select_bootstrap_python(
+    requested_python: str, *, repo_root: Path, venv_dir: str
+) -> str:
+    """
+    Choose the interpreter used to create the target virtual environment.
+
+    Parameters
+    ----------
+    requested_python : str
+        Interpreter path or executable name requested on the command line.
+    repo_root : pathlib.Path
+        Absolute repository root path.
+    venv_dir : str
+        Repository-relative virtual environment directory name.
+
+    Returns
+    -------
+    str
+        Interpreter path or executable name to use for ``python -m venv``.
+
+    Notes
+    -----
+    When bootstrap runs from the target repository virtual environment and
+    ``--python`` is left at its default value, the active virtual-environment
+    interpreter cannot safely recreate itself. In that case bootstrap falls
+    back to the base interpreter reported by ``sys._base_executable``.
+    """
+    target_venv = (repo_root / venv_dir).resolve()
+
+    try:
+        requested_path = Path(requested_python).resolve()
+    except OSError:
+        return requested_python
+
+    if not requested_path.is_absolute():
+        return requested_python
+
+    try:
+        requested_path.relative_to(target_venv)
+    except ValueError:
+        return requested_python
+
+    base_executable = getattr(sys, "_base_executable", "")
+    if not base_executable:
+        return requested_python
+
+    return str(Path(base_executable).resolve())
+
+
+def target_venv_is_active(*, repo_root: Path, venv_dir: str) -> bool:
+    """
+    Report whether bootstrap is running from the target repository virtual environment.
+
+    Parameters
+    ----------
+    repo_root : pathlib.Path
+        Absolute repository root path.
+    venv_dir : str
+        Repository-relative virtual environment directory name.
+
+    Returns
+    -------
+    bool
+        ``True`` when the active interpreter lives under the target virtual
+        environment directory, otherwise ``False``.
+    """
+    target_venv = (repo_root / venv_dir).resolve()
+    active_python = Path(sys.executable).resolve()
+
+    try:
+        active_python.relative_to(target_venv)
+    except ValueError:
+        return False
+
+    return True
+
+
 def git_alias_entries() -> list[tuple[str, str]]:
     """
     Return the repository-local Git alias contract.
@@ -332,11 +413,6 @@ def build_bootstrap_commands(
 
     commands = [
         CommandSpec(
-            description=f"Create or refresh virtual environment at {venv_path}",
-            argv=(python_executable, "-m", "venv", str(venv_path)),
-            cwd=repo_root,
-        ),
-        CommandSpec(
             description="Upgrade pip, setuptools, and wheel in the virtual environment",
             argv=(
                 str(venv_python),
@@ -345,7 +421,7 @@ def build_bootstrap_commands(
                 "install",
                 "--upgrade",
                 "pip",
-                "setuptools",
+                BOOTSTRAP_SETUPTOOLS_SPEC,
                 "wheel",
             ),
             cwd=repo_root,
@@ -366,6 +442,16 @@ def build_bootstrap_commands(
             cwd=repo_root,
         ),
     ]
+
+    if options.create_venv:
+        commands.insert(
+            0,
+            CommandSpec(
+                description=f"Create or refresh virtual environment at {venv_path}",
+                argv=(python_executable, "-m", "venv", str(venv_path)),
+                cwd=repo_root,
+            ),
+        )
 
     for key, value in git_alias_entries():
         commands.append(
@@ -502,7 +588,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     repo_root = detect_repo_root(args.repo_root)
-    python_executable = args.python
+    python_executable = select_bootstrap_python(
+        args.python,
+        repo_root=repo_root,
+        venv_dir=args.venv_dir,
+    )
     if not Path(python_executable).is_absolute():
         python_executable = resolve_executable(python_executable)
     git_executable = resolve_executable("git")
@@ -515,6 +605,10 @@ def main(argv: list[str] | None = None) -> int:
             venv_dir=args.venv_dir,
             with_docs=args.with_docs,
             run_validation=not args.skip_validation,
+            create_venv=not target_venv_is_active(
+                repo_root=repo_root,
+                venv_dir=args.venv_dir,
+            ),
         ),
     )
     run_plan(commands, dry_run=args.dry_run)
