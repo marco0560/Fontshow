@@ -22,6 +22,7 @@ shared pytest configuration and fixtures for the Fontshow test suite.
 import importlib
 import logging
 import os
+import shutil
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -32,12 +33,54 @@ import pytest
 from fontshow.__main__ import main as fontshow_main
 from tests.helpers import run_cli
 
-TEST_RUNTIME_TEMP = (Path.home() / "Documents" / "FontshowPytestTemp").resolve()
+DEFAULT_TEMP_PARENT = Path(tempfile.gettempdir()).resolve()
+TEST_RUNTIME_TEMP = DEFAULT_TEMP_PARENT / "fontshow-pytest"
+TEST_BASE_TEMP = TEST_RUNTIME_TEMP / "basetemp"
 TEST_RUNTIME_TEMP.mkdir(parents=True, exist_ok=True)
 os.environ["TMPDIR"] = str(TEST_RUNTIME_TEMP)
 os.environ["TMP"] = str(TEST_RUNTIME_TEMP)
 os.environ["TEMP"] = str(TEST_RUNTIME_TEMP)
 tempfile.tempdir = str(TEST_RUNTIME_TEMP)
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """
+    Configure pytest temporary paths outside the repository by default.
+
+    Parameters
+    ----------
+    config : pytest.Config
+        Active pytest configuration object.
+
+    Returns
+    -------
+    None
+    """
+    if config.option.basetemp is None:
+        config.option.basetemp = str(TEST_BASE_TEMP)
+
+
+def pytest_sessionfinish(
+    session: pytest.Session, exitstatus: int | pytest.ExitCode
+) -> None:
+    """
+    Remove the default test runtime temporary directory after the session.
+
+    Parameters
+    ----------
+    session : pytest.Session
+        Completed pytest session object.
+    exitstatus : int | pytest.ExitCode
+        Pytest session exit status.
+
+    Returns
+    -------
+    None
+    """
+    _ = session, exitstatus
+    if TEST_RUNTIME_TEMP.exists():
+        shutil.rmtree(TEST_RUNTIME_TEMP)
+
 
 # ---------------------------------------------------------------------------
 # Path & import hygiene

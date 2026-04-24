@@ -58,6 +58,7 @@ norecursedirs = [
     ".pytest_cache",
     ".pytest_tmp",
     ".pytest-basetemp",
+    ".tmp",
     "pytest-cache-files-*",
     "pytest-runtime",
     "node_modules",

@@ -9,6 +9,8 @@ clean state before validation, release, or refactoring work.
 Responsibilities
 ----------------
 - Discover ignored paths currently present in the repository working tree.
+- Discover known pytest/runtime artifact directories even when Git cannot
+  traverse them.
 - Remove removable files and directories while respecting protected paths.
 - Support dry-run execution so cleanup actions can be reviewed safely.
 
@@ -17,6 +19,8 @@ Design principles
 Repository cleanup must be deterministic and conservative. The script only
 acts on paths reported as ignored by git and explicitly preserves protected
 developer directories such as virtual environments or editor metadata.
+Known pytest artifact paths are included explicitly because permission issues
+can prevent Git from reporting their children reliably.
 
 Architectural role
 ------------------
@@ -38,6 +42,17 @@ PROTECTED_PATHS = {
     "node_modules",
     ".codira",
 }
+
+KNOWN_ARTIFACT_PATTERNS = (
+    ".mypy_cache",
+    ".pytest_cache",
+    ".pytest_tmp",
+    ".pytest-basetemp",
+    ".ruff_cache",
+    ".tmp",
+    "pytest-cache-files-*",
+    "pytest-runtime",
+)
 
 
 def git_ignored_paths() -> Iterable[Path]:
@@ -75,7 +90,57 @@ def git_ignored_paths() -> Iterable[Path]:
             yield Path(line[3:])
 
 
-def remove_path(path: Path, dry_run: bool) -> None:
+def known_artifact_paths(repo_root: Path) -> Iterable[Path]:
+    """
+    Yield known repository-local artifact paths that currently exist.
+
+    Parameters
+    ----------
+    repo_root : pathlib.Path
+        Repository root used as the base for artifact discovery.
+
+    Yields
+    ------
+    pathlib.Path
+        Repository-relative paths matching known artifact names.
+    """
+    for pattern in KNOWN_ARTIFACT_PATTERNS:
+        for path in repo_root.glob(pattern):
+            yield path.relative_to(repo_root)
+
+
+def cleanup_paths(repo_root: Path) -> list[Path]:
+    """
+    Return repository-relative cleanup paths in deterministic order.
+
+    Parameters
+    ----------
+    repo_root : pathlib.Path
+        Repository root used as the base for artifact discovery.
+
+    Returns
+    -------
+    list[pathlib.Path]
+        Deduplicated cleanup paths excluding protected top-level paths.
+    """
+    discovered = [*git_ignored_paths(), *known_artifact_paths(repo_root)]
+    paths: list[Path] = []
+    seen: set[Path] = set()
+
+    for path in discovered:
+        if not path.parts or path.parts[0] in PROTECTED_PATHS:
+            continue
+        if path in seen:
+            continue
+        if not (repo_root / path).exists():
+            continue
+        seen.add(path)
+        paths.append(path)
+
+    return sorted(paths)
+
+
+def remove_path(path: Path, dry_run: bool) -> bool:
     """
     Remove a filesystem path representing a file or directory.
 
@@ -89,33 +154,40 @@ def remove_path(path: Path, dry_run: bool) -> None:
 
     Returns
     -------
-    None
+    bool
+        ``True`` when the path was removed or only reported in dry-run mode,
+        ``False`` when removal failed.
 
     Raises
     ------
-    OSError
-        Raised if the removal operation fails.
+    None
     """
     if dry_run:
         print(f"[DRY-RUN] Would remove: {path}")
-        return
+        return True
 
-    if path.is_dir():
-        shutil.rmtree(path)
-        print(f"Removed directory: {path}")
-    elif path.exists():
-        path.unlink()
-        print(f"Removed file: {path}")
+    try:
+        if path.is_dir():
+            shutil.rmtree(path)
+            print(f"Removed directory: {path}")
+        elif path.exists():
+            path.unlink()
+            print(f"Removed file: {path}")
+    except OSError as exc:
+        print(f"Failed to remove: {path} ({exc})")
+        return False
+
+    return True
 
 
 def main() -> None:
     """
-    Clean the repository by removing ignored (untracked) artifacts.
+    Clean the repository by removing ignored and known temporary artifacts.
 
     This command-line entry point scans the current repository for files and
     directories that are ignored by Git (for example build artifacts, caches,
-    or generated files) and removes them, excluding paths listed in
-    ``PROTECTED_PATHS``.
+    or generated files), adds known pytest/runtime temporary paths, and removes
+    them, excluding paths listed in ``PROTECTED_PATHS``.
 
     A dry-run mode is available to preview the actions without performing
     any deletion.
@@ -148,26 +220,32 @@ def main() -> None:
 
     repo_root = Path.cwd()
 
-    print("Cleaning repository (ignored artifacts only)...")
+    print("Cleaning repository (ignored and known temporary artifacts)...")
     if args.dry_run:
         print("Running in DRY-RUN mode.\n")
     else:
         print()
 
-    ignored = [
-        path for path in git_ignored_paths() if path.parts[0] not in PROTECTED_PATHS
-    ]
+    ignored = cleanup_paths(repo_root)
 
     if not ignored:
         print("Nothing to clean. Repository is already clean.")
         return
 
+    failed: list[Path] = []
+
     for path in ignored:
         full_path = repo_root / path
-        remove_path(full_path, dry_run=args.dry_run)
+        if not remove_path(full_path, dry_run=args.dry_run):
+            failed.append(path)
 
     if args.dry_run:
         print("\nDry-run completed. No files were removed.")
+    elif failed:
+        print("\nCleanup incomplete. Failed paths:")
+        for path in failed:
+            print(f"- {path}")
+        raise SystemExit(1)
     else:
         print("\nDone. Repository is clean.")
 
