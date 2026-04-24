@@ -47,3 +47,6 @@ created before the adoption of the formal decision record system.
 - [0027 — Catalog low-information specimen rendering policy](0027-catalog-low-information-specimen-rendering-policy.md)
 - [0028 — Parse-inventory render-path loadability](0028-parse-inventory-render-path-loadability.md)
 - [0029 — dump-fonts controlled discovery paths](0029-dump-fonts-controlled-discovery-paths.md)
+- [0030 — Platform Support and Preflight Severity Matrix](0030-platform-support-preflight-severity-matrix.md)
+- [0031 — Inventory Schema v1.5 Authority and Compatibility Contract](0031-inventory-schema-v1-5-authority-compatibility-contract.md)
+- [0032 — Persisted LuaLaTeX Loadability v1.5 Schema Contract](0032-persisted-lualatex-loadability-v1-5-schema-contract.md)

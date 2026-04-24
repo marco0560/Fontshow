@@ -85,6 +85,7 @@ nav:
     - Contributing: CONTRIBUTING.md
 
   - Engineering:
+    - Assumptions evaluation 2026-04-24: engineering/assumptions-evaluation-24-04-2026.md
     - Lessons Learned: engineering/lessons-learned.md
     - Codex evaluation: engineering/codex-evaluation-04-02-2026.md
     - Exceptions policy: engineering/exception_policy.md
@@ -146,6 +147,9 @@ nav:
       - ADR 0027 Catalog Low Information Specimen Rendering: decisions/0027-catalog-low-information-specimen-rendering-policy.md
       - ADR 0028 Parse Inventory Render Path Loadability: decisions/0028-parse-inventory-render-path-loadability.md
       - ADR 0029 Dump Fonts Controlled Discovery Paths: decisions/0029-dump-fonts-controlled-discovery-paths.md
+      - ADR 0030 Platform Support Preflight Severity Matrix: decisions/0030-platform-support-preflight-severity-matrix.md
+      - ADR 0031 Inventory Schema v1.5 Authority Compatibility Contract: decisions/0031-inventory-schema-v1-5-authority-compatibility-contract.md
+      - ADR 0032 Persisted LuaLaTeX Loadability v1.5 Schema Contract: decisions/0032-persisted-lualatex-loadability-v1-5-schema-contract.md
 
   - Project:
     - Roadmap: roadmap.md
