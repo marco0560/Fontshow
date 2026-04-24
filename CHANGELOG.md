@@ -1,3 +1,9 @@
+## [0.73.3](https://github.com/marco0560/Fontshow/compare/v0.73.2...v0.73.3) (2026-04-24)
+
+### Bug Fixes
+
+* **dev:** keep pytest temp artifacts out of repo ([866597f](https://github.com/marco0560/Fontshow/commit/866597fd79a6e1279a951f8f94c408474951b7da))
+
 ## [0.73.2](https://github.com/marco0560/Fontshow/compare/v0.73.1...v0.73.2) (2026-04-23)
 
 ### Bug Fixes
