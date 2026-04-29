@@ -280,6 +280,40 @@ def test_resolve_batch_results_rejects_failed_single_candidate_with_ok_marker(
     assert result[7]["probe_input"] == "U+10E5"
 
 
+def test_render_probe_snippet_escapes_path_directory_and_probe_text(tmp_path):
+    r"""
+    Ensure generated LuaLaTeX probes cannot be broken by TeX syntax in data.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to create an adversarial font path.
+
+    Returns
+    -------
+    None
+    """
+    font_dir = tmp_path / "a}b"
+    font_dir.mkdir()
+    font_path = font_dir / "Probe.ttf"
+    font_path.write_text("", encoding="utf-8")
+    candidate = loadability._ProbeCandidate(
+        candidate_index=9,
+        font_index=0,
+        path=font_path,
+        probe_text=r"\input{/etc/passwd}",
+        probe_input="U+005C",
+        fontspec_opts=None,
+    )
+
+    snippet = loadability._render_probe_snippet(candidate)
+
+    expected_dir = str(font_dir).replace("}", r"\}") + "/"
+    assert "Path=\\detokenize{" + expected_dir + "}" in snippet
+    assert r"\textbackslash{}input\{/etc/passwd\}" in snippet
+    assert r"\input{/etc/passwd}" not in snippet
+
+
 def test_probe_and_persist_lualatex_loadability_accepts_parallel_jobs(
     tmp_path, monkeypatch
 ):

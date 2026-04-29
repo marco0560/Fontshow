@@ -2,13 +2,12 @@
   "name": "fontshow",
   "version": "0.29.1",
   "description": "",
-  "main": "index.js",
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": ".venv/bin/pytest -q"
   },
   "repository": {
     "type": "git",
@@ -16,7 +15,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/marco0560/Fontshow/issues"
   },

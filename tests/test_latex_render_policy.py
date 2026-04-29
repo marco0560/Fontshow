@@ -8,6 +8,7 @@ Responsibilities
 - Cover renderer prefix and detokenize sanitization behavior.
 """
 
+from fontshow.core.types import ScriptISO
 from fontshow.latex import policy, render
 
 
@@ -281,6 +282,35 @@ def test_collect_polyglossia_font_setup_uses_first_matching_catalog_font(monkeyp
     )
 
 
+def test_build_polyglossia_font_setup_escapes_path_directory(monkeypatch, tmp_path):
+    r"""
+    Ensure Polyglossia font setup keeps directory braces inside detokenize.
+
+    Parameters
+    ----------
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace render-policy helpers.
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build an adversarial font path.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(policy, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(policy, "_get_render_policy", lambda _script: ("arabic", ""))
+    font_path = tmp_path / "a}b" / "arabic.ttf"
+    font_path.parent.mkdir()
+    font_path.write_text("", encoding="utf-8")
+
+    result = policy._build_polyglossia_font_setup(
+        {"path": str(font_path)}, "arabic", ScriptISO("ARAB")
+    )
+
+    expected_dir = str(font_path.parent).replace("\\", "/").replace("}", r"\}") + "/"
+    assert "Path=\\detokenize{" + expected_dir + "}" in result
+
+
 def test_collect_polyglossia_font_setup_skips_english_and_missing_mappings(monkeypatch):
     """
     Ensure unsupported or main-language entries do not emit setup lines.
@@ -371,6 +401,7 @@ def test_render_helpers_strip_controls_and_toggle_renderer_prefix(monkeypatch):
     )
     assert render._strip_ascii_control_chars("A\x00B\x7f\n\tC") == "AB\n\tC"
     assert render._latex_detokenize_safe("A{\\}\x00B") == r"A\{\\\}B"
+    assert render._latex_detokenize_safe("/tmp/a}b/") == r"/tmp/a\}b/"
 
     monkeypatch.setattr(render, "IS_WINDOWS", True)
     assert render._renderer_option_prefix() == ""

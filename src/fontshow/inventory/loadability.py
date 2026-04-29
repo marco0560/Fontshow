@@ -58,6 +58,7 @@ from fontshow.latex.render import (
     _latex_detokenize_safe,
     _renderer_option_prefix,
     _strip_ascii_control_chars,
+    escape_latex,
 )
 from fontshow.ontology.language_tables import SCRIPT_INFO
 
@@ -328,10 +329,29 @@ def _fontspec_options(candidate: _ProbeCandidate) -> str:
         Comma-separated option string for `fontspec`.
     """
     directory, _filename = _normalize_path_for_fontspec(candidate.path)
-    options = _renderer_option_prefix() + "Path=" + "\\detokenize{" + directory + "}"
+    detok_dir = "\\detokenize{" + _latex_detokenize_safe(directory) + "}"
+    options = _renderer_option_prefix() + "Path=" + detok_dir
     if candidate.fontspec_opts:
         options += "," + candidate.fontspec_opts
     return options
+
+
+def _probe_text_for_latex(text: str) -> str:
+    """
+    Render a probe glyph as direct LaTeX-safe text.
+
+    Parameters
+    ----------
+    text : str
+        One-character probe text selected from inventory typography data.
+
+    Returns
+    -------
+    str
+        Escaped text safe for direct insertion into a LuaLaTeX probe
+        document.
+    """
+    return escape_latex(text)
 
 
 def _render_probe_snippet(candidate: _ProbeCandidate) -> str:
@@ -350,10 +370,11 @@ def _render_probe_snippet(candidate: _ProbeCandidate) -> str:
     """
     _directory, filename = _normalize_path_for_fontspec(candidate.path)
     detok_file = "\\detokenize{" + _latex_detokenize_safe(filename) + "}"
+    safe_probe_text = _probe_text_for_latex(candidate.probe_text)
     return (
         f"\\typeout{{FONTSHOW_LOAD_BEGIN:{candidate.candidate_index}}}\n"
         f"\\fontspec[{_fontspec_options(candidate)}]{{{detok_file}}}"
-        f"{candidate.probe_text}\n"
+        f"{safe_probe_text}\n"
         f"\\typeout{{FONTSHOW_LOAD_OK:{candidate.candidate_index}}}\n"
     )
 

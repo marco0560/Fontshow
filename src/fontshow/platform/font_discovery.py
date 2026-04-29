@@ -159,12 +159,13 @@ def get_font_files_from_paths(paths: list[Path]) -> list[Path]:
     skipped_legacy_extension = 0
     for root in sorted(set(roots)):
         for path in root.rglob("*"):
-            if not path.is_file():
-                continue
             if _has_legacy_font_extension(path):
-                skipped_legacy_extension += 1
+                if path.is_file():
+                    skipped_legacy_extension += 1
                 continue
             if path.suffix.lower() in DISCOVERABLE_FONT_EXTENSIONS:
+                if not path.is_file():
+                    continue
                 found.add(path.resolve())
 
     _LAST_DISCOVERY_STATS = {

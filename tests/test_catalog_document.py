@@ -313,6 +313,38 @@ def test_render_font_entry_uses_path_and_file_for_unknown_scripts(monkeypatch):
     assert options == "Renderer=1,Path=/tmp/,File=unknown.ttf"
 
 
+def test_render_font_entry_escapes_path_directory_in_detokenize(tmp_path, monkeypatch):
+    r"""
+    Ensure path-backed fontspec loading keeps directory braces inside detokenize.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to build an adversarial font path.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to replace render-policy helpers.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
+    monkeypatch.setattr(document, "_get_render_policy", lambda _script: ("", ""))
+    font_path = tmp_path / "a}b" / "unknown.ttf"
+    font_path.parent.mkdir()
+    font_path.write_text("", encoding="utf-8")
+
+    render, _options = document._render_font_entry(
+        font={"path": str(font_path)},
+        safe_specimen="abc",
+        script0_iso=ScriptISO(""),
+        fullpath=str(font_path),
+    )
+
+    expected_dir = str(font_path.parent).replace("\\", "/").replace("}", r"\}") + "/"
+    assert "Path=\\detokenize{" + expected_dir + "}" in render
+
+
 def test_ordered_script_candidates_prioritizes_primary_then_rtl_then_latn(
     monkeypatch,
 ):

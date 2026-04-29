@@ -566,7 +566,7 @@ def _build_polyglossia_font_setup(
     directory, filename = _normalize_font_path_for_latex(fullpath)
     file_suffix = Path(filename).suffix
     file_stem = Path(filename).stem
-    detok_dir = "\\detokenize{" + directory + "}"
+    detok_dir = "\\detokenize{" + _latex_detokenize_safe(directory) + "}"
     detok_stem = "\\detokenize{" + _latex_detokenize_safe(file_stem) + "}"
     renderer_prefix = _renderer_option_prefix()
     _, script_opt = _get_render_policy(script_iso)
