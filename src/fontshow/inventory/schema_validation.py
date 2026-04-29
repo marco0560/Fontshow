@@ -100,7 +100,7 @@ def _validate_inventory_schema_strict(data: dict) -> None:
             "schema validation failed",
             extra={
                 "schema_version": schema_version,
-                "ruke": "schema_version_supported",
+                "rule": "schema_version_supported",
                 "error": msg,
             },
         )
