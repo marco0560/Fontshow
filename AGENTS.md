@@ -159,6 +159,26 @@ Rules:
 - Do not ignore warnings/errors
 - Do not weaken tests to pass validation
 
+## 8.1 Toolchain Execution Model
+
+Primary execution path:
+
+```bash
+pre-commit run --all-files
+pytest -q
+```
+
+Fallback tooling must match:
+
+- black
+- ruff
+- mypy
+- pytest
+
+No repository-specific wrapper is currently enforced.
+
+If a wrapper is introduced, it becomes the primary execution path.
+
 ## 9. Targeted Validation
 
 - Identify affected subsystems
@@ -309,18 +329,86 @@ Do NOT include toolchain status lines.
 
 ## 20. Required Shared Skills
 
-When available, MUST be used:
+When available locally in ~/.codex/skills, MUST be used:
 
 - `deterministic-change-workflow`
 - `numpy-docstring-enforcer`
 - `commit-block-generator`
 - `planning-refinement-gate` for ambiguous or multi-option planning work
+- `codira-workflow`
 - repository-specific workflow tools
 
 If unavailable:
 
 -> state explicitly
 -> apply rules manually
+
+If a required skill is referenced but not available:
+
+-> STOP
+-> Report missing skill
+-> Do not approximate its behavior
+
+## 20.1. Codira Mandatory Exploration Rule
+
+When the repository provides the `codira` tool, it MUST be used as the primary exploration mechanism.
+
+This rule applies whenever the agent needs to:
+
+- understand repository structure
+- locate symbols or references
+- analyze call relationships
+- retrieve task-relevant context
+- decide where to read or modify code
+
+### Required behavior
+
+Before performing broad file reading, recursive browsing, or generic search:
+
+1. Activate the environment.
+2. Run:
+
+   codira index
+
+3. Use `codira` queries to narrow the search space:
+
+   - symbol lookup: codira sym ...
+   - call graph: codira calls ...
+   - references: codira refs ...
+   - semantic retrieval: codira emb ...
+   - contextual retrieval: codira ctx ...
+
+4. Only after narrowing the scope:
+   - read specific files
+   - inspect code in detail
+
+### Forbidden behavior
+
+The following are NOT allowed as first steps when `codira` is available:
+
+- reading large portions of the repository blindly
+- scanning directories without a prior indexed query
+- relying solely on text search (`rg`) for initial discovery
+
+### Fallback
+
+If and only if:
+
+- `codira index` fails, OR
+- results are demonstrably insufficient
+
+then fallback to:
+
+- `rg`
+- manual file inspection
+
+### Enforcement
+
+If `codira` is available and this rule is not followed:
+
+→ STOP
+→ report violation
+→ restart using `codira-workflow`
 
 ## 21. Anti-Patterns (Forbidden)
 
