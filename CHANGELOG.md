@@ -1,3 +1,9 @@
+## [0.73.4](https://github.com/marco0560/Fontshow/compare/v0.73.3...v0.73.4) (2026-04-29)
+
+### Bug Fixes
+
+* **latex:** harden TeX input rendering ([3505b3c](https://github.com/marco0560/Fontshow/commit/3505b3c8dee487c3ee59d1e998e28ee592c1c634))
+
 ## [0.73.3](https://github.com/marco0560/Fontshow/compare/v0.73.2...v0.73.3) (2026-04-24)
 
 ### Bug Fixes
