@@ -24,6 +24,8 @@ Fontshow is designed to be:
 - schema-driven
 - explicit about its execution model and return codes
 
+It generates .tex files that should be compiled with LuaLaTeX to produce PDF catalogs.
+
 ## Quick start
 
 Fontshow exposes a unified command-line interface through a dispatcher.
@@ -52,7 +54,7 @@ artifact for the next stage.
 - Deep font metadata extraction using fontTools
 - Script and language inference based on Unicode coverage
 - Structured JSON font inventory
-- LaTeX catalog generation (XeLaTeX / LuaLaTeX)
+- LaTeX catalog generation (LuaLaTeX)
 - Reproducible, inventory-driven workflow
 
 ## CLI design notes
@@ -272,6 +274,8 @@ fontshow create-catalog
 Additional options are available for:
 
 - test font selection
+- script selection
+- language selection
 - debug output
 - LaTeX generation control
 
