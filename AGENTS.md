@@ -142,6 +142,11 @@ If a skill is missing:
 - If behavior is fully specified → proceed manually
 - Otherwise → STOP and report missing capability
 
+When a skill fully defines a workflow:
+
+→ the skill replaces any equivalent procedural instructions in this document
+→ this document defines only constraints and enforcement
+
 ## 10. Change Strategy
 
 - Prefer small, atomic changes
