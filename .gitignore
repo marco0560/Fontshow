@@ -58,8 +58,9 @@ font_inventory_sample.txt
 fontshow_snapshot.zip
 fontshow_snapshot.tar.gz
 fontshow_snapshot.tar.xz
+guidelines.tar.xz
 issues.json
-milestones_plan.json
+milestones.json
 bootstrap_audit_report.txt
 fontspec.log
 luaotfload.log

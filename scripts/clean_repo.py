@@ -41,6 +41,7 @@ PROTECTED_PATHS = {
     ".vscode",
     "node_modules",
     ".codira",
+    "guidelines.tar.xz",
 }
 
 KNOWN_ARTIFACT_PATTERNS = (
