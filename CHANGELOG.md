@@ -1,3 +1,9 @@
+## [0.73.5](https://github.com/marco0560/Fontshow/compare/v0.73.4...v0.73.5) (2026-05-03)
+
+### Bug Fixes
+
+* **dev:** Added map of the repository to AGENTS.md ([d138d63](https://github.com/marco0560/Fontshow/commit/d138d632035c4cf42cd70b2fdda8c45faeaa6989))
+
 ## [0.73.4](https://github.com/marco0560/Fontshow/compare/v0.73.3...v0.73.4) (2026-04-29)
 
 ### Bug Fixes
