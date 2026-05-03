@@ -34,9 +34,9 @@ def test_install_target_tracks_requested_dependency_groups() -> None:
     assert bootstrap_dev_environment.install_target(with_docs=True) == ".[dev,docs]"
 
 
-def test_git_alias_entries_are_repo_safe_and_self_contained() -> None:
+def test_git_local_config_entries_match_repository_contract() -> None:
     """
-    Ensure bootstrap installs only portable repository-local Git aliases.
+    Ensure bootstrap applies the full repository-local Git config contract.
 
     Parameters
     ----------
@@ -46,16 +46,83 @@ def test_git_alias_entries_are_repo_safe_and_self_contained() -> None:
     -------
     None
     """
-    entries = dict(bootstrap_dev_environment.git_alias_entries())
+    entries = bootstrap_dev_environment.git_local_config_entries()
 
-    assert entries["core.hooksPath"] == ".githooks"
-    assert entries["commit.template"] == ".gitmessage"
-    assert "alias.rel" in entries
-    assert "alias.gen-boot-report" in entries
-    assert "alias.gen-issues" not in entries
-    assert "alias.gen-miles" not in entries
-    assert "alias.gen-zip" not in entries
-    assert ".venv" in entries["alias.clean-artifacts"]
+    assert entries == [
+        ("core.repositoryformatversion", "0"),
+        ("core.filemode", "true"),
+        ("core.bare", "false"),
+        ("core.logallrefupdates", "true"),
+        ("core.hooksPath", ".githooks"),
+        ("remote.origin.url", "git@github.com:marco0560/Fontshow.git"),
+        ("remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"),
+        ("init.defaultBranch", "main"),
+        ("branch.main.remote", "origin"),
+        ("branch.main.merge", "refs/heads/main"),
+        ("branch.main.vscode-merge-base", "origin/main"),
+        ("commit.template", ".gitmessage"),
+        ("commit.gpgsign", "true"),
+        ("commit.verbose", "true"),
+        ("alias.st", "status"),
+        ("alias.co", "checkout"),
+        ("alias.br", "branch"),
+        ("alias.ci", "commit"),
+        ("alias.lg", "log --oneline --graph --decorate -50"),
+        (
+            "alias.check",
+            "!bash -lc 'source .venv/bin/activate && black --check . && ruff check . && mypy . && pytest -q'",
+        ),
+        ("alias.fix", "!ruff check . --fix"),
+        ("alias.clean-repo", '!f() { python scripts/clean_repo.py "$@"; }; f'),
+        (
+            "alias.test-coverage",
+            '!f() { pytest --cov=fontshow --cov-report=term-missing "$@"; }; f',
+        ),
+        (
+            "alias.test-html",
+            "!pytest --cov=fontshow --cov-report=html && xdg-open htmlcov/index.html",
+        ),
+        ("alias.new-decision", '!f() { python scripts/new_decision.py "$@"; }; f'),
+        (
+            "alias.release-preview",
+            '!f() { python scripts/release_preview.py "$@"; }; f',
+        ),
+        (
+            "alias.gen-issues",
+            """!f() { rm -f issues.json &> /dev/null; timeout 10s gh api graphql -f query='query {repository(owner: "marco0560", name: "Fontshow") {issues(first: 100, states: OPEN, orderBy: {field: CREATED_AT, direction: ASC}) {totalCount pageInfo {hasNextPage endCursor} nodes {number title body url state createdAt updatedAt author {login} assignees(first: 20) {nodes {login}} labels(first: 20) {nodes {name}} milestone {number title} comments {totalCount}}}}}' > issues.json; }; f""",
+        ),
+        (
+            "alias.gen-miles",
+            """!f() { rm -f milestones.json &> /dev/null; timeout 10s gh api graphql -f query='query {repository(owner: "marco0560", name: "Fontshow") {milestones(first: 20, states: OPEN, orderBy: {field: DUE_DATE, direction: ASC}) {totalCount pageInfo {hasNextPage endCursor} nodes {number title description dueOn progressPercentage issues(first: 100) {totalCount pageInfo {hasNextPage endCursor} nodes {number title url state createdAt updatedAt labels(first: 20) { nodes {name}}}}}}}}' > milestones.json; }; f""",
+        ),
+        (
+            "alias.txz",
+            """!f(){ name="${1:-repo}"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; mkdir -p "$tmp/repo"; git ls-files -z | XZ_OPT="-9e -T0" tar --null -T - -cJf "$PWD/$name.tar.xz" --transform='s,^,repo/,'; }; f""",
+        ),
+        (
+            "alias.gen-zip-common",
+            """!f() { name="${1:-guidelines}"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; mkdir -p "$tmp/$name"; [ -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/chatgpt_guidelines.md" ] && cp -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/chatgpt_guidelines.md" "$tmp/$name/"; [ -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/patch_discipline.md" ] && cp -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/patch_discipline.md" "$tmp/$name/"; [ -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/anti-hallucination.md" ] && cp -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/anti-hallucination.md" "$tmp/$name/"; XZ_OPT="-9e -T0" tar --sort=name --mtime="UTC 1970-01-01" --owner=0 --group=0 --numeric-owner -C "$tmp" -cJf "$PWD/$name.tar.xz" "$name"; }; f""",
+        ),
+        ("alias.safe-push", "!git fetch && git pull --ff-only && git push"),
+        ("alias.release-audit", "!bash scripts/release_audit.sh"),
+        (
+            "alias.rel",
+            "!git fetch && git pull --ff-only && bash scripts/release_rel.sh && sleep 30s && git fetch && git pull --ff-only",
+        ),
+        (
+            "alias.re-clean",
+            "!git clean-repo && git gen-issues && git gen-miles && git gen-zip-repo",
+        ),
+        ("alias.gen-boot-report", "!python scripts/generate_bootstrap_audit_report.py"),
+        ("alias.ver-boot-report", "!python scripts/verify_bootstrap_audit_report.py"),
+        (
+            "alias.install-dev-codira",
+            '!python ../codira/scripts/install_first_party_packages.py --python "$VIRTUAL_ENV/bin/python" --include-core --core-extra semantic --include-bundle',
+        ),
+        ("pull.ff", "only"),
+        ("pull.rebase", "false"),
+        ("rebase.autostash", "true"),
+    ]
 
 
 def test_select_bootstrap_python_uses_base_interpreter_for_target_venv() -> None:

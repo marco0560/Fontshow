@@ -13,7 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from fontshow.ontology.language_tables import SCRIPT_INFO
 
@@ -35,7 +35,11 @@ def load_enriched_inventory(path: Path) -> dict[str, Any]:
     dict[str, object]
         Parsed inventory payload.
     """
-    return json.loads(path.read_text(encoding="utf-8"))
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        msg = "enriched inventory root must be a JSON object"
+        raise SystemExit(msg)
+    return cast("dict[str, Any]", payload)
 
 
 def collect_seen_scripts(data: dict[str, Any]) -> set[str]:

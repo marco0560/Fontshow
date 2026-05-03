@@ -51,12 +51,14 @@ None
 
 from __future__ import annotations
 
+import importlib
 import os
 import pathlib
 import re
 import sys
+from typing import Any, cast
 
-import requests
+requests = cast("Any", importlib.import_module("requests"))
 
 WORKFLOW_DIR = pathlib.Path(".github/workflows")
 

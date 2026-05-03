@@ -94,6 +94,7 @@ def check_project_table(data: dict[str, Any]) -> None:
     project = data.get("project")
     if not isinstance(project, dict):
         fail("Missing [project] table")
+    assert isinstance(project, dict)
 
     required = ["name", "requires-python"]
     for field in required:
@@ -224,6 +225,7 @@ def check_build_system(data: dict[str, Any]) -> None:
     build = data.get("build-system")
     if not isinstance(build, dict):
         fail("Missing [build-system]")
+    assert isinstance(build, dict)
 
     requires = build.get("requires")
     backend = build.get("build-backend")
@@ -255,6 +257,9 @@ def check_tooling(data: dict[str, Any]) -> None:
         Raised when required tool sections are missing.
     """
     tool = data.get("tool", {})
+    if not isinstance(tool, dict):
+        fail("Missing [tool] configuration")
+    assert isinstance(tool, dict)
 
     if "ruff" not in tool:
         fail("Missing [tool.ruff] configuration")

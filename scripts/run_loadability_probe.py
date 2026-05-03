@@ -12,8 +12,9 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections.abc import MutableMapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from fontshow.inventory.loadability import probe_and_persist_lualatex_loadability
 from fontshow.inventory.schema_accessors import ensure_v13_lualatex_loadability
@@ -33,10 +34,14 @@ def _load_inventory(path: Path) -> dict[str, Any]:
     dict[str, Any]
         Parsed inventory payload.
     """
-    return json.loads(path.read_text(encoding="utf-8"))
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        msg = "inventory root must be a JSON object"
+        raise SystemExit(msg)
+    return cast("dict[str, Any]", payload)
 
 
-def _validation_metadata(inventory: dict[str, Any]) -> dict[str, Any]:
+def _validation_metadata(inventory: dict[str, Any]) -> MutableMapping[str, Any]:
     """
     Return the mutable LuaLaTeX validation metadata block.
 
@@ -65,13 +70,13 @@ def _validation_metadata(inventory: dict[str, Any]) -> dict[str, Any]:
         msg = "inventory metadata.validation must be an object"
         raise SystemExit(msg)
     lualatex = validation.get("lualatex")
-    if not isinstance(lualatex, dict):
+    if not isinstance(lualatex, MutableMapping):
         msg = "inventory metadata.validation.lualatex must be an object"
         raise SystemExit(msg)
     return lualatex
 
 
-def _inventory_fonts(inventory: dict[str, Any]) -> list[dict[str, Any]]:
+def _inventory_fonts(inventory: dict[str, Any]) -> list[MutableMapping[str, Any]]:
     """
     Return the mutable inventory font list.
 
@@ -91,15 +96,17 @@ def _inventory_fonts(inventory: dict[str, Any]) -> list[dict[str, Any]]:
         Raised when ``fonts`` is absent or contains non-object entries.
     """
     fonts = inventory.get("fonts")
-    if not isinstance(fonts, list) or not all(isinstance(font, dict) for font in fonts):
+    if not isinstance(fonts, list) or not all(
+        isinstance(font, MutableMapping) for font in fonts
+    ):
         msg = "inventory fonts must be a list of objects"
         raise SystemExit(msg)
-    return fonts
+    return cast("list[MutableMapping[str, Any]]", fonts)
 
 
 def _reset_lualatex_state(
-    fonts: list[dict[str, Any]],
-    validation_metadata: dict[str, Any],
+    fonts: list[MutableMapping[str, Any]],
+    validation_metadata: MutableMapping[str, Any],
 ) -> None:
     """
     Reset persisted loadability fields before a benchmark replay.

@@ -31,13 +31,41 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from fontshow.core.types import normalize_script_iso
 from fontshow.ontology.language_tables import SCRIPT_INFO
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Mapping
+
+
+class QueryProcessor(Protocol):
+    """
+    Represent a saved-query post-processor with optional inventory filters.
+
+    Parameters
+    ----------
+    inventory_path : pathlib.Path
+        Inventory file to inspect.
+    family : str, optional
+        Exact family-name filter.
+    font_path : str, optional
+        Exact font-path filter.
+
+    Returns
+    -------
+    int
+        Process-style exit code.
+    """
+
+    def __call__(
+        self,
+        inventory_path: Path,
+        *,
+        family: str = "",
+        font_path: str = "",
+    ) -> int: ...
 
 
 @dataclass(frozen=True)
@@ -65,30 +93,61 @@ class QuerySpec:
     summary: str
     query: str
     interpretation: str
-    processor: Callable[[Path, str, str], int] | None = None
+    processor: QueryProcessor | None = None
     accepts_filters: bool = False
 
 
-def _load_inventory(inventory_path: Path) -> dict:
+def _load_inventory(inventory_path: Path) -> dict[str, Any]:
+    """
+    Load and validate an inventory JSON document.
+
+    Parameters
+    ----------
+    inventory_path : pathlib.Path
+        Inventory file to read.
+
+    Returns
+    -------
+    dict[str, Any]
+        Parsed inventory object.
+
+    Raises
+    ------
+    SystemExit
+        Raised when the JSON root is not an object.
+    """
     with inventory_path.open(encoding="utf-8") as handle:
-        return json.load(handle)
+        payload = json.load(handle)
+    if not isinstance(payload, dict):
+        fail(f"Inventory root must be a JSON object: {inventory_path}")
+    return cast("dict[str, Any]", payload)
 
 
 def _filter_fonts(
-    inventory: dict, family: str, font_path: str
-) -> list[tuple[int, dict]]:
-    results: list[tuple[int, dict]] = []
+    inventory: Mapping[str, Any], family: str, font_path: str
+) -> list[tuple[int, dict[str, Any]]]:
+    results: list[tuple[int, dict[str, Any]]] = []
     for index, entry in enumerate(inventory.get("fonts", [])):
+        if not isinstance(entry, dict):
+            continue
         if family and entry.get("family", "") != family:
             continue
         if font_path and entry.get("path", "") != font_path:
             continue
-        results.append((index, entry))
+        results.append((index, cast("dict[str, Any]", entry)))
     return results
 
 
-def _summarize_script_blocks(script_token: str) -> dict:
+def _summarize_script_blocks(script_token: str) -> dict[str, Any]:
     script_iso = normalize_script_iso(script_token)
+    if script_iso is None:
+        return {
+            "script": str(script_token),
+            "script_iso": "",
+            "canonical_name": "",
+            "required_blocks": [],
+            "optional_blocks": [],
+        }
     info = SCRIPT_INFO.get(script_iso)
     canonical_name = info["canonical_name"] if info else ""
     return {

@@ -139,6 +139,7 @@ def resolve_executable(name: str) -> str:
     resolved = shutil.which(name)
     if resolved is None:
         fail(f"Required executable not found in PATH: {name}")
+    assert resolved is not None
 
     return resolved
 
@@ -303,9 +304,9 @@ def target_venv_is_active(*, repo_root: Path, venv_dir: str) -> bool:
     return True
 
 
-def git_alias_entries() -> list[tuple[str, str]]:
+def git_local_config_entries() -> list[tuple[str, str]]:
     """
-    Return the repository-local Git alias contract.
+    Return the repository-local Git configuration contract.
 
     Parameters
     ----------
@@ -317,63 +318,92 @@ def git_alias_entries() -> list[tuple[str, str]]:
         Ordered ``(config_key, config_value)`` entries to apply via
         ``git config --local``.
     """
-    venv_python = ".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python"
-    venv_pytest = ".venv/Scripts/pytest.exe" if os.name == "nt" else ".venv/bin/pytest"
-
     return [
+        ("core.repositoryformatversion", "0"),
+        ("core.filemode", "true"),
+        ("core.bare", "false"),
+        ("core.logallrefupdates", "true"),
         ("core.hooksPath", ".githooks"),
+        ("remote.origin.url", "git@github.com:marco0560/Fontshow.git"),
+        ("remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"),
+        ("init.defaultBranch", "main"),
+        ("branch.main.remote", "origin"),
+        ("branch.main.merge", "refs/heads/main"),
+        ("branch.main.vscode-merge-base", "origin/main"),
         ("commit.template", ".gitmessage"),
+        ("commit.gpgsign", "true"),
+        ("commit.verbose", "true"),
+        ("alias.st", "status"),
+        ("alias.co", "checkout"),
+        ("alias.br", "branch"),
+        ("alias.ci", "commit"),
+        ("alias.lg", "log --oneline --graph --decorate -50"),
         (
-            "alias.clean-artifacts",
-            (
-                "!f() { ROOT=$(git rev-parse --show-toplevel) || exit $?; "
-                f'"$ROOT/{venv_python}" "$ROOT/scripts/clean_repo.py" "$@"; '
-                "}; f"
-            ),
+            "alias.check",
+            "!bash -lc 'source .venv/bin/activate && black --check . && ruff check . && mypy . && pytest -q'",
+        ),
+        ("alias.fix", "!ruff check . --fix"),
+        (
+            "alias.clean-repo",
+            """!f() { python scripts/clean_repo.py "$@"; }; f""",
         ),
         (
             "alias.test-coverage",
-            (
-                "!f() { ROOT=$(git rev-parse --show-toplevel) || exit $?; "
-                f'"$ROOT/{venv_pytest}" --cov=fontshow --cov-report=term-missing "$@"; '
-                "}; f"
-            ),
+            """!f() { pytest --cov=fontshow --cov-report=term-missing "$@"; }; f""",
+        ),
+        (
+            "alias.test-html",
+            "!pytest --cov=fontshow --cov-report=html && xdg-open htmlcov/index.html",
         ),
         (
             "alias.new-decision",
-            (
-                "!f() { ROOT=$(git rev-parse --show-toplevel) || exit $?; "
-                f'"$ROOT/{venv_python}" "$ROOT/scripts/new_decision.py" "$@"; '
-                "}; f"
-            ),
+            """!f() { python scripts/new_decision.py "$@"; }; f""",
         ),
         (
             "alias.release-preview",
-            (
-                "!f() { ROOT=$(git rev-parse --show-toplevel) || exit $?; "
-                f'"$ROOT/{venv_python}" "$ROOT/scripts/release_preview.py" "$@"; '
-                "}; f"
-            ),
+            """!f() { python scripts/release_preview.py "$@"; }; f""",
         ),
+        (
+            "alias.gen-issues",
+            """!f() { rm -f issues.json &> /dev/null; timeout 10s gh api graphql -f query='query {repository(owner: "marco0560", name: "Fontshow") {issues(first: 100, states: OPEN, orderBy: {field: CREATED_AT, direction: ASC}) {totalCount pageInfo {hasNextPage endCursor} nodes {number title body url state createdAt updatedAt author {login} assignees(first: 20) {nodes {login}} labels(first: 20) {nodes {name}} milestone {number title} comments {totalCount}}}}}' > issues.json; }; f""",
+        ),
+        (
+            "alias.gen-miles",
+            """!f() { rm -f milestones.json &> /dev/null; timeout 10s gh api graphql -f query='query {repository(owner: "marco0560", name: "Fontshow") {milestones(first: 20, states: OPEN, orderBy: {field: DUE_DATE, direction: ASC}) {totalCount pageInfo {hasNextPage endCursor} nodes {number title description dueOn progressPercentage issues(first: 100) {totalCount pageInfo {hasNextPage endCursor} nodes {number title url state createdAt updatedAt labels(first: 20) { nodes {name}}}}}}}}' > milestones.json; }; f""",
+        ),
+        (
+            "alias.txz",
+            """!f(){ name="${1:-repo}"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; mkdir -p "$tmp/repo"; git ls-files -z | XZ_OPT="-9e -T0" tar --null -T - -cJf "$PWD/$name.tar.xz" --transform='s,^,repo/,'; }; f""",
+        ),
+        (
+            "alias.gen-zip-common",
+            """!f() { name="${1:-guidelines}"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; mkdir -p "$tmp/$name"; [ -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/chatgpt_guidelines.md" ] && cp -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/chatgpt_guidelines.md" "$tmp/$name/"; [ -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/patch_discipline.md" ] && cp -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/patch_discipline.md" "$tmp/$name/"; [ -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/anti-hallucination.md" ] && cp -f "$HOME/OneDrive/Documenti/Fontshow/Comuni/anti-hallucination.md" "$tmp/$name/"; XZ_OPT="-9e -T0" tar --sort=name --mtime="UTC 1970-01-01" --owner=0 --group=0 --numeric-owner -C "$tmp" -cJf "$PWD/$name.tar.xz" "$name"; }; f""",
+        ),
+        ("alias.safe-push", "!git fetch && git pull --ff-only && git push"),
         ("alias.release-audit", "!bash scripts/release_audit.sh"),
-        ("alias.release-check", "!bash scripts/release_system_selfcheck.sh"),
-        ("alias.rel", "!bash scripts/release_rel.sh"),
+        (
+            "alias.rel",
+            "!git fetch && git pull --ff-only && bash scripts/release_rel.sh && sleep 30s && git fetch && git pull --ff-only",
+        ),
+        (
+            "alias.re-clean",
+            "!git clean-repo && git gen-issues && git gen-miles && git gen-zip-repo",
+        ),
         (
             "alias.gen-boot-report",
-            (
-                "!f() { ROOT=$(git rev-parse --show-toplevel) || exit $?; "
-                f'"$ROOT/{venv_python}" "$ROOT/scripts/generate_bootstrap_audit_report.py" "$@"; '
-                "}; f"
-            ),
+            "!python scripts/generate_bootstrap_audit_report.py",
         ),
         (
             "alias.ver-boot-report",
-            (
-                "!f() { ROOT=$(git rev-parse --show-toplevel) || exit $?; "
-                f'"$ROOT/{venv_python}" "$ROOT/scripts/verify_bootstrap_audit_report.py" "$@"; '
-                "}; f"
-            ),
+            "!python scripts/verify_bootstrap_audit_report.py",
         ),
+        (
+            "alias.install-dev-codira",
+            '!python ../codira/scripts/install_first_party_packages.py --python "$VIRTUAL_ENV/bin/python" --include-core --core-extra semantic --include-bundle',
+        ),
+        ("pull.ff", "only"),
+        ("pull.rebase", "false"),
+        ("rebase.autostash", "true"),
     ]
 
 
@@ -453,7 +483,7 @@ def build_bootstrap_commands(
             ),
         )
 
-    for key, value in git_alias_entries():
+    for key, value in git_local_config_entries():
         commands.append(
             CommandSpec(
                 description=f"Apply local Git config: {key}",
