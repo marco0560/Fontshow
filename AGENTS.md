@@ -57,7 +57,140 @@ Always use the highest available level:
 
 Lower levels are fallback only.
 
-## 5. Core Principles
+## 5. Repository Map (Orientation Layer)
+
+This section provides a **high-level structural map** of the repository to guide initial navigation.
+
+It is **not a substitute for codira**.
+Use it only to:
+
+- identify relevant subsystems quickly
+- choose initial query scope (`--prefix`, modules)
+- understand responsibility boundaries
+
+### 5.1. Top-Level Layout
+
+| Path            | Purpose                                     |
+|-----------------|---------------------------------------------|
+| `src/fontshow/` | Main application code                       |
+| `tests/`        | Authoritative behavioral specification      |
+| `docs/`         | Architecture, contracts, and decisions      |
+| `scripts/`      | Dev, release, audit, and generation tooling |
+| `devtools/`     | Codex prompts and auxiliary workflows       |
+| `.github/`      | CI/CD pipelines                             |
+| `_archive/`     | Historical artifacts (NOT active code)      |
+
+### 5.2. Core Code Structure (`src/fontshow/`)
+
+#### Entry points
+
+| Path          | Role                                                           |
+|---------------|----------------------------------------------------------------|
+| `__main__.py` | CLI entry                                                      |
+| `cli/`        | Command implementations (`create_catalog`, `dump_fonts`, etc.) |
+
+#### Major subsystems
+
+| Subsystem   | Path           | Responsibility                                  |
+|-------------|----------------|-------------------------------------------------|
+| Catalog     | `catalog/`     | LaTeX document generation pipeline              |
+| Inventory   | `inventory/`   | Font metadata extraction, validation, inference |
+| Platform    | `platform/`    | OS/font discovery (fontconfig, runtime)         |
+| Preflight   | `preflight/`   | Environment validation and checks               |
+| LaTeX       | `latex/`       | Rendering, templates, policies                  |
+| Ontology    | `ontology/`    | Language/script normalization tables            |
+| Schema      | `schema/`      | JSON schema definitions (v1.3–v1.5)             |
+| Unicode     | `unicode/`     | Charset and range handling                      |
+| Core        | `core/`        | Shared utilities (logging, JSON, types)         |
+| Constants   | `constants/`   | System-wide constants and invariants            |
+| Diagnostics | `diagnostics/` | Warnings and reporting                          |
+
+### 5.3. CLI → Subsystem Mapping
+
+| CLI Command          | Primary Modules                                  |
+|----------------------|--------------------------------------------------|
+| `dump-fonts`         | `platform/`, `inventory/fonttools_extraction.py` |
+| `parse-inventory`    | `inventory/`, `schema/`, `ontology/`             |
+| `create-catalog`     | `catalog/`, `latex/`, `inventory/`               |
+| `validate-inventory` | `inventory/schema_validation.py`, `schema/`      |
+| `preflight`          | `preflight/`                                     |
+
+Use this mapping to **scope codira queries**.
+
+### 5.4. Tests (Authoritative Behavior)
+
+| Area              | Path               |
+|-------------------|--------------------|
+| CLI contracts     | `tests/cli/`       |
+| Preflight         | `tests/preflight/` |
+| Schema validation | `tests/schema/`    |
+| Core + subsystems | `tests/test_*.py`  |
+
+Rules:
+
+- Tests define real behavior
+- Prefer reading tests over implementation when unclear
+
+### 5.5. Documentation (Contracts & Design)
+
+| Area                  | Path                      |
+|-----------------------|---------------------------|
+| Architecture overview | `docs/architecture.md`    |
+| CLI contract          | `docs/cli-contract.md`    |
+| Pipeline              | `docs/pipeline.md`        |
+| Data dictionary       | `docs/data_dictionary.md` |
+| Decisions (ADR)       | `docs/decisions/`         |
+| Schema docs           | `docs/schema/`            |
+| Tool docs             | `docs/tools/`             |
+
+Use docs to understand **intended invariants**, not actual behavior.
+
+### 5.6. Scripts (Non-runtime tooling)
+
+| Category     | Examples                                              |
+|--------------|-------------------------------------------------------|
+| Release      | `release_rel.sh`, `release_audit.sh`                  |
+| Benchmarking | `benchmark.sh`, `benchmark_loadability_batches.sh`    |
+| Generators   | `generate_unicode_tables.py`, `update_schema_docs.py` |
+| Diagnostics  | `generate_*_report.py`                                |
+
+These are **support tools**, not core logic.
+
+### 5.7. High-Value Entry Points for Analysis
+
+When investigating a feature, start from:
+
+- CLI command implementation (`cli/*.py`)
+- Corresponding subsystem
+- Matching tests
+
+Example flow:
+
+```text
+CLI → subsystem → schema/ontology → tests
+```
+
+### 5.8. Anti-Orientation Pitfalls
+
+- `_archive/` is NOT active → ignore unless explicitly needed
+- `scripts/` are not authoritative for runtime behavior
+- Docs may lag behind tests → tests win
+- Multiple schema versions exist → confirm active version (v1.5)
+
+### 5.9. Usage with Codira
+
+This map is intended to:
+
+- guide `--prefix` selection
+- reduce search space before queries
+- identify correct subsystems
+
+It MUST NOT replace:
+
+- `codira index`
+- structured queries (`sym`, `ctx`, `calls`, ...)
+
+## 6. Core Principles
 
 - Deterministic: reproducible, verifiable outputs
 - Minimal: smallest correct change
@@ -70,7 +203,7 @@ Forbidden unless explicitly required:
 - API changes
 - stylistic churn
 
-## 6. Task Classification
+## 7. Task Classification
 
 A task is non-trivial if it involves:
 
@@ -79,7 +212,7 @@ A task is non-trivial if it involves:
 - ambiguity
 - potential behavioral impact
 
-## 7. Execution Workflow (MANDATORY)
+## 8. Execution Workflow (MANDATORY)
 
 For non-trivial tasks use `deterministic-change-workflow`
 
@@ -94,7 +227,7 @@ Do not skip steps.
 
 If planning is ambiguous → use `planning-refinement-gate`.
 
-## 8. Codira Exploration (MANDATORY)
+## 9. Codira Exploration (MANDATORY)
 
 If the repository provides `codira`:
 
@@ -122,7 +255,7 @@ If `codira` is available and not used:
 → report violation
 → restart using `codira-workflow`
 
-## 9. Skills Usage
+## 10. Skills Usage
 
 If a required skill exists in `~/.codex/skills`:
 
@@ -147,13 +280,13 @@ When a skill fully defines a workflow:
 → the skill replaces any equivalent procedural instructions in this document
 → this document defines only constraints and enforcement
 
-## 10. Change Strategy
+## 11 Change Strategy
 
 - Prefer small, atomic changes
 - One subsystem at a time
 - Separate refactor / feature / fix
 
-## 11. Validation Contract
+## 12. Validation Contract
 
 All checks MUST pass.
 
@@ -179,7 +312,7 @@ Rules:
 - do not weaken tests
 - do not ignore errors
 
-## 12. Test Contract
+## 13. Test Contract
 
 Tests define behavior.
 
@@ -196,7 +329,7 @@ Forbidden:
 
 If tests contradict assumptions → tests win.
 
-## 13. Strict Patch Discipline
+## 14. Strict Patch Discipline
 
 All changes MUST include:
 
@@ -214,7 +347,7 @@ If OLD block cannot be matched:
 
 → STOP
 
-## 14. Architecture Constraints
+## 15. Architecture Constraints
 
 Respect separation of concerns:
 
@@ -231,13 +364,13 @@ Rules:
 - do not bypass abstractions
 - do not duplicate logic
 
-## 15. Build & Artifacts
+## 16. Build & Artifacts
 
 - do not edit generated files
 - modify generators instead
 - keep build outputs consistent
 
-## 16. Coding Standards
+## 17. Coding Standards
 
 ### Python
 
@@ -255,13 +388,13 @@ NumPy style required:
 
 Use `numpy-docstring-enforcer`
 
-## 17. Error Handling
+## 18. Error Handling
 
 - fail fast
 - catch only expected exceptions
 - avoid broad `except Exception`
 
-## 18. Regression Policy
+## 19. Regression Policy
 
 Bugs include:
 
@@ -270,13 +403,13 @@ Bugs include:
 - CLI/output changes
 - optional feature regressions
 
-## 19. Debugging Discipline
+## 20. Debugging Discipline
 
 - reproduce first
 - identify root cause
 - avoid speculative fixes
 
-## 20. Commit Contract
+## 21. Commit Contract
 
 Use `commit-block-generator`
 
@@ -291,7 +424,7 @@ Body must include:
 
 Do NOT include toolchain status lines.
 
-## 21. Roadmap Snapshots
+## 22. Roadmap Snapshots
 
 Use `roadmap-snapshots` for:
 
@@ -304,7 +437,7 @@ Rules:
 - verify schema and completeness
 - do not infer missing fields
 
-## 22. Anti-Patterns (Forbidden)
+## 23. Anti-Patterns (Forbidden)
 
 - guessing code
 - blind scanning
@@ -312,7 +445,7 @@ Rules:
 - silent failures
 - skipping validation
 
-## 23. Session Stability
+## 24. Session Stability
 
 Monitor:
 
@@ -324,24 +457,24 @@ If detected:
 → STOP
 → Recommend reset
 
-## 24. Heuristics
+## 25. Heuristics
 
 - small changes can have wide effects
 - complex code encodes edge cases
 - correctness > elegance
 
-## 25. Default Interaction Mode
+## 26. Default Interaction Mode
 
 - minimal prose
 - command-oriented
 - no verbosity unless requested
 
-## 26. Meta Rule
+## 27. Meta Rule
 
 Do not reference this contract in responses.
 Do not explain compliance.
 Only execute.
 
-## 27. When in Doubt
+## 28. When in Doubt
 
 STOP and ask.
