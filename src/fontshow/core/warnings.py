@@ -29,11 +29,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from fontshow.core.types import Severity, WarningInfo
+    from fontshow.core.types import FontRef, InventoryDocument, Severity, WarningInfo
 
 
 def add_structured_warning(
-    container: dict[str, Any],
+    container: InventoryDocument | FontRef,
     *,
     code: str,
     message: str,
@@ -56,7 +56,7 @@ def add_structured_warning(
 
     Parameters
     ----------
-    container : dict[str, Any]
+    container : InventoryDocument | FontRef
         Inventory root or font entry receiving the warning. The mapping
         is modified in place.
     code : str

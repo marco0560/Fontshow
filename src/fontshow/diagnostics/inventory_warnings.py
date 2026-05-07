@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from fontshow.core.cli_utils import (
     log_info,
@@ -35,16 +35,18 @@ from fontshow.core.cli_utils import (
 from fontshow.core.types import FontRef, Severity
 
 if TYPE_CHECKING:
-    from fontshow.core.warnings import WarningInfo
+    from collections.abc import Mapping
+
+    from fontshow.core.types import WarningInfo
 
 
-def _format_font_identity(font: dict, index: int) -> str:
+def _format_font_identity(font: FontRef, index: int) -> str:
     """
     Build a human-readable identifier for a font entry.
 
     Parameters
     ----------
-    font : dict
+    font : FontRef
         Font entry object.
     index : int
         Index of the font entry in the inventory.
@@ -71,23 +73,21 @@ def _format_font_identity(font: dict, index: int) -> str:
     if path:
         name = Path(path).name
         if family is not None:
-            if subfamily is not None:
-                name += f" ({family} {subfamily})"
-            else:
-                name += f" ({family})"
+            name += f" ({family} {subfamily})"
+
         return f"{label} {name}"
 
     return label
 
 
-def _get_font_path_for_diagnostics(font: dict) -> str | None:
+def _get_font_path_for_diagnostics(font: FontRef) -> str | None:
     """
     Return the best-available font file path for diagnostics.
 
     Parameters
     ----------
-    font : dict
-        Font entry dictionary from the inventory.
+    font : FontRef
+        Font entry object from the inventory.
 
     Returns
     -------
@@ -155,7 +155,7 @@ def _collect_language_warnings(
         message = str(warning.get("message", ""))
 
         extra_raw = warning.get("extra")
-        extra: dict[str, Any] = extra_raw if isinstance(extra_raw, dict) else {}
+        extra: Mapping[str, object] = extra_raw if isinstance(extra_raw, dict) else {}
 
         def _extract_lang(msg: str) -> str:
             """
@@ -178,7 +178,8 @@ def _collect_language_warnings(
             return m.group(1) if m else ""
 
         if code == "language_normalized":
-            raw = extra.get("raw") or _extract_lang(message)
+            raw_value = extra.get("raw")
+            raw = raw_value if isinstance(raw_value, str) else _extract_lang(message)
             norm = extra.get("normalized")
             if isinstance(norm, str):
                 if raw:
@@ -190,13 +191,15 @@ def _collect_language_warnings(
             continue
 
         if code == "language_duplicate":
-            raw = extra.get("raw") or _extract_lang(message)
+            raw_value = extra.get("raw")
+            raw = raw_value if isinstance(raw_value, str) else _extract_lang(message)
             if raw:
                 lang_dups.append(raw)
             continue
 
         if code == "language_dropped":
-            raw = extra.get("raw") or _extract_lang(message)
+            raw_value = extra.get("raw")
+            raw = raw_value if isinstance(raw_value, str) else _extract_lang(message)
             if raw:
                 lang_dropped.append(raw)
             continue
@@ -215,13 +218,15 @@ def _collect_language_warnings(
 # ============================================================
 
 
-def _emit_verbose_warnings(enriched: dict[str, Any], *, enabled: bool = False) -> None:
+def _emit_verbose_warnings(
+    enriched: Mapping[str, object], *, enabled: bool = False
+) -> None:
     """
     Emit grouped warnings for verbose CLI mode.
 
     Parameters
     ----------
-    enriched : dict[str, Any]
+    enriched : JSONDict
         Enriched inventory structure containing a ``fonts`` list.
     enabled : bool, optional
         Whether verbose warning emission is enabled for the current CLI
@@ -250,9 +255,11 @@ def _emit_verbose_warnings(enriched: dict[str, Any], *, enabled: bool = False) -
         if not isinstance(font, dict):
             continue
 
-        ident = _format_font_identity(font, idx)
+        font_ref = cast("FontRef", font)
 
-        norm, dups, dropped, other = _collect_language_warnings(cast("FontRef", font))
+        ident = _format_font_identity(font_ref, idx)
+
+        norm, dups, dropped, other = _collect_language_warnings(font_ref)
 
         if norm:
             log_info(f"{ident} normalized_languages: {', '.join(sorted(set(norm)))}")

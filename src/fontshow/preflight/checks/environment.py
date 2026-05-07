@@ -24,8 +24,9 @@ pipeline.
 """
 
 from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import Severity
 from fontshow.preflight.checks.base import BaseCheck
-from fontshow.preflight.model import CheckResult, Severity
+from fontshow.preflight.model import CheckResult
 
 
 def detect_os() -> str:

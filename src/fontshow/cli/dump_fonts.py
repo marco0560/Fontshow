@@ -33,10 +33,11 @@ import platform
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, cast
+
+from fontTools.ttLib import TTLibError
 
 from fontshow import __version__
-from fontshow.constants.catalog import IS_LINUX
 from fontshow.core.cli_utils import (
     add_common_arguments,
     log_err,
@@ -51,7 +52,6 @@ from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.inventory.font_descriptor import build_font_descriptor
 from fontshow.inventory.fonttools_extraction import (
     FONTTOOLS_AVAILABLE,
-    TTLibError,
     detect_font_container,
     fonttools_extract_all,
 )
@@ -76,6 +76,10 @@ from fontshow.platform.font_discovery import (
     get_last_discovery_stats,
 )
 from fontshow.platform.fontconfig import fc_query_extract_many
+from fontshow.platform.runtime import IS_LINUX
+
+if TYPE_CHECKING:
+    from fontshow.core.types import FontRef, JSONDict
 
 
 def _positive_loadability_jobs(value: str) -> int:
@@ -168,7 +172,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def register_cli(parser) -> None:
+def register_cli(parser: argparse.ArgumentParser) -> None:
     """
     Register dump-fonts CLI on a parser.
 
@@ -190,7 +194,7 @@ def register_cli(parser) -> None:
     parser.set_defaults(func=main)
 
 
-def run_dump_fonts(args) -> int:
+def run_dump_fonts(args: argparse.Namespace) -> int:
     """
     Execute the dump-fonts pipeline.
 
@@ -231,7 +235,7 @@ def run_dump_fonts(args) -> int:
     cache_dir = args.cache_dir
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    inventory: dict[str, Any] = {
+    inventory: JSONDict = {
         "metadata": {
             "schema_version": SCHEMA_VERSION,
             "input_inventory_tool": "dump_fonts",
@@ -296,7 +300,7 @@ def run_dump_fonts(args) -> int:
     style_leak_details: list[str] = []
     warned_unloadable_fonts: set[Path] = set()
 
-    fontconfig_by_path: dict[Path, dict[str, Any]] = {}
+    fontconfig_by_path: dict[Path, JSONDict] = {}
     if IS_LINUX:
         try:
             fontconfig_by_path = fc_query_extract_many(
@@ -314,7 +318,7 @@ def run_dump_fonts(args) -> int:
             fontconfig_by_path = {}
 
     for font_path in font_files:
-        fontconfig: dict[str, Any] | None = None
+        fontconfig: JSONDict | None = None
         if IS_LINUX:
             fontconfig = fontconfig_by_path.get(font_path)
 
@@ -335,16 +339,17 @@ def run_dump_fonts(args) -> int:
             ]
 
         for face in faces:
+            face_ref = cast("FontRef", face)
             total_faces += 1
 
             # Skip non-OpenType / bitmap fonts
-            if is_non_opentype_face(face):
+            if is_non_opentype_face(face_ref):
                 skipped_non_opentype += 1
                 log_warn(f"skipping non-opentype font: {font_path}")
                 continue
 
             # Skip structurally unloadable faces (missing mandatory tables)
-            if is_structurally_unloadable_face(face):
+            if is_structurally_unloadable_face(face_ref):
                 skipped_structurally_unloadable += 1
                 if font_path not in warned_unloadable_fonts:
                     log_warn(f"skipping structurally-unloadable font: {font_path}")
@@ -457,7 +462,7 @@ def run_dump_fonts(args) -> int:
     return 0
 
 
-def _run_dump_fonts(args) -> int:
+def _run_dump_fonts(args: argparse.Namespace) -> int:
     """
     Injectable wrapper around the core dump-fonts implementation.
 
@@ -479,7 +484,7 @@ def _run_dump_fonts(args) -> int:
     return run_dump_fonts(args)
 
 
-def main(args) -> int:
+def main(args: argparse.Namespace) -> int:
     """
     CLI wrapper for dump-fonts.
 

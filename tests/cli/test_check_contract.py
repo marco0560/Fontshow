@@ -46,9 +46,9 @@ def test_preflight_checks_respect_contract(check_cls: type[BaseCheck]) -> None:
     None
     """
     # 1) Must inherit from BaseCheck
-    assert issubclass(
-        check_cls, BaseCheck
-    ), f"{check_cls.__name__} must inherit from BaseCheck"
+    assert issubclass(check_cls, BaseCheck), (
+        f"{check_cls.__name__} must inherit from BaseCheck"
+    )
 
     # 2) Must expose a non-empty check_id at class level (preferred)
     check_id = getattr(check_cls, "check_id", None)
@@ -82,6 +82,6 @@ def test_preflight_checks_respect_contract(check_cls: type[BaseCheck]) -> None:
     # 4) Instantiable without args, and returns a CheckResult
     check = check_cls()
     result = check.run()
-    assert isinstance(
-        result, CheckResult
-    ), f"{check_cls.__name__}.run() must return CheckResult (got: {type(result).__name__})"
+    assert isinstance(result, CheckResult), (
+        f"{check_cls.__name__}.run() must return CheckResult (got: {type(result).__name__})"
+    )

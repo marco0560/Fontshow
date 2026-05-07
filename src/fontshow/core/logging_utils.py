@@ -104,11 +104,12 @@ from __future__ import annotations
 import logging
 import os
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+    from fontshow.core.types import JSONDict
 
 # -----------------------------
 # TRACE level (custom)
@@ -116,6 +117,22 @@ if TYPE_CHECKING:
 
 TRACE_LEVEL_NUM = 5  # lower than DEBUG (10)
 logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
+
+
+class SupportsLog(Protocol):
+    """
+    Minimal logging protocol required by TRACE helpers.
+    """
+
+    def isEnabledFor(self, level: int) -> bool: ...
+
+    def log(
+        self,
+        level: int,
+        msg: str,
+        *args: object,
+        **kwargs: Any,
+    ) -> None: ...
 
 
 def _trace(self: logging.Logger, message: str, *args: Any, **kwargs: Any) -> None:
@@ -318,7 +335,7 @@ class _LogFacade:
         logger = self._logger()
         return bool(logger and logger.isEnabledFor(level))
 
-    def log(self, level: int, msg: str, *args, **kwargs) -> None:
+    def log(self, level: int, msg: str, *args: object, **kwargs: Any) -> None:
         """
         Emit a log record at arbitrary level.
 
@@ -666,7 +683,7 @@ def _raw_max_len() -> int:
         return 4096
 
 
-def _truncate_raw(value: str) -> tuple[str, dict]:
+def _truncate_raw(value: str) -> tuple[str, JSONDict]:
     """
     Truncate RAW TRACE payload if exceeding configured limit.
 
@@ -677,7 +694,7 @@ def _truncate_raw(value: str) -> tuple[str, dict]:
 
     Returns
     -------
-    tuple[str, dict]
+    tuple[str, JSONDict]
         (possibly_truncated_value, metadata)
 
     Notes
@@ -729,7 +746,7 @@ def _trace_format() -> str:
     return "human" if fmt == "human" else "json"
 
 
-def _format_trace_human(msg: str, extra: dict | None) -> str:
+def _format_trace_human(msg: str, extra: JSONDict | None) -> str:
     """
     Render structured TRACE event into human-readable format.
 
@@ -737,7 +754,7 @@ def _format_trace_human(msg: str, extra: dict | None) -> str:
     ----------
     msg : str
         Base TRACE message.
-    extra : dict | None
+    extra : JSONDict | None
         Structured TRACE payload.
 
     Returns
@@ -773,30 +790,30 @@ def _format_trace_human(msg: str, extra: dict | None) -> str:
 
 
 def log_trace_cat(
-    logger,
+    logger: SupportsLog,
     category: str,
     message: str,
     *,
-    extra: dict | None = None,
+    extra: JSONDict | None = None,
     raw: str | None = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """
     Emit a categorized TRACE log event.
 
     Parameters
     ----------
-    logger : logging.Logger
+    logger : SupportsLog
         Logger instance used for emission.
     category : str
         TRACE category identifier.
     message : str
         TRACE message.
-    extra : dict | None
+    extra : JSONDict | None
         Structured payload.
     raw : str | None
         Optional raw data payload subject to truncation.
-    **kwargs : Any
+    **kwargs : object
         Additional logging parameters.
 
     Returns

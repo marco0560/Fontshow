@@ -304,8 +304,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=(1, 2, 3),
         default=None,
         help=(
-            "Stop procedure after stage: "
-            "1=preflight, 2=dump-fonts, 3=parse-inventory"
+            "Stop procedure after stage: 1=preflight, 2=dump-fonts, 3=parse-inventory"
         ),
     )
     return parser
@@ -402,7 +401,7 @@ def _catalog_latex_steps(catalog_output: Path) -> list[Step]:
         Step(
             name=f"compile_{catalog_output.stem}_pass_{pass_index}",
             description=(
-                f"Compile {catalog_output.name} with LuaLaTeX " f"(pass {pass_index})."
+                f"Compile {catalog_output.name} with LuaLaTeX (pass {pass_index})."
             ),
             argv=argv,
         )

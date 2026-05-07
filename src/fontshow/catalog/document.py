@@ -786,7 +786,7 @@ def _ordered_script_candidates(font: CatalogFontEntryV12) -> list[ScriptISO]:
         seen.add(cleaned)
         normalized.append(ScriptISO(cleaned))
 
-    if _has_significant_private_use(dict(font)) and str(_PUA_SCRIPT) not in seen:
+    if _has_significant_private_use(font) and str(_PUA_SCRIPT) not in seen:
         normalized.append(_PUA_SCRIPT)
 
     if not normalized:
@@ -961,7 +961,7 @@ def _pua_specimen_for_rendered_script(font: CatalogFontEntryV12) -> str:
     cps = _specimen_collect_cmap(str(font.get("path", "")).strip(), None)
     if not cps:
         return ""
-    pua_specimen, _pua_strategy = _specimen_from_private_use(dict(font), cps)
+    pua_specimen, _pua_strategy = _specimen_from_private_use(font, cps)
     if isinstance(pua_specimen, str) and pua_specimen.strip():
         return _strip_ascii_control_chars(pua_specimen)
     return ""

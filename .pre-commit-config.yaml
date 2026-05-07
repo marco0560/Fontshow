@@ -1,15 +1,10 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 26.1.0
-    hooks:
-      - id: black
-        language_version: python3
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.0
+    rev: v0.15.12
     hooks:
       - id: ruff
-        args: [--fix]
+        args: [ --fix ]
+      - id: ruff-format
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -37,9 +32,9 @@ repos:
       - id: verify-cheatsheet-clean
         name: Verify cheatsheet.md is up to date
         entry: >
-          bash -c 'git diff --exit-code docs/cheatsheet.md ||
-          (echo "ERROR: docs/cheatsheet.md is out of date.
-          Run scripts/generate_cheatsheet.py and commit the result." && exit 1)'
+          bash -c 'git diff --exit-code docs/cheatsheet.md || (echo "ERROR:
+          docs/cheatsheet.md is out of date. Run scripts/generate_cheatsheet.py
+          and commit the result." && exit 1)'
         language: system
         pass_filenames: false
         always_run: true
@@ -54,10 +49,9 @@ repos:
       # Static typing (Fontshow)
       # ------------------------------------------------------------------
       - id: mypy
-        name: mypy (fontshow)
-        entry: python -m mypy src/fontshow
-        language: python
-        additional_dependencies: [mypy==1.19.1]
+        name: mypy
+        entry: uv run mypy src/fontshow
+        language: system
         pass_filenames: false
       - id: pyproject-lint
         name: pyproject structural lint

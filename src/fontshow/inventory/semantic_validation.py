@@ -299,8 +299,8 @@ def validate_language_codes(inventory: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def enforce_semantic_validation(
-    inventory: dict, strict: bool
-) -> tuple[bool, list[dict]]:
+    inventory: dict[str, Any], strict: bool
+) -> tuple[bool, list[dict[str, Any]]]:
     """
     Perform semantic validation.
 

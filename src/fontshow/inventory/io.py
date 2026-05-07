@@ -38,7 +38,7 @@ from fontshow.core.cli_utils import log_err, log_ok
 from fontshow.core.global_constants import SCHEMA_VERSION
 from fontshow.core.json_boundary import normalize_loaded_enums
 from fontshow.core.logging_utils import log, log_trace_cat
-from fontshow.core.types import Severity
+from fontshow.core.types import CatalogFontEntryV12, JSONDict, Severity
 from fontshow.inventory.metadata_processing import font_family
 from fontshow.inventory.schema_validation import _validate_inventory_schema_strict
 from fontshow.inventory.semantic_validation import enforce_semantic_validation
@@ -123,12 +123,12 @@ def group_fonts_by_family(
 
     Parameters
     ----------
-    fonts : list[dict]
+    fonts : list[CatalogFontEntryV12]
         List of font descriptor dictionaries.
 
     Returns
     -------
-    list[dict]
+    list[CatalogFontEntryV12]
         List containing a single representative font for each family.
         The first encountered font per family is preserved, and the
         order of first occurrence is maintained.
@@ -162,7 +162,7 @@ def group_fonts_by_family(
 # ============================================================
 
 
-def load_font_inventory(path: Path) -> list[dict]:
+def load_font_inventory(path: Path) -> list[CatalogFontEntryV12]:
     """
     Load and validate a Fontshow inventory file.
 
@@ -173,7 +173,7 @@ def load_font_inventory(path: Path) -> list[dict]:
 
     Returns
     -------
-    list[dict]
+    list[CatalogFontEntryV12]
         List of normalized font descriptor dictionaries.
 
     Raises
@@ -195,18 +195,20 @@ def load_font_inventory(path: Path) -> list[dict]:
     return fonts
 
 
-def _validate_fonts_structure(inventory: dict) -> tuple[bool, list]:
+def _validate_fonts_structure(
+    inventory: JSONDict,
+) -> tuple[bool, list[CatalogFontEntryV12]]:
     """
     Validate the structure of the `fonts` section in an inventory.
 
     Parameters
     ----------
-    inventory : dict
+    inventory : JSONDict
         Inventory dictionary expected to contain a `fonts` list.
 
     Returns
     -------
-    tuple[bool, list]
+    tuple[bool, list[CatalogFontEntryV12]]
         A pair (ok, fonts):
         - ok is True if the `fonts` section exists, is a non-empty list,
           and all elements are dictionaries.
@@ -230,7 +232,7 @@ def _validate_fonts_structure(inventory: dict) -> tuple[bool, list]:
     if any(not isinstance(f, dict) for f in fonts):
         return False, []
 
-    return True, fonts
+    return True, cast("list[CatalogFontEntryV12]", fonts)
 
 
 @overload
@@ -239,7 +241,7 @@ def _load_inventory(
     *,
     require_platform: bool = True,
     return_metadata: Literal[False] = False,
-) -> tuple[int, list]: ...
+) -> tuple[int, list[CatalogFontEntryV12]]: ...
 
 
 @overload
@@ -248,7 +250,7 @@ def _load_inventory(
     *,
     require_platform: bool = True,
     return_metadata: Literal[True],
-) -> tuple[int, list, dict[str, Any]]: ...
+) -> tuple[int, list[CatalogFontEntryV12], JSONDict]: ...
 
 
 def _load_inventory(
@@ -256,7 +258,10 @@ def _load_inventory(
     *,
     require_platform: bool = True,
     return_metadata: bool = False,
-) -> tuple[int, list] | tuple[int, list, dict[str, Any]]:
+) -> (
+    tuple[int, list[CatalogFontEntryV12]]
+    | tuple[int, list[CatalogFontEntryV12], JSONDict]
+):
     """
     Load and strictly validate an inventory file.
 
@@ -273,7 +278,7 @@ def _load_inventory(
 
     Returns
     -------
-    tuple[int, list] | tuple[int, list, dict[str, Any]]
+    tuple[int, list[CatalogFontEntryV12]] | tuple[int, list[CatalogFontEntryV12], JSONDict]
         A pair ``(exit_code, fonts)`` by default, or a triple
         ``(exit_code, fonts, metadata)`` when ``return_metadata`` is
         true:
@@ -302,17 +307,23 @@ def _load_inventory(
         with inv_path.open(encoding="utf-8") as f:
             inventory = json.load(f)
 
-        failure_result: tuple[int, list] | tuple[int, list, dict[str, Any]]
+        failure_result: (
+            tuple[int, list[CatalogFontEntryV12]]
+            | tuple[int, list[CatalogFontEntryV12], JSONDict]
+        )
         failure_result = (1, [], {}) if return_metadata else (1, [])
 
         if not isinstance(inventory, dict):
             log_err("Invalid inventory JSON: expected top-level object.")
             return failure_result
 
-        metadata = inventory.get("metadata", {}) or {}
-        if not isinstance(metadata, dict):
+        metadata_raw = inventory.get("metadata", {}) or {}
+
+        if not isinstance(metadata_raw, dict):
             log_err("Invalid inventory JSON: expected 'metadata' to be an object.")
             return failure_result
+
+        metadata = cast("JSONDict", metadata_raw)
 
         schema_version = metadata.get("schema_version")
         if schema_version != SCHEMA_VERSION:

@@ -115,7 +115,6 @@ Required workflow:
    - add or update deterministic tests;
    - avoid LaTeX-dependent tests.
 6. After each accepted batch, run:
-   - `black .`
    - `ruff check .`
    - `mypy fontshow`
    - `pytest -q`

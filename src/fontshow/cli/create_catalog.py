@@ -33,6 +33,7 @@ import platform
 import shlex
 import socket
 import sys
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -111,7 +112,7 @@ def _format_display_path(raw_path: str) -> str:
     return raw_path
 
 
-def _render_invocation_command(args) -> str:
+def _render_invocation_command(args: argparse.Namespace) -> str:
     """
     Reconstruct the create-catalog invocation from parsed arguments.
 
@@ -235,7 +236,7 @@ def _append_repeated_arguments(
         argv.extend([option, str(value)])
 
 
-def _build_generation_metadata(args) -> dict[str, str]:
+def _build_generation_metadata(args: argparse.Namespace) -> dict[str, str]:
     """
     Build first-page metadata for the generated catalog document.
 
@@ -260,7 +261,7 @@ def _build_generation_metadata(args) -> dict[str, str]:
 
 
 def _generate_test_output(
-    inventory_fonts: list[dict],
+    inventory_fonts: Sequence[Mapping[str, object]],
     limit: int | None = None,
     filter_test: bool = False,
 ) -> None:
@@ -269,7 +270,7 @@ def _generate_test_output(
 
     Parameters
     ----------
-    inventory_fonts : list[dict]
+    inventory_fonts : collections.abc.Sequence[collections.abc.Mapping[str, object]]
         Inventory font descriptors used to derive family-level test
         output and associated file paths.
     limit : int | None, optional
@@ -514,7 +515,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def register_cli(parser) -> None:
+def register_cli(parser: argparse.ArgumentParser) -> None:
     """
     Register create-catalog CLI arguments.
 
@@ -540,7 +541,7 @@ def register_cli(parser) -> None:
 # ------------------------------------------------------------------
 
 
-def _resolve_inventory_path(args) -> Path | None:
+def _resolve_inventory_path(args: argparse.Namespace) -> Path | None:
     """
     Resolve the inventory file path according to CLI semantics.
 
@@ -574,7 +575,7 @@ def _resolve_inventory_path(args) -> Path | None:
     return None
 
 
-def run_create_catalog(args) -> int:
+def run_create_catalog(args: argparse.Namespace) -> int:
     """
     Execute the create-catalog workflow.
 
@@ -721,7 +722,7 @@ def run_create_catalog(args) -> int:
     return 0
 
 
-def _run_create_catalog(args) -> int:
+def _run_create_catalog(args: argparse.Namespace) -> int:
     """
     Indirection layer for CLI testing.
 
@@ -743,7 +744,7 @@ def _run_create_catalog(args) -> int:
     return run_create_catalog(args)
 
 
-def main(args) -> int:
+def main(args: argparse.Namespace) -> int:
     """
     CLI entrypoint for create-catalog.
 

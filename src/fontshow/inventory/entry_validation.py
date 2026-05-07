@@ -25,22 +25,25 @@ catalog generation or other downstream stages.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fontshow.inventory.schema_accessors import get_font_metrics, get_font_typography
+
+if TYPE_CHECKING:
+    from fontshow.core.types import JSONDict
 
 # ============================================================
 # Helper functions
 # ============================================================
 
 
-def _validate_str_required(obj: dict, key: str, errors: list[str]) -> None:
+def _validate_str_required(obj: JSONDict, key: str, errors: list[str]) -> None:
     """
     Validate that a required field is a non-empty string.
 
     Parameters
     ----------
-    obj : dict
+    obj : JSONDict
         Entry dictionary being validated.
     key : str
         Required field name.
@@ -56,13 +59,15 @@ def _validate_str_required(obj: dict, key: str, errors: list[str]) -> None:
         errors.append(f"Missing or invalid '{key}'")
 
 
-def _validate_int_min(obj: dict, key: str, min_value: int, errors: list[str]) -> None:
+def _validate_int_min(
+    obj: JSONDict, key: str, min_value: int, errors: list[str]
+) -> None:
     """
     Validate that a required integer field is at least a minimum value.
 
     Parameters
     ----------
-    obj : dict
+    obj : JSONDict
         Entry dictionary being validated.
     key : str
         Required field name.
@@ -81,14 +86,14 @@ def _validate_int_min(obj: dict, key: str, min_value: int, errors: list[str]) ->
 
 
 def _validate_int_range(
-    obj: dict, key: str, lo: int, hi: int, errors: list[str]
+    obj: JSONDict, key: str, lo: int, hi: int, errors: list[str]
 ) -> None:
     """
     Validate that a required integer field falls within an inclusive range.
 
     Parameters
     ----------
-    obj : dict
+    obj : JSONDict
         Entry dictionary being validated.
     key : str
         Required field name.
@@ -108,13 +113,13 @@ def _validate_int_range(
         errors.append(f"Missing or invalid '{key}'")
 
 
-def _validate_obj_required(obj: dict, key: str, errors: list[str]) -> None:
+def _validate_obj_required(obj: JSONDict, key: str, errors: list[str]) -> None:
     """
     Validate that a required field is a dictionary object.
 
     Parameters
     ----------
-    obj : dict
+    obj : JSONDict
         Entry dictionary being validated.
     key : str
         Required field name.
@@ -130,13 +135,13 @@ def _validate_obj_required(obj: dict, key: str, errors: list[str]) -> None:
         errors.append(f"Missing or invalid '{key}'")
 
 
-def _validate_bool_required(obj: dict, key: str, errors: list[str]) -> None:
+def _validate_bool_required(obj: JSONDict, key: str, errors: list[str]) -> None:
     """
     Validate that a required field is a boolean.
 
     Parameters
     ----------
-    obj : dict
+    obj : JSONDict
         Entry dictionary being validated.
     key : str
         Required field name.
@@ -152,13 +157,13 @@ def _validate_bool_required(obj: dict, key: str, errors: list[str]) -> None:
         errors.append(f"Missing or invalid '{key}'")
 
 
-def _validate_number_required(obj: dict, key: str, errors: list[str]) -> None:
+def _validate_number_required(obj: JSONDict, key: str, errors: list[str]) -> None:
     """
     Validate that a required field is numeric.
 
     Parameters
     ----------
-    obj : dict
+    obj : JSONDict
         Entry dictionary being validated.
     key : str
         Required field name.
@@ -174,13 +179,13 @@ def _validate_number_required(obj: dict, key: str, errors: list[str]) -> None:
         errors.append(f"Missing or invalid '{key}'")
 
 
-def _validate_sample_text(entry: dict, errors: list[str]) -> None:
+def _validate_sample_text(entry: JSONDict, errors: list[str]) -> None:
     """
     Validate the normalized embedded sample-text block.
 
     Parameters
     ----------
-    entry : dict
+    entry : JSONDict
         Inventory entry being validated.
     errors : list[str]
         Mutable error accumulator updated in place.
@@ -210,13 +215,13 @@ def _validate_sample_text(entry: dict, errors: list[str]) -> None:
         errors.append("Missing or invalid 'sample_text.text'")
 
 
-def _validate_specimen(entry: dict, errors: list[str]) -> None:
+def _validate_specimen(entry: JSONDict, errors: list[str]) -> None:
     """
     Validate specimen-related fields of an inventory entry.
 
     Parameters
     ----------
-    entry : dict
+    entry : JSONDict
         Inventory entry being validated.
     errors : list[str]
         Mutable error accumulator updated in place.

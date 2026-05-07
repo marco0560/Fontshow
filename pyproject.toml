@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel", "setuptools-scm"]
+requires = ["setuptools>=68", "wheel", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,7 +9,9 @@ description = "Fontshow utilities"
 readme = "README.md"
 requires-python = ">=3.13"
 license = { text = "MIT" }
+
 authors = [{ name = "Marco Coppola" }]
+
 dependencies = [
     "jsonschema>=4.23.0,<5",
     "language-tags>=1.2.0,<2",
@@ -17,237 +19,154 @@ dependencies = [
     "fonttools>=4.61.0,<5",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "pre-commit",
+    "packaging",
+    "build",
+    "setuptools-scm>=8",
+]
+
+docs = [
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.7,<10",
+    "mkdocstrings[python]>=1,<2",
+    "mkdocs-awesome-pages-plugin>=2.10,<3",
+]
+
+[project.scripts]
+fontshow = "fontshow.__main__:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["fontshow*"]
+exclude = ["docs*", "node_modules*", "scripts*"]
+
 [tool.setuptools_scm]
 tag_regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+(?:\\.post\\d+)?)$"
 git_describe_command = "git describe --dirty --tags --long --match v*"
 version_scheme = "post-release"
 local_scheme = "no-local-version"
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["fontshow*"]
-exclude = ["node_modules*", "docs*", "scripts*"]
-
-[project.optional-dependencies]
-dev = [
-  "black",
-  "ruff",
-  "pre-commit",
-  "pytest",
-  "pytest-cov",
-  "packaging"
-]
-
-docs = [
-  "mkdocs>=1.6,<2",
-  "mkdocs-material>=9.7,<10",
-  "mkdocstrings[python]>=0.24,<1"
-]
-
-[project.scripts]
-fontshow = "fontshow.__main__:main"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-norecursedirs = [
-    ".git",
-    ".venv",
-    ".pytest_cache",
-    ".pytest_tmp",
-    ".pytest-basetemp",
-    ".tmp",
-    "pytest-cache-files-*",
-    "pytest-runtime",
-    "node_modules",
-]
-
-# -------------------------------------------------
-# Formatting
-# -------------------------------------------------
-
-[tool.black]
-line-length = 88
+# ============================================================
+# Ruff
+# ============================================================
 
 [tool.ruff]
 line-length = 88
 target-version = "py313"
 
-# -------------------------------------------------
-# Ruff linting policy
-# -------------------------------------------------
+extend-exclude = [
+    ".git",
+    ".mypy_cache",
+    ".mypy_cache_run",
+    ".mypy_cache_verify",
+    ".pre-commit-cache",
+    ".pytest_cache",
+    ".pytest_cache_local",
+    ".pytest_tmp",
+    ".pytest_diag*",
+    ".pt_*",
+    ".ruff_cache",
+    ".ruff_cache_run",
+    ".tmp-pytest",
+    ".tmp_pytest_run",
+    ".venv",
+    "build",
+    "dist",
+    "node_modules",
+    "pytest-cache-files-*",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
 
 [tool.ruff.lint]
-# Baseline: real bugs + imports
-# Phase 1 — Exception semantics
-# Phase 2 — Import/type boundary
-# Phase 3 — pathlib migration
-# Phase 4 — Bug-risk & correctness
-# Phase 5 — Return & logging correctness
-# ------------------------------------------------------------
-# Phase 6 — Robustness hardening (low-noise / high-value)
-#
-# Adds:
-#   PLR  → risky constructs (not complexity limits)
-#   RSE  → raise misuse (exception correctness)
-#   SIM  → logic simplification traps (can reveal hidden bugs)
-#   ICN  → import alias / shadowing correctness
-#   TCH  → typing boundary correctness helpers
-#
-# Goal:
-#   Catch remaining real defects without enabling high-noise families
-#   (docstrings, typing completeness, complexity, perf, style).
-# ------------------------------------------------------------
-# Phase 7 — Engineering strictness (maturity phase, still low-noise)
-#
-# Adds:
-#   S602, S607, S610, S701 → core subprocess / execution hygiene
-#   C901, PLR0912          → light complexity detection
-#   ERA                    → commented-out / dead code detection
-#
-# Goal:
-#   Improve maintainability and execution safety without opening
-#   style, typing, or documentation flood.
-# ------------------------------------------------------------
-
 select = [
-    "E",    # pycodestyle errors
-    "F",    # pyflakes
-    "I",    # import order / correctness
-    "UP",   # pyupgrade
+    "E",
+    "F",
+    "I",
+    "UP",
 
-    # ------------------------------------------------------------
-    # Phase 1 — Exception semantics
-    # ------------------------------------------------------------
     "BLE",
     "TRY",
     "EM",
     "S110",
     "S112",
 
-    # ------------------------------------------------------------
-    # Phase 2 — Import/type boundary
-    # ------------------------------------------------------------
     "TC",
 
-    # ------------------------------------------------------------
-    # Phase 3 — pathlib migration
-    # ------------------------------------------------------------
     "PTH",
 
-    # ------------------------------------------------------------
-    # Phase 4 — Bug-risk & correctness
-    # ------------------------------------------------------------
-    "B",      # flake8-bugbear (high-value correctness rules)
+    "B",
 
-    # ------------------------------------------------------------
-    # Phase 5 — Return & logging correctness
-    # ------------------------------------------------------------
-    "RET",    # return correctness
-    "LOG",    # logging misuse
+    "RET",
+    "LOG",
 
-    # ------------------------------------------------------------
-    # Phase 6 — Robustness hardening
-    # ------------------------------------------------------------
-    "PLR",    # pylint refactor (risky constructs only; complexity still ignored)
-    "RSE",    # raise misuse / exception correctness
-    "SIM",    # simplification rules revealing hidden logic issues
-    "ICN",    # import alias / shadowing correctness
-    "TCH",    # typing boundary correctness helpers
-    "PIE",    # potential import cycles (can reveal hidden import issues)
+    "PLR",
+    "RSE",
+    "SIM",
+    "ICN",
+    "TCH",
+    "PIE",
 
-    # ------------------------------------------------------------
-    # Phase 7 — Engineering strictness (NEW)
-    # ------------------------------------------------------------
-    "S602",   # subprocess with shell=True
-    "S607",   # partial path execution
-    "S610",   # subprocess execution hygiene
-    "S701",   # template autoescape (harmless if unused)
-    "C901",   # function complexity
-    "PLR0912",# too many branches
-    "ERA",    # commented-out code / dead code
-    "TD",     # type comment detection (encourage migration to inline typing)
+    "S602",
+    "S607",
+    "S610",
+    "S701",
+
+    "C901",
+    "PLR0912",
+
+    "ERA",
+    "TD",
 ]
 
 ignore = [
-    # ------------------------------------------------------------
-    # Typing strictness (future phase)
-    # ------------------------------------------------------------
+    "D",
+
     "ANN",
     "FBT",
 
-    # ------------------------------------------------------------
-    # Security — partially enforced
-    # (S101 and S108 disabled in tests via per-file-ignores)
-    # ------------------------------------------------------------
     "S603",
     "S324",
 
-    # ------------------------------------------------------------
-    # Complexity — postponed (except C901 + PLR0912 enabled in Phase 7)
-    # ------------------------------------------------------------
     "PLR0911",
     "PLR0915",
 
-    # ------------------------------------------------------------
-    # Magic values / design
-    # ------------------------------------------------------------
     "PLR2004",
 
-    # ------------------------------------------------------------
-    # Formatting (handled elsewhere)
-    # ------------------------------------------------------------
     "COM812",
     "E501",
 
-    # ------------------------------------------------------------
-    # Hygiene / TODO
-    # ------------------------------------------------------------
     "FIX002",
 
-    # ------------------------------------------------------------
-    # Performance / micro-refactors — still optional
-    # ------------------------------------------------------------
     "FURB",
     "PERF",
 
-    # ------------------------------------------------------------
-    # Bugbear rules intentionally ignored
-    # ------------------------------------------------------------
-    "B008",   # function calls in default args (used intentionally sometimes)
-    "B905",   # zip() strict — too noisy for now
+    "B008",
+    "B905",
 ]
 
-fixable = [
-    "I",      # import sorting
-    "UP",     # pyupgrade
-    "B007",   # unused loop variable → _var
-    "B009",   # getattr(const) → attribute
-]
+fixable = ["I", "UP", "B007", "B009"]
 
-unfixable = [
-    "E501",   # never auto-wrap long lines (TeX/regex risk)
-]
-
-[tool.ruff.lint.pydocstyle]
-convention = "numpy"
+unfixable = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = [
-    "S101",  # asserts allowed in tests
-    "S108",  # temp files allowed
-    "S607",  # CLI tests intentionally invoke entrypoints via PATH (portable & venv-safe)
-    "ARG",   # test functions often have unused arguments for fixtures or parameterization
-    "PLR",   # test functions often have more branches than normal code (e.g. subtests, parameterization)
-]
-"tests/test_charset_decoding.py" = [
-    "B017", # So only truly generic-failure tests allow broad Exception
-]
-"tests/helpers.py" = [
-    "PLR0913", # test helper requires multiple independent knobs
-]
+"tests/**/*.py" = ["S101", "S108", "S607", "ARG", "PLR"]
+
+"tests/test_charset_decoding.py" = ["B017"]
+
+"tests/helpers.py" = ["PLR0913"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 15
@@ -255,37 +174,75 @@ max-complexity = 15
 [tool.ruff.lint.pylint]
 max-branches = 18
 
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
 [tool.ruff.lint.isort]
 known-first-party = ["fontshow"]
 combine-as-imports = true
 
+# ============================================================
+# mypy
+# ============================================================
+
 [tool.mypy]
 python_version = "3.13"
+
+strict = true
+
 warn_unused_configs = true
-ignore_missing_imports = true
-check_untyped_defs = true
-disallow_untyped_defs = false
-warn_return_any = true
 warn_unused_ignores = true
-show_error_codes = true
-no_implicit_optional = true
 warn_redundant_casts = true
+warn_return_any = true
 warn_unreachable = true
 
-exclude = [
-    '^tests/',
-    '^scripts/test_',
+show_error_codes = true
+
+exclude = """(?x)(
+    ^build/
+  | ^dist/
+  | ^src/fontshow\\.egg-info/
+  | ^\\.mypy_cache(?:/|$)
+  | ^\\.mypy_cache_run(?:/|$)
+  | ^\\.mypy_cache_verify(?:/|$)
+  | ^\\.pre-commit-cache(?:/|$)
+  | ^\\.pytest_cache(?:/|$)
+  | ^\\.pytest_cache_local(?:/|$)
+  | ^\\.pytest_tmp(?:/|$)
+  | ^\\.pytest_diag[^/]*(?:/|$)
+  | ^\\.pt_[^/]+(?:/|$)
+  | ^\\.ruff_cache(?:/|$)
+  | ^\\.tmp-pytest(?:/|$)
+  | ^\\.tmp_pytest_run(?:/|$)
+  | ^pytest-cache-files-[^/]+(?:/|$)
+)"""
+
+[[tool.mypy.overrides]]
+module = ["fontTools.*", "jsonschema", "jsonschema.*"]
+ignore_missing_imports = true
+
+# ============================================================
+# pytest
+# ============================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+norecursedirs = [
+    ".git",
+    ".mypy_cache",
+    ".pre-commit-cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "build",
+    "dist",
+    "node_modules",
 ]
 
-[tool.vulture]
-paths = ["fontshow"]
-exclude = ["vulture_whitelist.py"]
-
-# -------------------------------------------------
-# Ruff formatter
-# -------------------------------------------------
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-line-ending = "lf"
+[dependency-groups]
+dev = [
+    "libcst>=1.8.6",
+    "pyupgrade>=3.21.2",
+    "types-jsonschema>=4.26.0.20260408",
+]

@@ -55,7 +55,7 @@ class BaseCheck(ABC):
     #: Whether this check is meant to be executed by the runner
     executable: bool = True
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: object) -> None:
         """
         Register concrete subclasses automatically when they are defined.
 

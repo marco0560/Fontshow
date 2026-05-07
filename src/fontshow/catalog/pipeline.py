@@ -23,6 +23,7 @@ This module belongs to the catalog domain layer and provides internal
 pipeline utilities used during catalog generation.
 """
 
+import argparse
 from collections.abc import Mapping, Sequence
 
 from fontshow.catalog.labels import primary_script
@@ -34,7 +35,7 @@ from fontshow.inventory.io import as_font_desc_list
 from fontshow.inventory.metadata_processing import font_family
 
 
-def _configure_test_fonts(args) -> set[str]:
+def _configure_test_fonts(args: argparse.Namespace) -> set[str]:
     """
     Build the effective TEST_FONTS set from CLI arguments.
 
@@ -77,7 +78,9 @@ def _configure_test_fonts(args) -> set[str]:
     return effective
 
 
-def _handle_list_test_fonts(test_fonts: set[str], inventory_fonts: list[dict]) -> int:
+def _handle_list_test_fonts(
+    test_fonts: set[str], inventory_fonts: list[CatalogFontEntryV12]
+) -> int:
     """
     Implement the --list-test-fonts CLI behavior.
 
@@ -85,7 +88,7 @@ def _handle_list_test_fonts(test_fonts: set[str], inventory_fonts: list[dict]) -
     ----------
     test_fonts : set[str]
         Effective set of test font names used for filtering.
-    inventory_fonts : list[dict]
+    inventory_fonts : list[CatalogFontEntryV12]
         Inventory font descriptors used as the authoritative source for
         exact family-name matching.
 
@@ -135,14 +138,14 @@ def _handle_list_test_fonts(test_fonts: set[str], inventory_fonts: list[dict]) -
     return 0
 
 
-def _run_inventory_diagnostics(fonts: list) -> None:
+def _run_inventory_diagnostics(fonts: Sequence[Mapping[str, object] | object]) -> None:
     """
     Run consistency diagnostics for inventory-based execution.
 
     Parameters
     ----------
-    fonts : list
-        List of validated font descriptor dictionaries.
+    fonts : Sequence[Mapping[str, object] | object]
+        Sequence of validated font descriptor dictionaries.
 
     Returns
     -------
@@ -161,11 +164,21 @@ def _run_inventory_diagnostics(fonts: list) -> None:
     total_fonts = 0
 
     for font in fonts:
-        if not isinstance(font, dict):
+        if not isinstance(font, Mapping):
+            continue
+        total_fonts += 1
+        coverage = font.get("coverage", {})
+        if not isinstance(coverage, Mapping):
             continue
 
-        total_fonts += 1
-        declared = set(font.get("coverage", {}).get("languages", []))
+        languages = coverage.get("languages", [])
+        if not isinstance(languages, list):
+            missing_lang_count += 1
+            continue
+
+        declared = {
+            lang for lang in languages if isinstance(lang, str) and lang.strip()
+        }
 
         if not declared:
             missing_lang_count += 1
@@ -192,7 +205,7 @@ def _run_inventory_diagnostics(fonts: list) -> None:
         )
 
 
-def _normalized_language_filters(args) -> tuple[str, ...]:
+def _normalized_language_filters(args: argparse.Namespace) -> tuple[str, ...]:
     """
     Normalize language selector arguments for deterministic filtering.
 
@@ -216,7 +229,7 @@ def _normalized_language_filters(args) -> tuple[str, ...]:
     return tuple(sorted(normalized))
 
 
-def _normalized_script_filters(args) -> tuple[str, ...]:
+def _normalized_script_filters(args: argparse.Namespace) -> tuple[str, ...]:
     """
     Normalize script selector arguments for deterministic filtering.
 
@@ -240,7 +253,7 @@ def _normalized_script_filters(args) -> tuple[str, ...]:
     return tuple(sorted(normalized))
 
 
-def _normalized_sort_keys(args) -> tuple[str, ...]:
+def _normalized_sort_keys(args: argparse.Namespace) -> tuple[str, ...]:
     """
     Normalize sort-mode arguments for deterministic catalog ordering.
 
@@ -402,7 +415,7 @@ def _catalog_sort_key(
 
 
 def _filter_and_prepare_fonts(
-    fonts: list[CatalogFontEntryV12], args, test_fonts: set[str]
+    fonts: list[CatalogFontEntryV12], args: argparse.Namespace, test_fonts: set[str]
 ) -> list[CatalogFontEntryV12]:
     """
     Filter and prepare fonts for catalog generation.

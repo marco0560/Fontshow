@@ -28,8 +28,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fontshow.core.logging_utils import log, log_trace_cat
+from fontshow.core.types import Severity
 from fontshow.preflight.checks import environment, font_discovery, latex, ontology
-from fontshow.preflight.model import CheckResult, PreflightResult, Severity
+from fontshow.preflight.model import CheckResult, PreflightResult
 from fontshow.preflight.registry import get_registered_checks
 
 if TYPE_CHECKING:

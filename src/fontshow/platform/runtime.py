@@ -29,6 +29,7 @@ the runtime environment.
 
 import sys
 
+from fontshow.core.types import JSONDict
 from fontshow.inventory.platform_metadata import collect_platform_metadata
 
 if sys.platform == "win32":
@@ -44,15 +45,15 @@ else:
     IS_LINUX = False
 
 
-def _inventory_platform_mismatch(inv_env: dict, runtime: dict) -> list[str]:
+def _inventory_platform_mismatch(inv_env: JSONDict, runtime: JSONDict) -> list[str]:
     """
     Compare inventory and runtime platform metadata and report mismatches.
 
     Parameters
     ----------
-    inv_env : dict
+    inv_env : JSONDict
         Inventory run-environment metadata.
-    runtime : dict
+    runtime : JSONDict
         Runtime platform metadata collected from the current system.
 
     Returns
@@ -103,13 +104,13 @@ def _inventory_platform_mismatch(inv_env: dict, runtime: dict) -> list[str]:
     return mismatches
 
 
-def _enforce_platform(inv_env: dict) -> tuple[bool, list[str]]:
+def _enforce_platform(inv_env: JSONDict) -> tuple[bool, list[str]]:
     """
     Enforce inventory/platform compatibility.
 
     Parameters
     ----------
-    inv_env : dict
+    inv_env : JSONDict
         Inventory run-environment metadata.
 
     Returns

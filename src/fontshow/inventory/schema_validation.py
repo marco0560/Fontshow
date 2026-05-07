@@ -28,7 +28,7 @@ from jsonschema import ValidationError, validate
 
 from fontshow.core.global_constants import SCHEMA_VERSION
 from fontshow.core.logging_utils import log, log_trace_cat
-from fontshow.core.types import Severity
+from fontshow.core.types import InventoryDocument, JSONDict, Severity
 
 SUPPORTED_SCHEMA_VERSIONS = {SCHEMA_VERSION}
 
@@ -50,14 +50,14 @@ def _schema_resource_name(schema_version: str) -> str:
     return f"inventory_v{schema_version.replace('.', '_')}.json"
 
 
-def _validate_inventory_schema_strict(data: dict) -> None:
+def _validate_inventory_schema_strict(data: InventoryDocument | JSONDict) -> None:
     """
     Perform strict schema validation.
 
     Parameters
     ----------
-    data : dict
-        Inventory data.
+    data : InventoryDocument | JSONDict
+        Inventory data to validate.
 
     Returns
     -------
@@ -81,7 +81,15 @@ def _validate_inventory_schema_strict(data: dict) -> None:
     propagate low-level JSON decoding failures if the bundled schema
     file is malformed.
     """
-    schema_version = data.get("metadata", {}).get("schema_version")
+    metadata = data.get("metadata")
+
+    if not isinstance(metadata, dict):
+        schema_version = None
+    else:
+        raw_schema_version = metadata.get("schema_version")
+        schema_version = (
+            raw_schema_version if isinstance(raw_schema_version, str) else None
+        )
 
     log_trace_cat(
         log,
@@ -148,23 +156,22 @@ def _validate_inventory_schema_strict(data: dict) -> None:
         raise ValueError(msg) from exc
 
 
-def validate_inventory_schema(data: dict) -> list[dict]:
+def validate_inventory_schema(data: InventoryDocument | JSONDict) -> list[JSONDict]:
     """
     Validate inventory structure and return structured warnings.
 
     Parameters
     ----------
-    data : dict
+    data : InventoryDocument | JSONDict
         Inventory document to validate.
 
     Returns
     -------
-    list[dict]
+    list[JSONDict]
         Structured schema warnings, empty if valid.
 
     Raises
     ------
-    None
         This function is backward-compatible and MUST NOT raise.
         ValueError is handled internally
 
@@ -173,9 +180,17 @@ def validate_inventory_schema(data: dict) -> list[dict]:
     Missing or unknown schema versions are converted into structured
     error records instead of exceptions.
     """
-    warnings: list[dict] = []
+    warnings: list[JSONDict] = []
 
-    schema_version = data.get("metadata", {}).get("schema_version")
+    metadata = data.get("metadata")
+
+    if not isinstance(metadata, dict):
+        schema_version = None
+    else:
+        raw_schema_version = metadata.get("schema_version")
+        schema_version = (
+            raw_schema_version if isinstance(raw_schema_version, str) else None
+        )
 
     log_trace_cat(
         log,

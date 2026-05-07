@@ -24,12 +24,14 @@ This module belongs to the **inventory subsystem** and performs the
 metadata enrichment stage used during the `parse-inventory` workflow.
 """
 
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 
 from fontshow.core.cli_utils import log_info
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.core.types import (
     CatalogFontEntryV12,
+    FontRef,
+    JSONDict,
     LanguageInferenceInfo,
     Severity,
     normalize_script_iso,
@@ -48,14 +50,53 @@ from fontshow.unicode.charset_ranges import (
     unicode_blocks_from_charset_ranges,
 )
 
+
+class CharsetBlockCountMismatch(TypedDict):
+    """
+    Count mismatch for one Unicode block.
+
+    Parameters
+    ----------
+    block : str
+        Unicode block name whose counts differ.
+    canonical_count : int
+        Count from canonical Unicode block coverage.
+    charset_count : int
+        Count from charset-derived Unicode block coverage.
+    """
+
+    block: str
+    canonical_count: int
+    charset_count: int
+
+
+class CharsetBlockMismatchDetails(TypedDict):
+    """
+    Structured mismatch details for canonical and charset-derived blocks.
+
+    Parameters
+    ----------
+    canonical_only_blocks : list[str]
+        Blocks present only in canonical Unicode block coverage.
+    charset_only_blocks : list[str]
+        Blocks present only in charset-derived Unicode block coverage.
+    differing_counts : list[CharsetBlockCountMismatch]
+        Blocks present in both sources with different counts.
+    """
+
+    canonical_only_blocks: list[str]
+    charset_only_blocks: list[str]
+    differing_counts: list[CharsetBlockCountMismatch]
+
+
 # ============================================================
 # Helper: normalize & process language metadata
 # ============================================================
 
 
 def _process_language_metadata(
-    font: dict[str, Any],
-    coverage: dict[str, Any],
+    font: FontRef,
+    coverage: JSONDict,
     *,
     strict_bcp47: bool,
 ) -> None:
@@ -64,9 +105,9 @@ def _process_language_metadata(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry being enriched with warning records.
-    coverage : dict[str, Any]
+    coverage : JSONDict
         Coverage block whose language and script fields are normalized in
         place.
     strict_bcp47 : bool
@@ -123,8 +164,10 @@ def _process_language_metadata(
 
     # --- dropped / normalized / duplicate
     for dropped_item in result["dropped"]:
-        raw: str = dropped_item["raw"]
-        reason: str = dropped_item["reason"]
+        raw = dropped_item.get("raw")
+        reason = dropped_item.get("reason")
+        if raw is None or reason is None:
+            continue
 
         if reason == "variant_stripped":
             base = _language_base_tag(raw)
@@ -174,8 +217,8 @@ def _process_language_metadata(
 
 
 def _debug_dump_inference(
-    font: dict[str, Any],
-    coverage: dict[str, Any],
+    font: FontRef,
+    coverage: JSONDict,
     inferred_languages_map: dict[str, "LanguageInferenceInfo"],
     inferred_languages: list[str],
 ) -> None:
@@ -184,9 +227,9 @@ def _debug_dump_inference(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry whose inference state is being inspected.
-    coverage : dict[str, Any]
+    coverage : JSONDict
         Coverage block used during inference.
     inferred_languages_map : dict[str, LanguageInferenceInfo]
         Mapping of inferred language candidates and their evidence.
@@ -258,7 +301,7 @@ def _debug_dump_inference(
 def _charset_block_mismatch_details(
     canonical_blocks: dict[str, int],
     charset_blocks: dict[str, int],
-) -> dict[str, Any]:
+) -> CharsetBlockMismatchDetails:
     """
     Compute deterministic mismatch details between two block-coverage maps.
 
@@ -271,7 +314,7 @@ def _charset_block_mismatch_details(
 
     Returns
     -------
-    dict[str, Any]
+    CharsetBlockMismatchDetails
         Structured mismatch summary containing blocks present only in one
         source and blocks whose counts differ between sources.
 
@@ -284,7 +327,7 @@ def _charset_block_mismatch_details(
     canonical_names = set(canonical_blocks)
     charset_names = set(charset_blocks)
 
-    differing_counts = [
+    differing_counts: list[CharsetBlockCountMismatch] = [
         {
             "block": block,
             "canonical_count": canonical_blocks[block],
@@ -302,8 +345,8 @@ def _charset_block_mismatch_details(
 
 
 def _warn_on_charset_block_mismatch(
-    font: dict[str, Any],
-    coverage: dict[str, Any],
+    font: FontRef,
+    coverage: JSONDict,
     *,
     font_path: str | None,
 ) -> None:
@@ -312,9 +355,9 @@ def _warn_on_charset_block_mismatch(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry updated with structured warnings.
-    coverage : dict[str, Any]
+    coverage : JSONDict
         Coverage block containing canonical and charset-derived block maps.
     font_path : str | None
         Filesystem path included in diagnostic payloads.
@@ -368,8 +411,8 @@ def _warn_on_charset_block_mismatch(
 
 
 def _warn_on_charset_script_mismatch(
-    font: dict[str, Any],
-    coverage: dict[str, Any],
+    font: FontRef,
+    coverage: JSONDict,
     inferred_scripts: list[str],
     *,
     font_path: str | None,
@@ -379,9 +422,9 @@ def _warn_on_charset_script_mismatch(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry updated with structured warnings.
-    coverage : dict[str, Any]
+    coverage : JSONDict
         Coverage block that may contain charset-derived script coverage.
     inferred_scripts : list[str]
         Canonical inferred scripts ordered by confidence.
@@ -444,17 +487,15 @@ def _warn_on_charset_script_mismatch(
     )
 
 
-def _process_charset(
-    font: dict[str, Any], coverage: dict[str, Any], font_path: str | None
-) -> None:
+def _process_charset(font: FontRef, coverage: JSONDict, font_path: str | None) -> None:
     """
     Decode and normalize Fontconfig charset metadata.
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry being enriched with charset-derived warnings.
-    coverage : dict[str, Any]
+    coverage : JSONDict
         Coverage block updated in place with normalized charset,
         Unicode-block, and script-coverage information.
     font_path : str | None
@@ -581,8 +622,8 @@ def _process_charset(
 
 
 def _infer_and_attach_metadata(
-    font: dict[str, Any],
-    coverage: dict[str, Any],
+    font: FontRef,
+    coverage: JSONDict,
     *,
     level: str,
     font_path: str | None,
@@ -592,9 +633,9 @@ def _infer_and_attach_metadata(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry updated in place with inference results.
-    coverage : dict[str, Any]
+    coverage : JSONDict
         Coverage block supplying declared metadata and derived Unicode
         statistics.
     level : str

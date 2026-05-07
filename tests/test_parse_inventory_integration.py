@@ -266,9 +266,7 @@ def test_parse_inventory_reconciles_primary_script_with_internal_specimen(
     def _fake_specimen(font, coverage, font_path):
         _ = coverage, font_path
         typography = font.setdefault("typography", {})
-        typography["specimen_text"] = (
-            "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ ٱلشَّمْسِ إِذْ بَزَغَتْ"
-        )
+        typography["specimen_text"] = "صِفْ خَلْقَ خَوْدٍ كَمِثْلِ ٱلشَّمْسِ إِذْ بَزَغَتْ"
         typography["specimen_strategy"] = "internal"
         typography["specimen_glyph_count"] = 24
         typography["specimen_rejection_reason"] = None

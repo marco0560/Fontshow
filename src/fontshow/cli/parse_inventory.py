@@ -29,8 +29,9 @@ import argparse
 import json
 import sys
 from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 from fontshow import __version__
 from fontshow.catalog.labels import primary_script
@@ -45,7 +46,7 @@ from fontshow.core.global_constants import SCHEMA_VERSION
 from fontshow.core.json_boundary import normalize_loaded_enums
 from fontshow.core.json_format import dumps_pretty
 from fontshow.core.logging_utils import log, log_trace_cat
-from fontshow.core.types import ScriptISO
+from fontshow.core.types import FontRef, InventoryDocument, JSONDict, ScriptISO
 from fontshow.diagnostics.inventory_warnings import _emit_verbose_warnings
 from fontshow.inventory.io import _validate_fonts_container
 from fontshow.inventory.latex_validation_metadata import (
@@ -62,7 +63,10 @@ from fontshow.inventory.metadata_processing import (
     _process_language_metadata,
 )
 from fontshow.inventory.platform_metadata import collect_platform_metadata
-from fontshow.inventory.schema_accessors import ensure_v13_typography
+from fontshow.inventory.schema_accessors import (
+    MutableFontMapping,
+    ensure_v13_typography,
+)
 from fontshow.inventory.schema_validation import _validate_inventory_schema_strict
 from fontshow.inventory.script_analysis import infer_scripts
 from fontshow.inventory.specimens import _specimen_generate_for_font
@@ -288,8 +292,8 @@ def _preferred_specimen_primary(
 
 
 def _reconcile_primary_script_with_specimen(
-    font: dict[str, Any],
-    coverage: dict[str, Any],
+    font: FontRef,
+    coverage: JSONDict,
     *,
     level: str,
 ) -> None:
@@ -320,7 +324,7 @@ def _reconcile_primary_script_with_specimen(
     specimen-derived script to the explicit primary-script fields and
     reorders the explicit script lists accordingly.
     """
-    typography = ensure_v13_typography(font)
+    typography = ensure_v13_typography(cast("MutableFontMapping", font))
     specimen = typography.get("specimen_text")
     if not isinstance(specimen, str) or not specimen.strip():
         return
@@ -385,19 +389,19 @@ def _reconcile_primary_script_with_specimen(
 
 
 def parse_inventory(
-    data: dict[str, Any],
+    data: InventoryDocument,
     level: str,
     *,
     strict_bcp47: bool = False,
     loadability_jobs: int = DEFAULT_LOADABILITY_JOBS,
-) -> dict[str, Any]:
+) -> InventoryDocument:
     """
     Parse and enrich a font inventory structure.
 
     Parameters
     ----------
-    data : dict[str, Any]
-        Raw inventory structure to validate, enrich, and update in place.
+    data : InventoryDocument
+        Inventory root document to validate, enrich, and update in place.
     level : str
         Inference aggressiveness level forwarded to metadata processing.
     strict_bcp47 : bool, optional
@@ -409,37 +413,31 @@ def parse_inventory(
 
     Returns
     -------
-    dict[str, Any]
-        Enriched inventory structure with updated metadata and per-font
-        inferred fields.
-
-    Raises
-    ------
-    ValueError
-        Propagated when schema validation or downstream metadata helpers
-        reject the input inventory.
+    InventoryDocument
+        Enriched inventory document.
 
     Notes
     -----
-    Refactored version:
-    - reduced complexity
-    - separated concerns
-    - behavior unchanged
-    The function validates the input first, then processes charset,
-    inference, language metadata, and specimen generation for each font
-    before updating top-level inventory metadata.
+    This function operates on the inventory root. Individual elements of
+    ``data["fonts"]`` are `FontRef` entries.
     """
     _apply_schema_validation(data)
+
+    fonts = data["fonts"]
+
+    metadata = data.get("metadata", {})
 
     log.info(
         "font inventory parsing started",
         extra={
-            "schema_version": data.get("schema_version"),
-            "fonts_count": len(data.get("fonts", [])),
+            "schema_version": (
+                metadata.get("schema_version") if isinstance(metadata, dict) else None
+            ),
+            "fonts_count": len(fonts),
         },
     )
 
-    for font in data.get("fonts", []):
+    for font in fonts:
         font_path = font.get("path")
         family = font.get("family")
         style = font.get("subfamily")
@@ -449,7 +447,7 @@ def parse_inventory(
             extra={"font_path": font_path, "family": family, "style": style},
         )
 
-        coverage: dict[str, Any] = font.get("coverage", {}) or {}
+        coverage: JSONDict = font["coverage"]
 
         _process_charset(font, coverage, font_path)
 
@@ -472,7 +470,7 @@ def parse_inventory(
             coverage,
             level=level,
         )
-        typography = ensure_v13_typography(font)
+        typography = ensure_v13_typography(cast("MutableFontMapping", font))
         script = primary_script(font)
         script_iso = script.upper() if isinstance(script, str) and script else ""
         lang, fontspec_opts = _get_render_policy(ScriptISO(script_iso))
@@ -505,17 +503,14 @@ def parse_inventory(
     metadata.setdefault("input_inventory_tool", "parse_font_inventory")
     metadata.setdefault("input_inventory_tool_version", __version__)
     validation = metadata.setdefault("validation", {})
-    if not isinstance(validation, dict):
-        validation = {}
-        metadata["validation"] = validation
     validation["lualatex"] = collect_latex_validation_metadata()
     probe_and_persist_lualatex_render_variants(
-        data.get("fonts", []),
+        fonts,
         validation_metadata=validation["lualatex"],
         jobs=loadability_jobs,
     )
     loadability_errors = validate_persisted_lualatex_loadability(
-        data.get("fonts", []),
+        fonts,
         validation["lualatex"],
     )
     if loadability_errors:
@@ -526,7 +521,7 @@ def parse_inventory(
 
     log.info(
         "font inventory parsing completed",
-        extra={"fonts_processed": len(data.get("fonts", []))},
+        extra={"fonts_processed": len(fonts)},
     )
 
     return data
@@ -610,7 +605,7 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def register_cli(parser) -> None:
+def register_cli(parser: argparse.ArgumentParser) -> None:
     """
     Register parse-inventory CLI arguments.
 
@@ -682,14 +677,14 @@ def _default_write_text(p: Path, s: str) -> None:
 
 
 def _list_missing_language_coverage(
-    data: dict[str, Any], *, show_all: bool = False
+    data: InventoryDocument, *, show_all: bool = False
 ) -> int:
     """
     List fonts whose declared language coverage is missing.
 
     Parameters
     ----------
-    data : dict[str, Any]
+    data : InventoryDocument
         Inventory root containing a `fonts` list.
 
     show_all : bool, optional
@@ -708,14 +703,9 @@ def _list_missing_language_coverage(
     uses family name plus path to disambiguate duplicates.
     """
     fonts = data.get("fonts", [])
-    if not isinstance(fonts, list):
-        log_err("invalid inventory: missing or invalid 'fonts' list")
-        return 1
 
     missing: list[tuple[str, str]] = []
     for font in fonts:
-        if not isinstance(font, dict):
-            continue
         coverage = font.get("coverage")
         coverage_dict = coverage if isinstance(coverage, dict) else {}
         languages = coverage_dict.get("languages")
@@ -739,12 +729,12 @@ def _list_missing_language_coverage(
 
 
 def run_parse_font_inventory(
-    args,
+    args: argparse.Namespace,
     *,
-    parse_inventory_fn=parse_inventory,
-    validate_inventory_fn=validate_inventory,
-    read_text_fn=None,
-    write_text_fn=None,
+    parse_inventory_fn: Callable[..., InventoryDocument] = parse_inventory,
+    validate_inventory_fn: Callable[[InventoryDocument], int] = validate_inventory,
+    read_text_fn: Callable[[Path], str] | None = None,
+    write_text_fn: Callable[[Path, str], None] | None = None,
 ) -> int:
     """
     Run the internal parse-font-inventory CLI flow.
@@ -827,27 +817,20 @@ def run_parse_font_inventory(
 
     log.debug("inference level enabled", extra={"infer_level": args.infer_level})
 
-    data: dict[str, Any] = json.loads(read_text_fn(input_path))
-    normalize_loaded_enums(data)
+    raw_data: JSONDict = json.loads(read_text_fn(input_path))
+    normalize_loaded_enums(raw_data)
     log_trace_cat(
         log,
         "io",
         "inventory JSON loaded",
         extra={
-            "fonts": len(data.get("fonts", [])),
-            "schema_version": data.get("metadata", {}).get("schema_version"),
+            "fonts": len(raw_data.get("fonts", [])),
+            "schema_version": raw_data.get("metadata", {}).get("schema_version"),
         },
     )
 
-    metadata = data.get("metadata")
-    if not isinstance(metadata, dict):
-        log_err("invalid inventory: missing or invalid 'metadata' object")
-        return 1
-
-    actual_env = metadata.get("run_environment")
-    if not isinstance(actual_env, dict):
-        log_err("invalid inventory: missing or invalid 'metadata.run_environment'")
-        return 1
+    metadata = raw_data["metadata"]
+    actual_env = metadata["run_environment"]
 
     expected_env = collect_platform_metadata()
     if actual_env != expected_env:
@@ -856,14 +839,15 @@ def run_parse_font_inventory(
         )
         return 1
     try:
-        _validate_inventory_schema_strict(data)
+        _validate_inventory_schema_strict(raw_data)
     except ValueError as exc:
         log_err(f"schema validation failed: {exc}")
         return 1
-    fonts = _validate_fonts_container(data)
+    fonts = _validate_fonts_container(raw_data)
     if fonts is None:
         return 1
 
+    data = cast("InventoryDocument", raw_data)
     if args.validate_inventory:
         log_trace_cat(
             log,
@@ -966,7 +950,7 @@ def run_parse_font_inventory(
     return 0
 
 
-def _run_parse_inventory(args) -> int:
+def _run_parse_inventory(args: argparse.Namespace) -> int:
     """
     Indirection layer for CLI testing.
 
@@ -988,7 +972,7 @@ def _run_parse_inventory(args) -> int:
     return run_parse_font_inventory(args)
 
 
-def main(args) -> int:
+def main(args: argparse.Namespace) -> int:
     """
     Public CLI entrypoint (kept stable).
 

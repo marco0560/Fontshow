@@ -37,7 +37,7 @@ from pathlib import Path
 from typing import Any
 
 from fontshow.constants.runtime import SUBPROCESS_TIMEOUT_SECONDS
-from fontshow.core.types import ScriptISO
+from fontshow.core.types import FontRef, ScriptISO
 from fontshow.inventory.schema_accessors import (
     get_font_lualatex_loadability,
     get_font_typography,
@@ -157,17 +157,17 @@ def _loadability_identity(font: Mapping[str, Any]) -> str:
 
 
 def validate_persisted_lualatex_loadability(
-    fonts: Sequence[Mapping[str, Any]],
-    validation_metadata: Mapping[str, Any],
+    fonts: Sequence[Mapping[str, object]],
+    validation_metadata: Mapping[str, object],
 ) -> list[str]:
     """
     Validate that persisted LuaLaTeX loadability is catalog-ready.
 
     Parameters
     ----------
-    fonts : collections.abc.Sequence[collections.abc.Mapping[str, Any]]
+    fonts : collections.abc.Sequence[collections.abc.Mapping[str, object]]
         Inventory font entries to inspect.
-    validation_metadata : collections.abc.Mapping[str, Any]
+    validation_metadata : collections.abc.Mapping[str, object]
         Current ``metadata.validation.lualatex`` block whose runtime
         fingerprint is authoritative for the inventory.
 
@@ -219,13 +219,13 @@ def validate_persisted_lualatex_loadability(
     return errors
 
 
-def _probe_text_from_font(font: MutableMapping[str, Any]) -> str:
+def _probe_text_from_font(font: FontRef) -> str:
     """
     Select a deterministic one-character probe glyph for a font entry.
 
     Parameters
     ----------
-    font : collections.abc.MutableMapping[str, Any]
+    font : FontRef
         Inventory font entry whose typography metadata is inspected.
 
     Returns
@@ -708,7 +708,7 @@ def _resolve_candidate_chunks(
 
 
 def probe_and_persist_lualatex_loadability(
-    fonts: list[MutableMapping[str, Any]],
+    fonts: list[FontRef],
     *,
     validation_metadata: MutableMapping[str, Any],
     batch_size: int = _DEFAULT_BATCH_SIZE,
@@ -719,7 +719,7 @@ def probe_and_persist_lualatex_loadability(
 
     Parameters
     ----------
-    fonts : list[collections.abc.MutableMapping[str, Any]]
+    fonts : list[FontRef]
         Mutable inventory font entries updated in place.
     validation_metadata : collections.abc.MutableMapping[str, Any]
         Inventory-level ``metadata.validation.lualatex`` block updated
@@ -793,13 +793,13 @@ def probe_and_persist_lualatex_loadability(
         )
 
 
-def _ordered_render_variant_scripts(font: MutableMapping[str, Any]) -> list[ScriptISO]:
+def _ordered_render_variant_scripts(font: FontRef) -> list[ScriptISO]:
     """
     Return deterministic script candidates for parse-time render probing.
 
     Parameters
     ----------
-    font : collections.abc.MutableMapping[str, Any]
+    font : FontRef
         Enriched inventory font entry being prepared for catalog use.
 
     Returns
@@ -853,15 +853,13 @@ def _ordered_render_variant_scripts(font: MutableMapping[str, Any]) -> list[Scri
     return ordered[:20]
 
 
-def _render_variant_specimen(
-    font: MutableMapping[str, Any], script_iso: ScriptISO
-) -> str:
+def _render_variant_specimen(font: FontRef, script_iso: ScriptISO) -> str:
     """
     Return the sample text used to validate one render-path variant.
 
     Parameters
     ----------
-    font : collections.abc.MutableMapping[str, Any]
+    font : FontRef
         Enriched inventory font entry being validated.
     script_iso : ScriptISO
         Script code for the render-path candidate.
@@ -945,14 +943,14 @@ def _render_variant_cmap_fallback(cps: set[int], script_iso: ScriptISO) -> str:
 
 
 def _render_variant_specimen_details(
-    font: MutableMapping[str, Any], script_iso: ScriptISO
+    font: FontRef, script_iso: ScriptISO
 ) -> tuple[str, int, str] | None:
     """
     Return persisted specimen details for a render-path candidate.
 
     Parameters
     ----------
-    font : collections.abc.MutableMapping[str, Any]
+    font : FontRef
         Enriched inventory font entry being validated.
     script_iso : ScriptISO
         Script code for the render-path candidate.
@@ -999,7 +997,7 @@ def _render_variant_specimen_details(
 
 
 def probe_and_persist_lualatex_render_variants(
-    fonts: list[MutableMapping[str, Any]],
+    fonts: Sequence[FontRef],
     *,
     validation_metadata: MutableMapping[str, Any],
     batch_size: int = _DEFAULT_BATCH_SIZE,
@@ -1010,8 +1008,8 @@ def probe_and_persist_lualatex_render_variants(
 
     Parameters
     ----------
-    fonts : list[collections.abc.MutableMapping[str, Any]]
-        Mutable enriched inventory font entries updated in place.
+    fonts : Sequence[FontRef]
+        Sequence of enriched inventory font entries updated in place.
     validation_metadata : collections.abc.MutableMapping[str, Any]
         Inventory-level ``metadata.validation.lualatex`` block updated
         in place for the current parse-time environment.

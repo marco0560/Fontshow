@@ -48,13 +48,14 @@ must remain free of CLI or pipeline orchestration logic.
 """
 
 import unicodedata
+from collections.abc import Mapping
 from typing import Any, cast
 
 from fontTools.ttLib import TTFont, TTLibError
 
 from fontshow.common.specimens import choose_language_sample
 from fontshow.core.logging_utils import log, log_trace_cat
-from fontshow.core.types import ScriptISO, normalize_script_iso
+from fontshow.core.types import FontRef, JSONDict, ScriptISO, normalize_script_iso
 from fontshow.inventory.schema_accessors import (
     get_sample_text_value,
     set_specimen_fields,
@@ -484,7 +485,7 @@ def _script_fallback_specimen(
 
 
 def _specimen_from_internal(
-    font: dict[str, Any],
+    font: FontRef,
     cps: set[int],
 ) -> tuple[str | None, str | None]:
     """
@@ -492,7 +493,7 @@ def _specimen_from_internal(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry that may carry an embedded sample text.
     cps : set[int]
         Supported Unicode codepoints for the font.
@@ -599,7 +600,7 @@ def _specimen_from_script(
 
 
 def _specimen_from_cmap(
-    font: dict[str, Any],
+    font: FontRef,
     cps: set[int],
 ) -> tuple[str, str]:
     """
@@ -607,7 +608,7 @@ def _specimen_from_cmap(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry being enriched.
     cps : set[int]
         Supported Unicode codepoints extracted from the font cmap.
@@ -636,7 +637,7 @@ def _specimen_from_cmap(
 
 
 def _specimen_from_private_use(
-    font: dict[str, Any],
+    font: Mapping[str, object],
     cps: set[int],
 ) -> tuple[str | None, str | None]:
     """
@@ -644,7 +645,7 @@ def _specimen_from_private_use(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : collections.abc.Mapping[str, object]
         Inventory entry being enriched.
     cps : set[int]
         Supported Unicode codepoints extracted from the font cmap.
@@ -676,13 +677,13 @@ def _specimen_from_private_use(
     return "".join(chr(cp) for cp in chosen), "pua"
 
 
-def _significant_private_use_count(font: dict[str, Any]) -> int:
+def _significant_private_use_count(font: Mapping[str, object]) -> int:
     """
     Return the persisted count of private-use coverage for one font.
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : collections.abc.Mapping[str, object]
         Inventory entry whose coverage block is inspected.
 
     Returns
@@ -701,13 +702,13 @@ def _significant_private_use_count(font: dict[str, Any]) -> int:
     )
 
 
-def _has_significant_private_use(font: dict[str, Any]) -> bool:
+def _has_significant_private_use(font: Mapping[str, object]) -> bool:
     """
     Return whether one font covers a meaningful amount of private-use glyphs.
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : collections.abc.Mapping[str, object]
         Inventory entry whose coverage block is inspected.
 
     Returns
@@ -719,7 +720,7 @@ def _has_significant_private_use(font: dict[str, Any]) -> bool:
 
 
 def _specimen_apply_semantic_validation(
-    font: dict[str, Any],
+    font: FontRef,
     filtered: str,
     g: int,
     cps: set[int] | None,
@@ -729,7 +730,7 @@ def _specimen_apply_semantic_validation(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry whose inference metadata may be used for fallback.
     filtered : str
         Current specimen candidate.
@@ -777,7 +778,7 @@ def _specimen_apply_semantic_validation(
 
 
 def _specimen_from_language(
-    font: dict[str, Any],
+    font: FontRef,
     cps: set[int],
 ) -> tuple[str | None, str | None]:
     """
@@ -785,7 +786,7 @@ def _specimen_from_language(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry whose inference metadata is consulted.
     cps : set[int]
         Supported Unicode codepoints for the font.
@@ -820,7 +821,7 @@ def _specimen_from_language(
 
 
 def _specimen_upgrade_low_information_sample(
-    font: dict[str, Any],
+    font: FontRef,
     filtered: str,
     glyph_count: int,
     cps: set[int],
@@ -832,7 +833,7 @@ def _specimen_upgrade_low_information_sample(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry whose inference metadata is consulted.
     filtered : str
         Current accepted specimen candidate.
@@ -865,8 +866,8 @@ def _specimen_upgrade_low_information_sample(
 
 
 def _resolve_initial_specimen(
-    font: dict[str, Any],
-    coverage: dict[str, Any],
+    font: FontRef,
+    coverage: JSONDict,
     cps: set[int],
 ) -> tuple[str | None, str | None, str | None, int]:
     """
@@ -874,9 +875,9 @@ def _resolve_initial_specimen(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory entry being enriched.
-    coverage : dict[str, Any]
+    coverage : JSONDict
         Coverage block used for script-based specimen resolution.
     cps : set[int]
         Supported Unicode codepoints for the font.
@@ -923,8 +924,8 @@ def _resolve_initial_specimen(
 
 
 def _specimen_generate_for_font(
-    font: dict[str, Any],
-    coverage: dict[str, Any],
+    font: FontRef,
+    coverage: JSONDict,
     font_path: str | None,
 ) -> None:
     """

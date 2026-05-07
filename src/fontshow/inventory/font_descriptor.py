@@ -24,8 +24,6 @@ normalized font descriptors that form the core of the Fontshow
 inventory structure.
 """
 
-from typing import Any
-
 from fontshow.constants.opentype import (
     NAME_ID_FAMILY,
     NAME_ID_FULLNAME,
@@ -33,7 +31,7 @@ from fontshow.constants.opentype import (
     NAME_ID_SUBFAMILY,
     NAME_ID_VERSION,
 )
-from fontshow.core.types import Severity, WarningInfo
+from fontshow.core.types import FontRef, JSONDict, Severity, WarningInfo
 from fontshow.inventory.fonttools_extraction import (
     _best_name,
     extract_sample_text,
@@ -43,21 +41,21 @@ from fontshow.inventory.utils import make_font_id
 
 
 def _normalize_metrics(
-    fonttools,
-    typography,
-    names,
+    fonttools: JSONDict,
+    typography: JSONDict,
+    names: dict[str, list[str]],
     identity: tuple[str | None, str | None, str | None, str | None],
-):
+) -> tuple[str, str, str, str, str, int, int, int, int, int, float, bool, int]:
     """
     Normalize core metrics and identity fields for descriptor emission.
 
     Parameters
     ----------
-    fonttools : Any
+    fonttools : JSONDict
         FontTools-derived metadata block for the current face.
-    typography : Any
+    typography : JSONDict
         Typography sub-block containing normalized weight and width data.
-    names : Any
+    names : dict[str, list[str]]
         Name-table mapping used to resolve fallback version strings.
     identity : tuple[str | None, str | None, str | None, str | None]
         Tuple ``(family, style, fullname, postscript)`` with optional
@@ -119,7 +117,7 @@ def _normalize_metrics(
     )
 
 
-def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
+def build_font_descriptor(ctx: FontBuildContext) -> FontRef:
     """
     Build the canonical per-font descriptor used in the JSON inventory.
 
@@ -154,8 +152,8 @@ def build_font_descriptor(ctx: FontBuildContext) -> dict[str, Any]:
 
     Returns
     -------
-    dict[str, Any]
-        Dictionary representing the canonical font descriptor for the font face.
+    FontRef
+        Canonical font descriptor for the font face.
 
     Notes
     -----

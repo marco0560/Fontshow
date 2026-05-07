@@ -278,7 +278,7 @@ def render_bash_completion(spec: CompletionSpec | None = None) -> str:
                 f'_FONTSHOW_PATH_OPTIONS_{command_key}="'
                 f'{_render_shell_list(command_spec["path_options"])}"',
                 f"_FONTSHOW_POSITIONAL_PATH_{command_key}="
-                f'{"1" if command_spec["positional_paths"] else "0"}',
+                f"{'1' if command_spec['positional_paths'] else '0'}",
                 "",
             ]
         )

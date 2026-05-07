@@ -187,7 +187,7 @@ This map is intended to:
 
 It MUST NOT replace:
 
-- `codira index`
+- `uv run codira index`
 - structured queries (`sym`, `ctx`, `calls`, ...)
 
 ## 6. Core Principles
@@ -300,7 +300,6 @@ pytest -q
 Fallback:
 
 ```bash
-black --check .
 ruff check .
 mypy .
 pytest -q

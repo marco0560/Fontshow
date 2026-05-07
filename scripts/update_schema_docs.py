@@ -330,7 +330,7 @@ def generate_field_reference_markdown(schema: dict[str, object]) -> str:
             + " |"
         )
     body = "\n".join(table_lines)
-    return f"{FIELD_REFERENCE_START}\n\n" f"{body}\n\n" f"{FIELD_REFERENCE_END}"
+    return f"{FIELD_REFERENCE_START}\n\n{body}\n\n{FIELD_REFERENCE_END}"
 
 
 def generate_schema_json_markdown(schema: dict[str, object]) -> str:
@@ -348,7 +348,7 @@ def generate_schema_json_markdown(schema: dict[str, object]) -> str:
         Marker-bounded markdown fragment containing the schema JSON.
     """
     pretty = json.dumps(schema, indent=2, ensure_ascii=False)
-    return f"{SCHEMA_JSON_START}\n\n" f"```json\n{pretty}\n```\n\n" f"{SCHEMA_JSON_END}"
+    return f"{SCHEMA_JSON_START}\n\n```json\n{pretty}\n```\n\n{SCHEMA_JSON_END}"
 
 
 def _replace_marker_block(text: str, start: str, end: str, replacement: str) -> str:

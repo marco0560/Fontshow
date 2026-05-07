@@ -31,7 +31,7 @@ from argparse import _ActionsContainer
 from pathlib import Path
 
 from fontshow import __version__
-from fontshow.core.types import Severity
+from fontshow.core.types import JSONDict, Severity
 
 # ------------------------------------------------------------
 # Centralized CLI presentation state
@@ -67,7 +67,7 @@ def set_cli_mode(quiet: bool, verbose: bool) -> None:
 # ------------------------------------------------------------
 
 
-def _format_extra(extra: dict | None) -> str:
+def _format_extra(extra: JSONDict | None) -> str:
     """
     Deterministically format extra key/value pairs for CLI output.
 
@@ -82,7 +82,7 @@ def _format_extra(extra: dict | None) -> str:
 
     Parameters
     ----------
-    extra : dict | None
+    extra : JSONDict | None
         Optional mapping of extra key/value pairs attached to a CLI
         log event.
 
@@ -139,7 +139,7 @@ def _select_message(default: str, verbose: str | None) -> str:
 
 
 def log_info(
-    default: str, verbose: str | None = None, *, extra: dict | None = None
+    default: str, verbose: str | None = None, *, extra: JSONDict | None = None
 ) -> None:
     """
     Emit a CLI INFO message.
@@ -151,7 +151,7 @@ def log_info(
     verbose : str | None, optional
         Alternate message used when verbose mode is active.
         If None, the default message is used.
-    extra : dict | None, optional
+    extra : JSONDict | None, optional
         Optional key/value pairs appended to the message using
         deterministic formatting.
 
@@ -175,7 +175,7 @@ def log_info(
 
 
 def log_ok(
-    default: str, verbose: str | None = None, *, extra: dict | None = None
+    default: str, verbose: str | None = None, *, extra: JSONDict | None = None
 ) -> None:
     """
     Emit a CLI OK message.
@@ -187,7 +187,7 @@ def log_ok(
     verbose : str | None, optional
         Alternate message used when verbose mode is active.
         If None, the default message is used.
-    extra : dict | None, optional
+    extra : JSONDict | None, optional
         Optional key/value pairs appended to the message using
         deterministic formatting.
 

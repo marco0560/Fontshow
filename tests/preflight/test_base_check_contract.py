@@ -41,9 +41,9 @@ def test_all_checks_are_subclasses_of_basecheck():
     None
     """
     for check_cls in BaseCheck.registry:
-        assert issubclass(
-            check_cls, BaseCheck
-        ), f"{check_cls.__name__} does not subclass BaseCheck"
+        assert issubclass(check_cls, BaseCheck), (
+            f"{check_cls.__name__} does not subclass BaseCheck"
+        )
 
 
 def test_all_checks_define_check_id():
@@ -60,9 +60,9 @@ def test_all_checks_define_check_id():
     """
     for check_cls in BaseCheck.registry:
         assert hasattr(check_cls, "check_id"), f"{check_cls.__name__} missing check_id"
-        assert isinstance(
-            check_cls.check_id, str
-        ), f"{check_cls.__name__}.check_id is not a string"
+        assert isinstance(check_cls.check_id, str), (
+            f"{check_cls.__name__}.check_id is not a string"
+        )
         assert check_cls.check_id.strip(), f"{check_cls.__name__}.check_id is empty"
 
 
@@ -79,9 +79,9 @@ def test_check_ids_are_unique():
     None
     """
     check_ids = [check_cls.check_id for check_cls in BaseCheck.registry]
-    assert len(check_ids) == len(
-        set(check_ids)
-    ), f"Duplicate check_id found: {check_ids}"
+    assert len(check_ids) == len(set(check_ids)), (
+        f"Duplicate check_id found: {check_ids}"
+    )
 
 
 def test_all_checks_implement_run_method():
@@ -134,6 +134,6 @@ def test_run_returns_checkresult(monkeypatch):
 
         check = check_cls()
         result = check.run()
-        assert isinstance(
-            result, CheckResult
-        ), f"{check_cls.__name__}.run() did not return CheckResult"
+        assert isinstance(result, CheckResult), (
+            f"{check_cls.__name__}.run() did not return CheckResult"
+        )

@@ -26,9 +26,14 @@ ontology integrity check executed during environment validation.
 
 from __future__ import annotations
 
-from fontshow.core.types import Severity
+from typing import TYPE_CHECKING
+
+from fontshow.core.types import ScriptISO, Severity
 from fontshow.preflight.checks.base import BaseCheck
 from fontshow.preflight.model import CheckResult
+
+if TYPE_CHECKING:
+    from fontshow.ontology.language_tables import LanguageInfo, ScriptInfo
 
 
 class OntologyCheck(BaseCheck):
@@ -80,7 +85,11 @@ class OntologyCheck(BaseCheck):
 
     check_id = "ontology"
 
-    def _check_language_scripts(self, LANGUAGE_INFO, SCRIPT_INFO) -> list[str]:
+    def _check_language_scripts(
+        self,
+        LANGUAGE_INFO: dict[str, LanguageInfo],
+        SCRIPT_INFO: dict[ScriptISO, ScriptInfo],
+    ) -> list[str]:
         """
         Validate that language profiles reference known scripts.
 
@@ -114,9 +123,7 @@ class OntologyCheck(BaseCheck):
                 continue
 
             primary_script = lang_info.get("primary_script")
-            if primary_script is None:
-                errors.append(f"Language '{lang}' missing primary_script")
-            elif primary_script not in lang_scripts:
+            if primary_script not in lang_scripts:
                 errors.append(
                     f"Language '{lang}' primary_script '{primary_script}' "
                     "is not present in its scripts list"
@@ -130,7 +137,9 @@ class OntologyCheck(BaseCheck):
 
         return errors
 
-    def _check_script_fields(self, SCRIPT_INFO) -> list[str]:
+    def _check_script_fields(
+        self, SCRIPT_INFO: dict[ScriptISO, ScriptInfo]
+    ) -> list[str]:
         """
         Validate that each script entry defines the required metadata fields.
 
@@ -174,7 +183,11 @@ class OntologyCheck(BaseCheck):
 
         return errors
 
-    def _check_script_display_language(self, LANGUAGE_INFO, SCRIPT_INFO) -> list[str]:
+    def _check_script_display_language(
+        self,
+        LANGUAGE_INFO: dict[str, LanguageInfo],
+        SCRIPT_INFO: dict[ScriptISO, ScriptInfo],
+    ) -> list[str]:
         """
         Validate that each script points to a known representative language.
 
@@ -204,7 +217,11 @@ class OntologyCheck(BaseCheck):
 
         return errors
 
-    def _check_specimens(self, LANGUAGE_INFO, SCRIPT_INFO) -> list[str]:
+    def _check_specimens(
+        self,
+        LANGUAGE_INFO: dict[str, LanguageInfo],
+        SCRIPT_INFO: dict[ScriptISO, ScriptInfo],
+    ) -> list[str]:
         """
         Validate specimen availability for representative script languages.
 
@@ -240,7 +257,11 @@ class OntologyCheck(BaseCheck):
 
         return errors
 
-    def _check_bidirectional_consistency(self, LANGUAGE_INFO, SCRIPT_INFO) -> list[str]:
+    def _check_bidirectional_consistency(
+        self,
+        LANGUAGE_INFO: dict[str, LanguageInfo],
+        SCRIPT_INFO: dict[ScriptISO, ScriptInfo],
+    ) -> list[str]:
         """
         Validate script-to-language references in both ontology directions.
 
@@ -277,7 +298,9 @@ class OntologyCheck(BaseCheck):
 
         return errors
 
-    def _check_unicode_ranges(self, SCRIPT_INFO) -> list[str]:
+    def _check_unicode_ranges(
+        self, SCRIPT_INFO: dict[ScriptISO, ScriptInfo]
+    ) -> list[str]:
         """
         Validate that every script in SCRIPT_INFO has Unicode coverage.
 

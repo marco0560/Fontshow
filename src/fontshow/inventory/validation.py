@@ -26,7 +26,7 @@ validation stage used during inventory parsing and validation workflows.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from typing import Any
+from typing import cast
 
 from fontshow.constants.inventory import (
     STYLE_LEAK_RE,
@@ -41,7 +41,7 @@ from fontshow.core.cli_utils import (
 )
 from fontshow.core.global_constants import SCHEMA_VERSION
 from fontshow.core.logging_utils import log
-from fontshow.core.types import Severity
+from fontshow.core.types import FontRef, InventoryDocument, Severity
 from fontshow.core.warnings import add_structured_warning
 from fontshow.diagnostics.inventory_warnings import (
     _format_font_identity,
@@ -65,7 +65,7 @@ _VALIDATION_SUMMARY_WARNING_CODES = frozenset(
 
 
 def _record_fatal_validation(
-    font: dict[str, Any],
+    font: FontRef,
     *,
     index: int,
     fatal_categories: Counter[str],
@@ -76,7 +76,7 @@ def _record_fatal_validation(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Inventory font entry being validated.
     index : int
         Position of the entry within the inventory.
@@ -104,7 +104,7 @@ def _record_fatal_validation(
 
 
 def _record_validation_observations(
-    font: dict[str, Any],
+    font: FontRef,
     *,
     index: int,
     observation_counts: Counter[str],
@@ -115,7 +115,7 @@ def _record_validation_observations(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Font entry currently being inspected by validation.
     index : int
         Zero-based position of the font within the validated inventory.
@@ -175,7 +175,7 @@ def _record_validation_observations(
 
 
 def _record_validation_warnings(
-    font: dict[str, Any],
+    font: FontRef,
     *,
     index: int,
     warning_categories: Counter[str],
@@ -186,7 +186,7 @@ def _record_validation_warnings(
 
     Parameters
     ----------
-    font : dict[str, Any]
+    font : FontRef
         Font entry currently being inspected by validation.
     index : int
         Zero-based position of the font within the validated inventory.
@@ -360,7 +360,9 @@ def validate_inventory(
         log_err("'fonts' field missing or not a list")
         return 1
 
-    fonts: list[dict[str, Any]] = [f for f in raw_fonts if isinstance(f, dict)]
+    fonts: list[FontRef] = [
+        cast("FontRef", f) for f in raw_fonts if isinstance(f, dict)
+    ]
     fatal_categories: Counter[str] = Counter()
     fatal_examples: dict[str, list[str]] = defaultdict(list)
     warning_categories: Counter[str] = Counter()
@@ -418,14 +420,14 @@ def validate_inventory(
     return fatal_errors
 
 
-def _apply_schema_validation(data: dict[str, Any]) -> None:
+def _apply_schema_validation(data: InventoryDocument) -> None:
     """
     Validate the inventory schema and attach resulting structured warnings.
 
     Parameters
     ----------
-    data : dict[str, Any]
-        Inventory document to validate and annotate.
+    data : InventoryDocument
+        Inventory root document to validate and annotate.
 
     Returns
     -------
@@ -433,16 +435,16 @@ def _apply_schema_validation(data: dict[str, Any]) -> None:
 
     Notes
     -----
-    The function delegates schema validation to
-    `validate_inventory_schema()` and injects the returned warnings into
-    the inventory root via `add_structured_warning()`.
-
-    Existing inventory content is preserved; only warning records may be
-    appended to the root warning collection.
+    This function operates on the inventory root, not on a single font
+    descriptor. Schema warnings are attached as inventory-level
+    structured warnings.
     """
+    metadata = data.get("metadata", {})
+    schema_version = metadata.get("schema_version")
+
     log.info(
         "inventory schema validation requested",
-        extra={"schema_version": data.get("schema_version")},
+        extra={"schema_version": schema_version},
     )
     log.debug("inventory schema validation started")
 
@@ -451,21 +453,22 @@ def _apply_schema_validation(data: dict[str, Any]) -> None:
     log.info(
         "inventory schema validation completed",
         extra={
-            "schema_version": data.get("schema_version"),
+            "schema_version": schema_version,
             "warnings_count": len(schema_warnings),
         },
     )
 
     if schema_warnings:
         severity_counts: dict[Severity, int] = {}
-        for w in schema_warnings:
-            sev = w.get("severity", Severity.WARN)
-            severity_counts[sev] = severity_counts.get(sev, 0) + 1
+        for warning in schema_warnings:
+            sev = warning.get("severity", Severity.WARN)
+            if isinstance(sev, Severity):
+                severity_counts[sev] = severity_counts.get(sev, 0) + 1
 
         log.debug(
             "inventory schema validation produced warnings",
             extra={
-                "schema_version": data.get("schema_version"),
+                "schema_version": schema_version,
                 "severity_counts": severity_counts,
             },
         )
@@ -473,19 +476,19 @@ def _apply_schema_validation(data: dict[str, Any]) -> None:
     for warning in schema_warnings:
         add_structured_warning(
             data,
-            code=warning["code"],
-            message=warning["message"],
+            code=str(warning["code"]),
+            message=str(warning["message"]),
             severity=warning["severity"],
         )
 
 
-def is_non_opentype_face(face: dict) -> bool:
+def is_non_opentype_face(face: FontRef) -> bool:
     """
     Canonical detection of non-OpenType / bitmap faces.
 
     Parameters
     ----------
-    face : dict
+    face : FontRef
         Face-level extraction result produced by fontTools helpers.
 
     Returns
@@ -505,18 +508,21 @@ def is_non_opentype_face(face: dict) -> bool:
     general classifier for all unsupported font formats.
     """
     if face.get("ok") is False:
-        err = face.get("error") or ""
-        return "Not a TrueType or OpenType font" in err
+        err = face.get("error")
+
+        if isinstance(err, str):
+            return "Not a TrueType or OpenType font" in err
+
     return False
 
 
-def is_structurally_unloadable_face(face: dict) -> bool:
+def is_structurally_unloadable_face(face: FontRef) -> bool:
     """
     Detect faces that are structurally missing mandatory OpenType tables.
 
     Parameters
     ----------
-    face : dict
+    face : FontRef
         Face-level extraction result produced by fontTools helpers.
 
     Returns
@@ -554,13 +560,13 @@ def is_structurally_unloadable_face(face: dict) -> bool:
     )
 
 
-def has_style_leak_in_family(desc: dict) -> bool:
+def has_style_leak_in_family(desc: FontRef) -> bool:
     """
     Detect whether a family name appears to contain style qualifiers.
 
     Parameters
     ----------
-    desc : dict
+    desc : FontRef
         Font descriptor whose family field is inspected.
 
     Returns
@@ -575,9 +581,7 @@ def has_style_leak_in_family(desc: dict) -> bool:
     positives where family names legitimately embed weight/width/slant
     qualifiers that agree with the font metadata.
     """
-    fam = desc.get("family", "")
-    if not isinstance(fam, str):
-        return False
+    fam = desc["family"]
 
     subfamily = desc.get("subfamily", "")
     subfamily_lc = subfamily.lower() if isinstance(subfamily, str) else ""

@@ -18,9 +18,9 @@ sys.modules[_SPEC.name] = bootstrap_dev_environment
 _SPEC.loader.exec_module(bootstrap_dev_environment)
 
 
-def test_install_target_tracks_requested_dependency_groups() -> None:
+def test_uv_sync_command_tracks_requested_dependency_groups() -> None:
     """
-    Ensure editable install extras remain explicit and deterministic.
+    Ensure uv dependency-group synchronization remains explicit and deterministic.
 
     Parameters
     ----------
@@ -30,8 +30,21 @@ def test_install_target_tracks_requested_dependency_groups() -> None:
     -------
     None
     """
-    assert bootstrap_dev_environment.install_target(with_docs=False) == ".[dev]"
-    assert bootstrap_dev_environment.install_target(with_docs=True) == ".[dev,docs]"
+    assert bootstrap_dev_environment.uv_sync_command(with_docs=False) == (
+        "uv",
+        "sync",
+        "--extra",
+        "dev",
+    )
+
+    assert bootstrap_dev_environment.uv_sync_command(with_docs=True) == (
+        "uv",
+        "sync",
+        "--extra",
+        "dev",
+        "--extra",
+        "docs",
+    )
 
 
 def test_git_local_config_entries_match_repository_contract() -> None:
@@ -70,22 +83,25 @@ def test_git_local_config_entries_match_repository_contract() -> None:
         ("alias.lg", "log --oneline --graph --decorate -50"),
         (
             "alias.check",
-            "!bash -lc 'source .venv/bin/activate && black --check . && ruff check . && mypy . && pytest -q'",
+            "!uv run ruff check . && uv run ruff format --check . && uv run mypy src && uv run python -m pytest -q",
         ),
-        ("alias.fix", "!ruff check . --fix"),
-        ("alias.clean-repo", '!f() { python scripts/clean_repo.py "$@"; }; f'),
+        ("alias.fix", "!uv run ruff check . --fix && uv run ruff format ."),
+        ("alias.clean-repo", '!f() { uv run python scripts/clean_repo.py "$@"; }; f'),
         (
             "alias.test-coverage",
-            '!f() { pytest --cov=fontshow --cov-report=term-missing "$@"; }; f',
+            '!f() { uv run python -m pytest --cov=fontshow --cov-report=term-missing "$@"; }; f',
         ),
         (
             "alias.test-html",
-            "!pytest --cov=fontshow --cov-report=html && xdg-open htmlcov/index.html",
+            "!uv run python -m pytest --cov=fontshow --cov-report=html && xdg-open htmlcov/index.html",
         ),
-        ("alias.new-decision", '!f() { python scripts/new_decision.py "$@"; }; f'),
+        (
+            "alias.new-decision",
+            '!f() { uv run python scripts/new_decision.py "$@"; }; f',
+        ),
         (
             "alias.release-preview",
-            '!f() { python scripts/release_preview.py "$@"; }; f',
+            '!f() { uv run python scripts/release_preview.py "$@"; }; f',
         ),
         (
             "alias.gen-issues",
@@ -111,13 +127,19 @@ def test_git_local_config_entries_match_repository_contract() -> None:
         ),
         (
             "alias.re-clean",
-            "!git clean-repo && git gen-issues && git gen-miles && git gen-zip-repo",
+            "!git clean-repo && git gen-issues && git gen-miles && git txz",
         ),
-        ("alias.gen-boot-report", "!python scripts/generate_bootstrap_audit_report.py"),
-        ("alias.ver-boot-report", "!python scripts/verify_bootstrap_audit_report.py"),
+        (
+            "alias.gen-boot-report",
+            "!uv run python scripts/generate_bootstrap_audit_report.py",
+        ),
+        (
+            "alias.ver-boot-report",
+            "!uv run python scripts/verify_bootstrap_audit_report.py",
+        ),
         (
             "alias.install-dev-codira",
-            '!python ../codira/scripts/install_first_party_packages.py --python "$VIRTUAL_ENV/bin/python" --include-core --core-extra semantic --include-bundle',
+            "!uv pip install -e ../codira[semantic] -e ../codira/packages/codira-analyzer-python -e ../codira/packages/codira-analyzer-json -e ../codira/packages/codira-analyzer-c -e ../codira/packages/codira-analyzer-bash -e ../codira/packages/codira-backend-sqlite -e ../codira/packages/codira-backend-duckdb && uv pip install --no-deps -e ../codira/packages/codira-bundle-official",
         ),
         ("pull.ff", "only"),
         ("pull.rebase", "false"),
@@ -125,55 +147,10 @@ def test_git_local_config_entries_match_repository_contract() -> None:
     ]
 
 
-def test_select_bootstrap_python_uses_base_interpreter_for_target_venv() -> None:
-    """
-    Ensure bootstrap avoids recreating the target virtual environment with itself.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-    """
-    repo_root = Path("/tmp/fontshow")
-    selected = bootstrap_dev_environment.select_bootstrap_python(
-        "/tmp/fontshow/.venv/bin/python",
-        repo_root=repo_root,
-        venv_dir=".venv",
-    )
-
-    assert Path(selected).resolve() == Path(sys._base_executable).resolve()
-
-
-def test_select_bootstrap_python_preserves_explicit_external_interpreter() -> None:
-    """
-    Ensure an explicit external interpreter is preserved unchanged.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-    """
-    repo_root = Path("/tmp/fontshow")
-    requested_python = "/usr/bin/python3"
-
-    selected = bootstrap_dev_environment.select_bootstrap_python(
-        requested_python,
-        repo_root=repo_root,
-        venv_dir=".venv",
-    )
-
-    assert selected == requested_python
-
-
 def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
     """
-    Ensure the default bootstrap plan covers install, config, and validation.
+    Ensure the default bootstrap plan covers environment sync,
+    repository-local Git configuration, and validation steps.
 
     Parameters
     ----------
@@ -184,37 +161,42 @@ def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
     None
     """
     repo_root = Path("/tmp/fontshow")
+
     commands = bootstrap_dev_environment.build_bootstrap_commands(
         repo_root=repo_root,
-        python_executable="/usr/bin/python3",
         git_executable="/usr/bin/git",
         options=bootstrap_dev_environment.BootstrapOptions(
             venv_dir=".venv",
             with_docs=False,
             run_validation=True,
-            create_venv=True,
         ),
     )
 
-    assert commands[0].argv[:3] == (
-        "/usr/bin/python3",
-        "-m",
-        "venv",
-    )
-    assert Path(commands[0].argv[3]) == repo_root / ".venv"
-    assert bootstrap_dev_environment.BOOTSTRAP_SETUPTOOLS_SPEC in commands[1].argv
-    assert commands[2].argv[-1] == ".[dev]"
+    argvs = [command.argv for command in commands]
+
+    assert ("uv", "sync", "--extra", "dev") in argvs
+    assert ("uv", "run", "python", "-m", "pip", "check") in argvs
     assert any(
-        command.argv[:4] == ("/usr/bin/git", "config", "--local", "alias.rel")
-        for command in commands
+        argv[:4]
+        == (
+            "/usr/bin/git",
+            "config",
+            "--local",
+            "alias.rel",
+        )
+        for argv in argvs
     )
-    assert commands[-2].argv[-2:] == ("run", "--all-files")
-    assert commands[-1].argv[-1] == "-q"
+    assert ("uv", "run", "ruff", "check", ".", "--fix") in argvs
+    assert ("uv", "run", "ruff", "format", "--check", ".") in argvs
+    assert ("uv", "run", "mypy", "src") in argvs
+    assert ("uv", "run", "python", "-m", "pytest", "-q") in argvs
+    assert ("uv", "run", "pre-commit", "run", "--all-files") in argvs
 
 
 def test_build_bootstrap_commands_can_skip_validation_and_include_docs() -> None:
     """
-    Ensure optional docs install and validation skipping affect only planned steps.
+    Ensure docs dependency synchronization is enabled while validation
+    commands are omitted when requested.
 
     Parameters
     ----------
@@ -225,19 +207,77 @@ def test_build_bootstrap_commands_can_skip_validation_and_include_docs() -> None
     None
     """
     repo_root = Path("/tmp/fontshow")
+
     commands = bootstrap_dev_environment.build_bootstrap_commands(
         repo_root=repo_root,
-        python_executable="/usr/bin/python3",
         git_executable="/usr/bin/git",
         options=bootstrap_dev_environment.BootstrapOptions(
             venv_dir=".venv",
             with_docs=True,
             run_validation=False,
-            create_venv=False,
         ),
     )
 
-    assert commands[1].argv[-1] == ".[dev,docs]"
-    assert all(command.argv[1:3] != ("-m", "venv") for command in commands)
-    assert not any("pre-commit" in command.description for command in commands)
-    assert not any("pytest" in command.description for command in commands)
+    argvs = [command.argv for command in commands]
+
+    assert ("uv", "sync", "--extra", "dev", "--extra", "docs") in argvs
+    assert ("uv", "run", "python", "-m", "pip", "check") in argvs
+    assert any(
+        argv[:4]
+        == (
+            "/usr/bin/git",
+            "config",
+            "--local",
+            "alias.rel",
+        )
+        for argv in argvs
+    )
+    assert not any(
+        argv[:4]
+        == (
+            "uv",
+            "run",
+            "ruff",
+            "check",
+        )
+        for argv in argvs
+    )
+    assert not any(
+        argv[:4]
+        == (
+            "uv",
+            "run",
+            "ruff",
+            "format",
+        )
+        for argv in argvs
+    )
+    assert not any(
+        argv[:3]
+        == (
+            "uv",
+            "run",
+            "mypy",
+        )
+        for argv in argvs
+    )
+    assert not any(
+        argv[:5]
+        == (
+            "uv",
+            "run",
+            "python",
+            "-m",
+            "pytest",
+        )
+        for argv in argvs
+    )
+    assert not any(
+        argv[:4]
+        == (
+            "uv",
+            "run",
+            "pre-commit",
+        )
+        for argv in argvs
+    )

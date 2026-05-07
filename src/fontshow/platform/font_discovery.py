@@ -35,13 +35,13 @@ import os
 import sys
 from pathlib import Path
 
-from fontshow.constants.catalog import IS_LINUX, IS_WINDOWS
 from fontshow.constants.discovery import (
     DISCOVERABLE_FONT_EXTENSIONS,
     LEGACY_FONT_EXTENSIONS,
 )
 from fontshow.core.logging_utils import log, log_trace_cat
 from fontshow.inventory.utils import run_command
+from fontshow.platform.runtime import IS_LINUX, IS_WINDOWS
 
 _LAST_DISCOVERY_STATS = {"skipped_legacy_extension": 0}
 

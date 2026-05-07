@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from fontshow.core.cli_utils import (
     log_err,
@@ -39,18 +40,24 @@ from fontshow.core.logging_utils import log, log_trace_cat
 from .render import preflight_exit_code, render_preflight_results
 from .runner import run_preflight
 
+if TYPE_CHECKING:
+    import argparse
+    from collections.abc import Callable
+
+    from .model import PreflightResult
+
 
 def run_preflight_cli(
     *,
-    args=None,
-    run_preflight_fn=run_preflight,
+    args: argparse.Namespace | None = None,
+    run_preflight_fn: Callable[[], PreflightResult] = run_preflight,
 ) -> int:
     """
     Core preflight CLI logic.
 
     Parameters
     ----------
-    args : object, optional
+    args : argparse.Namespace, optional
         Parsed CLI arguments providing optional `verbose` and `output`
         attributes.
     run_preflight_fn : callable, optional
@@ -136,13 +143,13 @@ def run_preflight_cli(
     return exit_code
 
 
-def main(args=None) -> int:
+def main(args: argparse.Namespace | None = None) -> int:
     """
     Execute the preflight CLI entrypoint.
 
     Parameters
     ----------
-    args : object, optional
+    args : argparse.Namespace, optional
         Parsed CLI arguments with optional `quiet` and `verbose`
         attributes.
 

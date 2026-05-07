@@ -32,7 +32,6 @@ clone.
 from __future__ import annotations
 
 import argparse
-import os
 import shlex
 import shutil
 import subprocess
@@ -41,7 +40,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 DEFAULT_VENV_DIR = ".venv"
-BOOTSTRAP_SETUPTOOLS_SPEC = "setuptools<82"
 REQUIRED_REPO_MARKERS = (
     ".git",
     ".githooks",
@@ -83,14 +81,11 @@ class BootstrapOptions:
         Whether to include documentation dependencies in the editable install.
     run_validation : bool
         Whether to append repository validation commands.
-    create_venv : bool
-        Whether to create or refresh the repository virtual environment.
     """
 
     venv_dir: str
     with_docs: bool
     run_validation: bool
-    create_venv: bool
 
 
 def fail(msg: str, *, exit_code: int = 1) -> None:
@@ -183,32 +178,9 @@ def detect_repo_root(repo_root: Path | None = None) -> Path:
     return candidate
 
 
-def venv_executable(repo_root: Path, venv_dir: str, executable_name: str) -> Path:
+def uv_sync_command(*, with_docs: bool) -> tuple[str, ...]:
     """
-    Compute a virtual-environment executable path.
-
-    Parameters
-    ----------
-    repo_root : pathlib.Path
-        Absolute repository root path.
-    venv_dir : str
-        Repository-relative virtual environment directory name.
-    executable_name : str
-        Basename of the executable to resolve.
-
-    Returns
-    -------
-    pathlib.Path
-        Path to the requested virtual-environment executable.
-    """
-    scripts_dir = "Scripts" if os.name == "nt" else "bin"
-    suffix = ".exe" if os.name == "nt" else ""
-    return repo_root / venv_dir / scripts_dir / f"{executable_name}{suffix}"
-
-
-def install_target(*, with_docs: bool) -> str:
-    """
-    Build the editable installation target string.
+    Build the uv sync command for the repository environment.
 
     Parameters
     ----------
@@ -217,91 +189,15 @@ def install_target(*, with_docs: bool) -> str:
 
     Returns
     -------
-    str
-        Editable install target suitable for ``pip install -e``.
+    tuple[str, ...]
+        Command suitable for ``uv sync`` execution.
     """
-    extras = ["dev"]
+    command = ["uv", "sync", "--extra", "dev"]
+
     if with_docs:
-        extras.append("docs")
+        command.extend(["--extra", "docs"])
 
-    return f'.[{",".join(extras)}]'
-
-
-def select_bootstrap_python(
-    requested_python: str, *, repo_root: Path, venv_dir: str
-) -> str:
-    """
-    Choose the interpreter used to create the target virtual environment.
-
-    Parameters
-    ----------
-    requested_python : str
-        Interpreter path or executable name requested on the command line.
-    repo_root : pathlib.Path
-        Absolute repository root path.
-    venv_dir : str
-        Repository-relative virtual environment directory name.
-
-    Returns
-    -------
-    str
-        Interpreter path or executable name to use for ``python -m venv``.
-
-    Notes
-    -----
-    When bootstrap runs from the target repository virtual environment and
-    ``--python`` is left at its default value, the active virtual-environment
-    interpreter cannot safely recreate itself. In that case bootstrap falls
-    back to the base interpreter reported by ``sys._base_executable``.
-    """
-    target_venv = (repo_root / venv_dir).resolve()
-
-    try:
-        requested_path = Path(requested_python).resolve()
-    except OSError:
-        return requested_python
-
-    if not requested_path.is_absolute():
-        return requested_python
-
-    try:
-        requested_path.relative_to(target_venv)
-    except ValueError:
-        return requested_python
-
-    base_executable = getattr(sys, "_base_executable", "")
-    if not base_executable:
-        return requested_python
-
-    return str(Path(base_executable).resolve())
-
-
-def target_venv_is_active(*, repo_root: Path, venv_dir: str) -> bool:
-    """
-    Report whether bootstrap is running from the target repository virtual environment.
-
-    Parameters
-    ----------
-    repo_root : pathlib.Path
-        Absolute repository root path.
-    venv_dir : str
-        Repository-relative virtual environment directory name.
-
-    Returns
-    -------
-    bool
-        ``True`` when the active interpreter lives under the target virtual
-        environment directory, otherwise ``False``.
-    """
-    target_venv = (repo_root / venv_dir).resolve()
-    active_python = Path(sys.executable).resolve()
-
-    try:
-        active_python.relative_to(target_venv)
-    except ValueError:
-        return False
-
-    return True
+    return tuple(command)
 
 
 def git_local_config_entries() -> list[tuple[str, str]]:
@@ -340,28 +236,31 @@ def git_local_config_entries() -> list[tuple[str, str]]:
         ("alias.lg", "log --oneline --graph --decorate -50"),
         (
             "alias.check",
-            "!bash -lc 'source .venv/bin/activate && black --check . && ruff check . && mypy . && pytest -q'",
+            "!uv run ruff check . && uv run ruff format --check . && uv run mypy src && uv run python -m pytest -q",
         ),
-        ("alias.fix", "!ruff check . --fix"),
+        (
+            "alias.fix",
+            "!uv run ruff check . --fix && uv run ruff format .",
+        ),
         (
             "alias.clean-repo",
-            """!f() { python scripts/clean_repo.py "$@"; }; f""",
+            """!f() { uv run python scripts/clean_repo.py "$@"; }; f""",
         ),
         (
             "alias.test-coverage",
-            """!f() { pytest --cov=fontshow --cov-report=term-missing "$@"; }; f""",
+            """!f() { uv run python -m pytest --cov=fontshow --cov-report=term-missing "$@"; }; f""",
         ),
         (
             "alias.test-html",
-            "!pytest --cov=fontshow --cov-report=html && xdg-open htmlcov/index.html",
+            "!uv run python -m pytest --cov=fontshow --cov-report=html && xdg-open htmlcov/index.html",
         ),
         (
             "alias.new-decision",
-            """!f() { python scripts/new_decision.py "$@"; }; f""",
+            """!f() { uv run python scripts/new_decision.py "$@"; }; f""",
         ),
         (
             "alias.release-preview",
-            """!f() { python scripts/release_preview.py "$@"; }; f""",
+            """!f() { uv run python scripts/release_preview.py "$@"; }; f""",
         ),
         (
             "alias.gen-issues",
@@ -387,19 +286,19 @@ def git_local_config_entries() -> list[tuple[str, str]]:
         ),
         (
             "alias.re-clean",
-            "!git clean-repo && git gen-issues && git gen-miles && git gen-zip-repo",
+            "!git clean-repo && git gen-issues && git gen-miles && git txz",
         ),
         (
             "alias.gen-boot-report",
-            "!python scripts/generate_bootstrap_audit_report.py",
+            "!uv run python scripts/generate_bootstrap_audit_report.py",
         ),
         (
             "alias.ver-boot-report",
-            "!python scripts/verify_bootstrap_audit_report.py",
+            "!uv run python scripts/verify_bootstrap_audit_report.py",
         ),
         (
             "alias.install-dev-codira",
-            '!python ../codira/scripts/install_first_party_packages.py --python "$VIRTUAL_ENV/bin/python" --include-core --core-extra semantic --include-bundle',
+            "!uv pip install -e ../codira[semantic] -e ../codira/packages/codira-analyzer-python -e ../codira/packages/codira-analyzer-json -e ../codira/packages/codira-analyzer-c -e ../codira/packages/codira-analyzer-bash -e ../codira/packages/codira-backend-sqlite -e ../codira/packages/codira-backend-duckdb && uv pip install --no-deps -e ../codira/packages/codira-bundle-official",
         ),
         ("pull.ff", "only"),
         ("pull.rebase", "false"),
@@ -410,7 +309,6 @@ def git_local_config_entries() -> list[tuple[str, str]]:
 def build_bootstrap_commands(
     *,
     repo_root: Path,
-    python_executable: str,
     git_executable: str,
     options: BootstrapOptions,
 ) -> list[CommandSpec]:
@@ -421,67 +319,28 @@ def build_bootstrap_commands(
     ----------
     repo_root : pathlib.Path
         Absolute repository root path.
-    python_executable : str
-        Absolute path to the Python interpreter used to create the
-        virtual environment.
     git_executable : str
         Absolute path to the Git executable used for local config.
     options : BootstrapOptions
-        Bootstrap options controlling virtual-environment placement,
-        optional dependency groups, and validation behavior.
+        Bootstrap options controlling dependency groups and validation.
 
     Returns
     -------
     list[CommandSpec]
         Ordered command plan for the bootstrap workflow.
     """
-    venv_path = repo_root / options.venv_dir
-    venv_python = venv_executable(repo_root, options.venv_dir, "python")
-    venv_pip = venv_executable(repo_root, options.venv_dir, "pip")
-    venv_pre_commit = venv_executable(repo_root, options.venv_dir, "pre-commit")
-    venv_pytest = venv_executable(repo_root, options.venv_dir, "pytest")
-
-    commands = [
+    commands: list[CommandSpec] = [
         CommandSpec(
-            description="Upgrade pip, setuptools, and wheel in the virtual environment",
-            argv=(
-                str(venv_python),
-                "-m",
-                "pip",
-                "install",
-                "--upgrade",
-                "pip",
-                BOOTSTRAP_SETUPTOOLS_SPEC,
-                "wheel",
-            ),
-            cwd=repo_root,
-        ),
-        CommandSpec(
-            description="Install Fontshow in editable mode with development dependencies",
-            argv=(
-                str(venv_pip),
-                "install",
-                "-e",
-                install_target(with_docs=options.with_docs),
-            ),
+            description="Synchronize uv-managed development environment",
+            argv=uv_sync_command(with_docs=options.with_docs),
             cwd=repo_root,
         ),
         CommandSpec(
             description="Verify installed package requirements",
-            argv=(str(venv_python), "-m", "pip", "check"),
+            argv=("uv", "run", "python", "-m", "pip", "check"),
             cwd=repo_root,
         ),
     ]
-
-    if options.create_venv:
-        commands.insert(
-            0,
-            CommandSpec(
-                description=f"Create or refresh virtual environment at {venv_path}",
-                argv=(python_executable, "-m", "venv", str(venv_path)),
-                cwd=repo_root,
-            ),
-        )
 
     for key, value in git_local_config_entries():
         commands.append(
@@ -496,13 +355,28 @@ def build_bootstrap_commands(
         commands.extend(
             [
                 CommandSpec(
-                    description="Run repository validation (pre-commit)",
-                    argv=(str(venv_pre_commit), "run", "--all-files"),
+                    description="Run repository validation (ruff)",
+                    argv=("uv", "run", "ruff", "check", ".", "--fix"),
+                    cwd=repo_root,
+                ),
+                CommandSpec(
+                    description="Run repository validation (ruff format)",
+                    argv=("uv", "run", "ruff", "format", "--check", "."),
+                    cwd=repo_root,
+                ),
+                CommandSpec(
+                    description="Run repository validation (mypy)",
+                    argv=("uv", "run", "mypy", "src"),
                     cwd=repo_root,
                 ),
                 CommandSpec(
                     description="Run repository validation (pytest)",
-                    argv=(str(venv_pytest), "-q"),
+                    argv=("uv", "run", "python", "-m", "pytest", "-q"),
+                    cwd=repo_root,
+                ),
+                CommandSpec(
+                    description="Run repository validation (pre-commit)",
+                    argv=("uv", "run", "pre-commit", "run", "--all-files"),
                     cwd=repo_root,
                 ),
             ]
@@ -618,27 +492,17 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     repo_root = detect_repo_root(args.repo_root)
-    python_executable = select_bootstrap_python(
-        args.python,
-        repo_root=repo_root,
-        venv_dir=args.venv_dir,
-    )
-    if not Path(python_executable).is_absolute():
-        python_executable = resolve_executable(python_executable)
+
     git_executable = resolve_executable("git")
+    resolve_executable("uv")
 
     commands = build_bootstrap_commands(
         repo_root=repo_root,
-        python_executable=python_executable,
         git_executable=git_executable,
         options=BootstrapOptions(
             venv_dir=args.venv_dir,
             with_docs=args.with_docs,
             run_validation=not args.skip_validation,
-            create_venv=not target_venv_is_active(
-                repo_root=repo_root,
-                venv_dir=args.venv_dir,
-            ),
         ),
     )
     run_plan(commands, dry_run=args.dry_run)

@@ -4,7 +4,6 @@
 __pycache__/
 *.py[cod]
 .venv/
-.vscode/
 .gitconfig
 *.patch
 dist/
@@ -55,9 +54,7 @@ font_inventory.json
 font_inventory.txt
 font_inventory_enriched.json
 font_inventory_sample.txt
-fontshow_snapshot.zip
-fontshow_snapshot.tar.gz
-fontshow_snapshot.tar.xz
+repo.tar.xz
 guidelines.tar.xz
 issues.json
 milestones.json

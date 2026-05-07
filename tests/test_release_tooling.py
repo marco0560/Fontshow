@@ -90,7 +90,8 @@ def test_release_workflow_installs_from_lockfile() -> None:
 
 def test_documentation_workflows_delegate_to_single_reusable_workflow() -> None:
     """
-    Verify documentation deployment logic has one workflow implementation.
+    Verify documentation deployment logic is centralized in a single
+    reusable workflow and uses uv-managed tooling.
 
     Parameters
     ----------
@@ -106,11 +107,11 @@ def test_documentation_workflows_delegate_to_single_reusable_workflow() -> None:
 
     assert "uses: ./.github/workflows/docs-pages.yml" in ci_workflow_text
     assert "uses: ./.github/workflows/docs-pages.yml" in docs_workflow_text
-
     assert "pip install mkdocs" not in ci_workflow_text
     assert "pip install mkdocs" not in docs_workflow_text
+    assert "pip install mkdocs" not in docs_pages_workflow_text
     assert "mkdocs build --strict" not in ci_workflow_text
     assert "mkdocs build --strict" not in docs_workflow_text
-
-    assert docs_pages_workflow_text.count("          pip install mkdocs\n") == 1
-    assert docs_pages_workflow_text.count("mkdocs build --strict") == 1
+    assert "uv sync --frozen --extra dev --extra docs" in (docs_pages_workflow_text)
+    assert "uv run mkdocs build --strict" in (docs_pages_workflow_text)
+    assert docs_pages_workflow_text.count("uv run mkdocs build --strict") == 1

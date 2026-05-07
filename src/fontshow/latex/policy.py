@@ -592,7 +592,7 @@ def _build_polyglossia_font_setup(
     )
 
 
-def nfss_family_id(font: dict) -> str:
+def nfss_family_id(font: CatalogFontEntryV12) -> str:
     """
     Return a deterministic NFSS-safe identifier for a font.
 
@@ -601,7 +601,7 @@ def nfss_family_id(font: dict) -> str:
 
     Parameters
     ----------
-    font : dict
+    font : CatalogFontEntryV12
         Font descriptor dictionary containing a filesystem `path`
         field.
 

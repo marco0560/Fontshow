@@ -7,8 +7,8 @@ SCRIPT_DIR=$(
 REPO_ROOT=$(
     CDPATH= cd -- "$SCRIPT_DIR/.." && pwd
 )
-VENV_PRE_COMMIT="$REPO_ROOT/.venv/bin/pre-commit"
-VENV_PYTEST="$REPO_ROOT/.venv/bin/pytest"
+VENV_PRE_COMMIT="uv run pre-commit run --all-files"
+VENV_PYTEST="uv run python -m pytest -q tests"
 
 if [ -x "$VENV_PRE_COMMIT" ]; then
   PRE_COMMIT_BIN="$VENV_PRE_COMMIT"

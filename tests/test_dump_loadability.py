@@ -264,7 +264,7 @@ def test_resolve_batch_results_rejects_failed_single_candidate_with_ok_marker(
         assert ids == [7]
         return (
             1,
-            "FONTSHOW_LOAD_OK:7\n" "! I can't find file `DeferredFail.ttf.fontspec'.\n",
+            "FONTSHOW_LOAD_OK:7\n! I can't find file `DeferredFail.ttf.fontspec'.\n",
         )
 
     monkeypatch.setattr(loadability, "_run_lualatex_batch", _fake_run)

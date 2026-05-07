@@ -24,6 +24,8 @@ environment validation stage used before running inventory or catalog
 pipelines.
 """
 
+import argparse
+
 from .runner import run_preflight
 
 __all__ = [
@@ -32,7 +34,7 @@ __all__ = [
 ]
 
 
-def run(args):
+def run(args: argparse.Namespace) -> int:
     """
     CLI entrypoint for `fontshow preflight`.
 
@@ -41,7 +43,7 @@ def run(args):
 
     Parameters
     ----------
-    args : object
+    args : argparse.Namespace
         Parsed CLI arguments forwarded unchanged to the internal
         preflight CLI runner.
 
@@ -63,7 +65,7 @@ def run(args):
     return run_preflight_cli(args=args, run_preflight_fn=run_preflight)
 
 
-def register_cli(parser):
+def register_cli(parser: argparse.ArgumentParser) -> None:
     """
     Register the preflight command with the top-level CLI parser.
 

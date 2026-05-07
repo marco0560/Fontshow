@@ -26,21 +26,44 @@ migration by isolating v1.4 layout knowledge from downstream consumers.
 from __future__ import annotations
 
 from collections.abc import Mapping, MutableMapping, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any, Protocol, cast
+
+if TYPE_CHECKING:
+    from fontshow.core.types import FontRef, JSONDict
+
+type ReadableFontMapping = Mapping[str, object]
 
 
-def get_font_metrics(font: Mapping[str, Any]) -> Mapping[str, Any]:
+class MutableFontMapping(Protocol):
+    """
+    Structural protocol for partially-built mutable font mappings.
+    """
+
+    def get(
+        self,
+        key: str,
+        default: object | None = None,
+    ) -> object | None: ...
+
+    def __setitem__(
+        self,
+        key: str,
+        value: object,
+    ) -> None: ...
+
+
+def get_font_metrics(font: ReadableFontMapping) -> Mapping[str, object]:
     """
     Return the metrics block for a font entry.
 
     Parameters
     ----------
-    font : collections.abc.Mapping[str, Any]
+    font : collections.abc.Mapping[str, object]
         Font entry to inspect.
 
     Returns
     -------
-    collections.abc.Mapping[str, Any]
+    collections.abc.Mapping[str, object]
         Metrics mapping when present. Falls back to the top-level entry
         so callers can still read legacy flat metric fields.
     """
@@ -50,18 +73,18 @@ def get_font_metrics(font: Mapping[str, Any]) -> Mapping[str, Any]:
     return font
 
 
-def get_font_typography(font: Mapping[str, Any]) -> Mapping[str, Any]:
+def get_font_typography(font: ReadableFontMapping) -> Mapping[str, object]:
     """
     Return the typography block for a font entry.
 
     Parameters
     ----------
-    font : collections.abc.Mapping[str, Any]
+    font : collections.abc.Mapping[str, object]
         Font entry to inspect.
 
     Returns
     -------
-    collections.abc.Mapping[str, Any]
+    collections.abc.Mapping[str, object]
         Typography mapping when present. Falls back to the top-level
         entry for compatibility with legacy flat specimen fields.
     """
@@ -71,18 +94,18 @@ def get_font_typography(font: Mapping[str, Any]) -> Mapping[str, Any]:
     return font
 
 
-def get_font_loadability(font: Mapping[str, Any]) -> Mapping[str, Any]:
+def get_font_loadability(font: ReadableFontMapping) -> Mapping[str, object]:
     """
     Return the loadability block for a font entry.
 
     Parameters
     ----------
-    font : collections.abc.Mapping[str, Any]
+    font : collections.abc.Mapping[str, object]
         Font entry to inspect.
 
     Returns
     -------
-    collections.abc.Mapping[str, Any]
+    collections.abc.Mapping[str, object]
         Loadability mapping when present, otherwise an empty mapping.
     """
     loadability = font.get("loadability")
@@ -91,18 +114,20 @@ def get_font_loadability(font: Mapping[str, Any]) -> Mapping[str, Any]:
     return {}
 
 
-def get_font_lualatex_loadability(font: Mapping[str, Any]) -> Mapping[str, Any]:
+def get_font_lualatex_loadability(
+    font: ReadableFontMapping,
+) -> Mapping[str, object]:
     """
     Return the nested LuaLaTeX loadability block for a font entry.
 
     Parameters
     ----------
-    font : collections.abc.Mapping[str, Any]
+    font : collections.abc.Mapping[str, object]
         Font entry to inspect.
 
     Returns
     -------
-    collections.abc.Mapping[str, Any]
+    collections.abc.Mapping[str, object]
         ``loadability.lualatex`` mapping when present, otherwise an
         empty mapping.
     """
@@ -114,21 +139,20 @@ def get_font_lualatex_loadability(font: Mapping[str, Any]) -> Mapping[str, Any]:
 
 
 def get_font_lualatex_render_variants(
-    font: Mapping[str, Any],
-) -> tuple[Mapping[str, Any], ...]:
+    font: ReadableFontMapping,
+) -> Sequence[Mapping[str, object]]:
     """
-    Return persisted LuaLaTeX render-variant results for a font entry.
+    Return persisted LuaLaTeX render-variant records for a font.
 
     Parameters
     ----------
-    font : collections.abc.Mapping[str, Any]
+    font : collections.abc.Mapping[str, object]
         Font entry to inspect.
 
     Returns
     -------
-    tuple[collections.abc.Mapping[str, Any], ...]
-        Deterministic tuple of ``loadability.lualatex.render_variants``
-        records. Non-mapping items are ignored.
+    collections.abc.Sequence[collections.abc.Mapping[str, object]]
+        Persisted render-variant records.
     """
     lualatex = get_font_lualatex_loadability(font)
     raw_variants = lualatex.get("render_variants")
@@ -137,13 +161,13 @@ def get_font_lualatex_render_variants(
     return tuple(item for item in raw_variants if isinstance(item, Mapping))
 
 
-def get_sample_text_info(font: Mapping[str, Any]) -> dict[str, Any] | None:
+def get_sample_text_info(font: FontRef) -> dict[str, Any] | None:
     """
     Return normalized sample-text metadata for a font entry.
 
     Parameters
     ----------
-    font : collections.abc.Mapping[str, Any]
+    font : FontRef
         Font entry to inspect.
 
     Returns
@@ -161,13 +185,13 @@ def get_sample_text_info(font: Mapping[str, Any]) -> dict[str, Any] | None:
     return None
 
 
-def get_sample_text_value(font: Mapping[str, Any]) -> str | None:
+def get_sample_text_value(font: FontRef) -> str | None:
     """
     Return the plain sample-text value for a font entry.
 
     Parameters
     ----------
-    font : collections.abc.Mapping[str, Any]
+    font : FontRef
         Font entry to inspect.
 
     Returns
@@ -184,19 +208,19 @@ def get_sample_text_value(font: Mapping[str, Any]) -> str | None:
     return None
 
 
-def get_specimen_text(font: Mapping[str, Any]) -> str | None:
+def get_specimen_text(font: ReadableFontMapping) -> str | None:
     """
-    Return the specimen text for a font entry.
+    Return the accepted specimen text for a font entry.
 
     Parameters
     ----------
-    font : collections.abc.Mapping[str, Any]
+    font : collections.abc.Mapping[str, object]
         Font entry to inspect.
 
     Returns
     -------
     str | None
-        Specimen text when available, otherwise ``None``.
+        Accepted specimen text when present.
     """
     typography = get_font_typography(font)
     specimen_text = typography.get("specimen_text")
@@ -205,19 +229,19 @@ def get_specimen_text(font: Mapping[str, Any]) -> str | None:
     return None
 
 
-def get_specimen_strategy(font: Mapping[str, Any]) -> str | None:
+def get_specimen_strategy(font: ReadableFontMapping) -> str | None:
     """
-    Return the specimen generation strategy for a font entry.
+    Return the accepted specimen strategy for a font entry.
 
     Parameters
     ----------
-    font : collections.abc.Mapping[str, Any]
+    font : collections.abc.Mapping[str, object]
         Font entry to inspect.
 
     Returns
     -------
     str | None
-        Strategy string when available, otherwise ``None``.
+        Accepted specimen strategy when present.
     """
     typography = get_font_typography(font)
     strategy = typography.get("specimen_strategy")
@@ -226,19 +250,19 @@ def get_specimen_strategy(font: Mapping[str, Any]) -> str | None:
     return None
 
 
-def get_specimen_glyph_count(font: Mapping[str, Any]) -> int | None:
+def get_specimen_glyph_count(font: ReadableFontMapping) -> int | None:
     """
     Return the accepted specimen glyph count for a font entry.
 
     Parameters
     ----------
-    font : collections.abc.Mapping[str, Any]
+    font : collections.abc.Mapping[str, object]
         Font entry to inspect.
 
     Returns
     -------
     int | None
-        Glyph-count integer when available, otherwise ``None``.
+        Accepted specimen glyph count when present.
     """
     typography = get_font_typography(font)
     glyph_count = typography.get("specimen_glyph_count")
@@ -247,35 +271,38 @@ def get_specimen_glyph_count(font: Mapping[str, Any]) -> int | None:
     return None
 
 
-def ensure_v13_typography(font: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
+def ensure_v13_typography(font: MutableFontMapping) -> JSONDict:
     """
     Ensure a mutable v1.4 typography block exists on a font entry.
 
     Parameters
     ----------
-    font : collections.abc.MutableMapping[str, Any]
+    font : MutableMapping[str, object]
         Font entry updated in place.
 
     Returns
     -------
-    collections.abc.MutableMapping[str, Any]
-        Mutable typography mapping attached to ``font``.
+    JSONDict
+        JSON dictionary attached to ``font``.
     """
     typography = font.get("typography")
-    if isinstance(typography, MutableMapping):
+    if isinstance(typography, dict):
         return typography
-    created: dict[str, Any] = {}
+
+    created: JSONDict = {}
     font["typography"] = created
     return created
 
 
-def ensure_v13_loadability(font: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
+def ensure_v13_loadability(
+    font: MutableFontMapping,
+) -> MutableMapping[str, Any]:
     """
     Ensure a mutable v1.4 loadability block exists on a font entry.
 
     Parameters
     ----------
-    font : collections.abc.MutableMapping[str, Any]
+    font : MutableMapping[str, object]
         Font entry updated in place.
 
     Returns
@@ -286,20 +313,21 @@ def ensure_v13_loadability(font: MutableMapping[str, Any]) -> MutableMapping[str
     loadability = font.get("loadability")
     if isinstance(loadability, MutableMapping):
         return loadability
+
     created: dict[str, Any] = {}
     font["loadability"] = created
     return created
 
 
 def ensure_v13_lualatex_loadability(
-    font: MutableMapping[str, Any],
+    font: FontRef,
 ) -> MutableMapping[str, Any]:
     """
     Ensure a mutable nested LuaLaTeX loadability block exists.
 
     Parameters
     ----------
-    font : collections.abc.MutableMapping[str, Any]
+    font : FontRef
         Font entry updated in place.
 
     Returns
@@ -307,7 +335,7 @@ def ensure_v13_lualatex_loadability(
     collections.abc.MutableMapping[str, Any]
         Mutable ``loadability.lualatex`` mapping attached to ``font``.
     """
-    loadability = ensure_v13_loadability(font)
+    loadability = ensure_v13_loadability(cast("MutableFontMapping", font))
     lualatex = loadability.get("lualatex")
     if isinstance(lualatex, MutableMapping):
         return lualatex
@@ -324,7 +352,7 @@ def ensure_v13_lualatex_loadability(
 
 
 def set_lualatex_loadability_fields(
-    font: MutableMapping[str, Any],
+    font: FontRef,
     *,
     state: Mapping[str, Any],
 ) -> None:
@@ -333,7 +361,7 @@ def set_lualatex_loadability_fields(
 
     Parameters
     ----------
-    font : collections.abc.MutableMapping[str, Any]
+    font : FontRef
         Font entry updated in place.
     state : collections.abc.Mapping[str, Any]
         Mapping containing the persisted LuaLaTeX loadability fields to
@@ -355,7 +383,7 @@ def set_lualatex_loadability_fields(
 
 
 def set_lualatex_render_variants(
-    font: MutableMapping[str, Any],
+    font: FontRef,
     *,
     states: Sequence[Mapping[str, Any]],
 ) -> None:
@@ -364,7 +392,7 @@ def set_lualatex_render_variants(
 
     Parameters
     ----------
-    font : collections.abc.MutableMapping[str, Any]
+    font : FontRef
         Font entry updated in place.
     states : collections.abc.Sequence[collections.abc.Mapping[str, Any]]
         Ordered render-variant validation states to persist.
@@ -392,7 +420,7 @@ def set_lualatex_render_variants(
 
 
 def set_specimen_fields(
-    font: MutableMapping[str, Any],
+    font: FontRef,
     *,
     specimen_text: str,
     specimen_strategy: str,
@@ -404,7 +432,7 @@ def set_specimen_fields(
 
     Parameters
     ----------
-    font : collections.abc.MutableMapping[str, Any]
+    font : FontRef
         Font entry updated in place.
     specimen_text : str
         Final specimen text.
@@ -419,7 +447,7 @@ def set_specimen_fields(
     -------
     None
     """
-    typography = ensure_v13_typography(font)
+    typography = ensure_v13_typography(cast("MutableFontMapping", font))
     typography["specimen_text"] = specimen_text
     typography["specimen_strategy"] = specimen_strategy
     typography["specimen_glyph_count"] = specimen_glyph_count

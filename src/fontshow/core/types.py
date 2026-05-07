@@ -30,7 +30,16 @@ from enum import Enum, auto
 from typing import Any, Literal, NewType, NotRequired, TypedDict
 
 # ------------------------------------------------------------------
-# Script identifier canonical types (Phase 5)
+# Type aliases and newtypes
+# ------------------------------------------------------------------
+
+JSONDict = dict[str, Any]
+JSONList = list[Any]
+JSONScalar = str | int | float | bool | None
+JSONValue = JSONDict | JSONList | JSONScalar
+
+# ------------------------------------------------------------------
+# Script identifier canonical types
 # ------------------------------------------------------------------
 
 # ISO-15924 uppercase (canonical internal representation)
@@ -308,24 +317,32 @@ class Severity(Enum):
 
 class WarningInfo(TypedDict, total=False):
     """
-    Structured warning payload attached to inventories or font entries.
+    Structured warning payload.
 
     Parameters
     ----------
-    severity : Severity
-        Severity level associated with the warning.
     code : str
-        Machine-readable warning identifier.
+        Stable warning identifier.
     message : str
         Human-readable warning message.
-    extra : dict[str, Any]
-        Optional structured payload with warning-specific metadata.
+    severity : Severity
+        Warning severity classification.
+    source : str
+        Originating subsystem or validation stage.
+    extra : JSONDict
+        Optional structured diagnostic payload.
+
+    Notes
+    -----
+    Warning payloads are intentionally JSON-serializable because they are
+    persisted into inventory documents and may appear in exported reports.
     """
 
-    severity: Severity
     code: str
     message: str
-    extra: dict[str, Any]
+    severity: Severity
+    source: str
+    extra: JSONDict | DeprecatedLanguageInfo
 
 
 class SampleTextInfo(TypedDict, total=False):
@@ -346,39 +363,155 @@ class SampleTextInfo(TypedDict, total=False):
 
 class FontRef(TypedDict):
     """
-    Shared lightweight font reference used across multiple subsystems.
+    Canonical normalized font inventory descriptor.
 
     Parameters
     ----------
+    path : str
+        Absolute or normalized filesystem path of the font resource.
+
     family : str
         Canonical family name.
-    style : str
-        Style or subfamily label.
-    path : str | None, optional
-        Source font path when available.
+
+    subfamily : str
+        Canonical subfamily or style designation.
+
+    typographic_subfamily : str
+        Typographic subfamily name derived from OpenType naming data.
+
+    full_name : str
+        Full display name for the font face.
+
+    postscript_name : str
+        PostScript-compatible font identifier.
+
+    version_string : str
+        Human-readable font version string.
+
+    unique_font_id : str
+        Stable deterministic identifier for the font face.
+
+    metrics : JSONDict
+        Numeric font metrics and geometry-related metadata.
+
+    coverage : JSONDict
+        Unicode coverage, scripts, languages, and charset metadata.
+
+    inference : JSONDict
+        Semantic inference payload generated during parse-inventory.
+
+    charset : JSONDict
+        Charset-related enrichment metadata.
+
+    typography : JSONDict
+        Typography-oriented rendering and specimen metadata.
+
+    loadability : JSONDict
+        LuaLaTeX loadability probing results and runtime metadata.
+
+    warnings : list[WarningInfo]
+        Structured warnings associated with the font descriptor.
+
     index : int | None, optional
-        Face index for collection-based fonts.
-    inference : InferenceInfo, optional
-        Minimal inference payload associated with the font.
-    warnings : list[WarningInfo], optional
-        Structured warnings attached to the font.
+        TTC/OTC face index for collection-based fonts.
+
     sample_text : SampleTextInfo, optional
         Embedded sample text payload.
 
     Notes
     -----
-    The structure mixes required identity keys with optional enrichment
-    fields used by specimen selection, warnings, and inventory-derived
-    metadata helpers.
+    This structure represents the canonical schema emitted by the
+    dump-fonts stage and consumed by subsequent parsing, validation,
+    diagnostics, and catalog-generation stages.
+
+    The descriptor intentionally contains denormalized metadata to avoid
+    reopening font binaries during downstream processing.
+
+    Required keys correspond to the active inventory schema contract.
+    Optional keys are compatibility or enrichment fields that may be
+    absent depending on the pipeline stage.
     """
 
+    path: str
+
     family: str
-    style: str
-    path: NotRequired[str | None]
+    subfamily: str
+    typographic_subfamily: str
+
+    full_name: str
+    postscript_name: str
+    version_string: str
+    unique_font_id: str
+
+    metrics: JSONDict
+    coverage: JSONDict
+    inference: JSONDict
+    charset: JSONDict
+    typography: JSONDict
+    loadability: JSONDict
+
+    warnings: list[WarningInfo]
+
     index: NotRequired[int | None]
-    inference: NotRequired[InferenceInfo]
-    warnings: NotRequired[list[WarningInfo]]
     sample_text: NotRequired[SampleTextInfo]
+
+
+class InventoryMetadata(TypedDict, total=False):
+    """
+    Inventory-level metadata block.
+
+    Parameters
+    ----------
+    schema_version : str
+        Active inventory schema version.
+    inference_level : str
+        Inference level used by parse-inventory.
+    input_inventory_tool : str
+        Name of the tool that produced or enriched the inventory.
+    input_inventory_tool_version : str
+        Version of the producing tool.
+    run_environment : JSONDict
+        Platform/runtime metadata captured at inventory generation time.
+    validation : JSONDict
+        Validation metadata, including LuaLaTeX loadability metadata.
+
+    Notes
+    -----
+    This structure describes the inventory document itself, not an
+    individual font entry. All fields are optional because partially
+    loaded JSON is validated before it becomes trusted pipeline input.
+    """
+
+    schema_version: str
+    inference_level: str
+    input_inventory_tool: str
+    input_inventory_tool_version: str
+    run_environment: JSONDict
+    validation: JSONDict
+
+
+class InventoryDocument(TypedDict):
+    """
+    Canonical inventory root document.
+
+    Parameters
+    ----------
+    metadata : InventoryMetadata
+        Inventory-level metadata.
+    fonts : list[FontRef]
+        Normalized font descriptors contained in the inventory.
+    warnings : list[WarningInfo], optional
+        Inventory-level structured warnings.
+
+    Notes
+    -----
+    This is the type for the whole JSON inventory object. It must not be
+    confused with `FontRef`, which describes one font entry.
+    """
+
+    metadata: InventoryMetadata
+    fonts: list[FontRef]
+    warnings: NotRequired[list[WarningInfo]]
 
 
 class CoverageV12(TypedDict, total=False):

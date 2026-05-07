@@ -93,7 +93,7 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(func=main)
 
 
-def run(args) -> int:
+def run(args: argparse.Namespace) -> int:
     """
     CLI entry point for validating a Fontshow inventory against the JSON schema.
 
@@ -160,7 +160,7 @@ def run(args) -> int:
     return 0
 
 
-def main(args) -> int:
+def main(args: argparse.Namespace) -> int:
     """
     Public CLI entrypoint for validate-inventory.
 

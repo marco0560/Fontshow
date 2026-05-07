@@ -24,9 +24,10 @@ font discovery capability check used during environment validation.
 
 import shutil
 
+from fontshow.core.types import Severity
 from fontshow.preflight.checks import environment
 from fontshow.preflight.checks.base import BaseCheck
-from fontshow.preflight.model import CheckResult, Severity
+from fontshow.preflight.model import CheckResult
 
 
 def has_fontconfig() -> bool:
