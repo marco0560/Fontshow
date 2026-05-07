@@ -1,3 +1,9 @@
+## [0.74.1](https://github.com/marco0560/Fontshow/compare/v0.74.0...v0.74.1) (2026-05-07)
+
+### Bug Fixes
+
+* **ci:** adapted github workflow to the uv environment ([1dab7fc](https://github.com/marco0560/Fontshow/commit/1dab7fc70948a522c1bcf1c9e5e46cc1013513f1))
+
 ## [0.74.0](https://github.com/marco0560/Fontshow/compare/v0.73.5...v0.74.0) (2026-05-07)
 
 ### Features
