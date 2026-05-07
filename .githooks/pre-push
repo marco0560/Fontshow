@@ -7,29 +7,29 @@ SCRIPT_DIR=$(
 REPO_ROOT=$(
     CDPATH= cd -- "$SCRIPT_DIR/.." && pwd
 )
-VENV_PRE_COMMIT="uv run pre-commit run --all-files"
-VENV_PYTEST="uv run python -m pytest -q tests"
+VENV_PRE_COMMIT="uv run pre-commit"
+VENV_PYTEST="uv run python -m pytest"
 
-if [ -x "$VENV_PRE_COMMIT" ]; then
+if uv run pre-commit --version >/dev/null 2>&1; then
   PRE_COMMIT_BIN="$VENV_PRE_COMMIT"
 elif command -v pre-commit >/dev/null 2>&1; then
   PRE_COMMIT_BIN=$(command -v pre-commit)
 else
   echo "ERROR: pre-commit is not available." >&2
   echo "Expected one of:" >&2
-  echo "  - $VENV_PRE_COMMIT" >&2
+  echo "  - uv-managed pre-commit" >&2
   echo "  - pre-commit on PATH" >&2
   exit 1
 fi
 
-if [ -x "$VENV_PYTEST" ]; then
+if uv run python -m pytest --version >/dev/null 2>&1; then
   PYTEST_BIN="$VENV_PYTEST"
 elif command -v pytest >/dev/null 2>&1; then
   PYTEST_BIN=$(command -v pytest)
 else
   echo "ERROR: pytest is not available." >&2
   echo "Expected one of:" >&2
-  echo "  - $VENV_PYTEST" >&2
+  echo "  - uv-managed pytest" >&2
   echo "  - pytest on PATH" >&2
   exit 1
 fi
@@ -52,7 +52,7 @@ else
 fi
 
 echo "🔍 Running pre-commit checks before push..."
-"$PRE_COMMIT_BIN" run --all-files
+$PRE_COMMIT_BIN run --all-files
 echo "✅ pre-commit checks passed"
 
 echo "🧪 Running test suite..."
@@ -64,7 +64,7 @@ fi
 mkdir -p "$PYTEST_RUNTIME_ROOT"
 PYTEST_TEMP_DIR="$PYTEST_RUNTIME_ROOT"
 TMPDIR="$PYTEST_TEMP_DIR" TMP="$PYTEST_TEMP_DIR" TEMP="$PYTEST_TEMP_DIR" \
-  "$PYTEST_BIN" -q tests
+  $PYTEST_BIN -q tests
 echo "✅ Tests passed"
 
 # ------------------------------------------------------------
