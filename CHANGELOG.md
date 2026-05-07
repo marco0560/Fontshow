@@ -1,3 +1,13 @@
+## [0.74.0](https://github.com/marco0560/Fontshow/compare/v0.73.5...v0.74.0) (2026-05-07)
+
+### Features
+
+* **dev:** migrate repository to uv and enforce ruff+mypy strict typing ([3776133](https://github.com/marco0560/Fontshow/commit/377613391b159a6d95df52b4c987551f4b1a1516))
+
+### Bug Fixes
+
+* **git:** adapted pre-push hook to the uv environment ([c4b3f57](https://github.com/marco0560/Fontshow/commit/c4b3f57b9c3d014e5d8a4a82cbfc4e2282b2608a))
+
 ## [0.73.5](https://github.com/marco0560/Fontshow/compare/v0.73.4...v0.73.5) (2026-05-03)
 
 ### Bug Fixes
