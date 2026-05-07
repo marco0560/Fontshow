@@ -60,7 +60,7 @@ jobs:
 
             - name: Run test suite
               run: |
-                  pytest -q
+                  uv run python -mpytest -q
 
     # -------------------------
     # Job 2: Docs (MkDocs + Pages)
