@@ -298,7 +298,7 @@ def git_local_config_entries() -> list[tuple[str, str]]:
         ),
         (
             "alias.install-dev-codira",
-            "!uv pip install -e ../codira[semantic] -e ../codira/packages/codira-analyzer-python -e ../codira/packages/codira-analyzer-json -e ../codira/packages/codira-analyzer-c -e ../codira/packages/codira-analyzer-bash -e ../codira/packages/codira-backend-sqlite -e ../codira/packages/codira-backend-duckdb && uv pip install --no-deps -e ../codira/packages/codira-bundle-official",
+            '!f() { uv run python ../codira/scripts/install_first_party_packages.py --python "$VIRTUAL_ENV/bin/python" --include-core --core-extra semantic --include-bundle; }; f',
         ),
         ("pull.ff", "only"),
         ("pull.rebase", "false"),
