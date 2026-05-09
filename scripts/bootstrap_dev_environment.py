@@ -298,7 +298,7 @@ def git_local_config_entries() -> list[tuple[str, str]]:
         ),
         (
             "alias.install-dev-codira",
-            '!f() { uv run python ../codira/scripts/install_first_party_packages.py --python "$VIRTUAL_ENV/bin/python" --include-core --core-extra semantic --include-bundle; }; f',
+            '!f() { uv run python ../codira/scripts/install_first_party_packages.py --python "$VIRTUAL_ENV/bin/python" --include-core --core-extra semantic; }; f',
         ),
         ("pull.ff", "only"),
         ("pull.rebase", "false"),
