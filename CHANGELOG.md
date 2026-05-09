@@ -1,3 +1,9 @@
+## [0.74.2](https://github.com/marco0560/Fontshow/compare/v0.74.1...v0.74.2) (2026-05-09)
+
+### Bug Fixes
+
+* **dev:** installation of codira as tool to uv-backed repo ([31f6c74](https://github.com/marco0560/Fontshow/commit/31f6c74998c4f183dc204fce5d62400caae0a863))
+
 ## [0.74.1](https://github.com/marco0560/Fontshow/compare/v0.74.0...v0.74.1) (2026-05-07)
 
 ### Bug Fixes
