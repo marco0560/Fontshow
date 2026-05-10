@@ -1,3 +1,9 @@
+## [0.74.3](https://github.com/marco0560/Fontshow/compare/v0.74.2...v0.74.3) (2026-05-10)
+
+### Bug Fixes
+
+* **ci:** install uv in docs-pages.yml workflow ([b764a69](https://github.com/marco0560/Fontshow/commit/b764a691a85257377fb061e99b50fe4319d05cba))
+
 ## [0.74.2](https://github.com/marco0560/Fontshow/compare/v0.74.1...v0.74.2) (2026-05-09)
 
 ### Bug Fixes
