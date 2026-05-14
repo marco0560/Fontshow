@@ -124,7 +124,21 @@ class SupportsLog(Protocol):
     Minimal logging protocol required by TRACE helpers.
     """
 
-    def isEnabledFor(self, level: int) -> bool: ...
+    def isEnabledFor(self, level: int) -> bool:
+        """
+        Report whether logging is enabled for a level.
+
+        Parameters
+        ----------
+        level : int
+            Logging level to check.
+
+        Returns
+        -------
+        bool
+            ``True`` when records at ``level`` should be emitted.
+        """
+        ...
 
     def log(
         self,
@@ -132,7 +146,26 @@ class SupportsLog(Protocol):
         msg: str,
         *args: object,
         **kwargs: Any,
-    ) -> None: ...
+    ) -> None:
+        """
+        Emit a log record with stdlib-compatible arguments.
+
+        Parameters
+        ----------
+        level : int
+            Logging level attached to the record.
+        msg : str
+            Log message template.
+        *args : object
+            Positional formatting arguments passed to the logger.
+        **kwargs : typing.Any
+            Keyword arguments forwarded to the logger implementation.
+
+        Returns
+        -------
+        None
+        """
+        ...
 
 
 def _trace(self: logging.Logger, message: str, *args: Any, **kwargs: Any) -> None:

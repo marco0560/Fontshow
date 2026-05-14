@@ -34,6 +34,11 @@ def load_enriched_inventory(path: Path) -> dict[str, Any]:
     -------
     dict[str, object]
         Parsed inventory payload.
+
+    Raises
+    ------
+    SystemExit
+        Raised when the decoded JSON root is not an object.
     """
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):

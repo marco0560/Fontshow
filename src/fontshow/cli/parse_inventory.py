@@ -416,6 +416,12 @@ def parse_inventory(
     InventoryDocument
         Enriched inventory document.
 
+    Raises
+    ------
+    ValueError
+        Raised when persisted LuaLaTeX loadability validation reports
+        incomplete results after render-variant probing.
+
     Notes
     -----
     This function operates on the inventory root. Individual elements of

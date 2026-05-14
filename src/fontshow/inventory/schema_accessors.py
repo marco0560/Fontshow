@@ -43,7 +43,23 @@ class MutableFontMapping(Protocol):
         self,
         key: str,
         default: object | None = None,
-    ) -> object | None: ...
+    ) -> object | None:
+        """
+        Return a mapping value or a fallback default.
+
+        Parameters
+        ----------
+        key : str
+            Mapping key to resolve.
+        default : object | None, optional
+            Fallback value returned when ``key`` is absent.
+
+        Returns
+        -------
+        object | None
+            Stored mapping value or ``default`` when the key is missing.
+        """
+        ...
 
     def __setitem__(
         self,
