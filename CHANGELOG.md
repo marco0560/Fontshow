@@ -1,3 +1,9 @@
+## [0.74.4](https://github.com/marco0560/Fontshow/compare/v0.74.3...v0.74.4) (2026-05-17)
+
+### Bug Fixes
+
+* **dev:** make install-dev-codira use a repo-local wrapper ([c0b7021](https://github.com/marco0560/Fontshow/commit/c0b702198634f5970e04ee1f3e5d2f712c9a1a4b))
+
 ## [0.74.3](https://github.com/marco0560/Fontshow/compare/v0.74.2...v0.74.3) (2026-05-10)
 
 ### Bug Fixes
