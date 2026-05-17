@@ -9,13 +9,25 @@ from pathlib import Path
 _SCRIPT_PATH = (
     Path(__file__).resolve().parents[1] / "scripts" / "bootstrap_dev_environment.py"
 )
+_INSTALL_DEV_CODIRA_PATH = (
+    Path(__file__).resolve().parents[1] / "scripts" / "install_dev_codira.py"
+)
 _SPEC = importlib.util.spec_from_file_location(
     "bootstrap_dev_environment", _SCRIPT_PATH
 )
+_INSTALL_DEV_CODIRA_SPEC = importlib.util.spec_from_file_location(
+    "install_dev_codira", _INSTALL_DEV_CODIRA_PATH
+)
 assert _SPEC is not None and _SPEC.loader is not None
+assert (
+    _INSTALL_DEV_CODIRA_SPEC is not None and _INSTALL_DEV_CODIRA_SPEC.loader is not None
+)
 bootstrap_dev_environment = importlib.util.module_from_spec(_SPEC)
+install_dev_codira = importlib.util.module_from_spec(_INSTALL_DEV_CODIRA_SPEC)
 sys.modules[_SPEC.name] = bootstrap_dev_environment
+sys.modules[_INSTALL_DEV_CODIRA_SPEC.name] = install_dev_codira
 _SPEC.loader.exec_module(bootstrap_dev_environment)
+_INSTALL_DEV_CODIRA_SPEC.loader.exec_module(install_dev_codira)
 
 
 def test_uv_sync_command_tracks_requested_dependency_groups() -> None:
@@ -139,12 +151,59 @@ def test_git_local_config_entries_match_repository_contract() -> None:
         ),
         (
             "alias.install-dev-codira",
-            '!f() { uv run python ../codira/scripts/install_first_party_packages.py --python "$VIRTUAL_ENV/bin/python" --include-core --core-extra semantic; }; f',
+            "!uv run python scripts/install_dev_codira.py",
         ),
         ("pull.ff", "only"),
         ("pull.rebase", "false"),
         ("rebase.autostash", "true"),
     ]
+
+
+def test_install_dev_codira_builds_repo_local_wrapper_command() -> None:
+    """
+    Ensure the codira install wrapper targets the current repository venv.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    command = install_dev_codira.build_install_command(
+        python="/tmp/fontshow/.venv/bin/python",
+        codira_root=Path("/repos/codira"),
+    )
+
+    assert command == (
+        "uv",
+        "run",
+        "python",
+        "/repos/codira/scripts/install_first_party_packages.py",
+        "--python",
+        "/tmp/fontshow/.venv/bin/python",
+        "--include-core",
+        "--core-extra",
+        "semantic",
+    )
+
+
+def test_install_dev_codira_default_root_points_to_sibling_checkout() -> None:
+    """
+    Ensure the codira install wrapper resolves the expected sibling checkout.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    assert install_dev_codira.DEFAULT_CODIRA_ROOT.as_posix().endswith(
+        "/Software/Python/codira"
+    )
 
 
 def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
