@@ -1,3 +1,9 @@
+## [0.74.5](https://github.com/marco0560/Fontshow/compare/v0.74.4...v0.74.5) (2026-05-29)
+
+### Bug Fixes
+
+* **parser:** harden parse inventory runtime contract ([ef65d1b](https://github.com/marco0560/Fontshow/commit/ef65d1b7fa9f607d931e18de47748ca008ecd34d))
+
 ## [0.74.4](https://github.com/marco0560/Fontshow/compare/v0.74.3...v0.74.4) (2026-05-17)
 
 ### Bug Fixes
