@@ -564,7 +564,7 @@ def test_probe_and_persist_lualatex_render_variants_persists_specimen_data(
     monkeypatch.setattr(
         loadability,
         "_render_variant_specimen_details",
-        lambda _font, script: (
+        lambda _font, script, **_kwargs: (
             ("The quick brown fox", 16, "script")
             if str(script) == "LATN"
             else ("ابتثجحخدذرزسشصض", 16, "script-cmap")

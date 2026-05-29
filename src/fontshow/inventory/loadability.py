@@ -48,6 +48,7 @@ from fontshow.inventory.schema_accessors import (
 )
 from fontshow.inventory.specimens import (
     MIN_SAMPLE_GLYPHS,
+    CmapCache,
     _script_fallback_specimen,
     _specimen_collect_cmap,
     _specimen_preference,
@@ -853,7 +854,12 @@ def _ordered_render_variant_scripts(font: FontRef) -> list[ScriptISO]:
     return ordered[:20]
 
 
-def _render_variant_specimen(font: FontRef, script_iso: ScriptISO) -> str:
+def _render_variant_specimen(
+    font: FontRef,
+    script_iso: ScriptISO,
+    *,
+    cmap_cache: CmapCache | None = None,
+) -> str:
     """
     Return the sample text used to validate one render-path variant.
 
@@ -863,6 +869,9 @@ def _render_variant_specimen(font: FontRef, script_iso: ScriptISO) -> str:
         Enriched inventory font entry being validated.
     script_iso : ScriptISO
         Script code for the render-path candidate.
+    cmap_cache : CmapCache | None, optional
+        Scoped cmap cache used to avoid reopening the same font file
+        repeatedly.
 
     Returns
     -------
@@ -885,7 +894,11 @@ def _render_variant_specimen(font: FontRef, script_iso: ScriptISO) -> str:
     if not variant_path:
         return ""
 
-    cps = _specimen_collect_cmap(variant_path, None)
+    cps = (
+        cmap_cache.get(variant_path, None)
+        if cmap_cache is not None
+        else _specimen_collect_cmap(variant_path, None)
+    )
     if not cps:
         return ""
 
@@ -943,7 +956,10 @@ def _render_variant_cmap_fallback(cps: set[int], script_iso: ScriptISO) -> str:
 
 
 def _render_variant_specimen_details(
-    font: FontRef, script_iso: ScriptISO
+    font: FontRef,
+    script_iso: ScriptISO,
+    *,
+    cmap_cache: CmapCache | None = None,
 ) -> tuple[str, int, str] | None:
     """
     Return persisted specimen details for a render-path candidate.
@@ -954,6 +970,9 @@ def _render_variant_specimen_details(
         Enriched inventory font entry being validated.
     script_iso : ScriptISO
         Script code for the render-path candidate.
+    cmap_cache : CmapCache | None, optional
+        Scoped cmap cache used to avoid reopening the same font file
+        repeatedly.
 
     Returns
     -------
@@ -982,7 +1001,11 @@ def _render_variant_specimen_details(
     if not variant_path:
         return None
 
-    cps = _specimen_collect_cmap(variant_path, None)
+    cps = (
+        cmap_cache.get(variant_path, None)
+        if cmap_cache is not None
+        else _specimen_collect_cmap(variant_path, None)
+    )
     if not cps:
         return None
 
@@ -1032,12 +1055,17 @@ def probe_and_persist_lualatex_render_variants(
         return
 
     candidates: list[_ProbeCandidate] = []
+    cmap_cache = CmapCache(_specimen_collect_cmap)
     for index, font in enumerate(fonts):
         if not _is_inventory_validation_candidate(font):
             continue
 
         for script_iso in _ordered_render_variant_scripts(font):
-            specimen_details = _render_variant_specimen_details(font, script_iso)
+            specimen_details = _render_variant_specimen_details(
+                font,
+                script_iso,
+                cmap_cache=cmap_cache,
+            )
             if specimen_details is None:
                 continue
             specimen, specimen_glyph_count, specimen_strategy = specimen_details

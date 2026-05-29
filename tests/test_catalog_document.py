@@ -612,7 +612,9 @@ def test_primary_specimen_for_rendered_script_rejects_semantically_invalid_sampl
     -------
     None
     """
-    monkeypatch.setattr(document, "_curated_primary_script_specimen", lambda *_: "")
+    monkeypatch.setattr(
+        document, "_curated_primary_script_specimen", lambda *_, **_kwargs: ""
+    )
 
     specimen = document._primary_specimen_for_rendered_script(
         {
@@ -669,12 +671,16 @@ def test_primary_specimen_for_rendered_script_prefers_glyph_mode_for_low_info_cm
     -------
     None
     """
-    monkeypatch.setattr(document, "_curated_primary_script_specimen", lambda *_: "")
+    monkeypatch.setattr(
+        document, "_curated_primary_script_specimen", lambda *_, **_kwargs: ""
+    )
     monkeypatch.setattr(
         document, "_should_suppress_specialized_primary_specimen", lambda _font: True
     )
     monkeypatch.setattr(
-        document, "_specialized_glyph_sample", lambda _font: "█ \ue0a0 \ue0b0"
+        document,
+        "_specialized_glyph_sample",
+        lambda _font, **_kwargs: "█ \ue0a0 \ue0b0",
     )
 
     specimen = document._primary_specimen_for_rendered_script(
@@ -707,7 +713,9 @@ def test_primary_specimen_for_rendered_script_suppresses_primary_pua_without_cur
     -------
     None
     """
-    monkeypatch.setattr(document, "_curated_primary_script_specimen", lambda *_: "")
+    monkeypatch.setattr(
+        document, "_curated_primary_script_specimen", lambda *_, **_kwargs: ""
+    )
 
     specimen = document._primary_specimen_for_rendered_script(
         {
@@ -1323,7 +1331,7 @@ def test_specimen_for_rendered_script_replaces_mismatched_primary_with_curated(
     monkeypatch.setattr(
         document,
         "_curated_primary_script_specimen",
-        lambda _font, _script: "Arabic sample",
+        lambda _font, _script, **_kwargs: "Arabic sample",
     )
 
     specimen = document._specimen_for_rendered_script({}, ScriptISO("ARAB"))
@@ -1353,7 +1361,7 @@ def test_specimen_for_rendered_script_replaces_primary_pua_with_script_fallback(
     monkeypatch.setattr(
         document,
         "_curated_primary_script_specimen",
-        lambda _font, _script: "あいうえおかきくけこさしすせそたちつてと",
+        lambda _font, _script, **_kwargs: "あいうえおかきくけこさしすせそたちつてと",
     )
 
     specimen = document._specimen_for_rendered_script(
@@ -1415,7 +1423,9 @@ def test_generate_document_skips_sparse_renderer_added_specimens(monkeypatch, tm
     monkeypatch.setattr(
         document,
         "_filter_renderer_script_specimen",
-        lambda _font, specimen: "" if specimen == "Greek sample" else specimen,
+        lambda _font, specimen, **_kwargs: (
+            "" if specimen == "Greek sample" else specimen
+        ),
     )
 
     def render_stub(font, safe_specimen, script0_iso, fullpath, catalog_detail=None):
@@ -1507,7 +1517,9 @@ def test_generate_document_adds_multi_script_specimens_from_ontology(
     monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
     monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
     monkeypatch.setattr(
-        document, "_filter_renderer_script_specimen", lambda _font, specimen: specimen
+        document,
+        "_filter_renderer_script_specimen",
+        lambda _font, specimen, **_kwargs: specimen,
     )
     monkeypatch.setattr(
         document,
@@ -1614,7 +1626,9 @@ def test_generate_document_labels_single_script_extended_specimen(
     monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
     monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
     monkeypatch.setattr(
-        document, "_filter_renderer_script_specimen", lambda _font, specimen: specimen
+        document,
+        "_filter_renderer_script_specimen",
+        lambda _font, specimen, **_kwargs: specimen,
     )
     monkeypatch.setattr(
         document,
@@ -1716,7 +1730,9 @@ def test_generate_document_escapes_tex_size_and_family_commands(monkeypatch, tmp
     monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
     monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
     monkeypatch.setattr(
-        document, "_filter_renderer_script_specimen", lambda _font, specimen: specimen
+        document,
+        "_filter_renderer_script_specimen",
+        lambda _font, specimen, **_kwargs: specimen,
     )
     monkeypatch.setattr(
         document,
@@ -1823,7 +1839,9 @@ def test_generate_latex_compact_layout_includes_frontmatter_and_tighter_blocks(
     monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
     monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
     monkeypatch.setattr(
-        document, "_filter_renderer_script_specimen", lambda _font, specimen: specimen
+        document,
+        "_filter_renderer_script_specimen",
+        lambda _font, specimen, **_kwargs: specimen,
     )
     monkeypatch.setattr(
         document,
@@ -1950,7 +1968,9 @@ def test_generate_latex_indexed_navigation_adds_toc_anchors_and_end_index(
     monkeypatch.setattr(document, "_renderer_option_prefix", lambda: "")
     monkeypatch.setattr(document, "primary_script", lambda font: font.get("script"))
     monkeypatch.setattr(
-        document, "_filter_renderer_script_specimen", lambda _font, specimen: specimen
+        document,
+        "_filter_renderer_script_specimen",
+        lambda _font, specimen, **_kwargs: specimen,
     )
     monkeypatch.setattr(
         document,

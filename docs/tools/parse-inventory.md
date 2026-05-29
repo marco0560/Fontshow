@@ -3,7 +3,11 @@
 This module enriches the raw font inventory produced by `dump_fonts`
 by performing script, language, and writing-system inference.
 
-It operates purely on JSON data and never inspects font binaries.
+It operates on JSON inventory data for inference and validation, but it
+also verifies that the inventory belongs to the current runtime
+environment and refreshes persisted LuaLaTeX render-loadability metadata.
+Render-variant validation may inspect font binaries referenced by the
+inventory paths.
 
 ---
 
@@ -13,6 +17,8 @@ It operates purely on JSON data and never inspects font binaries.
 - Infer language coverage
 - Normalize Unicode coverage information
 - Attach inference metadata to each font entry
+- Verify `metadata.run_environment` against the current platform
+- Refresh LuaLaTeX render-loadability metadata
 
 ---
 
@@ -24,9 +30,7 @@ inventory data produced by earlier stages.
 It is **not** responsible for:
 
 - discovering fonts on the system
-- inspecting font files directly
 - extracting raw font metadata
-- generating output artifacts
 - performing LaTeX compilation
 
 All font discovery and metadata extraction are performed upstream by
@@ -39,6 +43,10 @@ This separation ensures that:
 - parsing remains deterministic
 - validation rules are centralized
 - pipeline stages remain loosely coupled
+
+The stage is environment-bound. An inventory generated on another
+machine, or with paths that are not valid in the current runtime, may be
+rejected or may fail render-loadability refresh.
 
 ---
 

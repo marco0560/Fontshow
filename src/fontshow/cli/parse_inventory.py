@@ -15,9 +15,11 @@ Responsibilities
 
 Design principles
 -----------------
-This stage operates exclusively on JSON inventory data and performs
-no direct inspection of font binaries. All inference logic must be
-deterministic so that identical inputs produce identical outputs.
+This stage operates on JSON inventory data, verifies that the source
+inventory matches the current runtime environment, and refreshes
+persisted LuaLaTeX render-variant metadata for downstream catalog use.
+All inference logic must be deterministic so that identical inputs in
+the same runtime environment produce identical outputs.
 
 Architectural role
 ------------------
@@ -734,6 +736,42 @@ def _list_missing_language_coverage(
     return 0
 
 
+def _load_inventory_json_for_parse(
+    input_path: Path,
+    read_text_fn: Callable[[Path], str],
+) -> JSONDict | None:
+    """
+    Load parse-inventory input JSON with deterministic user errors.
+
+    Parameters
+    ----------
+    input_path : pathlib.Path
+        Inventory path selected by the CLI.
+    read_text_fn : Callable[[pathlib.Path], str]
+        Text reader used to load the inventory payload.
+
+    Returns
+    -------
+    JSONDict | None
+        Parsed top-level inventory object, or ``None`` when user input is
+        malformed and an error has already been logged.
+    """
+    try:
+        loaded_data = json.loads(read_text_fn(input_path))
+    except json.JSONDecodeError as exc:
+        log_err(f"invalid JSON: {exc}")
+        return None
+    except OSError as exc:
+        log_err(f"failed to read input file: {exc}")
+        return None
+
+    if not isinstance(loaded_data, dict):
+        log_err("invalid inventory: expected top-level object")
+        return None
+
+    return cast("JSONDict", loaded_data)
+
+
 def run_parse_font_inventory(
     args: argparse.Namespace,
     *,
@@ -766,14 +804,8 @@ def run_parse_font_inventory(
 
     Raises
     ------
-    json.JSONDecodeError
-        May propagate indirectly from the injected read/parse path if
-        malformed JSON is not intercepted by the caller.
     OSError
-        May propagate from injected read or write adapters.
-    ValueError
-        May propagate from `parse_inventory_fn` if enrichment or strict
-        validation rejects the loaded inventory.
+        May propagate from the injected write adapter.
 
     Notes
     -----
@@ -823,7 +855,10 @@ def run_parse_font_inventory(
 
     log.debug("inference level enabled", extra={"infer_level": args.infer_level})
 
-    raw_data: JSONDict = json.loads(read_text_fn(input_path))
+    raw_data = _load_inventory_json_for_parse(input_path, read_text_fn)
+    if raw_data is None:
+        return 1
+
     normalize_loaded_enums(raw_data)
     log_trace_cat(
         log,
@@ -835,19 +870,28 @@ def run_parse_font_inventory(
         },
     )
 
-    metadata = raw_data["metadata"]
-    actual_env = metadata["run_environment"]
+    try:
+        _validate_inventory_schema_strict(raw_data)
+    except ValueError as exc:
+        log_err(f"schema validation failed: {exc}")
+        return 1
+
+    metadata_raw = raw_data.get("metadata")
+    if not isinstance(metadata_raw, dict):
+        log_err("invalid inventory: expected 'metadata' to be an object")
+        return 1
+    actual_env = metadata_raw.get("run_environment")
+    if not isinstance(actual_env, dict):
+        log_err(
+            "invalid inventory: expected 'metadata.run_environment' to be an object"
+        )
+        return 1
 
     expected_env = collect_platform_metadata()
     if actual_env != expected_env:
         log_err(
             "invalid inventory: 'metadata.run_environment' does not match current platform"
         )
-        return 1
-    try:
-        _validate_inventory_schema_strict(raw_data)
-    except ValueError as exc:
-        log_err(f"schema validation failed: {exc}")
         return 1
     fonts = _validate_fonts_container(raw_data)
     if fonts is None:

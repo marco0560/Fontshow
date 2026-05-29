@@ -53,6 +53,7 @@ from fontshow.inventory.schema_accessors import (
 from fontshow.inventory.script_analysis import infer_scripts
 from fontshow.inventory.specimens import (
     MIN_SAMPLE_GLYPHS,
+    CmapCache,
     _has_significant_private_use,
     _script_core_specimen_seed,
     _script_fallback_specimen,
@@ -556,8 +557,8 @@ def _render_family_catalog_block(
     family_name: str,
     family_fonts: list[CatalogFontEntryV12],
     family_index: int,
-    catalog_detail: CatalogDetailLevel,
-    indexed_navigation: bool,
+    options: _CatalogDocumentOptions,
+    cmap_cache: CmapCache,
 ) -> _FamilyRenderResult:
     """
     Render one family block for the catalog body.
@@ -570,10 +571,10 @@ def _render_family_catalog_block(
         Font variants grouped under the same family.
     family_index : int
         One-based family index in render order.
-    catalog_detail : {"compact", "extended"}
-        Requested catalog metadata detail level.
-    indexed_navigation : bool
-        Whether indexed navigation output is being generated.
+    options : _CatalogDocumentOptions
+        Rendering options controlling detail level and navigation.
+    cmap_cache : CmapCache
+        Scoped cmap cache shared across the catalog render operation.
 
     Returns
     -------
@@ -619,7 +620,7 @@ def _render_family_catalog_block(
         safe_specimen=safe_specimen,
         script0_iso=script0_iso,
         fullpath=fullpath,
-        catalog_detail=catalog_detail,
+        catalog_detail=options.catalog_detail,
     )
 
     options_pretty = (
@@ -631,7 +632,7 @@ def _render_family_catalog_block(
         scripts_pretty=scripts_pretty,
         languages_pretty=languages_pretty,
         options_pretty=options_pretty,
-        catalog_detail=catalog_detail,
+        catalog_detail=options.catalog_detail,
     )
 
     variant_blocks: list[str] = []
@@ -662,7 +663,8 @@ def _render_family_catalog_block(
         result = _render_variant_specimen_blocks(
             variant,
             family_name=family_name,
-            catalog_detail=catalog_detail,
+            catalog_detail=options.catalog_detail,
+            cmap_cache=cmap_cache,
         )
         if result.rendered:
             variant_blocks.append(result.body_block)
@@ -680,7 +682,7 @@ def _render_family_catalog_block(
             duplicate_entries=tuple(duplicate_entries),
         )
 
-    if indexed_navigation:
+    if options.indexed_navigation:
         anchor = _catalog_family_anchor(family_index)
         family_intro = (
             "\\hypertarget{" + anchor + "}{}\n\\subsection*{" + safe_name + "}"
@@ -891,6 +893,8 @@ def _persisted_render_variant(
 def _specimen_for_rendered_script(
     font: CatalogFontEntryV12,
     script_iso: ScriptISO,
+    *,
+    cmap_cache: CmapCache | None = None,
 ) -> str:
     """
     Resolve the specimen text used to render a specific script block.
@@ -901,6 +905,9 @@ def _specimen_for_rendered_script(
         Font descriptor being rendered.
     script_iso : ScriptISO
         Script rendered for the current specimen block.
+    cmap_cache : CmapCache | None, optional
+        Scoped cmap cache used to avoid reopening the same font file
+        repeatedly.
 
     Returns
     -------
@@ -909,11 +916,15 @@ def _specimen_for_rendered_script(
         when no script-appropriate sample can be resolved.
     """
     if script_iso == _PUA_SCRIPT:
-        return _pua_specimen_for_rendered_script(font)
+        return _pua_specimen_for_rendered_script(font, cmap_cache=cmap_cache)
 
     primary = (primary_script(font) or "").upper()
     if str(script_iso) == primary:
-        return _primary_specimen_for_rendered_script(font, script_iso)
+        return _primary_specimen_for_rendered_script(
+            font,
+            script_iso,
+            cmap_cache=cmap_cache,
+        )
 
     persisted_variant = _persisted_render_variant(font, script_iso)
     if persisted_variant is not None:
@@ -935,10 +946,18 @@ def _specimen_for_rendered_script(
     script_specimen = script_info.get("specimen")
     if not isinstance(script_specimen, str):
         return ""
-    return _filter_renderer_script_specimen(font, script_specimen)
+    return _filter_renderer_script_specimen(
+        font,
+        script_specimen,
+        cmap_cache=cmap_cache,
+    )
 
 
-def _pua_specimen_for_rendered_script(font: CatalogFontEntryV12) -> str:
+def _pua_specimen_for_rendered_script(
+    font: CatalogFontEntryV12,
+    *,
+    cmap_cache: CmapCache | None = None,
+) -> str:
     """
     Resolve the dedicated private-use specimen row for one font.
 
@@ -946,6 +965,9 @@ def _pua_specimen_for_rendered_script(font: CatalogFontEntryV12) -> str:
     ----------
     font : CatalogFontEntryV12
         Font descriptor whose private-use coverage may be rendered.
+    cmap_cache : CmapCache | None, optional
+        Scoped cmap cache used to avoid reopening the same font file
+        repeatedly.
 
     Returns
     -------
@@ -958,7 +980,12 @@ def _pua_specimen_for_rendered_script(font: CatalogFontEntryV12) -> str:
         stored_specimen = _strip_ascii_control_chars(get_specimen_text(font) or "")
         if stored_specimen.strip():
             return stored_specimen
-    cps = _specimen_collect_cmap(str(font.get("path", "")).strip(), None)
+    variant_path = str(font.get("path", "")).strip()
+    cps = (
+        cmap_cache.get(variant_path, None)
+        if cmap_cache is not None
+        else _specimen_collect_cmap(variant_path, None)
+    )
     if not cps:
         return ""
     pua_specimen, _pua_strategy = _specimen_from_private_use(font, cps)
@@ -970,6 +997,8 @@ def _pua_specimen_for_rendered_script(font: CatalogFontEntryV12) -> str:
 def _primary_specimen_for_rendered_script(
     font: CatalogFontEntryV12,
     script_iso: ScriptISO,
+    *,
+    cmap_cache: CmapCache | None = None,
 ) -> str:
     """
     Resolve the rendered specimen for the primary script row.
@@ -980,6 +1009,9 @@ def _primary_specimen_for_rendered_script(
         Font descriptor whose primary row is being rendered.
     script_iso : ScriptISO
         Primary script rendered for the current row.
+    cmap_cache : CmapCache | None, optional
+        Scoped cmap cache used to avoid reopening the same font file
+        repeatedly.
 
     Returns
     -------
@@ -992,7 +1024,11 @@ def _primary_specimen_for_rendered_script(
     typography_raw = font.get("typography")
     typography = typography_raw if isinstance(typography_raw, Mapping) else {}
     rejection = str(typography.get("specimen_rejection_reason") or "").strip()
-    curated = _curated_primary_script_specimen(font, script_iso)
+    curated = _curated_primary_script_specimen(
+        font,
+        script_iso,
+        cmap_cache=cmap_cache,
+    )
     if strategy == "pua":
         return curated
     if rejection == "specimen_not_in_cmap":
@@ -1001,7 +1037,7 @@ def _primary_specimen_for_rendered_script(
         strategy in {"cmap", "validated-fallback"}
         and _is_low_information_primary_specimen(font)
         and _should_suppress_specialized_primary_specimen(font)
-        and _specialized_glyph_sample(font)
+        and _specialized_glyph_sample(font, cmap_cache=cmap_cache)
     ):
         return ""
     if (
@@ -1026,6 +1062,8 @@ def _primary_specimen_for_rendered_script(
 def _filter_renderer_script_specimen(
     font: CatalogFontEntryV12,
     specimen: str,
+    *,
+    cmap_cache: CmapCache | None = None,
 ) -> str:
     """
     Filter a renderer-added specimen against the font cmap.
@@ -1036,6 +1074,9 @@ def _filter_renderer_script_specimen(
         Font descriptor whose file-backed cmap is consulted.
     specimen : str
         Candidate ontology specimen selected for renderer-only output.
+    cmap_cache : CmapCache | None, optional
+        Scoped cmap cache used to avoid reopening the same font file
+        repeatedly.
 
     Returns
     -------
@@ -1047,7 +1088,11 @@ def _filter_renderer_script_specimen(
     if not variant_path or not specimen:
         return ""
 
-    cps = _specimen_collect_cmap(variant_path, None)
+    cps = (
+        cmap_cache.get(variant_path, None)
+        if cmap_cache is not None
+        else _specimen_collect_cmap(variant_path, None)
+    )
     if not cps:
         return ""
 
@@ -1061,6 +1106,8 @@ def _filter_renderer_script_specimen(
 def _curated_primary_script_specimen(
     font: CatalogFontEntryV12,
     script_iso: ScriptISO,
+    *,
+    cmap_cache: CmapCache | None = None,
 ) -> str:
     """
     Return a curated specimen fallback for a low-information primary specimen.
@@ -1071,6 +1118,9 @@ def _curated_primary_script_specimen(
         Font descriptor whose primary specimen is being evaluated.
     script_iso : ScriptISO
         Primary script rendered for the current specimen block.
+    cmap_cache : CmapCache | None, optional
+        Scoped cmap cache used to avoid reopening the same font file
+        repeatedly.
 
     Returns
     -------
@@ -1083,7 +1133,11 @@ def _curated_primary_script_specimen(
     variant_path = str(font.get("path", "")).strip()
     if not variant_path:
         return ""
-    cps = _specimen_collect_cmap(variant_path, None)
+    cps = (
+        cmap_cache.get(variant_path, None)
+        if cmap_cache is not None
+        else _specimen_collect_cmap(variant_path, None)
+    )
     if not cps:
         return ""
     specimen, _glyphs, _strategy = _catalog_script_fallback_specimen(script_iso, cps)
@@ -1334,7 +1388,10 @@ def _should_suppress_specialized_primary_specimen(font: CatalogFontEntryV12) -> 
 
 
 def _specialized_glyph_sample(
-    font: CatalogFontEntryV12, *, max_glyphs: int = 12
+    font: CatalogFontEntryV12,
+    *,
+    max_glyphs: int = 12,
+    cmap_cache: CmapCache | None = None,
 ) -> str:
     """
     Build a compact glyph-strip sample for a specialized non-text font.
@@ -1345,6 +1402,9 @@ def _specialized_glyph_sample(
         Font descriptor whose cmap is sampled.
     max_glyphs : int, optional
         Maximum number of glyphs to include in the strip.
+    cmap_cache : CmapCache | None, optional
+        Scoped cmap cache used to avoid reopening the same font file
+        repeatedly.
 
     Returns
     -------
@@ -1356,7 +1416,11 @@ def _specialized_glyph_sample(
     if not variant_path:
         return ""
 
-    cps = _specimen_collect_cmap(variant_path, None)
+    cps = (
+        cmap_cache.get(variant_path, None)
+        if cmap_cache is not None
+        else _specimen_collect_cmap(variant_path, None)
+    )
     if not cps:
         return ""
 
@@ -1520,6 +1584,7 @@ def _render_variant_specimen_blocks(
     *,
     family_name: str,
     catalog_detail: CatalogDetailLevel,
+    cmap_cache: CmapCache,
 ) -> _VariantRenderResult:
     """
     Render one or more specimen blocks for a family variant.
@@ -1532,6 +1597,8 @@ def _render_variant_specimen_blocks(
         Family label used for deterministic log identifiers.
     catalog_detail : {"compact", "extended"}
         Requested catalog metadata detail level.
+    cmap_cache : CmapCache
+        Scoped cmap cache shared across the catalog render operation.
 
     Returns
     -------
@@ -1548,7 +1615,11 @@ def _render_variant_specimen_blocks(
     for script_iso in script_candidates:
         if not _has_persisted_render_variant_success(variant, script_iso):
             continue
-        specimen = _specimen_for_rendered_script(variant, script_iso)
+        specimen = _specimen_for_rendered_script(
+            variant,
+            script_iso,
+            cmap_cache=cmap_cache,
+        )
         if not specimen:
             continue
         safe_specimen = _format_specimen_for_latex(specimen, script_iso)
@@ -1572,7 +1643,7 @@ def _render_variant_specimen_blocks(
     if not variant_renderable and _should_suppress_specialized_primary_specimen(
         variant
     ):
-        glyph_sample = _specialized_glyph_sample(variant)
+        glyph_sample = _specialized_glyph_sample(variant, cmap_cache=cmap_cache)
         if glyph_sample:
             safe_glyph_sample = _format_specimen_for_latex(glyph_sample, ScriptISO(""))
             glyph_render, _ = _render_font_entry(
@@ -1648,147 +1719,6 @@ def _normalize_path_for_latex(fullpath: str) -> tuple[str, str]:
         d = (d + "/") if d else "./"
         return d, f
     return "./", norm
-
-
-def _use_inline_fontspec_for_script(script0_iso: ScriptISO) -> bool:
-    r"""
-    Return whether a script-only entry should use inline ``\\fontspec``.
-
-    Parameters
-    ----------
-    script0_iso : ScriptISO
-        Primary script driving the specimen rendering branch.
-
-    Returns
-    -------
-    bool
-        ``True`` when the script should use the inline ``\\fontspec``
-        fallback instead of a temporary ``\\newfontfamily`` command.
-
-    Notes
-    -----
-    Deprecated compatibility scaffolding. The current renderer already
-    uses the compact inline form unconditionally, so this helper
-    always returns ``False``.
-    """
-    _ = script0_iso
-    return False
-
-
-def _use_inline_fontspec_for_font(
-    font: CatalogFontEntryV12, script0_iso: ScriptISO
-) -> bool:
-    r"""
-    Return whether a font should force the inline ``\\fontspec`` path.
-
-    Parameters
-    ----------
-    font : CatalogFontEntryV12
-        Font descriptor being rendered.
-    script0_iso : ScriptISO
-        Primary script driving the specimen rendering branch.
-
-    Returns
-    -------
-    bool
-        ``True`` when the specimen should use the inline file-oriented
-        ``\\fontspec`` path instead of ``\\newfontfamily`` or
-        ``\\renewfontfamily``.
-
-    Notes
-    -----
-    Deprecated compatibility scaffolding. The current renderer already
-    uses the compact inline form unconditionally, so this helper
-    always returns ``False``.
-    """
-    _ = font
-    _ = script0_iso
-    return False
-
-
-def _omit_script_option_for_script(script0_iso: ScriptISO) -> bool:
-    """
-    TODO: Deprecated and to be deleted.
-
-    Return whether a script should skip the explicit ``Script=`` option.
-
-    Parameters
-    ----------
-    script0_iso : ScriptISO
-        Primary script driving the specimen rendering branch.
-
-    Returns
-    -------
-    bool
-        ``True`` when the render path should omit the explicit script
-        option from the fontspec argument list.
-
-    Notes
-    -----
-    Script-option omission is no longer used as a per-script exception
-    policy. The helper remains only as compatibility scaffolding while
-    the old policy layer is being removed.
-    """
-    _ = script0_iso
-    return False
-
-
-def _omit_script_option_for_font(
-    font: CatalogFontEntryV12, script0_iso: ScriptISO
-) -> bool:
-    """
-    TODO: Deprecated and to be deleted.
-
-    Return whether a font should skip the explicit ``Script=`` option.
-
-    Parameters
-    ----------
-    font : CatalogFontEntryV12
-        Font descriptor being rendered.
-    script0_iso : ScriptISO
-        Primary script driving the specimen rendering branch.
-
-    Returns
-    -------
-    bool
-        ``True`` when the render path should omit the explicit script
-        option from the fontspec argument list.
-
-    Notes
-    -----
-    Script-option omission is no longer used as a per-font exception
-    policy. The helper remains only as compatibility scaffolding while
-    the old policy layer is being removed.
-    """
-    _ = font
-    _ = script0_iso
-    return False
-
-
-def _use_language_wrapper_for_font(font: CatalogFontEntryV12) -> bool:
-    r"""
-    Return whether a font should be wrapped in ``\\foreignlanguage``.
-
-    Parameters
-    ----------
-    font : CatalogFontEntryV12
-        Font descriptor being rendered.
-
-    Returns
-    -------
-    bool
-        ``True`` when the specimen should remain wrapped in a
-        Polyglossia language command.
-
-    Notes
-    -----
-    Deprecated compatibility scaffolding. The current renderer no
-    longer wraps specimen blocks in ``\\foreignlanguage`` because the
-    wrapper is fragile around paragraph boxes and duplicates shaping
-    responsibility already covered by fontspec script options.
-    """
-    _ = font
-    return False
 
 
 def _use_fontconfig_family_resolution(font: CatalogFontEntryV12) -> bool:
@@ -1925,11 +1855,11 @@ def _render_font_entry(
         inline_font = "\\detokenize{" + _latex_detokenize_safe(family_name) + "}"
         options_plain = renderer_prefix + "Family=" + family_name + ",UprightFont=*"
 
-    if script_opt and not _omit_script_option_for_font(font, script0_iso):
+    if script_opt:
         render_options.append(script_opt)
     opts = ",".join(render_options)
 
-    if script_opt and not _omit_script_option_for_font(font, script0_iso):
+    if script_opt:
         options_plain += "," + script_opt
 
     specimen_size = "\\small " if catalog_detail == "compact" else ""
@@ -2087,6 +2017,7 @@ def generate_latex_with_report(
     """
     font_list = as_font_desc_list(font_list)
     options = render_options or _CatalogDocumentOptions()
+    cmap_cache = CmapCache(_specimen_collect_cmap)
 
     # --- GROUP BY FAMILY, PRESERVING FIRST-SEEN ORDER ---
     seen_families: set[str] = set()
@@ -2144,8 +2075,8 @@ def generate_latex_with_report(
             family_name=fam,
             family_fonts=fonts_by_family[fam],
             family_index=idx,
-            catalog_detail=options.catalog_detail,
-            indexed_navigation=options.indexed_navigation,
+            options=options,
+            cmap_cache=cmap_cache,
         )
         missing_entries.extend(family_result.missing_entries)
         duplicate_entries.extend(family_result.duplicate_entries)

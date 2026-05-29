@@ -48,7 +48,7 @@ must remain free of CLI or pipeline orchestration logic.
 """
 
 import unicodedata
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any, cast
 
 from fontTools.ttLib import TTFont, TTLibError
@@ -413,6 +413,58 @@ def _specimen_collect_cmap(path: str | None, ttc_index: int | None) -> set[int]:
         except (TypeError, ValueError):
             continue
     return cps
+
+
+class CmapCache:
+    """
+    Cache font cmap extraction results within one pipeline operation.
+
+    Parameters
+    ----------
+    collector : Callable[[str | None, int | None], set[int]], optional
+        Function used to collect cmap codepoints on cache misses.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The cache is intentionally process-local and caller-scoped. It avoids
+    reopening the same font file repeatedly while keeping each command
+    invocation independent.
+    """
+
+    def __init__(
+        self,
+        collector: Callable[
+            [str | None, int | None], set[int]
+        ] = _specimen_collect_cmap,
+    ) -> None:
+        self._collector = collector
+        self._cache: dict[tuple[str, int | None], set[int]] = {}
+
+    def get(self, path: str | None, ttc_index: int | None = None) -> set[int]:
+        """
+        Return cached cmap codepoints for one font face.
+
+        Parameters
+        ----------
+        path : str | None
+            Filesystem path to the font binary.
+        ttc_index : int | None, optional
+            Face index for TrueType collections.
+
+        Returns
+        -------
+        set[int]
+            Supported Unicode codepoints returned by the configured
+            collector.
+        """
+        key = (path or "", ttc_index)
+        if key not in self._cache:
+            self._cache[key] = self._collector(path, ttc_index)
+        return self._cache[key]
 
 
 def _script_core_specimen_seed(script_iso: ScriptISO) -> str:

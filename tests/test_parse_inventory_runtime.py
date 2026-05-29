@@ -175,3 +175,124 @@ def test_run_parse_inventory_lists_all_missing_language_coverage_when_requested(
         "Alpha | /fonts/a.ttf",
         "Gamma | /fonts/c.ttf",
     ]
+
+
+def test_run_parse_inventory_rejects_non_object_inventory(tmp_path, monkeypatch):
+    """
+    Ensure parse-inventory rejects non-object JSON input as a user error.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage the input file.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to capture user-facing error messages.
+
+    Returns
+    -------
+    None
+    """
+    input_file = tmp_path / "inventory.json"
+    output_file = tmp_path / "out.json"
+    errors: list[str] = []
+
+    input_file.write_text("[]", encoding="utf-8")
+    monkeypatch.setattr(parse_inventory, "log_err", errors.append)
+
+    args = SimpleNamespace(
+        input=input_file,
+        output=output_file,
+        infer_level="medium",
+        validate_inventory=False,
+        list_missing_language_coverage=False,
+        show_all_missing_language_coverage=False,
+        strict_bcp47=False,
+        verbose=False,
+    )
+
+    rc = parse_inventory.run_parse_font_inventory(args)
+
+    assert rc == 1
+    assert errors == ["invalid inventory: expected top-level object"]
+
+
+def test_run_parse_inventory_rejects_missing_metadata_without_crashing(
+    tmp_path, monkeypatch
+):
+    """
+    Ensure missing metadata is converted into a deterministic user error.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage the input file.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to capture user-facing error messages.
+
+    Returns
+    -------
+    None
+    """
+    input_file = tmp_path / "inventory.json"
+    output_file = tmp_path / "out.json"
+    errors: list[str] = []
+
+    input_file.write_text(json.dumps({"fonts": []}), encoding="utf-8")
+    monkeypatch.setattr(parse_inventory, "log_err", errors.append)
+
+    args = SimpleNamespace(
+        input=input_file,
+        output=output_file,
+        infer_level="medium",
+        validate_inventory=False,
+        list_missing_language_coverage=False,
+        show_all_missing_language_coverage=False,
+        strict_bcp47=False,
+        verbose=False,
+    )
+
+    rc = parse_inventory.run_parse_font_inventory(args)
+
+    assert rc == 1
+    assert errors
+    assert errors[0].startswith("schema validation failed:")
+
+
+def test_run_parse_inventory_rejects_malformed_json(tmp_path, monkeypatch):
+    """
+    Ensure malformed JSON is reported as a deterministic user error.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory fixture used to stage the input file.
+    monkeypatch : pytest.MonkeyPatch
+        Fixture used to capture user-facing error messages.
+
+    Returns
+    -------
+    None
+    """
+    input_file = tmp_path / "inventory.json"
+    output_file = tmp_path / "out.json"
+    errors: list[str] = []
+
+    input_file.write_text("{", encoding="utf-8")
+    monkeypatch.setattr(parse_inventory, "log_err", errors.append)
+
+    args = SimpleNamespace(
+        input=input_file,
+        output=output_file,
+        infer_level="medium",
+        validate_inventory=False,
+        list_missing_language_coverage=False,
+        show_all_missing_language_coverage=False,
+        strict_bcp47=False,
+        verbose=False,
+    )
+
+    rc = parse_inventory.run_parse_font_inventory(args)
+
+    assert rc == 1
+    assert errors
+    assert errors[0].startswith("invalid JSON:")

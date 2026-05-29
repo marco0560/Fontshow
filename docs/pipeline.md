@@ -92,22 +92,25 @@ The resulting inventory is a **data artifact**, not a live reference.
 
 ### Stage 3 — parse-inventory
 
-This stage operates **exclusively on serialized data**.
+This stage consumes serialized inventory data and enriches it with
+deterministic inference, specimen metadata, and persisted LuaLaTeX
+render-variant validation state.
 
 Important properties:
 
-- No font files are accessed
-- No filesystem paths are resolved
-- No environment assumptions are made
-- All paths are treated as opaque data
+- The input inventory must match the current `metadata.run_environment`
+- LuaLaTeX validation metadata is refreshed for the current runtime
+- Render-variant probing may inspect font files referenced by inventory paths
+- Persisted loadability data is part of the enriched inventory contract
 
 This means:
 
-✔ The inventory JSON can be moved across machines
-✔ The stage is safe to run on a different system
-✔ No font files are required at this stage
+✔ The stage validates that the inventory belongs to the current environment
+✔ The enriched output records current LuaLaTeX/render-policy compatibility
+❌ The stage is not portable across arbitrary machines
+❌ Font paths referenced by the inventory may be required
 
-This behavior is intentional and enforced by design.
+This behavior is intentional and enforced by tests.
 
 ---
 
@@ -147,7 +150,7 @@ This is an intentional design constraint.
 |-----------------|-----------------------|-----------------|----------|
 | Preflight       | ✔                     | ✔               | ❌       |
 | dump-fonts      | ✔                     | ✔               | ❌       |
-| parse-inventory | ❌                    | ❌              | ✔        |
+| parse-inventory | ✔                     | ⚠️              | ❌       |
 | create-catalog  | ⚠️                    | ⚠️              | Partial  |
 | LaTeX compile   | ✔                     | ✔               | ❌       |
 
@@ -245,6 +248,8 @@ It is responsible for:
 - normalization of extracted metadata
 - semantic validation
 - enforcement of strict or permissive validation modes
+- runtime-environment consistency checks
+- LuaLaTeX render-variant validation metadata refresh
 
 ---
 
@@ -270,8 +275,10 @@ The inventory parsing stage:
 - consumes raw font metadata
 - produces a validated inventory representation
 - applies semantic and structural checks
+- verifies that the source inventory matches the current runtime environment
+- may inspect referenced font files while refreshing render-variant validation
 - does not perform font discovery
-- does not generate output artifacts
+- writes the enriched inventory artifact
 
 All subsequent stages operate on the validated inventory produced here.
 

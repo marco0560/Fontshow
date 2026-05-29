@@ -597,3 +597,44 @@ def test_specimen_collect_cmap_returns_empty_for_malformed_subtables(monkeypatch
     monkeypatch.setattr(specimens, "TTFont", FakeTTFont)
 
     assert specimens._specimen_collect_cmap("/tmp/font.ttf", None) == set()
+
+
+def test_cmap_cache_reuses_collected_codepoints():
+    """
+    Ensure scoped cmap caching avoids repeated collection for the same face.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    calls: list[tuple[str | None, int | None]] = []
+
+    def collect(path: str | None, ttc_index: int | None) -> set[int]:
+        """
+        Return a deterministic cmap while recording cache misses.
+
+        Parameters
+        ----------
+        path : str | None
+            Font path requested by the cache.
+        ttc_index : int | None
+            Font collection index requested by the cache.
+
+        Returns
+        -------
+        set[int]
+            Deterministic codepoint set.
+        """
+        calls.append((path, ttc_index))
+        return {ord("A")}
+
+    cache = specimens.CmapCache(collect)
+
+    assert cache.get("/tmp/font.ttf", None) == {ord("A")}
+    assert cache.get("/tmp/font.ttf", None) == {ord("A")}
+    assert cache.get("/tmp/font.ttf", 1) == {ord("A")}
+    assert calls == [("/tmp/font.ttf", None), ("/tmp/font.ttf", 1)]
