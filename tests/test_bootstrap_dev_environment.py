@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
 from pathlib import Path
+
+import pytest
 
 _SCRIPT_PATH = (
     Path(__file__).resolve().parents[1] / "scripts" / "bootstrap_dev_environment.py"
@@ -189,9 +192,15 @@ def test_install_dev_codira_builds_repo_local_wrapper_command() -> None:
     )
 
 
+@pytest.mark.skipif(
+    os.environ.get("GITHUB_ACTIONS") == "true",
+    reason="Depends on local checkout layout",
+)
 def test_install_dev_codira_default_root_points_to_sibling_checkout() -> None:
     """
     Ensure the codira install wrapper resolves the expected sibling checkout.
+    Will not run successfully in CI due to reliance on local filesystem layout,
+    but provides a sanity check for local development.
 
     Parameters
     ----------
