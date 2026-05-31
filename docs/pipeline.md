@@ -48,6 +48,23 @@ LuaLaTeX compilation (multi-pass)
 
 Each stage produces one or more intermediate artifacts, which can be retained for later analysis.
 
+## Implementation Callgraphs
+
+The following callgraphs show the current implementation call paths for the
+three main pipeline stages.
+
+### System font dump
+
+![System font dump implementation callgraph](assets/callgraphs/pipeline-dump-fonts-run-dump-fonts.svg)
+
+### Inventory parsing, validation and enrichment
+
+![Inventory parsing implementation callgraph](assets/callgraphs/pipeline-parse-inventory-run-parse-font-inventory.svg)
+
+### Catalog creation
+
+![Catalog creation implementation callgraph](assets/callgraphs/pipeline-create-catalog-run-create-catalog.svg)
+
 ## Pipeline Stages and Artifact Locality
 
 Fontshow’s pipeline is composed of distinct stages with different assumptions

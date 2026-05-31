@@ -242,6 +242,7 @@ norecursedirs = [
 
 [dependency-groups]
 dev = [
+    "codira[bundle-official]==1.40.0",
     "libcst>=1.8.6",
     "pyupgrade>=3.21.2",
     "types-jsonschema>=4.26.0.20260408",

@@ -214,6 +214,46 @@ Important files:
 
 ---
 
+## Stage callgraphs
+
+These callgraphs are generated from the current Codira index and show the
+implementation-level call paths for the three main pipeline stages.
+
+### System font dump
+
+![System font dump implementation callgraph](assets/callgraphs/pipeline-dump-fonts-run-dump-fonts.svg)
+
+Regenerate with:
+
+```bash
+uv run codira calls run_dump_fonts --module fontshow.cli.dump_fonts --tree --dot --prefix src/fontshow --max-depth 4 --max-nodes 80 > docs/assets/callgraphs/pipeline-dump-fonts-run-dump-fonts.dot
+dot -Tsvg docs/assets/callgraphs/pipeline-dump-fonts-run-dump-fonts.dot -o docs/assets/callgraphs/pipeline-dump-fonts-run-dump-fonts.svg
+```
+
+### Inventory parsing, validation and enrichment
+
+![Inventory parsing implementation callgraph](assets/callgraphs/pipeline-parse-inventory-run-parse-font-inventory.svg)
+
+Regenerate with:
+
+```bash
+uv run codira calls run_parse_font_inventory --module fontshow.cli.parse_inventory --tree --dot --prefix src/fontshow --max-depth 4 --max-nodes 80 > docs/assets/callgraphs/pipeline-parse-inventory-run-parse-font-inventory.dot
+dot -Tsvg docs/assets/callgraphs/pipeline-parse-inventory-run-parse-font-inventory.dot -o docs/assets/callgraphs/pipeline-parse-inventory-run-parse-font-inventory.svg
+```
+
+### Catalog creation
+
+![Catalog creation implementation callgraph](assets/callgraphs/pipeline-create-catalog-run-create-catalog.svg)
+
+Regenerate with:
+
+```bash
+uv run codira calls run_create_catalog --module fontshow.cli.create_catalog --tree --dot --prefix src/fontshow --max-depth 4 --max-nodes 80 > docs/assets/callgraphs/pipeline-create-catalog-run-create-catalog.dot
+dot -Tsvg docs/assets/callgraphs/pipeline-create-catalog-run-create-catalog.dot -o docs/assets/callgraphs/pipeline-create-catalog-run-create-catalog.svg
+```
+
+---
+
 ## How one font entry moves through the system
 
 A single font face starts in `src/fontshow/cli/dump_fonts.py`.
