@@ -108,6 +108,21 @@ Status:
 - requires local Node / `npx` / `semantic-release` availability
 - uses `.releaserc.json` by default
 
+### generate_github_snapshot.py
+
+Generate paginated local GitHub planning snapshots:
+
+- `issues.json`
+- `milestones.json`
+
+Status:
+
+- installed as `git gen-issues` and `git gen-miles` by the bootstrap script
+- uses the GitHub CLI GraphQL API
+- paginates top-level issue and milestone connections
+- paginates nested milestone issue connections
+- covered by `tests/test_generate_github_snapshot.py`
+
 ### release_audit.sh
 
 Release-safety audit executed before guarded release pushes and by the
