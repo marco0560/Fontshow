@@ -1,3 +1,9 @@
+## [0.74.6](https://github.com/marco0560/Fontshow/compare/v0.74.5...v0.74.6) (2026-05-31)
+
+### Bug Fixes
+
+* **dev:** paginate GitHub snapshot aliases ([3e45425](https://github.com/marco0560/Fontshow/commit/3e45425824543e4cbeaa93f16eb433091b34a1d6)), closes [#75](https://github.com/marco0560/Fontshow/issues/75)
+
 ## [0.74.5](https://github.com/marco0560/Fontshow/compare/v0.74.4...v0.74.5) (2026-05-29)
 
 ### Bug Fixes
