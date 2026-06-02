@@ -1,3 +1,9 @@
+## [0.74.7](https://github.com/marco0560/Fontshow/compare/v0.74.6...v0.74.7) (2026-06-02)
+
+### Bug Fixes
+
+* **ci:** update Node.js version to 22 in release workflow ([9997aeb](https://github.com/marco0560/Fontshow/commit/9997aeb10c04ece069eb98926a33c8a339d49bf6))
+
 ## [0.74.6](https://github.com/marco0560/Fontshow/compare/v0.74.5...v0.74.6) (2026-05-31)
 
 ### Bug Fixes
