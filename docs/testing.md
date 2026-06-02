@@ -264,17 +264,14 @@ documentation deployment.
 
 ### Code coverage
 
-Test coverage is measured using `pytest-cov`.
+`git check` runs the deterministic test suite under `coverage`, writes
+`.coverage-report.json`, and renders a compact summary through
+`scripts/coverage_summary.py`.
 
-Coverage reports are generated during Continuous Integration to help
-identify untested code paths and guide future test additions.
-
-Coverage metrics are used to highlight untested code paths and guide
-testing efforts. At this stage, no minimum coverage threshold is enforced
-in order to preserve development velocity.
-
-Generated artifacts such as `.coverage`, `coverage.xml`, and `htmlcov/`
-are considered local and are not tracked in version control.
+The repository validation workflow enforces a minimum total coverage threshold
+of 70%. Generated artifacts such as `.coverage`, `.coverage-report.json`,
+`coverage.xml`, and `htmlcov/` are considered local and are not tracked in
+version control.
 
 ### Relationship with manual tests
 

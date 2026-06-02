@@ -22,6 +22,7 @@ pytest-cache-files-*/
 pytest-runtime/
 .coverage
 .coverage.*
+.coverage-report.json
 htmlcov/
 coverage.xml
 

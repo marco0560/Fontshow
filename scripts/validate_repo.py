@@ -50,7 +50,21 @@ VALIDATION_STEPS: tuple[ValidationStep, ...] = (
     ValidationStep("ruff-format", "ruff", ("format", "--check", ".")),
     ValidationStep("mypy", "mypy", ("src",)),
     ValidationStep("pre-commit-noncode", "pre-commit-noncode", ("run", "--all-files")),
-    ValidationStep("pytest", "pytest", ("-q", "tests")),
+    ValidationStep("coverage", "coverage", ("run", "-m", "pytest", "-q", "tests")),
+    ValidationStep(
+        "coverage-json",
+        "coverage",
+        (
+            "json",
+            "-o",
+            ".coverage-report.json",
+        ),
+    ),
+    ValidationStep(
+        "coverage-summary",
+        "python",
+        ("scripts/coverage_summary.py",),
+    ),
 )
 
 

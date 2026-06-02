@@ -56,7 +56,18 @@ Status:
 
 - installed as `git check` by the bootstrap script
 - called by bootstrap validation when requested
+- runs the test suite under coverage and emits `.coverage-report.json`
 - excludes Semgrep by repository policy
+
+### coverage_summary.py
+
+Render a compact coverage summary from `.coverage-report.json` and enforce the
+repository coverage threshold.
+
+Status:
+
+- called by `scripts/validate_repo.py`
+- part of the `git check` validation sequence
 
 ### clean_repo.py
 
