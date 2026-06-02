@@ -2,28 +2,18 @@
 
 set -eu
 
-SCRIPT_DIR=$(
-    CDPATH= cd -- "$(dirname -- "$0")" && pwd
-)
-REPO_ROOT=$(
-    CDPATH= cd -- "$SCRIPT_DIR/.." && pwd
-)
-VENV_PRE_COMMIT="$REPO_ROOT/.venv/bin/pre-commit"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+PYTHON_BIN="$REPO_ROOT/.venv/bin/python"
 
-if [ -x "$VENV_PRE_COMMIT" ]; then
-    PRE_COMMIT_BIN="$VENV_PRE_COMMIT"
-elif command -v pre-commit >/dev/null 2>&1; then
-    PRE_COMMIT_BIN=$(command -v pre-commit)
-else
-    echo "ERROR: pre-commit is not available." >&2
-    echo "Expected one of:" >&2
-    echo "  - $VENV_PRE_COMMIT" >&2
-    echo "  - pre-commit on PATH" >&2
+if [ ! -x "$PYTHON_BIN" ]; then
+    echo "ERROR: repository Python is not available: $PYTHON_BIN" >&2
+    echo "Run: uv sync --extra dev" >&2
     exit 1
 fi
 
 # ------------------------------------------------------------
 # Run pre-commit framework
 # ------------------------------------------------------------
-echo "▶ Running pre-commit hooks"
-"$PRE_COMMIT_BIN" run --hook-stage commit
+echo "Running pre-commit hooks"
+exec "$PYTHON_BIN" "$REPO_ROOT/scripts/run_repo_tool.py" pre-commit run --hook-stage commit

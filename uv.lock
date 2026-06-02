@@ -438,6 +438,7 @@ dependencies = [
 [package.optional-dependencies]
 dev = [
     { name = "build" },
+    { name = "codira", extra = ["bundle-official"] },
     { name = "mypy" },
     { name = "packaging" },
     { name = "pre-commit" },
@@ -464,6 +465,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "build", marker = "extra == 'dev'" },
+    { name = "codira", extras = ["bundle-official"], marker = "extra == 'dev'" },
     { name = "fonttools", specifier = ">=4.61.0,<5" },
     { name = "jsonschema", specifier = ">=4.23.0,<5" },
     { name = "language-tags", specifier = ">=1.2.0,<2" },

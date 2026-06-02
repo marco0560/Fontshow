@@ -301,6 +301,7 @@ Fallback:
 
 ```bash
 ruff check .
+ruff format --check .
 mypy .
 pytest -q
 ```
@@ -407,6 +408,12 @@ Bugs include:
 - reproduce first
 - identify root cause
 - avoid speculative fixes
+- do not repeatedly retry the same failing approach
+- if the same error is encountered twice:
+  - research 3-5 plausible fixes
+  - compare tradeoffs
+  - choose the most efficient correct solution
+  - implement deterministically
 
 ## 21. Commit Contract
 

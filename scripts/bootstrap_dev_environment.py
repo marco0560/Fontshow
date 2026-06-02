@@ -234,33 +234,18 @@ def git_local_config_entries() -> list[tuple[str, str]]:
         ("alias.br", "branch"),
         ("alias.ci", "commit"),
         ("alias.lg", "log --oneline --graph --decorate -50"),
-        (
-            "alias.check",
-            "!uv run ruff check . && uv run ruff format --check . && uv run mypy src && uv run python -m pytest -q",
-        ),
+        ("alias.check", "!uv run python scripts/validate_repo.py"),
         (
             "alias.fix",
-            "!uv run ruff check . --fix && uv run ruff format .",
+            "!uv run python scripts/run_repo_tool.py ruff check . --fix && uv run python scripts/run_repo_tool.py ruff format .",
         ),
         (
             "alias.clean-repo",
             """!f() { uv run python scripts/clean_repo.py "$@"; }; f""",
         ),
         (
-            "alias.test-coverage",
-            """!f() { uv run python -m pytest --cov=fontshow --cov-report=term-missing "$@"; }; f""",
-        ),
-        (
-            "alias.test-html",
-            "!uv run python -m pytest --cov=fontshow --cov-report=html && xdg-open htmlcov/index.html",
-        ),
-        (
             "alias.new-decision",
             """!f() { uv run python scripts/new_decision.py "$@"; }; f""",
-        ),
-        (
-            "alias.release-preview",
-            """!f() { uv run python scripts/release_preview.py "$@"; }; f""",
         ),
         (
             "alias.gen-issues",
@@ -272,7 +257,7 @@ def git_local_config_entries() -> list[tuple[str, str]]:
         ),
         (
             "alias.txz",
-            """!f() { name="${1:-repo}"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; mkdir -p "$tmp/repo"; { git ls-files -z; printf "%s\0" issues.json milestones.json; } | XZ_OPT="-9e -T0" tar --null -T - -cJf "$PWD/$name.tar.xz" --transform='s,^,repo/,'; }; f""",
+            """!f() { name="${1:-repo}"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; mkdir -p "$tmp/repo"; { git ls-files -z; printf "%s\\0" issues.json milestones.json; } | XZ_OPT="-9e -T0" tar --null -T - -cJf "$PWD/$name.tar.xz" --transform='s,^,repo/,'; }; f""",
         ),
         (
             "alias.gen-zip-common",
@@ -287,18 +272,6 @@ def git_local_config_entries() -> list[tuple[str, str]]:
         (
             "alias.re-clean",
             "!git clean-repo && git gen-issues && git gen-miles && git txz",
-        ),
-        (
-            "alias.gen-boot-report",
-            "!uv run python scripts/generate_bootstrap_audit_report.py",
-        ),
-        (
-            "alias.ver-boot-report",
-            "!uv run python scripts/verify_bootstrap_audit_report.py",
-        ),
-        (
-            "alias.install-dev-codira",
-            "!uv run python scripts/install_dev_codira.py",
         ),
         ("pull.ff", "only"),
         ("pull.rebase", "false"),
@@ -337,7 +310,7 @@ def build_bootstrap_commands(
         ),
         CommandSpec(
             description="Verify installed package requirements",
-            argv=("uv", "run", "python", "-m", "pip", "check"),
+            argv=("uv", "pip", "check"),
             cwd=repo_root,
         ),
     ]
@@ -355,28 +328,8 @@ def build_bootstrap_commands(
         commands.extend(
             [
                 CommandSpec(
-                    description="Run repository validation (ruff)",
-                    argv=("uv", "run", "ruff", "check", ".", "--fix"),
-                    cwd=repo_root,
-                ),
-                CommandSpec(
-                    description="Run repository validation (ruff format)",
-                    argv=("uv", "run", "ruff", "format", "--check", "."),
-                    cwd=repo_root,
-                ),
-                CommandSpec(
-                    description="Run repository validation (mypy)",
-                    argv=("uv", "run", "mypy", "src"),
-                    cwd=repo_root,
-                ),
-                CommandSpec(
-                    description="Run repository validation (pytest)",
-                    argv=("uv", "run", "python", "-m", "pytest", "-q"),
-                    cwd=repo_root,
-                ),
-                CommandSpec(
-                    description="Run repository validation (pre-commit)",
-                    argv=("uv", "run", "pre-commit", "run", "--all-files"),
+                    description="Run repository validation",
+                    argv=("uv", "run", "python", "scripts/validate_repo.py"),
                     cwd=repo_root,
                 ),
             ]

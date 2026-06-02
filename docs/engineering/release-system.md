@@ -49,7 +49,7 @@ git rel
 Alias definition:
 
 ```bash
-git config alias.rel '!bash scripts/release_rel.sh'
+git config alias.rel '!git fetch && git pull --ff-only && bash scripts/release_rel.sh && sleep 30s && git fetch && git pull --ff-only'
 ```
 
 ### Forbidden (blocked by hooks)
@@ -358,7 +358,7 @@ These aliases are **NOT versioned** and must be defined locally:
 ## Safe release (ONLY publish command)
 
 ```bash
-git config alias.rel '!bash scripts/release_rel.sh'
+git config alias.rel '!git fetch && git pull --ff-only && bash scripts/release_rel.sh && sleep 30s && git fetch && git pull --ff-only'
 ```
 
 ### Release audit (manual check)

@@ -29,13 +29,34 @@ Responsibilities:
 - upgrade `pip`, `setuptools`, and `wheel`
 - install `fontshow` in editable mode with `.[dev]`
 - apply repo-local Git configuration and sanctioned aliases
-- run `pre-commit run --all-files` and `pytest -q` by default
+- run `uv run python scripts/validate_repo.py` when validation is requested
 
 Status:
 
 - recommended contributor entrypoint
 - documented in `README.md`, `docs/getting_started.md`, and `docs/CONTRIBUTING.md`
 - covered by `tests/test_bootstrap_dev_environment.py`
+
+### run_repo_tool.py
+
+Run sanctioned repository tools with cache and temporary state outside the
+checkout.
+
+Status:
+
+- called by hooks, validation, and bootstrap-installed aliases
+- excludes Semgrep by repository policy
+- covered by tests through bootstrap validation contracts
+
+### validate_repo.py
+
+Run the standard local validation sequence through `scripts/run_repo_tool.py`.
+
+Status:
+
+- installed as `git check` by the bootstrap script
+- called by bootstrap validation when requested
+- excludes Semgrep by repository policy
 
 ### clean_repo.py
 
@@ -97,17 +118,6 @@ Status:
 - maintained documentation helper
 - interactive by design
 
-### release_preview.py
-
-Run a local `semantic-release --dry-run` preview.
-
-Status:
-
-- installed as `git release-preview` by the bootstrap script
-- documented in `docs/CONTRIBUTING.md`
-- requires local Node / `npx` / `semantic-release` availability
-- uses `.releaserc.json` by default
-
 ### generate_github_snapshot.py
 
 Generate paginated local GitHub planning snapshots:
@@ -151,27 +161,6 @@ Status:
 
 - installed as `git release-check` by the bootstrap script
 - documented in `docs/engineering/release-system.md`
-
-### generate_bootstrap_audit_report.py
-
-Generate `bootstrap_audit_report.txt`, a deterministic repository audit
-snapshot used for audit-oriented workflows.
-
-Status:
-
-- installed as `git gen-boot-report` by the bootstrap script
-- niche but retained
-- not required for normal development
-
-### verify_bootstrap_audit_report.py
-
-Verify the current repository state against `bootstrap_audit_report.txt`.
-
-Status:
-
-- installed as `git ver-boot-report` by the bootstrap script
-- niche but retained
-- not required for normal development
 
 ---
 

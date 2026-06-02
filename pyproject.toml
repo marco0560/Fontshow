@@ -28,6 +28,7 @@ dev = [
     "pre-commit",
     "packaging",
     "build",
+    "codira[bundle-official]",
     "setuptools-scm>=8",
 ]
 

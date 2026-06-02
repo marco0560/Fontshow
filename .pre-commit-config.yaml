@@ -50,7 +50,7 @@ repos:
       # ------------------------------------------------------------------
       - id: mypy
         name: mypy
-        entry: uv run mypy src/fontshow
+        entry: uv run python scripts/run_repo_tool.py mypy src/fontshow
         language: system
         pass_filenames: false
       - id: pyproject-lint

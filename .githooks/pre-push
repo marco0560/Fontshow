@@ -1,36 +1,13 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_DIR=$(
-    CDPATH= cd -- "$(dirname -- "$0")" && pwd
-)
-REPO_ROOT=$(
-    CDPATH= cd -- "$SCRIPT_DIR/.." && pwd
-)
-VENV_PRE_COMMIT="uv run pre-commit"
-VENV_PYTEST="uv run python -m pytest"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+PYTHON_BIN="$REPO_ROOT/.venv/bin/python"
 
-if uv run pre-commit --version >/dev/null 2>&1; then
-  PRE_COMMIT_BIN="$VENV_PRE_COMMIT"
-elif command -v pre-commit >/dev/null 2>&1; then
-  PRE_COMMIT_BIN=$(command -v pre-commit)
-else
-  echo "ERROR: pre-commit is not available." >&2
-  echo "Expected one of:" >&2
-  echo "  - uv-managed pre-commit" >&2
-  echo "  - pre-commit on PATH" >&2
-  exit 1
-fi
-
-if uv run python -m pytest --version >/dev/null 2>&1; then
-  PYTEST_BIN="$VENV_PYTEST"
-elif command -v pytest >/dev/null 2>&1; then
-  PYTEST_BIN=$(command -v pytest)
-else
-  echo "ERROR: pytest is not available." >&2
-  echo "Expected one of:" >&2
-  echo "  - uv-managed pytest" >&2
-  echo "  - pytest on PATH" >&2
+if [ ! -x "$PYTHON_BIN" ]; then
+  echo "ERROR: repository Python is not available: $PYTHON_BIN" >&2
+  echo "Run: uv sync --extra dev" >&2
   exit 1
 fi
 
@@ -45,43 +22,35 @@ fi
 
 # Allow git rel to bypass double audit
 if [ -z "${SKIP_RELEASE_AUDIT:-}" ]; then
-  echo "🔐 Running release safety audit..."
+  echo "Running release safety audit..."
   scripts/release_audit.sh || exit 1
 else
-  echo "ℹ Skipping release_audit (already executed)"
+  echo "Skipping release_audit (already executed)"
 fi
 
-echo "🔍 Running pre-commit checks before push..."
-$PRE_COMMIT_BIN run --all-files
-echo "✅ pre-commit checks passed"
+echo "Running pre-commit checks before push..."
+"$PYTHON_BIN" "$REPO_ROOT/scripts/run_repo_tool.py" pre-commit run --all-files
+echo "pre-commit checks passed"
 
-echo "🧪 Running test suite..."
-if [ -n "${USERPROFILE:-}" ]; then
-  PYTEST_RUNTIME_ROOT="$USERPROFILE/Documents/FontshowPytestTemp"
-else
-  PYTEST_RUNTIME_ROOT="$HOME/Documents/FontshowPytestTemp"
-fi
-mkdir -p "$PYTEST_RUNTIME_ROOT"
-PYTEST_TEMP_DIR="$PYTEST_RUNTIME_ROOT"
-TMPDIR="$PYTEST_TEMP_DIR" TMP="$PYTEST_TEMP_DIR" TEMP="$PYTEST_TEMP_DIR" \
-  $PYTEST_BIN -q tests
-echo "✅ Tests passed"
+echo "Running test suite..."
+"$PYTHON_BIN" "$REPO_ROOT/scripts/run_repo_tool.py" pytest -q tests
+echo "Tests passed"
 
 # ------------------------------------------------------------
 # Optional semantic-release preview (non-blocking)
 # ------------------------------------------------------------
-echo "📦 Semantic-release preview (optional)..."
+echo "Semantic-release preview (optional)..."
 
 if [ -n "${GH_TOKEN:-}" ]; then
   if command -v npx >/dev/null 2>&1; then
     npx semantic-release --dry-run || {
-      echo "⚠ semantic-release preview failed (non-blocking)"
+      echo "semantic-release preview failed (non-blocking)"
     }
   else
-    echo "ℹ npx not available, skipping semantic-release preview"
+    echo "npx not available, skipping semantic-release preview"
   fi
 else
-  echo "ℹ GH_TOKEN not set, skipping semantic-release preview"
+  echo "GH_TOKEN not set, skipping semantic-release preview"
 fi
 
-echo "🚀 Pre-push checks completed successfully"
+echo "Pre-push checks completed successfully"

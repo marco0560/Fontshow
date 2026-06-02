@@ -3,34 +3,19 @@
 from __future__ import annotations
 
 import importlib.util
-import os
 import sys
 from pathlib import Path
-
-import pytest
 
 _SCRIPT_PATH = (
     Path(__file__).resolve().parents[1] / "scripts" / "bootstrap_dev_environment.py"
 )
-_INSTALL_DEV_CODIRA_PATH = (
-    Path(__file__).resolve().parents[1] / "scripts" / "install_dev_codira.py"
-)
 _SPEC = importlib.util.spec_from_file_location(
     "bootstrap_dev_environment", _SCRIPT_PATH
 )
-_INSTALL_DEV_CODIRA_SPEC = importlib.util.spec_from_file_location(
-    "install_dev_codira", _INSTALL_DEV_CODIRA_PATH
-)
 assert _SPEC is not None and _SPEC.loader is not None
-assert (
-    _INSTALL_DEV_CODIRA_SPEC is not None and _INSTALL_DEV_CODIRA_SPEC.loader is not None
-)
 bootstrap_dev_environment = importlib.util.module_from_spec(_SPEC)
-install_dev_codira = importlib.util.module_from_spec(_INSTALL_DEV_CODIRA_SPEC)
 sys.modules[_SPEC.name] = bootstrap_dev_environment
-sys.modules[_INSTALL_DEV_CODIRA_SPEC.name] = install_dev_codira
 _SPEC.loader.exec_module(bootstrap_dev_environment)
-_INSTALL_DEV_CODIRA_SPEC.loader.exec_module(install_dev_codira)
 
 
 def test_uv_sync_command_tracks_requested_dependency_groups() -> None:
@@ -96,27 +81,15 @@ def test_git_local_config_entries_match_repository_contract() -> None:
         ("alias.br", "branch"),
         ("alias.ci", "commit"),
         ("alias.lg", "log --oneline --graph --decorate -50"),
+        ("alias.check", "!uv run python scripts/validate_repo.py"),
         (
-            "alias.check",
-            "!uv run ruff check . && uv run ruff format --check . && uv run mypy src && uv run python -m pytest -q",
+            "alias.fix",
+            "!uv run python scripts/run_repo_tool.py ruff check . --fix && uv run python scripts/run_repo_tool.py ruff format .",
         ),
-        ("alias.fix", "!uv run ruff check . --fix && uv run ruff format ."),
         ("alias.clean-repo", '!f() { uv run python scripts/clean_repo.py "$@"; }; f'),
-        (
-            "alias.test-coverage",
-            '!f() { uv run python -m pytest --cov=fontshow --cov-report=term-missing "$@"; }; f',
-        ),
-        (
-            "alias.test-html",
-            "!uv run python -m pytest --cov=fontshow --cov-report=html && xdg-open htmlcov/index.html",
-        ),
         (
             "alias.new-decision",
             '!f() { uv run python scripts/new_decision.py "$@"; }; f',
-        ),
-        (
-            "alias.release-preview",
-            '!f() { uv run python scripts/release_preview.py "$@"; }; f',
         ),
         (
             "alias.gen-issues",
@@ -128,7 +101,7 @@ def test_git_local_config_entries_match_repository_contract() -> None:
         ),
         (
             "alias.txz",
-            """!f() { name="${1:-repo}"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; mkdir -p "$tmp/repo"; { git ls-files -z; printf "%s\0" issues.json milestones.json; } | XZ_OPT="-9e -T0" tar --null -T - -cJf "$PWD/$name.tar.xz" --transform='s,^,repo/,'; }; f""",
+            """!f() { name="${1:-repo}"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; mkdir -p "$tmp/repo"; { git ls-files -z; printf "%s\\0" issues.json milestones.json; } | XZ_OPT="-9e -T0" tar --null -T - -cJf "$PWD/$name.tar.xz" --transform='s,^,repo/,'; }; f""",
         ),
         (
             "alias.gen-zip-common",
@@ -144,75 +117,10 @@ def test_git_local_config_entries_match_repository_contract() -> None:
             "alias.re-clean",
             "!git clean-repo && git gen-issues && git gen-miles && git txz",
         ),
-        (
-            "alias.gen-boot-report",
-            "!uv run python scripts/generate_bootstrap_audit_report.py",
-        ),
-        (
-            "alias.ver-boot-report",
-            "!uv run python scripts/verify_bootstrap_audit_report.py",
-        ),
-        (
-            "alias.install-dev-codira",
-            "!uv run python scripts/install_dev_codira.py",
-        ),
         ("pull.ff", "only"),
         ("pull.rebase", "false"),
         ("rebase.autostash", "true"),
     ]
-
-
-def test_install_dev_codira_builds_repo_local_wrapper_command() -> None:
-    """
-    Ensure the codira install wrapper targets the current repository venv.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-    """
-    command = install_dev_codira.build_install_command(
-        python="/tmp/fontshow/.venv/bin/python",
-        codira_root=Path("/repos/codira"),
-    )
-
-    assert command == (
-        "uv",
-        "run",
-        "python",
-        "/repos/codira/scripts/install_first_party_packages.py",
-        "--python",
-        "/tmp/fontshow/.venv/bin/python",
-        "--include-core",
-        "--core-extra",
-        "semantic",
-    )
-
-
-@pytest.mark.skipif(
-    os.environ.get("GITHUB_ACTIONS") == "true",
-    reason="Depends on local checkout layout",
-)
-def test_install_dev_codira_default_root_points_to_sibling_checkout() -> None:
-    """
-    Ensure the codira install wrapper resolves the expected sibling checkout.
-    Will not run successfully in CI due to reliance on local filesystem layout,
-    but provides a sanity check for local development.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-    """
-    assert install_dev_codira.DEFAULT_CODIRA_ROOT.as_posix().endswith(
-        "/Software/Python/codira"
-    )
 
 
 def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
@@ -243,7 +151,7 @@ def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
     argvs = [command.argv for command in commands]
 
     assert ("uv", "sync", "--extra", "dev") in argvs
-    assert ("uv", "run", "python", "-m", "pip", "check") in argvs
+    assert ("uv", "pip", "check") in argvs
     assert any(
         argv[:4]
         == (
@@ -254,11 +162,7 @@ def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
         )
         for argv in argvs
     )
-    assert ("uv", "run", "ruff", "check", ".", "--fix") in argvs
-    assert ("uv", "run", "ruff", "format", "--check", ".") in argvs
-    assert ("uv", "run", "mypy", "src") in argvs
-    assert ("uv", "run", "python", "-m", "pytest", "-q") in argvs
-    assert ("uv", "run", "pre-commit", "run", "--all-files") in argvs
+    assert ("uv", "run", "python", "scripts/validate_repo.py") in argvs
 
 
 def test_build_bootstrap_commands_can_skip_validation_and_include_docs() -> None:
@@ -289,7 +193,7 @@ def test_build_bootstrap_commands_can_skip_validation_and_include_docs() -> None
     argvs = [command.argv for command in commands]
 
     assert ("uv", "sync", "--extra", "dev", "--extra", "docs") in argvs
-    assert ("uv", "run", "python", "-m", "pip", "check") in argvs
+    assert ("uv", "pip", "check") in argvs
     assert any(
         argv[:4]
         == (
@@ -301,51 +205,5 @@ def test_build_bootstrap_commands_can_skip_validation_and_include_docs() -> None
         for argv in argvs
     )
     assert not any(
-        argv[:4]
-        == (
-            "uv",
-            "run",
-            "ruff",
-            "check",
-        )
-        for argv in argvs
-    )
-    assert not any(
-        argv[:4]
-        == (
-            "uv",
-            "run",
-            "ruff",
-            "format",
-        )
-        for argv in argvs
-    )
-    assert not any(
-        argv[:3]
-        == (
-            "uv",
-            "run",
-            "mypy",
-        )
-        for argv in argvs
-    )
-    assert not any(
-        argv[:5]
-        == (
-            "uv",
-            "run",
-            "python",
-            "-m",
-            "pytest",
-        )
-        for argv in argvs
-    )
-    assert not any(
-        argv[:4]
-        == (
-            "uv",
-            "run",
-            "pre-commit",
-        )
-        for argv in argvs
+        argv == ("uv", "run", "python", "scripts/validate_repo.py") for argv in argvs
     )

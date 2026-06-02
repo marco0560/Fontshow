@@ -30,7 +30,7 @@ Fontshow provides a small set of development helpers implemented as Python
 scripts under the `scripts/` directory.
 
 For convenience, commonly used helpers are exposed via Git aliases
-(e.g. `git clean-artifacts`, `git test-coverage`, `git release-preview`).
+(e.g. `git clean-repo`, `git check`, `git gen-issues`).
 
 See `scripts.md` for details.
 

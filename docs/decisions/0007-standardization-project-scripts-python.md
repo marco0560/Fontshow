@@ -43,10 +43,10 @@ with arguments transparently forwarded to the underlying Python implementation.
 
 Examples include:
 
-- `git clean-artifacts`
+- `git clean-repo`
 - `git new-decision`
-- `git release-preview`
-- `git test-gentoo`
+- `git gen-issues`
+- `git gen-miles`
 
 Some scripts (e.g. Gentoo-style end-to-end tests) are explicitly designated
 as **local helpers** and are not intended to be used in CI pipelines.
