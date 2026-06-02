@@ -29,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
 
       # 🔐 SOFT enforcement: verifica firme SOLO sui commit nuovi
       - name: Verify commit signatures (soft enforcement)
