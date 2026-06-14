@@ -20,6 +20,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+docs = [
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.7,<10",
+    "mkdocstrings[python]>=1,<2",
+    "mkdocs-awesome-pages-plugin>=2.10,<3",
+]
+
+[dependency-groups]
 dev = [
     "ruff",
     "mypy",
@@ -28,19 +36,18 @@ dev = [
     "pre-commit",
     "packaging",
     "build",
-    "codira[bundle-official]",
     "setuptools-scm>=8",
-]
-
-docs = [
-    "mkdocs>=1.6,<2",
-    "mkdocs-material>=9.7,<10",
-    "mkdocstrings[python]>=1,<2",
-    "mkdocs-awesome-pages-plugin>=2.10,<3",
+    "codira[bundle-official]==1.40.0",
+    "libcst>=1.8.6",
+    "pyupgrade>=3.21.2",
+    "types-jsonschema>=4.26.0.20260408",
 ]
 
 [project.scripts]
 fontshow = "fontshow.__main__:main"
+
+[tool.uv]
+python-preference = "only-managed"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
@@ -239,12 +246,4 @@ norecursedirs = [
     "build",
     "dist",
     "node_modules",
-]
-
-[dependency-groups]
-dev = [
-    "codira[bundle-official]==1.40.0",
-    "libcst>=1.8.6",
-    "pyupgrade>=3.21.2",
-    "types-jsonschema>=4.26.0.20260408",
 ]

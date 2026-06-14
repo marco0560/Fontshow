@@ -436,17 +436,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-dev = [
-    { name = "build" },
-    { name = "codira", extra = ["bundle-official"] },
-    { name = "mypy" },
-    { name = "packaging" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "setuptools-scm" },
-]
 docs = [
     { name = "mkdocs" },
     { name = "mkdocs-awesome-pages-plugin" },
@@ -456,16 +445,22 @@ docs = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "build" },
     { name = "codira", extra = ["bundle-official"] },
     { name = "libcst" },
+    { name = "mypy" },
+    { name = "packaging" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
     { name = "pyupgrade" },
+    { name = "ruff" },
+    { name = "setuptools-scm" },
     { name = "types-jsonschema" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "build", marker = "extra == 'dev'" },
-    { name = "codira", extras = ["bundle-official"], marker = "extra == 'dev'" },
     { name = "fonttools", specifier = ">=4.61.0,<5" },
     { name = "jsonschema", specifier = ">=4.23.0,<5" },
     { name = "language-tags", specifier = ">=1.2.0,<2" },
@@ -473,22 +468,23 @@ requires-dist = [
     { name = "mkdocs-awesome-pages-plugin", marker = "extra == 'docs'", specifier = ">=2.10,<3" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.7,<10" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'", specifier = ">=1,<2" },
-    { name = "mypy", marker = "extra == 'dev'" },
-    { name = "packaging", marker = "extra == 'dev'" },
-    { name = "pre-commit", marker = "extra == 'dev'" },
     { name = "pycountry", specifier = ">=22.3.5,<27" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-cov", marker = "extra == 'dev'" },
-    { name = "ruff", marker = "extra == 'dev'" },
-    { name = "setuptools-scm", marker = "extra == 'dev'", specifier = ">=8" },
 ]
-provides-extras = ["dev", "docs"]
+provides-extras = ["docs"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "build" },
     { name = "codira", extras = ["bundle-official"], specifier = "==1.40.0" },
     { name = "libcst", specifier = ">=1.8.6" },
+    { name = "mypy" },
+    { name = "packaging" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
     { name = "pyupgrade", specifier = ">=3.21.2" },
+    { name = "ruff" },
+    { name = "setuptools-scm", specifier = ">=8" },
     { name = "types-jsonschema", specifier = ">=4.26.0.20260408" },
 ]
 
