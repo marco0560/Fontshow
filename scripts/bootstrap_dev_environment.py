@@ -192,7 +192,7 @@ def uv_sync_command(*, with_docs: bool) -> tuple[str, ...]:
     tuple[str, ...]
         Command suitable for ``uv sync`` execution.
     """
-    command = ["uv", "sync", "--extra", "dev"]
+    command = ["uv", "sync", "--group", "dev"]
 
     if with_docs:
         command.extend(["--extra", "docs"])

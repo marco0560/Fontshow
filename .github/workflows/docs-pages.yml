@@ -37,7 +37,7 @@ jobs:
 
             - name: Install documentation dependencies
               run: |
-                  uv sync --frozen --extra dev --extra docs
+                  uv sync --frozen --group dev --extra docs
 
             - name: Build documentation
               run: uv run mkdocs build --strict

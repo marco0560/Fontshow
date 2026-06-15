@@ -33,14 +33,14 @@ def test_uv_sync_command_tracks_requested_dependency_groups() -> None:
     assert bootstrap_dev_environment.uv_sync_command(with_docs=False) == (
         "uv",
         "sync",
-        "--extra",
+        "--group",
         "dev",
     )
 
     assert bootstrap_dev_environment.uv_sync_command(with_docs=True) == (
         "uv",
         "sync",
-        "--extra",
+        "--group",
         "dev",
         "--extra",
         "docs",
@@ -150,7 +150,7 @@ def test_build_bootstrap_commands_include_git_setup_and_validation() -> None:
 
     argvs = [command.argv for command in commands]
 
-    assert ("uv", "sync", "--extra", "dev") in argvs
+    assert ("uv", "sync", "--group", "dev") in argvs
     assert ("uv", "pip", "check") in argvs
     assert any(
         argv[:4]
@@ -192,7 +192,7 @@ def test_build_bootstrap_commands_can_skip_validation_and_include_docs() -> None
 
     argvs = [command.argv for command in commands]
 
-    assert ("uv", "sync", "--extra", "dev", "--extra", "docs") in argvs
+    assert ("uv", "sync", "--group", "dev", "--extra", "docs") in argvs
     assert ("uv", "pip", "check") in argvs
     assert any(
         argv[:4]

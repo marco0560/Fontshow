@@ -112,6 +112,6 @@ def test_documentation_workflows_delegate_to_single_reusable_workflow() -> None:
     assert "pip install mkdocs" not in docs_pages_workflow_text
     assert "mkdocs build --strict" not in ci_workflow_text
     assert "mkdocs build --strict" not in docs_workflow_text
-    assert "uv sync --frozen --extra dev --extra docs" in (docs_pages_workflow_text)
+    assert "uv sync --frozen --group dev --extra docs" in (docs_pages_workflow_text)
     assert "uv run mkdocs build --strict" in (docs_pages_workflow_text)
     assert docs_pages_workflow_text.count("uv run mkdocs build --strict") == 1
