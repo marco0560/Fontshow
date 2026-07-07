@@ -54,6 +54,21 @@ Previous assistant output is not a source of truth.
 - Use `rg` only after structured repository tools are unavailable,
   insufficient, or irrelevant to the task.
 
+## Token And Context Discipline
+
+- Use Codex memory as an index, not as a transcript: when relevant, search the
+  configured Codex memory registry first and open only the directly relevant
+  rollout summary unless exact historical evidence is required.
+- Use Codira to locate symbols and relationships before broad `rg` searches or
+  large file reads; `rg` is follow-up or fallback.
+- During implementation, run focused tests and checks for the touched surface;
+  run the full repository gate once at the coherent slice or phase boundary,
+  and again only after subsequent changes.
+- Keep status updates concise and operational; summarize long tool outputs
+  instead of pasting them.
+- When committing, use `commit-block-generator` and include a descriptive body,
+  not a subject-only commit.
+
 ## Repository Map
 
 | Path            | Purpose                                     |
