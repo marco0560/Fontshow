@@ -90,6 +90,31 @@ def _extract_engine_version(output: str | None) -> str | None:
     return output.splitlines()[0].strip() if output.splitlines() else None
 
 
+def _extract_texlive_version(output: str | None) -> str | None:
+    """
+    Extract a TeX Live release identifier from LuaLaTeX version output.
+
+    Parameters
+    ----------
+    output : str | None
+        Text emitted by ``lualatex --version``.
+
+    Returns
+    -------
+    str | None
+        Parsed TeX Live release identifier when detected, otherwise ``None``.
+    """
+    if not output:
+        return None
+    match = re.search(r"\((TeX Live [^)]+)\)", output)
+    if match:
+        return match.group(1).strip()
+    match = re.search(r"\b(TeX Live \d{4}[^\n)]*)", output)
+    if match:
+        return match.group(1).strip()
+    return None
+
+
 def _find_tex_package_path(package_name: str) -> Path | None:
     """
     Locate a TeX package file using ``kpsewhich``.
@@ -174,6 +199,7 @@ def build_latex_runtime_fingerprint(metadata: dict[str, object]) -> str | None:
     for key in (
         "engine",
         "engine_version",
+        "texlive_version",
         "luaotfload_version",
         "fontspec_version",
         "polyglossia_version",
@@ -230,13 +256,15 @@ def collect_latex_validation_metadata() -> dict[str, object]:
     """
     lualatex_bin = shutil.which("lualatex")
     engine = "lualatex" if lualatex_bin is not None else None
-    engine_version = _extract_engine_version(
+    lualatex_version_output = (
         _read_command_stdout(lualatex_bin, "--version") if lualatex_bin else None
     )
+    engine_version = _extract_engine_version(lualatex_version_output)
     metadata: dict[str, Any] = {
         "attempted": False,
         "engine": engine,
         "engine_version": engine_version,
+        "texlive_version": _extract_texlive_version(lualatex_version_output),
         "luaotfload_version": _extract_package_version("luaotfload"),
         "fontspec_version": _extract_package_version("fontspec"),
         "polyglossia_version": _extract_package_version("polyglossia"),

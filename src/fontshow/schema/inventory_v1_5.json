@@ -523,6 +523,10 @@
           "type": ["string", "null"],
           "description": "Version string reported by the LaTeX engine."
         },
+        "texlive_version": {
+          "type": ["string", "null"],
+          "description": "TeX Live release identifier reported by the associated LaTeX runtime, when available."
+        },
         "luaotfload_version": {
           "type": ["string", "null"],
           "description": "Version of the luaotfload package available in the associated LaTeX runtime."

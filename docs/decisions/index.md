@@ -51,3 +51,4 @@ created before the adoption of the formal decision record system.
 - [0031 — Inventory Schema v1.5 Authority and Compatibility Contract](0031-inventory-schema-v1-5-authority-compatibility-contract.md)
 - [0032 — Persisted LuaLaTeX Loadability v1.5 Schema Contract](0032-persisted-lualatex-loadability-v1-5-schema-contract.md)
 - [0033 — Project Versioning and v2 Deprecation Policy](0033-project-versioning-and-v2-deprecation-policy.md)
+- [0034 — TeX Runtime Support and Distro Lag Policy](0034-tex-runtime-support-and-distro-lag-policy.md)

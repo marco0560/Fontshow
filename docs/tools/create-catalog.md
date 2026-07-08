@@ -124,6 +124,13 @@ Notes:
 - The catalog stage does not run runtime LuaLaTeX probes.
 - There is no longer a `--validate-loadability` flag on
   `create-catalog`.
+- Large catalogs depend on the local TeX runtime. Stale distro-packaged
+  TeX Live releases are best-effort and may expose renderer defects already
+  fixed upstream. Regenerate the inventory and retry with a current or locally
+  validated TeX Live runtime before treating such failures as Fontshow defects.
+- Bug reports for catalog compilation failures should include the recorded
+  `metadata.validation.lualatex` block, especially `engine_version`,
+  `texlive_version`, and `runtime_fingerprint`.
 
 ## API reference
 

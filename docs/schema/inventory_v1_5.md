@@ -37,6 +37,7 @@ This document is a human-oriented rendering of that schema.
 | `metadata.validation.lualatex.attempted` | boolean | yes | Whether inventory-wide LuaLaTeX validation or probing has been attempted. |
 | `metadata.validation.lualatex.engine` | string \| null | yes | Name of the LaTeX engine associated with the validation metadata. |
 | `metadata.validation.lualatex.engine_version` | string \| null | yes | Version string reported by the LaTeX engine. |
+| `metadata.validation.lualatex.texlive_version` | string \| null | no | TeX Live release identifier reported by the associated LaTeX runtime, when available. |
 | `metadata.validation.lualatex.luaotfload_version` | string \| null | yes | Version of the luaotfload package available in the associated LaTeX runtime. |
 | `metadata.validation.lualatex.fontspec_version` | string \| null | yes | Version of the fontspec package available in the associated LaTeX runtime. |
 | `metadata.validation.lualatex.polyglossia_version` | string \| null | yes | Version of the Polyglossia package available in the associated LaTeX runtime. |
@@ -718,6 +719,13 @@ This document is a human-oriented rendering of that schema.
             "null"
           ],
           "description": "Version string reported by the LaTeX engine."
+        },
+        "texlive_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "TeX Live release identifier reported by the associated LaTeX runtime, when available."
         },
         "luaotfload_version": {
           "type": [

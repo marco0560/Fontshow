@@ -30,6 +30,7 @@ def test_build_latex_runtime_fingerprint_requires_engine():
             {
                 "engine": None,
                 "engine_version": "1.18.0",
+                "texlive_version": "TeX Live 2024",
                 "luaotfload_version": "3.28",
                 "fontspec_version": "2.9g",
                 "polyglossia_version": "1.60.0",
@@ -55,6 +56,7 @@ def test_build_latex_runtime_fingerprint_is_deterministic():
     metadata = {
         "engine": "lualatex",
         "engine_version": "1.18.0",
+        "texlive_version": "TeX Live 2024",
         "luaotfload_version": "3.28",
         "fontspec_version": "2.9g",
         "polyglossia_version": "1.60.0",
@@ -85,6 +87,7 @@ def test_attach_latex_runtime_fingerprint_preserves_other_fields():
         "attempted": False,
         "engine": "lualatex",
         "engine_version": "1.18.0",
+        "texlive_version": "TeX Live 2024",
         "luaotfload_version": "3.28",
         "fontspec_version": "2.9g",
         "polyglossia_version": "1.60.0",
@@ -119,7 +122,7 @@ def test_collect_latex_validation_metadata_populates_runtime_fingerprint(monkeyp
     monkeypatch.setattr(
         latex_validation_metadata,
         "_read_command_stdout",
-        lambda *_argv: "This is LuaHBTeX, Version 1.18.0",
+        lambda *_argv: "This is LuaHBTeX, Version 1.18.0 (TeX Live 2024)",
     )
     monkeypatch.setattr(
         latex_validation_metadata,
@@ -140,9 +143,60 @@ def test_collect_latex_validation_metadata_populates_runtime_fingerprint(monkeyp
 
     assert metadata["engine"] == "lualatex"
     assert metadata["engine_version"] == "1.18.0"
+    assert metadata["texlive_version"] == "TeX Live 2024"
     assert metadata["render_policy_version"] == "policy-v1+loadability-probe-v2"
     assert isinstance(metadata["runtime_fingerprint"], str)
     assert len(metadata["runtime_fingerprint"]) == 64
+
+
+def test_extract_texlive_version_accepts_distro_qualified_output():
+    """
+    Ensure TeX Live release identifiers include distro qualifiers.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    assert (
+        latex_validation_metadata._extract_texlive_version(
+            "This is LuaHBTeX, Version 1.18.0 (TeX Live 2024/Gentoo Linux)"
+        )
+        == "TeX Live 2024/Gentoo Linux"
+    )
+
+
+def test_runtime_fingerprint_includes_texlive_version():
+    """
+    Ensure TeX Live release drift affects runtime fingerprints.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    metadata = {
+        "engine": "lualatex",
+        "engine_version": "1.18.0",
+        "texlive_version": "TeX Live 2024",
+        "luaotfload_version": "3.28",
+        "fontspec_version": "2.9g",
+        "polyglossia_version": "1.60.0",
+        "render_policy_version": "policy-v1",
+    }
+
+    changed = dict(metadata)
+    changed["texlive_version"] = "TeX Live 2026"
+
+    assert latex_validation_metadata.build_latex_runtime_fingerprint(
+        metadata
+    ) != latex_validation_metadata.build_latex_runtime_fingerprint(changed)
 
 
 def test_get_font_lualatex_loadability_returns_nested_mapping():
