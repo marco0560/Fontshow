@@ -150,6 +150,7 @@ nav:
       - ADR 0030 Platform Support Preflight Severity Matrix: decisions/0030-platform-support-preflight-severity-matrix.md
       - ADR 0031 Inventory Schema v1.5 Authority Compatibility Contract: decisions/0031-inventory-schema-v1-5-authority-compatibility-contract.md
       - ADR 0032 Persisted LuaLaTeX Loadability v1.5 Schema Contract: decisions/0032-persisted-lualatex-loadability-v1-5-schema-contract.md
+      - ADR 0033 Project Versioning v2 Deprecation Policy: decisions/0033-project-versioning-and-v2-deprecation-policy.md
 
   - Project:
     - Roadmap: roadmap.md

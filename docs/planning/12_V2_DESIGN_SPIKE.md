@@ -20,6 +20,9 @@ It exists to:
 
 This document is **explicitly non-binding**.
 
+Versioning and deprecation rules for any future v2.x.y work are defined in
+`docs/decisions/0033-project-versioning-and-v2-deprecation-policy.md`.
+
 ---
 
 ## Non-Goals
