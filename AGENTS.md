@@ -36,6 +36,14 @@ Use sources in this order:
 
 Previous assistant output is not a source of truth.
 
+## Documentation
+
+For current third-party library, framework, SDK, or tool documentation, use the
+Context7 MCP server before relying on model memory. Use it especially for
+version-sensitive APIs, configuration syntax, setup steps, or package behavior.
+For OpenAI products, Codex behavior, OpenAI APIs, Apps SDK, or OpenAI
+documentation, use the OpenAI developer documentation MCP server instead.
+
 ## Required Tools And Skills
 
 - If the repo provides `codira`, use `codira-workflow` before broad exploration
