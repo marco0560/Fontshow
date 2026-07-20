@@ -1,3 +1,9 @@
+## [0.75.0](https://github.com/marco0560/Fontshow/compare/v0.74.7...v0.75.0) (2026-07-20)
+
+### Features
+
+* **dev:** added Context7 MCP server for up-to-date documentation ([812ba65](https://github.com/marco0560/Fontshow/commit/812ba65f5966e118d1af95a547622689fba21ac5))
+
 ## [0.74.7](https://github.com/marco0560/Fontshow/compare/v0.74.6...v0.74.7) (2026-06-02)
 
 ### Bug Fixes
