@@ -101,7 +101,7 @@ def test_git_local_config_entries_match_repository_contract() -> None:
         ),
         (
             "alias.txz",
-            """!f() { name="${1:-repo}"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; mkdir -p "$tmp/repo"; { git ls-files -z; printf "%s\\0" issues.json milestones.json; } | XZ_OPT="-9e -T0" tar --null -T - -cJf "$PWD/$name.tar.xz" --transform='s,^,repo/,'; }; f""",
+            """!f() { name="${1:-fontshow}"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; mkdir -p "$tmp/fontshow"; { git ls-files -z; printf "%s\\0" issues.json milestones.json; } | XZ_OPT="-9e -T0" tar --null -T - -cJf "$PWD/$name.tar.xz" --transform='s,^,fontshow/,'; }; f""",
         ),
         (
             "alias.gen-zip-common",
