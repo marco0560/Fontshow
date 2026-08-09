@@ -48,6 +48,10 @@ documentation, use the OpenAI developer documentation MCP server instead.
 
 - If the repo provides `codira`, use `codira-workflow` before broad exploration
   or patching.
+- If both the Codira MCP server and the `codira` command are available for the
+  repository, use the Codira MCP server first. The MCP interface takes precedence
+  over direct `codira` command invocation; use the command as a fallback when the
+  MCP server is unavailable, insufficient, or irrelevant to the task.
 - Prefer repository-native commands through `uv run`.
 - At the start of each task, inspect the skills available in the current
   session and select the minimal set that applies.
