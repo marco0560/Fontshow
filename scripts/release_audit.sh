@@ -31,7 +31,7 @@ echo "== Release Audit =="
 ########################################
 echo "[0] Checking history not rewritten after first release..."
 
-FIRST_TAG=$(git tag --sort=v:refname | head -1)
+  FIRST_TAG=$(git tag --sort=v:refname | grep -E '^v[0-9]+.[0-9]+.[0-9]+$' | head -1 || true)
 
 if [ -n "$FIRST_TAG" ]; then
   if ! git merge-base --is-ancestor "$FIRST_TAG" HEAD; then
