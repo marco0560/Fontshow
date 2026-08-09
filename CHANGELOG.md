@@ -1,3 +1,10 @@
+## [0.75.1](https://github.com/marco0560/Fontshow/compare/v0.75.0...v0.75.1) (2026-08-09)
+
+### Bug Fixes
+
+* **dev:** added precedence for codira mcp server ([d760866](https://github.com/marco0560/Fontshow/commit/d7608663c69ccb1a51190dbf13b100f5b2f7f834))
+* **release:** ignore non-release tags in history audit ([bf31483](https://github.com/marco0560/Fontshow/commit/bf314833dc0e76d3102b19ed671528227cc13b5e))
+
 ## [0.75.0](https://github.com/marco0560/Fontshow/compare/v0.74.7...v0.75.0) (2026-07-20)
 
 ### Features
