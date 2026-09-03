@@ -18,6 +18,9 @@ import tempfile
 from pathlib import Path
 from typing import cast
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from sops_exec import SopsExecutionError, run_with_github_secret
+
 OWNER = "marco0560"
 REPOSITORY = "Fontshow"
 ISSUES_PAGE_SIZE = 100
@@ -114,14 +117,14 @@ def _run_graphql(query: str) -> dict[str, object]:
         Raised when the GitHub CLI command fails or returns malformed JSON.
     """
     try:
-        completed = subprocess.run(  # (trusted fixed binary, no shell)
-            ["gh", "api", "graphql", "-f", f"query={query}"],  # noqa: S607
-            check=True,
+        completed = run_with_github_secret(
+            ["gh", "api", "graphql", "-f", f"query={query}"],
             capture_output=True,
             text=True,
         )
-    except subprocess.CalledProcessError as exc:
-        stderr = exc.stderr.strip()
+    except (SopsExecutionError, subprocess.CalledProcessError) as exc:
+        stderr = getattr(exc, "stderr", "") or ""
+        stderr = stderr.strip()
         detail = f": {stderr}" if stderr else ""
         message = f"GitHub GraphQL query failed{detail}"
         raise _snapshot_error(message) from exc

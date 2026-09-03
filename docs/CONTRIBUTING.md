@@ -21,8 +21,8 @@ Before submitting a contribution, you must:
 Fontshow uses a **pre-commit–driven workflow** to keep generated artifacts
 and documentation consistent and to avoid noisy or accidental changes.
 
-Local semantic-release dry-runs require a temporary GitHub token
-(GH_TOKEN) due to mandatory GitHub plugin verification, even in dry-run mode.
+Local GitHub operations obtain ``GH_TOKEN`` from the encrypted SOPS GitHub
+environment. Do not export or source the token into the parent shell.
 
 ### Development tooling
 
@@ -62,16 +62,14 @@ generation. However, its usage differs between local development and CI.
 - direct `git push` to `main` is blocked by the pre-push hook
 - use `git rel` for guarded pushes to `main`
 - direct `git push` remains allowed on non-`main` branches
-- The pre-push hook may optionally run a `semantic-release --dry-run`
-  **only if** a `GH_TOKEN` environment variable is present
-- If `GH_TOKEN` is not set, the semantic-release preview is skipped
-  without blocking the push
+- The pre-push hook runs a SOPS-scoped `semantic-release --dry-run`; it is
+  mandatory for `git rel` and does not receive a parent-shell token
 
 This design ensures that:
 
-- guarded release pushes to `main` remain deterministic
+- guarded release pushes to `main` remain deterministic and authenticated
 - branch pushes work in all environments (Linux, WSL, Windows)
-- no local credentials are required by default
+- GitHub credentials are decrypted only for the command that uses them
 - release planning remains an explicit, opt-in action
 
 For local release previews, contributors can run:
@@ -79,8 +77,6 @@ For local release previews, contributors can run:
 ```bash
 python scripts/release_preview.py
 ```
-
-or use a convenience alias that injects a temporary `GH_TOKEN`.
 
 #### Continuous Integration (CI)
 

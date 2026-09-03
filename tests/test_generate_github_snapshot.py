@@ -330,7 +330,7 @@ def test_main_reports_github_cli_failure(capsys, monkeypatch) -> None:
     None
     """
 
-    def _fake_run(
+    def _fake_run_with_github_secret(
         *_args: object, **_kwargs: object
     ) -> subprocess.CompletedProcess[str]:
         raise subprocess.CalledProcessError(
@@ -339,7 +339,11 @@ def test_main_reports_github_cli_failure(capsys, monkeypatch) -> None:
             stderr="authentication required",
         )
 
-    monkeypatch.setattr(generate_github_snapshot.subprocess, "run", _fake_run)
+    monkeypatch.setattr(
+        generate_github_snapshot,
+        "run_with_github_secret",
+        _fake_run_with_github_secret,
+    )
 
     result = generate_github_snapshot.main(["issues"])
 

@@ -37,20 +37,13 @@ echo "Running test suite..."
 echo "Tests passed"
 
 # ------------------------------------------------------------
-# Optional semantic-release preview (non-blocking)
+# Mandatory semantic-release preview for guarded releases
 # ------------------------------------------------------------
-echo "Semantic-release preview (optional)..."
-
-if [ -n "${GH_TOKEN:-}" ]; then
-  if command -v npx >/dev/null 2>&1; then
-    npx semantic-release --dry-run || {
-      echo "semantic-release preview failed (non-blocking)"
-    }
-  else
-    echo "npx not available, skipping semantic-release preview"
-  fi
+if [ "${ALLOW_MAIN_PUSH:-}" = "1" ]; then
+  echo "Semantic-release preview..."
+  "$PYTHON_BIN" "$REPO_ROOT/scripts/release_preview.py"
 else
-  echo "GH_TOKEN not set, skipping semantic-release preview"
+  echo "Semantic-release preview skipped outside guarded release"
 fi
 
 echo "Pre-push checks completed successfully"

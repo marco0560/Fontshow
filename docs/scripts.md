@@ -140,6 +140,7 @@ Status:
 
 - installed as `git gen-issues` and `git gen-miles` by the bootstrap script
 - uses the GitHub CLI GraphQL API
+- runs each GitHub CLI call through `sops exec-env` with the GitHub secret
 - paginates top-level issue and milestone connections
 - paginates nested milestone issue connections
 - covered by `tests/test_generate_github_snapshot.py`
@@ -197,6 +198,7 @@ Inspect repository GitHub Actions workflows for likely Node runtime drift.
 Status:
 
 - manual maintenance helper for workflow upkeep
+- runs remote GitHub checks through `sops exec-env` with the GitHub secret
 - useful when GitHub Actions deprecates a Node runtime
 - not currently wired into hooks or contributor bootstrap
 

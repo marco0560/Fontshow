@@ -327,7 +327,7 @@ Pre-push hook
    ├─ Run release_audit (secondary safety)
    ├─ Run lint
    ├─ Run tests
-   └─ Optional semantic-release dry-run
+   └─ Run SOPS-scoped semantic-release dry-run
    │
    ▼
 git push (authorized)

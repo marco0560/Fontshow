@@ -28,10 +28,10 @@ Run the scanner from repository root:
 
 >>> python scripts/check_actions_runtime.py
 
-Environment variables
----------------------
-GITHUB_TOKEN : str, optional
-    GitHub token used to avoid low API rate limits.
+Credentials
+-----------
+Remote checks invoke the GitHub CLI through the scoped SOPS GitHub
+environment. The scanner itself does not read a token from its environment.
 
 Notes
 -----
@@ -51,14 +51,15 @@ None
 
 from __future__ import annotations
 
-import importlib
-import os
+import json
 import pathlib
 import re
+import subprocess
 import sys
 from typing import Any, cast
 
-requests = cast("Any", importlib.import_module("requests"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from sops_exec import SopsExecutionError, run_with_github_secret
 
 WORKFLOW_DIR = pathlib.Path(".github/workflows")
 
@@ -154,21 +155,13 @@ def get_latest_major(action: str) -> int | None:
     if action in CACHE:
         return CACHE[action]
 
-    url = f"https://api.github.com/repos/{action}/releases/latest"
-
-    headers = {}
-    token = os.getenv("GITHUB_TOKEN")
-
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-
     try:
-        r = requests.get(url, headers=headers, timeout=10)
-
-        if r.status_code != 200:
-            return None
-
-        data = r.json()
+        completed = run_with_github_secret(
+            ["gh", "api", f"repos/{action}/releases/latest"],
+            capture_output=True,
+            text=True,
+        )
+        data = cast("dict[str, Any]", json.loads(completed.stdout))
         tag = data.get("tag_name", "")
 
         m = re.search(r"v(\d+)", tag)
@@ -177,7 +170,7 @@ def get_latest_major(action: str) -> int | None:
             CACHE[action] = result
             return result
 
-    except (requests.exceptions.RequestException, ValueError):
+    except (SopsExecutionError, subprocess.CalledProcessError, ValueError):
         CACHE[action] = None
         return None
     return None

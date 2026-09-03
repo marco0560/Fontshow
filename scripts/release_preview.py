@@ -33,6 +33,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from sops_exec import SopsExecutionError, run_with_github_secret
+
 DEFAULT_CONFIG = ".releaserc.json"
 
 
@@ -106,7 +109,9 @@ def run(cmd: list[str], *, verbose: bool = False) -> None:
         print("+", " ".join(cmd))
 
     try:
-        subprocess.run(cmd, check=True)
+        run_with_github_secret(cmd)
+    except SopsExecutionError as exc:
+        fail(str(exc))
     except subprocess.CalledProcessError as exc:
         fail(f"Command failed with exit code {exc.returncode}: {' '.join(cmd)}")
 

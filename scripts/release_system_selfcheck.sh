@@ -68,7 +68,7 @@ if [ -n "$LATEST_TAG" ]; then
 fi
 
 echo "[7] Checking semantic-release baseline..."
-npx semantic-release --dry-run >/dev/null 2>&1 || {
+python scripts/release_preview.py >/dev/null 2>&1 || {
   echo "WARN: semantic-release dry-run failed"
 }
 
