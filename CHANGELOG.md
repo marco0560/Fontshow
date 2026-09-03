@@ -1,3 +1,9 @@
+## [0.75.2](https://github.com/marco0560/Fontshow/compare/v0.75.1...v0.75.2) (2026-09-03)
+
+### Bug Fixes
+
+* **dev:** scope GitHub tooling credentials with SOPS ([655539f](https://github.com/marco0560/Fontshow/commit/655539f0c9f5c6708a14f8de815c15848fc5d644))
+
 ## [0.75.1](https://github.com/marco0560/Fontshow/compare/v0.75.0...v0.75.1) (2026-08-09)
 
 ### Bug Fixes
