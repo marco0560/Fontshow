@@ -133,14 +133,16 @@ wheels = [
 
 [[package]]
 name = "codira"
-version = "1.40.0"
+version = "1.55.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jsonschema" },
+    { name = "platformdirs" },
+    { name = "tomlkit" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/44/01/4eb485991d5b1954f7d210db585c6c81bca87eaab0dd5951ae15b2799472/codira-1.40.0.tar.gz", hash = "sha256:151c9269dc6da866f0361e8e09c16558e7f8ceaa249f7093d9bb7b4439f1be37", size = 1405189, upload-time = "2026-05-31T16:28:30.651Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bc/2e/966922021eef87705bccd85f15cf9b6da8056dea96126a650df3f70e1f4a/codira-1.55.0.tar.gz", hash = "sha256:90ada683b6c0eddf95b6fbd9bf306d0ad14280d4d7773802e18fdaac2a57afa4", size = 1711611, upload-time = "2026-07-24T06:10:08.46Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/35/af/1a3df0d7b10500eb1d26861b76caf212a68e1548ebbc8c38ce4e3b125683/codira-1.40.0-py3-none-any.whl", hash = "sha256:0d477fe4d2ff7c407b771e9151dffa635d7393786376cec9b240d66ba89cdb31", size = 156007, upload-time = "2026-05-31T16:28:18.981Z" },
+    { url = "https://files.pythonhosted.org/packages/c3/ea/e29e31857daa760168cf35c0cdcef04d5c0b0afd0827c3dcb454dbec1dc2/codira-1.55.0-py3-none-any.whl", hash = "sha256:cf7c6e6bc4d4166e9c359af53b814cb050064962a3fb5c89637a60cd47f1d1fd", size = 212057, upload-time = "2026-07-24T06:04:14.133Z" },
 ]
 
 [package.optional-dependencies]
@@ -149,102 +151,227 @@ bundle-official = [
     { name = "codira-analyzer-c" },
     { name = "codira-analyzer-cpp" },
     { name = "codira-analyzer-json" },
+    { name = "codira-analyzer-markdown" },
     { name = "codira-analyzer-python" },
+    { name = "codira-analyzer-text" },
     { name = "codira-backend-duckdb" },
     { name = "codira-backend-sqlite" },
+    { name = "codira-documentation-audit-doxygen" },
+    { name = "codira-documentation-audit-google" },
+    { name = "codira-documentation-audit-numpy" },
+    { name = "codira-embedding-onnx" },
+    { name = "codira-embedding-sentence-transformers" },
+    { name = "codira-vector-store-duckdb" },
+    { name = "codira-vector-store-sqlite" },
+    { name = "einops" },
     { name = "sentence-transformers" },
 ]
 
 [[package]]
 name = "codira-analyzer-bash"
-version = "1.40.0"
+version = "1.55.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "codira" },
     { name = "tree-sitter" },
     { name = "tree-sitter-bash" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fa/0b/2f9094d3f1fa07a57bcd0e9ab319c81f4a9bd2d98e5b490d033b3a2a436a/codira_analyzer_bash-1.40.0.tar.gz", hash = "sha256:846f00628e64f78c5b2154919613b98ff34915b1848bf23bf64d57817f25f794", size = 5215, upload-time = "2026-05-31T16:28:35.404Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d0/41/51324c8f380601009a1462bb6ccf8f20d9db9664c5727331f3332a7fd56d/codira_analyzer_bash-1.55.0.tar.gz", hash = "sha256:32a7d3699814c78b5e6313b22d98c1bb3f4c41d3bce6baa05e792dd4a23bce63", size = 6201, upload-time = "2026-07-24T06:10:41.145Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/66/91/b54ecac7c4369f794055ae68ed3dc3d6dd0f17b6050315a38dc665475a9b/codira_analyzer_bash-1.40.0-py3-none-any.whl", hash = "sha256:2715d636609d3f78149e659509ab290837fb57aae787b90b3f70f70ce54400f5", size = 5141, upload-time = "2026-05-31T16:28:25.072Z" },
+    { url = "https://files.pythonhosted.org/packages/10/bd/8575d9b8ba629af362bfbdf2e78729ec73557ed569a1106fe4ce787e08bf/codira_analyzer_bash-1.55.0-py3-none-any.whl", hash = "sha256:90f04a29679e809b7e7f267ba3b010aafb8bfaa3183073506b31947289380b32", size = 5794, upload-time = "2026-07-24T06:04:20.163Z" },
 ]
 
 [[package]]
 name = "codira-analyzer-c"
-version = "1.40.0"
+version = "1.55.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "codira" },
     { name = "tree-sitter" },
     { name = "tree-sitter-c" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f5/b8/df50e06c797bd3b23d5e14c5d41ae91744fd3592a9d6dc5f679b6212c0d5/codira_analyzer_c-1.40.0.tar.gz", hash = "sha256:75a5bf3d3e436c6fe8bc9a6f25f371d99331395ea04c68fa53ad7890984a06e2", size = 11244, upload-time = "2026-05-31T16:28:33.842Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b5/f7/d0fd11190f3326d2102e9b3e172815785c78c502b9f6e253f27ac13daf31/codira_analyzer_c-1.55.0.tar.gz", hash = "sha256:307edd4af07272b54b272255be2ae6807aeec37b90ccaf6da2e17a98e3e36131", size = 14136, upload-time = "2026-07-24T06:10:39.45Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/94/33/af3ce4bc0b866710e6971398e1db69cffb61484656bbe4f544b255130e85/codira_analyzer_c-1.40.0-py3-none-any.whl", hash = "sha256:4c2cc25f1ce3670b1078869090d84d0e45f4e13400ec220ec37bd4bfc93cadd2", size = 10646, upload-time = "2026-05-31T16:28:22.577Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/2a/2dfd02edd1f489ab26120036f368b084693e1bda5c4ad108c8fca3bf9101/codira_analyzer_c-1.55.0-py3-none-any.whl", hash = "sha256:580432b5e0eb9ab7d49f9d45d18b79d2d84ffcbd8a14fe550ef6a365b3518968", size = 12786, upload-time = "2026-07-24T06:04:17.84Z" },
 ]
 
 [[package]]
 name = "codira-analyzer-cpp"
-version = "1.40.0"
+version = "1.55.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "codira" },
     { name = "tree-sitter" },
     { name = "tree-sitter-cpp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2a/06/41b8c55968185c4bf27fe23913a638fa238e20cc472308a60c06edda9e2e/codira_analyzer_cpp-1.40.0.tar.gz", hash = "sha256:58ead104b6ed235b253b3db49b7841e5297b04d83c426342e65148da5ad8dff8", size = 15397, upload-time = "2026-05-31T16:28:34.559Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/79/e960bbc74314f20c880aea63791224ac0dec7198c3975bdb33a653026f45/codira_analyzer_cpp-1.55.0.tar.gz", hash = "sha256:0ab63bf7311945870576e9808f75b1133582be3889e0a5253b25a35d56d3a6ab", size = 18937, upload-time = "2026-07-24T06:10:40.386Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/4a/cd7283ea54a41d7e0449404981972465181f888930eac9e6be5d9bdd2924/codira_analyzer_cpp-1.40.0-py3-none-any.whl", hash = "sha256:113c8a760485731e345463e33fa865284209edf587ce4a8592ec183060638fc7", size = 14908, upload-time = "2026-05-31T16:28:23.847Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/a4/9efe8f51340b9da751378a5d3ca72d559b7fba6e234e5ca8c821ff894a57/codira_analyzer_cpp-1.55.0-py3-none-any.whl", hash = "sha256:14d7a7ac957be1252e2307dd1d99b0ef82ffda5fe01a65123da45a041373d32a", size = 17665, upload-time = "2026-07-24T06:04:18.957Z" },
 ]
 
 [[package]]
 name = "codira-analyzer-json"
-version = "1.40.0"
+version = "1.55.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "codira" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/60/3e/517d60ab3781e338678ac97b983dcf492b471509e403c8fb38856d8fc0cf/codira_analyzer_json-1.40.0.tar.gz", hash = "sha256:02f36c6d126e9a318d2354b4f5994217b75c6d4fdf029b4df3e53f7715ef99ef", size = 8376, upload-time = "2026-05-31T16:28:32.895Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/08/b2/4d1c74af4874080b6df646caad7717f8d33010b32c8d7a6bdf00a3bf64a0/codira_analyzer_json-1.55.0.tar.gz", hash = "sha256:87c1b5c318eea37220ed31b0b637f778f637705ad88e7a1ec058421c87944768", size = 9901, upload-time = "2026-07-24T06:10:38.583Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2d/36/15c43ad56582325bf7efaafe76d58d80bb13734a090d089b8b23d8e1896e/codira_analyzer_json-1.40.0-py3-none-any.whl", hash = "sha256:3f938f82e6fbe4535b5b9bb398908f4f5b871870e8f9a5cc0fbe167f72a31c71", size = 7919, upload-time = "2026-05-31T16:28:21.388Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/f0/a76fa59d33aa2a64438a29abdb87308c82e94bdebe1a0b661fe1d7aa28c5/codira_analyzer_json-1.55.0-py3-none-any.whl", hash = "sha256:6eee3be7884aabf75697cbae9eed7592996520a3640e62e25615f005c8bac259", size = 8854, upload-time = "2026-07-24T06:04:16.726Z" },
+]
+
+[[package]]
+name = "codira-analyzer-markdown"
+version = "1.55.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "codira" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/71/63/f499e81f8309b845f46c8948cafc3aaa4d58091fd95855bd68675934b0be/codira_analyzer_markdown-1.55.0.tar.gz", hash = "sha256:b02f0234510335b2bd8a21b91496d840fdb77f0094f0e31bf85426ca3816b12b", size = 8295, upload-time = "2026-07-24T06:10:41.817Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c2/4a/b72da6ab9523e924b08f6b4115445edbf983d8acd47e111622cdbd46c51e/codira_analyzer_markdown-1.55.0-py3-none-any.whl", hash = "sha256:8a7abd294e3aba27444c9a69c11996ebd2e33c20012c17296f8cb5cb83c3004b", size = 6893, upload-time = "2026-07-24T06:04:21.23Z" },
 ]
 
 [[package]]
 name = "codira-analyzer-python"
-version = "1.40.0"
+version = "1.55.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "codira" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c6/10/b56bd4ba38626a33827e1e1773838b5f4ad7edc76fa31719797eee2da4b6/codira_analyzer_python-1.40.0.tar.gz", hash = "sha256:3adfee4ee7f1b4b83fe3583058b7083d5329f8277c1724de56a46e7455d440ea", size = 8266, upload-time = "2026-05-31T16:28:32.122Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d9/e7/7def01b20f5b580d8b76ec0a51b71dbdeeabfeec73f7346419c574eaf2fd/codira_analyzer_python-1.55.0.tar.gz", hash = "sha256:c16632c5a9df61b9107a57d3a049faa2746c2e304279636df7713053a8520241", size = 10161, upload-time = "2026-07-24T06:10:37.868Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/42/80/4c20c0012875edcee361209d5858407cdf4b4088d455ededc550dfb75327/codira_analyzer_python-1.40.0-py3-none-any.whl", hash = "sha256:24f1fed67e815dae0b45fcf1c668a3891a319e190a196c29d29c71a948166c4e", size = 7497, upload-time = "2026-05-31T16:28:20.396Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/56/6e631bb6dd1b4f9f9e59f689c9958db20a633c7f851e331547c58d24535a/codira_analyzer_python-1.55.0-py3-none-any.whl", hash = "sha256:f821866c09ca01260ea5d03f8f5d989243f098e44ab8eb09fe941abb6f33b6f1", size = 8833, upload-time = "2026-07-24T06:04:15.64Z" },
+]
+
+[[package]]
+name = "codira-analyzer-text"
+version = "1.55.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "codira" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7d/cb/8dd8dcc8adae5ebd35b02c6f6ba0c03616ee0caf3d4ba1337365d18bbbe5/codira_analyzer_text-1.55.0.tar.gz", hash = "sha256:192e8396cd17936ac77a6c63eff5b9473ef2692ab894680de8fe038c594458ae", size = 7048, upload-time = "2026-07-24T06:10:42.503Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7d/92/ad6df7e40c53960d6f991c42c083a2d25cb0a62edaa5b5066f41de34b9bd/codira_analyzer_text-1.55.0-py3-none-any.whl", hash = "sha256:a0f416b4254b3e4c812f6029acf16b7ff917163e3a7657e0bb6ea5f271f72a4e", size = 6062, upload-time = "2026-07-24T06:04:22.495Z" },
 ]
 
 [[package]]
 name = "codira-backend-duckdb"
-version = "1.40.0"
+version = "1.55.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "codira" },
     { name = "duckdb" },
     { name = "pyarrow" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/68/44b27baaa4ab9f5732d43e434818d586befa172f85ac3dff81acbba68bc3/codira_backend_duckdb-1.40.0.tar.gz", hash = "sha256:36f5ec791a74c595b31bddde9733303492b272a4a968354cb403b408bc685b6e", size = 52799, upload-time = "2026-05-31T16:28:37.255Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/9a/0cacdcb4993932a8fb8648808f98b70146c5feeb7db7e54b25e45571eb59/codira_backend_duckdb-1.55.0.tar.gz", hash = "sha256:6fa5a081c5ff4b2ae403ea0000686dc10d25fe9d48919c08def349c6c073d5b9", size = 72942, upload-time = "2026-07-24T06:11:55.873Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a7/58/4144a46faff1e5c0aad12942e35aac1ead8c1d8dc44102d38c46d172ad65/codira_backend_duckdb-1.40.0-py3-none-any.whl", hash = "sha256:5433be5623fd46b6155489ff2300c5de673a2561f2e364333b963910d4880827", size = 46257, upload-time = "2026-05-31T16:28:27.75Z" },
+    { url = "https://files.pythonhosted.org/packages/3d/fa/52d90474d1c75291806317af58a7ddaa9caf2df482d0b630c85dd53b031c/codira_backend_duckdb-1.55.0-py3-none-any.whl", hash = "sha256:502e56e5fbedb7da7f37790546178744435617f8b442ca74e0d6555115ffcd89", size = 60679, upload-time = "2026-07-24T06:11:53.981Z" },
 ]
 
 [[package]]
 name = "codira-backend-sqlite"
-version = "1.40.0"
+version = "1.55.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "codira" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/88/a1/3ecf2e12bfb438fa6718c7d945aed051e6dbbde417f3d9ed1cece77af79d/codira_backend_sqlite-1.40.0.tar.gz", hash = "sha256:beb276ace5d8a183d2435215d89845576cec058fbb0a0ade97b1fac12f26e2d8", size = 30874, upload-time = "2026-05-31T16:28:36.309Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/84/5d/ee1a39e1849d048041990be65adf7d72d06738e4c297e01ea97a9a158a9a/codira_backend_sqlite-1.55.0.tar.gz", hash = "sha256:6d4206b09a1b0b8797032d6465c6abf2ea0e5d8e35a6a6b33ec764c3756c084b", size = 38664, upload-time = "2026-07-24T06:11:55.014Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d4/87/eb707266e6b539a0e339283650d0bfe5424d011b616e57339162ea7424f7/codira_backend_sqlite-1.40.0-py3-none-any.whl", hash = "sha256:cb45591c6ed8e44d5e75d6186d8cb1d60eda7a621016a01bf354b6102f7ad3ab", size = 29118, upload-time = "2026-05-31T16:28:26.335Z" },
+    { url = "https://files.pythonhosted.org/packages/9a/c4/c9ebdb083b1fb26578d4618eaeeaf2fb8cad5dc51f33dc084d3dfd1807d3/codira_backend_sqlite-1.55.0-py3-none-any.whl", hash = "sha256:491e27bbfa96d59cd9efb24ce59d9e2afd78f6b86567efd0277e11c6b15cc237", size = 36384, upload-time = "2026-07-24T06:11:52.704Z" },
+]
+
+[[package]]
+name = "codira-documentation-audit-doxygen"
+version = "1.55.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "codira" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/29/e4/84dd14edf580cc8d641e20f6268eb4751eca7d26c3d6405d83946cf9b27a/codira_documentation_audit_doxygen-1.55.0.tar.gz", hash = "sha256:8ee20eafa4b07f7f0ed2c80ef81ecfd96b20e3c04f05c1ae7c233725c0cf2506", size = 2534, upload-time = "2026-07-25T07:02:08.998Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/77/d8/d42f148a5a6b1f0539f40c56aa0afc33e9b7fbc0a0d88f9f10be0875314c/codira_documentation_audit_doxygen-1.55.0-py3-none-any.whl", hash = "sha256:db5d55c20cde36514b967a95bcb978d06158ab53b205606315376949670426b9", size = 2664, upload-time = "2026-07-25T07:02:04.722Z" },
+]
+
+[[package]]
+name = "codira-documentation-audit-google"
+version = "1.55.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "codira" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b0/4f/689ab7f5d83fbf7b8dc7aa08cae5738935a00b9959e2bfdeabd0cfa340cd/codira_documentation_audit_google-1.55.0.tar.gz", hash = "sha256:5df2a68bdb16b574f059a775bd8b938cebda4a0a2a8da538e9ba9fe1325f7ed2", size = 2525, upload-time = "2026-07-24T06:10:44.206Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/70/49/fe2db8e5e28938d687ddbf4ecf2ef1d01fa1298a5f41bf1bd34b30d68343/codira_documentation_audit_google-1.55.0-py3-none-any.whl", hash = "sha256:9de9bca86c08fa123a2744442a7efb7963328b0c5dea838e70d4d3d1c523afb7", size = 2657, upload-time = "2026-07-24T06:04:25.055Z" },
+]
+
+[[package]]
+name = "codira-documentation-audit-numpy"
+version = "1.55.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "codira" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0a/64/c5711e972c698454143ef83f2ab549aa8b1609bec0bba52e3736b200341d/codira_documentation_audit_numpy-1.55.0.tar.gz", hash = "sha256:71f35bb2db68bbfbb9900920772895971906e1cd9759c3cf670852551571d1d0", size = 2487, upload-time = "2026-07-24T06:10:43.314Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/85/6b/b4481fba160f9d4bd70190f4ad043a403f70773b96f57f6cfcf161741cfb/codira_documentation_audit_numpy-1.55.0-py3-none-any.whl", hash = "sha256:ef54c2e11895f4b0abbb22f59c80526c86da4f3e2d9665707c455833ea0fbf0a", size = 2621, upload-time = "2026-07-24T06:04:23.81Z" },
+]
+
+[[package]]
+name = "codira-embedding-onnx"
+version = "1.55.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "codira" },
+    { name = "numpy" },
+    { name = "onnxruntime" },
+    { name = "tokenizers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/37/12/c55bed7fbfe926ddc5aa651975dd55621db2ec4670cdaed039aedf474dde/codira_embedding_onnx-1.55.0.tar.gz", hash = "sha256:279e5f509f904499b214ae39bd8117ed8809a4d04325ce588f19e9d4f5009d76", size = 10220, upload-time = "2026-07-25T07:02:10.445Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/05/37/9659d6ec1fbbc0eec49a59536e4f8dbc4903e6fd1be360a8e4e511af874a/codira_embedding_onnx-1.55.0-py3-none-any.whl", hash = "sha256:45deff7a1d66aabf5a442bee7f8f7e03e20ce217ef9d9b05f340d61d82c68147", size = 7178, upload-time = "2026-07-25T07:02:06.793Z" },
+]
+
+[[package]]
+name = "codira-embedding-sentence-transformers"
+version = "1.55.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "codira" },
+    { name = "einops" },
+    { name = "sentence-transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c3/be/35b040b679f108e864a41b307a78bc4f320078d1915c5c69ccb5e40dbe8f/codira_embedding_sentence_transformers-1.55.0.tar.gz", hash = "sha256:fc2bd6cbd1c0a68120a9b7f1ac58df74483b4bbb4ac3f413b29ba027ab82463b", size = 4198, upload-time = "2026-07-25T07:02:09.716Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ce/7f/a5cabab4e0b51621e30122999029ec856b1ee8f67eb17d2941bcf4ef861b/codira_embedding_sentence_transformers-1.55.0-py3-none-any.whl", hash = "sha256:bf2dffa88617596366124648764d1e335d4605425deab31996332d1399d35b7b", size = 4131, upload-time = "2026-07-25T07:02:05.769Z" },
+]
+
+[[package]]
+name = "codira-vector-store-duckdb"
+version = "1.55.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "codira" },
+    { name = "duckdb" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/93/c5/6e526fff77bd86ba112c0e259fe16c044eed4c152f0b86789f156112fa30/codira_vector_store_duckdb-1.55.0.tar.gz", hash = "sha256:818d52e11fb9023983106df4e8c6ad50e77904b6cee1f5cce747ed0b97fd2ef0", size = 13305, upload-time = "2026-07-26T08:54:37.29Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/66/750d213690d6ed270d17eba35308b2a35cf2ad38502fd544f51f1abce48a/codira_vector_store_duckdb-1.55.0-py3-none-any.whl", hash = "sha256:99f0811e2b38c03b5ee0d059249d79918821cf5bacc16358c260040292801afd", size = 9529, upload-time = "2026-07-26T08:54:36.042Z" },
+]
+
+[[package]]
+name = "codira-vector-store-sqlite"
+version = "1.55.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "codira" },
+    { name = "sqlite-vec" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b1/ee/d99d8c611f02f3e161715b058767a3418975b30b131bbb2c343ef7f96eac/codira_vector_store_sqlite-1.55.0.tar.gz", hash = "sha256:3321e749745883c226f9c2975c420536a6a19d22095c77f8a61f066b2e199c94", size = 10611, upload-time = "2026-07-25T07:02:11.143Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d4/89/49d6d6fd16cfdaa0029d6bbb4138a425e0b4b2da79e7e6417da2e764c4d1/codira_vector_store_sqlite-1.55.0-py3-none-any.whl", hash = "sha256:555ce616cba89fb063709deccbfaff1d0bc8d39af0bb519951b5d8b10a36a440", size = 7971, upload-time = "2026-07-25T07:02:07.859Z" },
 ]
 
 [[package]]
@@ -340,12 +467,29 @@ wheels = [
 ]
 
 [[package]]
+name = "einops"
+version = "0.8.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/77/850bef8d72ffb9219f0b1aac23fbc1bf7d038ee6ea666f331fa273031aa2/einops-0.8.2.tar.gz", hash = "sha256:609da665570e5e265e27283aab09e7f279ade90c4f01bcfca111f3d3e13f2827", size = 56261, upload-time = "2026-01-26T04:13:17.638Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl", hash = "sha256:54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193", size = 65638, upload-time = "2026-01-26T04:13:18.546Z" },
+]
+
+[[package]]
 name = "filelock"
 version = "3.29.0"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b5/fe/997687a931ab51049acce6fa1f23e8f01216374ea81374ddee763c493db5/filelock-3.29.0.tar.gz", hash = "sha256:69974355e960702e789734cb4871f884ea6fe50bd8404051a3530bc07809cf90", size = 57571, upload-time = "2026-04-19T15:39:10.068Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/81/47/dd9a212ef6e343a6857485ffe25bba537304f1913bdbed446a23f7f592e1/filelock-3.29.0-py3-none-any.whl", hash = "sha256:96f5f6344709aa1572bbf631c640e4ebeeb519e08da902c39a001882f30ac258", size = 39812, upload-time = "2026-04-19T15:39:08.752Z" },
+]
+
+[[package]]
+name = "flatbuffers"
+version = "25.12.19"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl", hash = "sha256:7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4", size = 26661, upload-time = "2025-12-19T23:16:13.622Z" },
 ]
 
 [[package]]
@@ -398,7 +542,7 @@ provides-extras = ["docs"]
 [package.metadata.requires-dev]
 dev = [
     { name = "build" },
-    { name = "codira", extras = ["bundle-official"], specifier = "==1.40.0" },
+    { name = "codira", extras = ["bundle-official"], specifier = "==1.55.0" },
     { name = "libcst", specifier = ">=1.8.6" },
     { name = "mypy" },
     { name = "packaging" },
@@ -1104,6 +1248,26 @@ wheels = [
 ]
 
 [[package]]
+name = "onnxruntime"
+version = "1.28.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flatbuffers" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "protobuf" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9c/12/3807e2b17d9eb71d3cb78ed2ba76869b05c637c9b9d6112e636098b0c97a/onnxruntime-1.28.0-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:31410f544674f534c2f27348af52ef81682ca9c8719154bf4d48f0ef23823b1e", size = 19141759, upload-time = "2026-07-25T01:21:53.765Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/23/b46045c3bf67a9cf54c12f5df0f018a422c65fbb9d6072b10071bebfaae2/onnxruntime-1.28.0-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f649dd6f6452d12a8059888aa489fe519e062e18793dac72b9efa0f9fdb64135", size = 17049339, upload-time = "2026-07-25T01:21:43.005Z" },
+    { url = "https://files.pythonhosted.org/packages/78/b6/8c5396e7894e77c5a7d1e026f3acb9dd39c4b5644e412e37a0055eaa3bc5/onnxruntime-1.28.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:54fa221d669282bd8f582708ce4c96010a7e9fb0661f9006b37fe2fedafb73fe", size = 19214329, upload-time = "2026-07-25T01:22:04.133Z" },
+    { url = "https://files.pythonhosted.org/packages/56/f1/51225c202edba4dfc94e1ea03f3d78f1aaf307da75fd792c0ce1946b2514/onnxruntime-1.28.0-cp313-cp313-win_amd64.whl", hash = "sha256:1a1a19175464665c9b8d50bc916f216cc0b569110045b7bbca8f9f290b186f58", size = 13755033, upload-time = "2026-07-25T01:22:29.302Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/db/f59f715edfdd96a051f32b5ef0e680a20a8755d4ecd75f63090e960e347a/onnxruntime-1.28.0-cp313-cp313-win_arm64.whl", hash = "sha256:cfab507abe09d6ffeb817eee07944d452fdc0b00fdcef34cab4db10a45e378c7", size = 13454175, upload-time = "2026-07-25T01:22:19.912Z" },
+    { url = "https://files.pythonhosted.org/packages/47/28/810314fa88647af9f4cdaf438a30ad1cfebebb53ded55499232d7a0094e6/onnxruntime-1.28.0-cp313-cp313t-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ac301f53b1930402fc46c368e268acfed02f3207272aaff05070d7e09f96f031", size = 17057307, upload-time = "2026-07-25T01:21:45.492Z" },
+    { url = "https://files.pythonhosted.org/packages/3d/cc/9e9f193cc0f29f263a8f09ec08487aed6c96ee856d5fd77da32a425c1949/onnxruntime-1.28.0-cp313-cp313t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f7f022a1103cae591c75fc4565589a515f2ddd14a6ac8e8a05812dfeda142e28", size = 19222954, upload-time = "2026-07-25T01:22:06.952Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "26.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1162,6 +1326,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/8e/22/2de9408ac81acbb8a7d05d4cc064a152ccf33b3d480ebe0cd292153db239/pre_commit-4.6.0.tar.gz", hash = "sha256:718d2208cef53fdc38206e40524a6d4d9576d103eb16f0fec11c875e7716e9d9", size = 198525, upload-time = "2026-04-21T20:31:41.613Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/80/6e/4b28b62ecb6aae56769c34a8ff1d661473ec1e9519e2d5f8b2c150086b26/pre_commit-4.6.0-py2.py3-none-any.whl", hash = "sha256:e2cf246f7299edcabcf15f9b0571fdce06058527f0a06535068a86d38089f29b", size = 226472, upload-time = "2026-04-21T20:31:40.092Z" },
+]
+
+[[package]]
+name = "protobuf"
+version = "7.35.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/01/9ef0afd7999eb9badb3a768b4aedd78c86d4c65cfaf1958ab276199e76b4/protobuf-7.35.1.tar.gz", hash = "sha256:ce115a26fe0c39a2c29973d914d327e516a6455464489fe3cd1e51a1b354f81a", size = 458717, upload-time = "2026-06-11T21:55:40.257Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/03/8aeeb7458d22546bf64b5250ca1daeb5ff757d900e8e4a7476c6f0db843e/protobuf-7.35.1-cp310-abi3-macosx_10_9_universal2.whl", hash = "sha256:24f857477359a85c0c235261b8ba905fd51b2562f4a64ca1df5473f29850cbf6", size = 433226, upload-time = "2026-06-11T21:55:31.719Z" },
+    { url = "https://files.pythonhosted.org/packages/37/4b/dfb89eb0e652a1ff073c39a59fb5e3a83cfe9b57a2c83fa6d78270101767/protobuf-7.35.1-cp310-abi3-manylinux2014_aarch64.whl", hash = "sha256:11d6b0ec246892d85215b0a13ca6e0233cf5284b68f0ac02646427f4ff88a799", size = 328847, upload-time = "2026-06-11T21:55:34.035Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/58/dc12f2cd484951524af6e3382c785869b9b3fb5e52ee95ae23add53ee8f9/protobuf-7.35.1-cp310-abi3-manylinux2014_s390x.whl", hash = "sha256:b73f9489a4b8b1c9cb1f8ed951c736392592edb24b9d6819f36d2e10b171d5b4", size = 344030, upload-time = "2026-06-11T21:55:34.941Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/be/5b3cfe508bfab6761414ff944e3366eb13be4fd71efcd69450f89ba39f43/protobuf-7.35.1-cp310-abi3-manylinux2014_x86_64.whl", hash = "sha256:74758715c53d7158fb76caf4f0cfdacc5329a4b1bb994f865d6cf302d413a1c4", size = 327130, upload-time = "2026-06-11T21:55:35.921Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/bc/6d6c7ba8709c85f8f2c390b2b118d6fb08a783676a572271851bf45a7d22/protobuf-7.35.1-cp310-abi3-win32.whl", hash = "sha256:353652e4efd0bca5b5fc2656abf8307ef351f0cf938c9eba09f0e09c20a25c30", size = 428945, upload-time = "2026-06-11T21:55:37.034Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/19/8d0cb6f20a1ef7b18f1c8986ad5783f22f84cce39c6ce9a6e645ea55192e/protobuf-7.35.1-cp310-abi3-win_amd64.whl", hash = "sha256:230a75ddfc2de4806e56696ce9640c1cdfdb6543b7cfce98d42a4c0a0e7bdb87", size = 439996, upload-time = "2026-06-11T21:55:38.123Z" },
+    { url = "https://files.pythonhosted.org/packages/19/c7/5f7c636ec43e0c545e28d1f1db71990108306f7bdcb89f069ba97e428e7f/protobuf-7.35.1-py3-none-any.whl", hash = "sha256:4bc97768d8fe4ad6743c8a19403e314511ed9f6d13205b687e52421c023ac1b9", size = 171659, upload-time = "2026-06-11T21:55:39.155Z" },
 ]
 
 [[package]]
@@ -1630,6 +1809,18 @@ wheels = [
 ]
 
 [[package]]
+name = "sqlite-vec"
+version = "0.1.9"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/68/85/9fad0045d8e7c8df3e0fa5a56c630e8e15ad6e5ca2e6106fceb666aa6638/sqlite_vec-0.1.9-py3-none-macosx_10_6_x86_64.whl", hash = "sha256:1b62a7f0a060d9475575d4e599bbf94a13d85af896bc1ce86ee80d1b5b48e5fb", size = 131171, upload-time = "2026-03-31T08:02:31.717Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/3d/3677e0cd2f92e5ebc43cd29fbf565b75582bff1ccfa0b8327c7508e1084f/sqlite_vec-0.1.9-py3-none-macosx_11_0_arm64.whl", hash = "sha256:1d52e30513bae4cc9778ddbf6145610434081be4c3afe57cd877893bad9f6b6c", size = 165434, upload-time = "2026-03-31T08:02:32.712Z" },
+    { url = "https://files.pythonhosted.org/packages/00/d4/f2b936d3bdc38eadcbd2a87875815db36430fab0363182ba5d12cd8e0b51/sqlite_vec-0.1.9-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4e921e592f24a5f9a18f590b6ddd530eb637e2d474e3b1972f9bbeb773aa3cb9", size = 160076, upload-time = "2026-03-31T08:02:33.796Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/ad/6afd073b0f817b3e03f9e37ad626ae341805891f23c74b5292818f49ac63/sqlite_vec-0.1.9-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux1_x86_64.whl", hash = "sha256:1515727990b49e79bcaf75fdee2ffc7d461f8b66905013231251f1c8938e7786", size = 163388, upload-time = "2026-03-31T08:02:34.888Z" },
+    { url = "https://files.pythonhosted.org/packages/42/89/81b2907cda14e566b9bf215e2ad82fc9b349edf07d2010756ffdb902f328/sqlite_vec-0.1.9-py3-none-win_amd64.whl", hash = "sha256:4a28dc12fa4b53d7b1dced22da2488fade444e96b5d16fd2d698cd670675cf32", size = 292804, upload-time = "2026-03-31T08:02:36.035Z" },
+]
+
+[[package]]
 name = "sympy"
 version = "1.14.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1683,6 +1874,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/fd/18/a545c4ea42af3df6effd7d13d250ba77a0a86fb20393143bbb9a92e434d4/tokenizers-0.22.2-cp39-abi3-win32.whl", hash = "sha256:a6bf3f88c554a2b653af81f3204491c818ae2ac6fbc09e76ef4773351292bc92", size = 2502363, upload-time = "2026-01-05T10:45:20.593Z" },
     { url = "https://files.pythonhosted.org/packages/65/71/0670843133a43d43070abeb1949abfdef12a86d490bea9cd9e18e37c5ff7/tokenizers-0.22.2-cp39-abi3-win_amd64.whl", hash = "sha256:c9ea31edff2968b44a88f97d784c2f16dc0729b8b143ed004699ebca91f05c48", size = 2747786, upload-time = "2026-01-05T10:45:18.411Z" },
     { url = "https://files.pythonhosted.org/packages/72/f4/0de46cfa12cdcbcd464cc59fde36912af405696f687e53a091fb432f694c/tokenizers-0.22.2-cp39-abi3-win_arm64.whl", hash = "sha256:9ce725d22864a1e965217204946f830c37876eee3b2ba6fc6255e8e903d5fcbc", size = 2612133, upload-time = "2026-01-05T10:45:17.232Z" },
+]
+
+[[package]]
+name = "tomlkit"
+version = "0.15.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/96/e07752635b98536177fa1f37671c8f3cdde2e724c6bcf6034b2cfb571565/tomlkit-0.15.1.tar.gz", hash = "sha256:e25bbf38843005246210a12982776f27f99cb9be67160e14434d0c0d21ee1e97", size = 180129, upload-time = "2026-07-17T01:48:04.562Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/13/bc/8c13eb66537dce1d2bd3a57132902f38d0e7f5bb46fa9f4daed9fe9d76ee/tomlkit-0.15.1-py3-none-any.whl", hash = "sha256:177a05aece5a8ca5266fd3c448abb47b8d352f09d477d3ca8332db4d89b24304", size = 49449, upload-time = "2026-07-17T01:48:05.728Z" },
 ]
 
 [[package]]
